@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Entopic — Clinical Vision Assessment</title>
+
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=JetBrains+Mono:wght@400;500&family=Fraunces:opsz,wght@9..144,400;9..144,500&display=swap" rel="stylesheet">
+
+<!-- Styles -->
+<link rel="stylesheet" href="css/entopic.css">
+
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SAVE INDICATOR (fixed position, bottom-right)                 -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="save-ind" id="saveInd">Saved</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- PAGE 1: LOGIN                                                  -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="page active" id="pgLogin">
+  <div class="login-wrap">
+    <div class="login-box">
+
+      <!-- Branding -->
+      <div class="login-logo">Entopic</div>
+      <div class="login-tag">Clinical Vision Assessment</div>
+
+      <!-- Login Form -->
+      <div id="loginView">
+        <div class="fi" style="margin-bottom:10px">
+          <label>Username</label>
+          <input id="inp_lu" placeholder="Username" autocomplete="username">
+        </div>
+        <div class="fi" style="margin-bottom:10px">
+          <label>Password</label>
+          <input type="password" id="inp_lp" placeholder="Password" autocomplete="current-password">
+        </div>
+        <div class="login-err" id="loginErr"></div>
+        <button class="btn btn-p" style="width:100%;justify-content:center;margin-top:6px" onclick="doLogin()">
+          Sign In
+        </button>
+        <div class="alt-link" onclick="showView('setupView','loginView')">Create new account</div>
+      </div>
+
+      <!-- Setup Form (hidden by default) -->
+      <div id="setupView" style="display:none">
+        <div class="fi" style="margin-bottom:8px">
+          <label>Display Name</label>
+          <input id="inp_sn" placeholder="Dr. Smith">
+        </div>
+        <div class="fi" style="margin-bottom:8px">
+          <label>Credentials</label>
+          <select id="inp_sc">
+            <option>Optometrist</option>
+            <option>Ophthalmologist</option>
+            <option>Optician</option>
+            <option>Technician</option>
+          </select>
+        </div>
+        <div class="fi" style="margin-bottom:8px">
+          <label>Clinic Name</label>
+          <input id="inp_scl" placeholder="Vision Care Clinic">
+        </div>
+        <div class="fi" style="margin-bottom:8px">
+          <label>Username</label>
+          <input id="inp_su" placeholder="Choose username">
+        </div>
+        <div class="fi" style="margin-bottom:8px">
+          <label>Password</label>
+          <input type="password" id="inp_sp" value="12345">
+        </div>
+        <button class="btn btn-p" style="width:100%;justify-content:center;margin-top:6px" onclick="doSetup()">
+          Create Account
+        </button>
+        <div class="alt-link" onclick="showView('loginView','setupView')">Back to sign in</div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- PAGE 2: HOME / DASHBOARD                                       -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="page" id="pgHome">
+
+  <!-- Home Header Bar -->
+  <div class="home-bar">
+    <span class="home-bar-logo">Entopic</span>
+    <span id="homeClinic" class="home-bar-clinic"></span>
+    <span class="home-bar-spacer"></span>
+    <span id="homeUser" class="home-bar-user"></span>
+    <button class="btn btn-s" style="font-size:.58rem;padding:3px 8px" onclick="doLogout()">Sign Out</button>
+  </div>
+
+  <!-- Home Content (rendered by JS) -->
+  <div class="home-wrap" id="homeContent"></div>
+
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- PAGE 3: EXAM APP (3-column grid)                               -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="page page-exam" id="pgExam">
+
+  <!-- Exam Header -->
+  <header class="header">
+    <span class="hdr-logo">Entopic</span>
+    <span class="hdr-pat" id="hdrPat"></span>
+    <span class="hdr-badge">Advisory Only</span>
+    <span class="hdr-home" onclick="goHome()">← Home</span>
+  </header>
+
+  <!-- Sidebar Navigation (22 steps) -->
+  <nav class="sidebar-nav" id="sidebarEl"></nav>
+
+  <!-- Main Content Area (page renderers inject here) -->
+  <main class="main-area" id="mainEl"></main>
+
+  <!-- Advisory Panel (diagnosis, alerts, nudges) -->
+  <aside class="advisory-panel" id="advEl"></aside>
+
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- MODAL: API Key Setup (overlay, toggled by JS)                  -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="modalApiKey" style="display:none">
+  <div class="modal-box">
+    <div class="modal-title">Claude API Configuration</div>
+    <div class="modal-desc">
+      Required for interpretive clinical remarks and speech-to-data parsing.
+      The diagnostic engine works offline without this key.
+      Get your key at <b>console.anthropic.com</b>
+    </div>
+    <div class="fi" style="margin:12px 0">
+      <label>API Key</label>
+      <input id="inp_apikey" type="text" placeholder="sk-ant-api03-..." 
+             style="font-family:var(--mono);font-size:.68rem">
+    </div>
+    <div class="btn-g">
+      <button class="btn btn-p" onclick="saveApiKeyFromModal()">Save Key</button>
+      <button class="btn btn-s" onclick="closeModal('modalApiKey')">Cancel</button>
+    </div>
+    <div id="apiKeyStatus" style="font-size:.58rem;color:var(--sv);margin-top:6px"></div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- MODAL: Knowledge Base Info (overlay)                            -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="modalKBInfo" style="display:none">
+  <div class="modal-box">
+    <div class="modal-title">Knowledge Base</div>
+    <div id="kbInfoContent"></div>
+    <div class="btn-g">
+      <button class="btn btn-s" onclick="closeModal('modalKBInfo')">Close</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- CANVAS: Drawing overlay for slit lamp / fundus sketches        -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="canvas-overlay" id="canvasOverlay" style="display:none">
+  <div class="canvas-wrap">
+    <div class="canvas-toolbar" id="canvasToolbar"></div>
+    <canvas id="drawCanvas" width="500" height="500"></canvas>
+    <div class="btn-g" style="margin-top:8px">
+      <button class="btn btn-p" onclick="saveDrawing()">Save Drawing</button>
+      <button class="btn btn-s" onclick="clearDrawing()">Clear</button>
+      <button class="btn btn-s" onclick="closeDrawing()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SCRIPT LOADING ORDER (critical — do not rearrange)             -->
+<!--                                                                 -->
+<!-- 1. Knowledge base files (data only, no dependencies)           -->
+<!-- 2. Data model and constants                                     -->
+<!-- 3. Storage layer                                                -->
+<!-- 4. Engine (depends on knowledge + data model)                  -->
+<!-- 5. UI renderers (depend on engine + data model)                -->
+<!-- 6. Speech, Claude API, utilities                                -->
+<!-- 7. App init (depends on everything above)                      -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+
+<!-- Knowledge Base -->
+<script src="knowledge/surface.js"></script>
+<script src="knowledge/corneal.js"></script>
+<script src="knowledge/retina.js"></script>
+<script src="knowledge/neuro.js"></script>
+<script src="knowledge/binocular.js"></script>
+<script src="knowledge/refractive.js"></script>
+<script src="knowledge/glaucoma.js"></script>
+<script src="knowledge/anterior.js"></script>
+<script src="knowledge/lens.js"></script>
+<script src="knowledge/medications.js"></script>
+<script src="knowledge/token-dictionary.js"></script>
+<script src="knowledge/finding-token-map.js"></script>
+<script src="knowledge/loader.js"></script>
+
+<!-- Core -->
+<script src="js/data-model.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/engine.js"></script>
+
+<!-- UI -->
+<script src="js/ui-sidebar.js"></script>
+<script src="js/ui-advisory.js"></script>
+<script src="js/ui-pages.js"></script>
+<script src="js/ui-pages-2.js"></script>
+<script src="js/ui-report.js"></script>
+<script src="js/ui-flowmap.js"></script>
+
+<!-- Features -->
+<script src="js/speech.js"></script>
+<script src="js/claude.js"></script>
+<script src="js/drawing.js"></script>
+<script src="js/risk-calc.js"></script>
+<script src="js/medication-checker.js"></script>
+<script src="js/smart-intake.js"></script>
+<script src="js/spectacle-advisor.js"></script>
+
+<!-- App Init (must be last) -->
+<script src="js/app.js"></script>
+
+</body>
+</html>

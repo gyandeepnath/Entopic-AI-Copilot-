@@ -1,0 +1,14 @@
+{
+  "name": "entopic",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Entopic — offline-first ophthalmic exam copilot and clinical decision-support tool. The app itself is browser-only (open index.html); this package.json exists only to run dev tooling and tests in Node.",
+  "scripts": {
+    "audit": "node tools/kb-audit.js",
+    "audit:strict": "node tools/kb-audit.js --strict",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
