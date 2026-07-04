@@ -35,7 +35,7 @@ var KB_BINOCULAR = [
   "con": ["near_symptoms"],
   "temporal": ["chronic"],
   "tests": ["eso_distance_more"],
-  "exclusions": ["sixth_nerve_palsy"]
+  "exclusions": ["sixth_cranial_nerve_palsy"]
 },
 
 {

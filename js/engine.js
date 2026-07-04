@@ -800,15 +800,34 @@ function applyExclusions(results, tokens) {
     }
   }
 
+  /* Exclusion strings are snake_case (e.g. "acute_angle_closure") while
+     condition names are display strings ("Acute Angle Closure Crisis").
+     Normalize both sides to snake_case before comparing — raw substring
+     comparison between the two formats never matches. */
+  function normName(name) {
+    return String(name).toLowerCase()
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_+|_+$/g, "");
+  }
+
   /* Filter out excluded conditions */
   return results.filter(function(r) {
+    /* SAFETY: urgent conditions are never suppressed by exclusion logic.
+       A high-scoring chronic condition must not hide an emergency from
+       the differential. Red flags stay visible; the clinician decides. */
+    if (r.urgent) return true;
+
+    var rNorm = normName(r.name);
+
     /* Check if any high-scoring condition excludes this one */
     for (var condName in highScorers) {
+      if (condName === r.name) continue; /* a condition never excludes itself */
       if (typeof KB_EXCLUSION_MAP !== "undefined" && KB_EXCLUSION_MAP[condName]) {
         var exclusions = KB_EXCLUSION_MAP[condName];
-        /* Check for partial name matches too */
+        /* Normalized substring match: "acute_angle_closure" matches
+           "acute_angle_closure_crisis" */
         for (var ei = 0; ei < exclusions.length; ei++) {
-          if (r.name.toLowerCase().indexOf(exclusions[ei].toLowerCase()) >= 0) {
+          if (rNorm.indexOf(normName(exclusions[ei])) >= 0) {
             r._excludedBy = condName;
             return false;
           }

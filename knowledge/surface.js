@@ -14,6 +14,9 @@ var KB_SURFACE = [
   "temporal": ["chronic", "progressive"],
   "severity_modifiers": ["mild_irritation", "moderate_discomfort"],
   "tests": ["TBUT_reduced", "meibomian_gland_dropout", "thick_meibum", "tear_film_instability"],
+  /* NEEDS_CLINICAL_REVIEW: "acute_keratitis" matches no condition in the KB.
+     Several keratitis entries exist (microbial, herpetic, marginal, ...) —
+     founder to confirm which, if any, this exclusion should target. */
   "exclusions": ["allergic_conjunctivitis", "bacterial_conjunctivitis", "acute_keratitis"]
 },
 
@@ -205,6 +208,11 @@ var KB_SURFACE = [
   "con": ["proptosis", "restricted_motility"],
   "temporal": ["acute"],
   "tests": ["clinical_exam"],
+  /* NEEDS_CLINICAL_REVIEW: "orbital_cellulitis" does not exist in the KB, so
+     this exclusion can never fire. The intent also looks inverted — if it
+     did fire it would suppress orbital cellulitis (the sight/life-threatening
+     one) whenever preseptal scores high. Founder to decide whether to ADD
+     orbital cellulitis as an urgent condition instead of excluding it. */
   "exclusions": ["orbital_cellulitis"]
 },
 

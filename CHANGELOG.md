@@ -6,6 +6,47 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-07-04 — Session 2 (increment B): Exclusion matcher fixed, urgent conditions un-suppressible
+
+**What**
+
+- `js/engine.js` — rewrote the matching inside `applyExclusions` (the only
+  engine change):
+  - Condition names are normalized to snake_case before comparison, so
+    exclusion strings like `"acute_angle_closure"` now actually match
+    "Acute Angle Closure Crisis". Before this fix, 16 declared exclusion
+    rules essentially never fired (2 fired by accident).
+  - **Safety guard: urgent-flagged conditions are never removed by exclusion
+    logic.** A high-scoring chronic condition (e.g. POAG) can no longer hide
+    an emergency (e.g. Acute Angle Closure Crisis) from the differential.
+    This is a deliberate divergence from the raw KB intent, in line with the
+    "red flags are un-suppressible" guardrail.
+  - A condition can no longer exclude itself.
+- `knowledge/binocular.js` — exclusion target `sixth_nerve_palsy` renamed to
+  `sixth_cranial_nerve_palsy` (unambiguous naming fix: the condition "Sixth
+  Cranial Nerve Palsy" exists; the old string could never match it).
+- `knowledge/surface.js` — flagged the two genuinely unresolvable exclusion
+  targets inline with `NEEDS_CLINICAL_REVIEW` comments (`acute_keratitis`
+  from evaporative dry eye; `orbital_cellulitis` from preseptal cellulitis —
+  the latter's intent also looks inverted and needs the founder's call).
+- `tests/engine-exclusions.test.js` — 6 new tests pinning the fixed matcher:
+  normalized matching fires, low scorers suppress nothing, no self-exclusion,
+  urgent survival (unit + full-pipeline end-to-end where POAG ≥ 0.5 coexists
+  with an acute angle-closure presentation and AACC stays in the list).
+- `tools/kb-audit.js` — exclusion section now models the fixed engine matcher
+  (resolvable / suppressible / unresolvable) instead of simulating the old bug.
+
+**Why**
+
+Gap 2 in ARCHITECTURE.md — comorbidity suppression silently no-oped. Fixing
+it without the urgent guard would have been dangerous (several exclusion
+targets are urgent conditions); the guard makes the feature safe to enable.
+
+**Verified:** 26/26 tests pass (golden vignettes unchanged — no regression);
+audit shows 14/16 rules resolving. All app files pass `node --check`.
+
+---
+
 ## 2026-07-03 — Session 1: Repo bootstrap + KB audit/validation harness
 
 **What**

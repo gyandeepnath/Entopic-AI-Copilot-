@@ -80,27 +80,29 @@ const withIcd = ALL.filter((c) => c.icd && String(c.icd).trim().length > 0);
 
 /* ── 5. Exclusion resolution ──
    Each exclusion string (e.g. "acute_angle_closure") is meant to name
-   another condition. Check whether it resolves to a real condition:
-     - currentMatch: the engine's live substring test (buggy: snake_case
-       token vs. space-separated display name → essentially never matches)
-     - tokenMatch: a normalized match (display name → snake_case token) */
-const conditionTokens = ALL.map((c) => ({ name: c.name, token: toToken(c.name) }));
+   another condition. The engine (applyExclusions) matches the normalized
+   condition name against the exclusion string, and NEVER suppresses
+   urgent-flagged conditions (safety guard). Mirror that here:
+     - resolvesByToken: the exclusion string matches >=1 condition name
+     - suppressible targets: matched conditions that are not urgent
+       (urgent matches resolve but can never actually be suppressed) */
+const conditionTokens = ALL.map((c) => ({ name: c.name, token: toToken(c.name), urgent: !!c.urgent }));
 const exclusionRules = [];
 for (const c of ALL) {
   for (const ex of c.exclusions || []) {
-    const currentMatch = ALL.some((o) => norm(o.name).indexOf(norm(ex)) >= 0);
-    const tokenHit = conditionTokens.find((o) => o.token === ex || o.token.indexOf(ex) >= 0);
+    const hits = conditionTokens.filter((o) => o.token.indexOf(ex) >= 0 && o.name !== c.name);
+    const suppressible = hits.filter((h) => !h.urgent);
     exclusionRules.push({
       from: c.name,
       excludes: ex,
-      firesToday: currentMatch,
-      resolvesByToken: !!tokenHit,
-      resolvesTo: tokenHit ? tokenHit.name : null
+      resolvesByToken: hits.length > 0,
+      resolvesTo: hits.map((h) => h.name + (h.urgent ? " [urgent: never suppressed]" : "")),
+      suppressibleTargets: suppressible.length
     });
   }
 }
-const exclFiresToday = exclusionRules.filter((r) => r.firesToday).length;
 const exclResolvable = exclusionRules.filter((r) => r.resolvesByToken).length;
+const exclEffective = exclusionRules.filter((r) => r.suppressibleTargets > 0).length;
 const exclUnresolvable = exclusionRules.filter((r) => !r.resolvesByToken);
 
 /* ── Report ── */
@@ -119,8 +121,8 @@ const report = {
   requiredTokensNoLexicalProducer: reqUnreached.length,
   conditionsWithIcd: withIcd.length,
   exclusionRules: exclusionRules.length,
-  exclusionsFiringToday: exclFiresToday,
-  exclusionsResolvableByToken: exclResolvable,
+  exclusionsResolvable: exclResolvable,
+  exclusionsWithSuppressibleTarget: exclEffective,
   exclusionsUnresolvable: exclUnresolvable.length
 };
 
@@ -159,11 +161,11 @@ line();
 console.log("CLINICAL CODING");
 console.log(`  Conditions carrying an ICD code: ${report.conditionsWithIcd} / ${report.conditions} (${pct(report.conditionsWithIcd, report.conditions)})`);
 line();
-console.log("EXCLUSIONS (comorbidity suppression)");
-console.log(`  Total exclusion rules declared:        ${report.exclusionRules}`);
-console.log(`  ...that FIRE under today's engine:      ${report.exclusionsFiringToday}  <-- BUG if 0 with rules present`);
-console.log(`  ...that resolve to a real condition:    ${report.exclusionsResolvableByToken}`);
-console.log(`  ...unresolvable (target not found):     ${report.exclusionsUnresolvable}`);
+console.log("EXCLUSIONS (comorbidity suppression — engine matcher model)");
+console.log(`  Total exclusion rules declared:            ${report.exclusionRules}`);
+console.log(`  ...resolving to >=1 condition:              ${report.exclusionsResolvable}`);
+console.log(`  ...with a suppressible (non-urgent) target: ${report.exclusionsWithSuppressibleTarget}`);
+console.log(`  ...unresolvable (target not found):         ${report.exclusionsUnresolvable}`);
 if (exclUnresolvable.length) {
   console.log("  Unresolvable exclusion targets:");
   exclUnresolvable.forEach((r) => console.log(`     ${r.from}  →  excludes "${r.excludes}" (no matching condition)`));
@@ -172,8 +174,8 @@ line();
 
 /* ── Hard invariants (strict mode) ── */
 const violations = [];
-if (report.exclusionRules > 0 && report.exclusionsFiringToday === 0) {
-  violations.push("Exclusion rules are declared but NONE fire today (applyExclusions matcher bug).");
+if (report.exclusionRules > 0 && report.exclusionsResolvable === 0) {
+  violations.push("Exclusion rules are declared but NONE resolve to any condition (matcher or naming bug).");
 }
 if (exclUnresolvable.length > 0) {
   violations.push(`${exclUnresolvable.length} exclusion target(s) do not resolve to any condition.`);
