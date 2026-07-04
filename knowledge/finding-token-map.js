@@ -117,6 +117,7 @@ var FINDING_TOKEN_MAP = {
   "PCO":                             ["post_cataract_surgery_blur", "glare"],
   "Aphakia":                         [],
   "White cataract":                  ["reduced_vision"],
+  "Leukocoria (white pupillary reflex)": ["leukocoria"],
 
   /* ═══ SLIT LAMP — Tear Film ═══ */
   "TBUT reduced (<10s)":            ["dryness"],

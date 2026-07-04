@@ -6,6 +6,56 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-07-04 — Session 2 (increment D2): Token registry + reachability fixes + browser smoke test
+
+**What**
+
+- **Token registry (Phase 1 foundation, ARCHITECTURE.md §A.1).**
+  `tools/gen-token-registry.js` generates `knowledge/token-registry.js`
+  (`TOKEN_REGISTRY` + `TOKEN_REGISTRY_STATS`) by MEASURING every token's
+  producers (symptom chips, dictionary, finding-map, free-text parser,
+  engine derivation, temporal, medication bridge), KB usage counts, and
+  reachability. Nothing invented; `type_hint` is mechanically inferred and
+  marked provisional. Loaded in both the browser (`index.html`) and Node.
+  `npm run registry` / `registry:check`.
+- **Reachability fixes surfaced by the registry** (were: hallmark evidence
+  present but condition never scored):
+  - `leukocoria` — added as a selectable slit-lamp finding + dictionary
+    aliases + finding-map entry, so Congenital Cataract (req: leukocoria)
+    is now reachable. Added an **urgent leukocoria alert** (retinoblastoma /
+    congenital cataract), flagged `NEEDS_CLINICAL_REVIEW` for founder to
+    verify wording/urgency. Zero unreachable required tokens now.
+  - **Data-driven urgent routing.** `selectRoutes` now activates the urgent
+    route whenever the *required* token of any urgent-route condition is
+    present. Fixes silent non-scoring of Hypopyon Uveitis (hypopyon_visible),
+    Neovascular Glaucoma (rubeosis_iridis), and Wet AMD (distortion) — each
+    previously fired a safety alert but produced an empty differential.
+    Self-maintains as the KB grows.
+  - Added `RAPD_positive`→neuro, `hypopyon_visible`→anterior,
+    `rubeosis_iridis`→glaucoma, `leukocoria`→lens route triggers.
+- **Real browser smoke test** (Chromium/Playwright, kept in scratchpad):
+  confirms the app loads with no console/page errors, KB (130) + registry
+  (490 tokens) load, login renders, engine is callable. Observed the app
+  pulls fonts from Google Fonts CDN — cosmetic, but a minor offline-first
+  wrinkle worth self-hosting later.
+- `tests/token-registry.test.js` (5 tests): registry-in-sync guard, every
+  required token reachable, unreachable sup/con frozen at ≤70, no undeclared
+  KB tokens. Plus 5 new golden vignettes for the routing fixes.
+
+**Why**
+
+The registry is the root-cause fix for gap 1 and the recon that made the
+reachability bugs visible and provable. Enforcing "every required token is
+reachable" as a test means a condition can never again be silently
+un-diagnosable.
+
+**Verified:** 48/48 unit tests pass; browser smoke test passes; registry
+`--check` clean. Divergence from doc: built the registry as a *generated*
+file with a sync-check test (rather than a hand-maintained one) so it can
+never drift from the sources — recorded here per the brief.
+
+---
+
 ## 2026-07-04 — Session 2 (increment D1): Medication tokens actually reach the engine
 
 **What**

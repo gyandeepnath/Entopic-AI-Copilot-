@@ -179,6 +179,48 @@ test("measurement auto-derivation produces the expected tokens", () => {
   assert.ok(t.indexOf("older_age") >= 0, "age≥60 → older_age");
 });
 
+/* ═══ Route reachability: hallmark evidence must reach scoring ═══ */
+
+test("leukocoria finding → urgent alert + congenital cataract scored", () => {
+  const out = eng.runCase(
+    { sl: { findings: ["Leukocoria (white pupillary reflex)"] } },
+    { age: "2" }
+  );
+  assert.ok(alertMatching(out, /leukocoria/i).length > 0, "leukocoria red-flag alert fires");
+  assert.strictEqual(alertMatching(out, /leukocoria/i)[0].l, "urgent");
+  assert.ok(hasDx(out, "Congenital Cataract"), "lens route activates on leukocoria");
+});
+
+test("hypopyon finding → hypopyon uveitis tops the differential", () => {
+  const out = eng.runCase({ sl: { findings: ["Hypopyon"] } });
+  assert.ok(hasDx(out, "Hypopyon Uveitis"),
+    "urgent route activates on hypopyon_visible (was: alert with empty differential)");
+});
+
+test("rubeosis + elevated IOP → neovascular glaucoma scored", () => {
+  const out = eng.runCase({ sl: { findings: ["Rubeosis iridis"] }, iop: { od: "38", os: "16" } });
+  assert.ok(hasDx(out, "Neovascular Glaucoma"), "urgent route activates on rubeosis_iridis");
+  assert.ok(alertMatching(out, /rubeosis/i).length > 0, "rubeosis alert fires");
+});
+
+test("acute metamorphopsia in a 72-year-old → wet AMD scored", () => {
+  const out = eng.runCase(
+    { symptoms: ["distortion", "central_blur"], temporal: { onset: "acute" } },
+    { age: "72" }
+  );
+  assert.ok(hasDx(out, "Age-related Macular Degeneration (Wet)"),
+    "urgent route activates on distortion (wet AMD was unreachable by routing)");
+  assert.ok(alertMatching(out, /metamorphopsia/i).length > 0, "OCT-macula alert fires");
+});
+
+test("RAPD + pain on eye movement → optic neuritis scored via neuro route", () => {
+  const out = eng.runCase({
+    pupil: { rapd: "OD" },
+    cc: "pain when moving the eye, colors look faded"
+  });
+  assert.ok(hasDx(out, "Optic Neuritis"), "neuro route activates on RAPD_positive");
+});
+
 /* ═══ Medication bridge (engine source 10) ═══ */
 
 test("systemic steroid use → steroid_history token → steroid cataract reachable", () => {

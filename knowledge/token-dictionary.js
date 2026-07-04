@@ -79,6 +79,7 @@ var TOKEN_DICTIONARY = {
   "color_vision_loss":         ["colour change", "colors dull", "faded colors", "washed out"],
   "reduced_contrast":          ["low contrast", "washed out", "pale looking"],
   "night_blindness":           ["night vision", "cant see dark", "nyctalopia", "night blind"],
+  "leukocoria":                ["white pupil", "white reflex", "white pupillary reflex", "leukocoria"],
 
   /* ── FIELD LOSS TOKENS ── */
   "field_loss":                ["field loss", "missing vision", "part missing"],

@@ -652,11 +652,30 @@ function selectRoutes(tokens) {
     addRoute("urgent");
   }
 
+  /* Urgent — data-driven: if the hallmark (required) token of ANY
+     urgent-route condition is present, the urgent route must activate.
+     Without this, conditions like Hypopyon Uveitis (req: hypopyon_visible),
+     Neovascular Glaucoma (req: rubeosis_iridis) or Wet AMD (req: distortion)
+     could carry their defining evidence yet never be scored, because the
+     hard-coded trigger list above only covered four retinal symptoms.
+     Self-maintains as the KB grows. */
+  if (routes.indexOf("urgent") === -1 && typeof KNOWLEDGE_ALL !== "undefined") {
+    for (var uci = 0; uci < KNOWLEDGE_ALL.length; uci++) {
+      var ucond = KNOWLEDGE_ALL[uci];
+      if (ucond.route !== "urgent") continue;
+      for (var uti = 0; uti < ucond.req.length; uti++) {
+        if (tokens.indexOf(ucond.req[uti]) >= 0) { addRoute("urgent"); break; }
+      }
+      if (routes.indexOf("urgent") >= 0) break;
+    }
+  }
+
   /* Neuro */
   if (tokens.indexOf("pain_eye_movement") >= 0 || tokens.indexOf("color_vision_loss") >= 0 ||
       tokens.indexOf("ptosis") >= 0 || tokens.indexOf("horizontal_diplopia") >= 0 ||
       tokens.indexOf("vertical_diplopia") >= 0 || tokens.indexOf("field_loss_half") >= 0 ||
-      tokens.indexOf("temporal_field_loss") >= 0 || tokens.indexOf("adduction_deficit") >= 0) {
+      tokens.indexOf("temporal_field_loss") >= 0 || tokens.indexOf("adduction_deficit") >= 0 ||
+      tokens.indexOf("RAPD_positive") >= 0) {
     addRoute("neuro");
   }
 
@@ -668,6 +687,11 @@ function selectRoutes(tokens) {
 
   /* Anterior */
   if (tokens.indexOf("pain") >= 0 && tokens.indexOf("photophobia") >= 0) {
+    addRoute("anterior");
+  }
+  /* Hypopyon is definitionally anterior-segment disease; without this the
+     token fires the safety alert but no condition is ever scored. */
+  if (tokens.indexOf("hypopyon_visible") >= 0) {
     addRoute("anterior");
   }
 
@@ -698,14 +722,15 @@ function selectRoutes(tokens) {
   /* Glaucoma */
   if (tokens.indexOf("high_iop") >= 0 || tokens.indexOf("field_defect") >= 0 ||
       tokens.indexOf("increased_cd") >= 0 || tokens.indexOf("nrr_thinning") >= 0 ||
-      tokens.indexOf("shallow_ac") >= 0 || tokens.indexOf("halos") >= 0) {
+      tokens.indexOf("shallow_ac") >= 0 || tokens.indexOf("halos") >= 0 ||
+      tokens.indexOf("rubeosis_iridis") >= 0) {
     addRoute("glaucoma");
   }
 
   /* Lens */
   if (tokens.indexOf("gradual_blur") >= 0 || tokens.indexOf("glare") >= 0 ||
       tokens.indexOf("myopic_shift") >= 0 || tokens.indexOf("post_cataract_surgery_blur") >= 0 ||
-      tokens.indexOf("lens_displacement") >= 0) {
+      tokens.indexOf("lens_displacement") >= 0 || tokens.indexOf("leukocoria") >= 0) {
     addRoute("lens");
   }
 
@@ -1017,6 +1042,13 @@ function computeAlerts(tokens) {
   /* Rubeosis */
   if (tokens.indexOf("rubeosis_iridis") >= 0) {
     alerts.push({ m: "Rubeosis iridis — URGENT: neovascular glaucoma risk", l: "urgent" });
+  }
+
+  /* Leukocoria — classic pediatric red flag (retinoblastoma / congenital
+     cataract until proven otherwise). NEEDS_CLINICAL_REVIEW: alert wording
+     added by engineering; founder to verify phrasing and referral urgency. */
+  if (tokens.indexOf("leukocoria") >= 0) {
+    alerts.push({ m: "Leukocoria — URGENT referral: rule out retinoblastoma / congenital cataract", l: "urgent" });
   }
 
   return alerts;

@@ -33,6 +33,7 @@ const LOAD_ORDER = [
   "token-dictionary.js",
   "finding-token-map.js",
   "medications.js",
+  "token-registry.js", /* generated — see tools/gen-token-registry.js */
   "loader.js"
 ];
 

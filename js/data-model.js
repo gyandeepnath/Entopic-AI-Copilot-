@@ -519,7 +519,8 @@ var SL_FINDINGS = {
     "IOL — decentered",
     "PCO",
     "Aphakia",
-    "White cataract"
+    "White cataract",
+    "Leukocoria (white pupillary reflex)"
   ],
 
   "Tear Film": [

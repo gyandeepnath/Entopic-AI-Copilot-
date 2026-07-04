@@ -6,6 +6,8 @@
   "scripts": {
     "audit": "node tools/kb-audit.js",
     "audit:strict": "node tools/kb-audit.js --strict",
+    "registry": "node tools/gen-token-registry.js",
+    "registry:check": "node tools/gen-token-registry.js --check",
     "test": "node --test"
   },
   "engines": {
