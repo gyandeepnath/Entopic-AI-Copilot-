@@ -11,24 +11,32 @@ Legend: 🟥 clinical-safety-adjacent · 🟧 clinical accuracy · 🟦 product/
 
 ## Clinical content to verify
 
-### 🟧 ICD-10 code mappings (23 conditions coded so far)
+### 🟧 ICD-10 code mappings — ALL 130 conditions now coded
 Every code in `knowledge/icd-map.js` was looked up and validated as a real,
-billable ICD-10-CM 2026 code — but a *valid* code is not necessarily the
-*right* code for the intended clinical entity, and all default to
-**unspecified eye/stage**. Please confirm each mapping. The judgment calls
-(marked `caution` in the file) most need your eye:
-- **Microbial Keratitis** → `H16.9` (unspecified keratitis) — should this be an
-  organism-specific keratitis or a corneal-ulcer code instead?
-- **Compressive Optic Neuropathy** → `H47.099` (other optic nerve disorder,
-  NEC) — no specific "compressive" code exists; is this acceptable?
-- **Choroidal Melanoma** → `C69.30` (malignant neoplasm of choroid) — site
-  code, not melanoma-specific. OK?
-- **Retinal Tear** → `H33.319` (horseshoe tear w/o detachment) and
-  **Retinal Detachment** → `H33.009` — confirm these default subtypes.
-- **Allergic Conjunctivitis** → `H10.45` (other chronic) vs acute `H10.1-`.
+billable ICD-10-CM 2026 code via the ICD-10 tool — but a *valid* code is not
+necessarily the *right* code for the intended clinical entity, and defaults use
+the **unspecified eye/stage** variant. Please confirm each mapping. The entries
+marked `caution` in the file are the judgment calls that most need your eye:
+- **Diabetic Retinopathy** → `E11.319` — **assumes type-2 DM and no macular
+  edema.** Type-1 is `E10.319`; severity/ME change the code. This is the most
+  important one to confirm.
+- **CRVO / BRVO / CME / PVD** → these default to a specific eye ("right") or a
+  stability/edema status because ICD requires it. Refine per patient.
+- **Microbial Keratitis** → `H16.9` (unspecified keratitis) — organism-specific
+  or corneal-ulcer code instead?
+- **Compressive Optic Neuropathy** → `H47.099`; **Cortical Visual Impairment**
+  → `H47.619` (cortical blindness); **Quadrantanopia** → `H53.459`;
+  **Divergence Insufficiency/Excess**, **Accommodative Infacility**, **Fusional
+  Vergence Dysfunction** — all mapped to non-specific buckets (no dedicated
+  code exists).
+- **Choroidal Melanoma** → `C69.30` (site code, not melanoma-specific).
+- **Keratoglobus** and **Pellucid Marginal Degeneration** share `H18.719`
+  (corneal ectasia).
+- **HLA-B27 Uveitis / Traumatic Iritis** → generic iridocyclitis codes; the
+  systemic association / external cause should be coded separately.
 
-The other **107 conditions still need codes** — same authoritative,
-one-verified-code-at-a-time process (the ICD-10 tool is connected).
+Laterality/stage capture in the UI is still a product decision (the coding
+page currently shows a laterality dropdown but doesn't yet drive the code).
 
 ### 🟥 Leukocoria alert wording
 `js/engine.js` now fires an urgent alert on the `leukocoria` token:

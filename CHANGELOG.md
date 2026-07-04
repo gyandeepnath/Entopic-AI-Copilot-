@@ -6,6 +6,38 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-07-04 — Session 2 (increment I): ICD-10 coverage completed — all 130 conditions
+
+**What**
+
+- `knowledge/icd-map.js` — expanded from 23 to **all 130 conditions coded**
+  (100% ICD-10-CM coverage; was 0/130 at session start). Every code was
+  looked up AND validated as real + billable against ICD-10-CM 2026 via the
+  connected tool — none invented. Defaults use the "unspecified eye/stage"
+  variant; every entry is `NEEDS_CLINICAL_REVIEW` with provenance, official
+  label, and a `caution` note wherever the mapping is a judgment call
+  (no dedicated code, an assumption like diabetes type, or a forced
+  laterality for combination codes such as CRVO/BRVO/CME).
+- `tests/icd-map.test.js` — added a guard that **every** condition carries a
+  code (not just urgent ones), so coverage can't silently regress.
+- `NEEDS_REVIEW.md` — updated the ICD section with the full list of
+  judgment-call mappings for the founder (Diabetic Retinopathy type/ME
+  assumption highlighted as most important to confirm).
+
+**Why**
+
+Finishing gap 3. The coding page is now fully populated for every possible
+differential, while keeping the "provisional / verify / advisory only"
+framing intact (the ⚠ verify flags and disclaimer from increment E apply to
+all of them).
+
+**Verified:** 63/63 tests pass; audit shows 130/130 coded (100%); browser
+smoke clean. A handful of codes (ERM, CME, macular edema, MacTel,
+quadrantanopia, diabetic retinopathy) were explicitly re-validated against the
+tool before commit to keep the "verified" provenance honest.
+
+---
+
 ## 2026-07-04 — Session 2 (increment H): Data-driven routing — fixes 50 silently-undiagnosable conditions
 
 **What**

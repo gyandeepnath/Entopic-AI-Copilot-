@@ -62,6 +62,11 @@ test("all urgent-flagged conditions carry an ICD code", () => {
   assert.strictEqual(missing.length, 0, "urgent conditions must be codable: " + missing.join(", "));
 });
 
+test("every condition in the knowledge base carries an ICD code", () => {
+  const missing = [...kb.KNOWLEDGE_ALL].filter((c) => !c.icd).map((c) => c.name);
+  assert.strictEqual(missing.length, 0, "conditions still uncoded: " + missing.join(", "));
+});
+
 test("codes backfill onto conditions with review status attached", () => {
   const poag = byName.get("Primary Open Angle Glaucoma (POAG)");
   assert.strictEqual(poag.icd, "H40.1190");
