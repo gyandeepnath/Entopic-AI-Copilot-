@@ -6,6 +6,40 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-07-04 — Session 2 (increment H): Data-driven routing — fixes 50 silently-undiagnosable conditions
+
+**What**
+
+- `js/engine.js` — `selectRoutes` now has a general **data-driven pass**: if
+  ALL of a condition's required tokens are present, its route is activated so
+  the condition can be scored. The hardcoded symptom triggers remain as a
+  fast path.
+- `tests/engine-reachability.test.js` — permanent guard: **every** condition
+  must be self-reachable (appear in the differential when all its own
+  evidence is present).
+
+**Why — this was the biggest correctness gap found this session.**
+
+A mechanical probe (inject each condition's own req+sup tokens, check it
+surfaces) found **50 of 130 conditions were silently un-diagnosable**: their
+route was never in `selectRoutes`' hardcoded trigger list, so they were never
+scored even with a textbook-complete picture. Examples: Conjunctival
+Hyperemia (req: redness), Corneal Abrasion (pain_acute), Diabetic Retinopathy
+(blur), Divergence Insufficiency (distance_diplopia), Traumatic Cataract
+(trauma_history), and most of the cornea domain. After the fix: **0/130
+unreachable**.
+
+Scoring is unchanged, so ranking of the known golden cases is preserved
+(verified) and simple presentations don't gain noise — broader routing only
+lets a condition be *considered*; the req-gated scoring still decides whether
+it ranks. Self-maintains as the KB grows.
+
+**Verified:** 62/62 tests pass (incl. all prior golden vignettes unchanged);
+0/130 self-unreachable; browser smoke clean; simple cases (dry eye, POAG)
+unchanged, isolated "redness" now correctly surfaces Conjunctival Hyperemia.
+
+---
+
 ## 2026-07-04 — Session 2 (increment G): Concurrent problem foci (multi-problem view)
 
 **What**

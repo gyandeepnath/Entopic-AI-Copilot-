@@ -734,6 +734,27 @@ function selectRoutes(tokens) {
     addRoute("lens");
   }
 
+  /* Data-driven route activation (general).
+     The symptom triggers above are a fast path, but they only cover a
+     subset of presenting tokens — many conditions' hallmark (required)
+     evidence is a sign/measurement not in those lists, so their route
+     never turned on and they could never be scored (audit: 50/130
+     conditions were self-unreachable). Here: if ALL of a condition's
+     required tokens are present, its route must be active so it can be
+     scored. Self-maintains as the KB grows; scoring still gates ranking. */
+  if (typeof KNOWLEDGE_ALL !== "undefined") {
+    for (var ci = 0; ci < KNOWLEDGE_ALL.length; ci++) {
+      var cond = KNOWLEDGE_ALL[ci];
+      if (routes.indexOf(cond.route) >= 0) continue;
+      if (!cond.req || cond.req.length === 0) continue;
+      var allReqPresent = true;
+      for (var ri = 0; ri < cond.req.length; ri++) {
+        if (tokens.indexOf(cond.req[ri]) === -1) { allReqPresent = false; break; }
+      }
+      if (allReqPresent) addRoute(cond.route);
+    }
+  }
+
   /* Default */
   if (routes.length === 0) {
     addRoute("general");
