@@ -289,6 +289,8 @@ This is your "looping conditions for independent identification of problems and 
 
 Today: collect tokens → score all → one sorted list. Target: collect tokens → **partition into independent problem foci** → run **one independent diagnostic loop per focus**, concurrently. The output is *N* independent working problems, each with its own confidence and its own refinement state — not one list where they fight.
 
+> **Implemented (2026-07-04, first bounded version):** `computeProblemFoci(dxList)` in `js/engine.js` partitions the scored differential into independent problems **by clinical domain**, each with its own lead condition, confidence band, within-focus alternates, and per-problem "next check" (the lead's top missing evidence). It is written to `V.problemFoci` and rendered as a **"Working Problems"** section in the advisory panel (above the flat differential, which is retained). This is a **deterministic presentation layer over the existing scoring** — it deliberately does *not* yet implement the per-focus state machine (B.3) or change scoring, so it carries zero regression risk and keeps `V.dxList` intact. The state-machine/value-of-information loop (B.3) remains the next step. Covered by `tests/engine-problem-foci.test.js`.
+
 ### B.2 Problem-focus clustering
 
 After token collection, group tokens into **foci** by anatomical/functional domain and co-activation (surface, cornea, lens, glaucoma/disc, retina/macula, neuro, binocular, refractive). A patient with dry-eye tokens *and* disc/IOP tokens *and* convergence tokens yields **three foci**, each seeded independently. Clustering rules are explicit and inspectable (and themselves testable).

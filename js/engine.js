@@ -1114,6 +1114,76 @@ function computeNudges(results, tokens) {
 
 
 /* ═══════════════════════════════════════════════════════════════ */
+/* PROBLEM FOCI — concurrent independent problems                  */
+/*                                                                  */
+/* Deterministic PRESENTATION layer over the already-scored          */
+/* differential. Groups the single ranked list into independent      */
+/* clinical problems by domain so that co-existing conditions        */
+/* (e.g. dry eye + glaucoma-suspect + convergence insufficiency)     */
+/* stop competing for one top slot. Scoring is unchanged — each      */
+/* focus simply carries its own lead candidate, confidence, and      */
+/* alternates. This is the inspectable, multi-problem view; it does  */
+/* NOT alter V.dxList.                                               */
+/* ═══════════════════════════════════════════════════════════════ */
+
+function computeProblemFoci(dxList) {
+  if (!dxList || dxList.length === 0) return [];
+
+  /* Group by clinical domain (fallback to route). */
+  var groups = {};
+  var order = [];
+  for (var i = 0; i < dxList.length; i++) {
+    var d = dxList[i];
+    var key = d.domain || d.cat || "Other";
+    if (!groups[key]) {
+      groups[key] = [];
+      order.push(key);
+    }
+    groups[key].push(d);
+  }
+
+  var foci = [];
+  for (var k = 0; k < order.length; k++) {
+    var name = order[k];
+    var members = groups[name];
+
+    /* members inherit dxList's global sort (score desc), but sort defensively */
+    members.sort(function(a, b) { return b.prob - a.prob; });
+
+    var lead = members[0];
+    /* A focus is only surfaced if its lead carries real evidence. Mirrors
+       "zero evidence = zero output": don't manufacture a problem from noise. */
+    if (!lead || lead.prob < 0.15) continue;
+
+    foci.push({
+      focus: name,
+      lead: lead.n,
+      icd: lead.icd || "",
+      confidence: lead.prob,
+      band: interpretConfidence(lead.prob),
+      urgent: !!lead.urgent,
+      candidates: members.slice(0, 4).map(function(m) {
+        return { n: m.n, prob: m.prob, urgent: !!m.urgent };
+      }),
+      /* the single most useful next check for THIS problem, if any */
+      needs: (lead.evidence && lead.evidence.missing && lead.evidence.missing.length > 0)
+        ? lead.evidence.missing.slice(0, 2)
+        : []
+    });
+  }
+
+  /* Order foci: urgent first, then by lead confidence. */
+  foci.sort(function(a, b) {
+    if (a.urgent && !b.urgent) return -1;
+    if (b.urgent && !a.urgent) return 1;
+    return b.confidence - a.confidence;
+  });
+
+  return foci;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════ */
 /* STAGE 12: ENGINE LOG                                            */
 /* Records each engine run for debugging and audit                 */
 /* ═══════════════════════════════════════════════════════════════ */
@@ -1158,6 +1228,7 @@ function runDiagnosticEngine() {
   /* ── Empty check ── */
   if (tokens.length === 0) {
     V.dxList = [];
+    V.problemFoci = [];
     V.alerts = [];
     V.nudges = [];
     ENGINE_STATE.tokens = [];
@@ -1279,6 +1350,9 @@ function runDiagnosticEngine() {
       evidence: ev
     };
   });
+
+  /* ── Problem foci (concurrent independent problems) ── */
+  V.problemFoci = computeProblemFoci(V.dxList);
 
   /* ── STAGE 10: Alerts ── */
   V.alerts = computeAlerts(tokens);

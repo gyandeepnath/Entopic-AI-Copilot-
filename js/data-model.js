@@ -860,6 +860,7 @@ function blankVisit() {
     /* Tracking */
     completed: [],
     dxList: [],
+    problemFoci: [],
     alerts: [],
     nudges: [],
     sugTests: [],

@@ -6,6 +6,41 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-07-04 — Session 2 (increment G): Concurrent problem foci (multi-problem view)
+
+**What**
+
+- `js/engine.js` — new `computeProblemFoci(dxList)`: a deterministic
+  presentation layer that partitions the scored differential into
+  **independent clinical problems by domain**, each with its own lead
+  condition, confidence band, within-focus alternates, and a per-problem
+  "next check" (the lead's top missing evidence). Written to `V.problemFoci`;
+  urgent problems sort first. **Scoring is unchanged and `V.dxList` is
+  untouched** — zero regression risk.
+- `js/ui-advisory.js` — new **"Working Problems"** section renders the foci
+  (grouped, urgent-flagged) above the retained flat differential. The panel
+  evolves; nothing is torn down.
+- `js/data-model.js` — `blankVisit()` carries `problemFoci: []`.
+- `tests/engine-problem-foci.test.js` (6 tests): multi-problem separation,
+  per-focus shape, urgent ordering, foci-are-a-view-over-dxList, evidence
+  floor. `ARCHITECTURE.md` §B.1 updated to record this as the first bounded
+  version (the per-focus state machine B.3 remains the next step).
+
+**Why**
+
+Gap 4 — the central conceptual limitation: one ranked list forces
+co-existing problems (dry eye + glaucoma-suspect + convergence insufficiency)
+to compete for one slot. This surfaces them as **N independent problems**,
+which is how real multi-morbid patients present. Doing it as a view over the
+existing engine keeps determinism, safety, and every golden test intact while
+delivering the product's headline differentiator.
+
+**Verified:** 60/60 tests pass. Confirmed in headless Chromium: a 3-problem
+patient (POAG 72% / Exposure Keratopathy 67% / Convergence Insufficiency 44%)
+renders as three separate Working Problems with no console errors.
+
+---
+
 ## 2026-07-04 — Session 2 (increment F): CI pipeline + dev harness docs
 
 **What**

@@ -50,6 +50,38 @@ function renderAdvisory() {
   }
 
 
+  /* ═══ WORKING PROBLEMS (concurrent independent foci) ═══ */
+  if (V.problemFoci && V.problemFoci.length > 1) {
+    h += '<div class="adv-sec">Working Problems <span style="color:var(--sv);font-weight:400">· ' + V.problemFoci.length + ' independent</span></div>';
+    for (var pf = 0; pf < V.problemFoci.length; pf++) {
+      var foc = V.problemFoci[pf];
+      var fpct = (foc.confidence * 100).toFixed(0);
+      h += '<div class="dx-row" style="flex-direction:column;align-items:stretch;gap:2px;padding:6px 0' +
+        (foc.urgent ? ';border-left:2px solid var(--ur,#c0392b);padding-left:6px' : '') + '">';
+      h += '<div style="display:flex;align-items:center;gap:6px">';
+      h += '<div style="flex:1">';
+      h += '<div style="font-size:.5rem;text-transform:uppercase;letter-spacing:.04em;color:var(--sv)">' +
+        foc.focus + (foc.urgent ? ' · URGENT' : '') + '</div>';
+      h += '<div class="dx-n">' + foc.lead + '</div>';
+      h += '</div>';
+      h += '<div class="dx-pct">' + fpct + '%</div>';
+      h += '</div>';
+      /* other candidates competing WITHIN this problem */
+      if (foc.candidates.length > 1) {
+        var alts = [];
+        for (var ca = 1; ca < foc.candidates.length; ca++) {
+          alts.push(foc.candidates[ca].n + ' ' + (foc.candidates[ca].prob * 100).toFixed(0) + '%');
+        }
+        h += '<div class="dx-evidence"><span class="missing">vs ' + alts.join(' · ') + '</span></div>';
+      }
+      if (foc.needs && foc.needs.length > 0) {
+        h += '<div class="dx-evidence"><span class="missing">next: ' + foc.needs.join(", ") + '</span></div>';
+      }
+      h += '</div>';
+    }
+  }
+
+
   /* ═══ DIFFERENTIAL DIAGNOSES ═══ */
   if (V.dxList && V.dxList.length > 0) {
     h += '<div class="adv-sec">Differentials</div>';
