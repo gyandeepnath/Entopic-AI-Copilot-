@@ -1,0 +1,39 @@
+name: CI
+
+# Runs the Entopic dev/test harness on every push and PR.
+# The app itself is browser-only and offline-first; this pipeline only
+# exercises the Node-based tooling and the deterministic engine tests.
+# No secrets, no network, no external services.
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      # No dependencies to install — the harness uses only Node built-ins.
+      - name: Syntax-check all app JS
+        run: |
+          set -e
+          for f in js/*.js knowledge/*.js tools/*.js tools/lib/*.js; do
+            node --check "$f"
+          done
+
+      - name: Token registry is in sync with sources
+        run: npm run registry:check
+
+      - name: Golden clinical vignettes + KB/registry/ICD tests
+        run: npm test
+
+      - name: KB audit (report)
+        run: npm run audit

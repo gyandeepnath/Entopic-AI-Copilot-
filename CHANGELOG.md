@@ -6,6 +6,29 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-07-04 — Session 2 (increment F): CI pipeline + dev harness docs
+
+**What**
+
+- `.github/workflows/ci.yml` — GitHub Actions CI running on every push/PR:
+  syntax-checks all app JS, verifies the token registry is in sync
+  (`registry:check`), runs the full test suite (`npm test`), and prints the
+  KB audit. No dependencies, secrets, or network — the harness uses only Node
+  built-ins. This operationalizes the continuous-feedback loop: every future
+  change is now regression-tested automatically.
+- `tools/README.md` — plain developer guide to the harness (commands, files,
+  the token registry, the browser smoke test).
+
+**Why**
+
+The safety net only protects the project if it runs on every change. CI makes
+the golden vignettes, registry sync, and KB invariants a gate, not a habit.
+
+**Verified:** all four CI steps pass locally (test/registry/audit exit 0;
+syntax check clean).
+
+---
+
 ## 2026-07-04 — Session 2 (increment E): ICD-10 codes (authoritative, provisional) + coding page
 
 **What**
