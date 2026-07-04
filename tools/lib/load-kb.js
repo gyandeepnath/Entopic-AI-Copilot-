@@ -34,6 +34,7 @@ const LOAD_ORDER = [
   "finding-token-map.js",
   "medications.js",
   "token-registry.js", /* generated — see tools/gen-token-registry.js */
+  "icd-map.js",
   "loader.js"
 ];
 

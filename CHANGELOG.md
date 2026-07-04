@@ -6,6 +6,51 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-07-04 — Session 2 (increment E): ICD-10 codes (authoritative, provisional) + coding page
+
+**What**
+
+- **`knowledge/icd-map.js`** — new condition→ICD-10-CM map. 23 conditions
+  coded, covering **all 17 urgent conditions** plus common ones (POAG, dry
+  eye, nuclear cataract, allergic conjunctivitis, keratoconus, optic
+  neuritis). Every code was looked up AND validated against the **ICD-10-CM
+  2026** code set via the connected ICD-10 tool — real, billable
+  (HIPAA-valid) leaf codes, none invented. Defaults use the
+  "unspecified eye/stage" variant (app doesn't capture laterality at coding
+  time). Every entry carries `status: NEEDS_CLINICAL_REVIEW`, provenance
+  (`verified`), the official label, and a `caution` note where the mapping
+  is a judgment call.
+- `knowledge/loader.js` backfills `cond.icd` (+ `icd_label`, `icd_status`)
+  from the map during assembly — engine and coding page already read
+  `cond.icd`, so this lights up gap 3 with no engine rewrite.
+- `js/engine.js` threads `icd_label`/`icd_status` through `dxList`.
+- `js/ui-pages-2.js` (coding page) now shows the code with its official
+  label on hover, a **"⚠ verify" flag** on every provisional code, a
+  placeholder for unmapped conditions, and a footer disclaimer ("provisional
+  defaults… advisory only — not a billing decision"). Keeps the
+  never-authoritative framing.
+- `tests/icd-map.test.js` (6 tests): well-formed billable-shape codes (no
+  bare category headers), names exist in KB, every entry review-flagged with
+  provenance, all urgent conditions coded, codes propagate to `dxList`.
+
+**Why**
+
+Gap 3 — ICD codes referenced but never populated; the coding page had
+nothing to render. Sourcing real codes from the authoritative tool (rather
+than inventing them) respects the "never fabricate clinical content"
+guardrail; flagging every one for review respects "AI-authored clinical
+content is provisional until the founder verifies."
+
+**Founder action needed:** confirm the 23 mappings (esp. the `caution`
+ones: Microbial Keratitis, Compressive Optic Neuropathy, Choroidal Melanoma,
+Retinal Tear/Detachment) and decide laterality/stage capture. Remaining 107
+conditions still need codes — same verified process.
+
+**Verified:** 54/54 tests pass; browser smoke test clean; coding page
+renders codes + verify flags (confirmed via headless Chromium).
+
+---
+
 ## 2026-07-04 — Session 2 (increment D2): Token registry + reachability fixes + browser smoke test
 
 **What**

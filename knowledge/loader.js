@@ -55,6 +55,16 @@ var KNOWLEDGE_ALL = [];
       if (!cond.tests)      cond.tests = [];
       if (!cond.exclusions) cond.exclusions = [];
 
+      /* Backfill ICD-10 code from the (provisional, review-flagged) map.
+         The engine and coding page read cond.icd directly; keep any code
+         already present on the condition. */
+      if (typeof ICD_MAP !== "undefined" && ICD_MAP[cond.name]) {
+        var icdEntry = ICD_MAP[cond.name];
+        if (!cond.icd) cond.icd = icdEntry.icd10;
+        cond.icd_label = icdEntry.label;
+        cond.icd_status = icdEntry.status;
+      }
+
       /* Tag with domain for traceability */
       cond._domain = domain;
       cond._index = totalConditions;

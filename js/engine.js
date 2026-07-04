@@ -1220,6 +1220,8 @@ function runDiagnosticEngine() {
         name: cond.name,
         score: scoreResult.score,
         icd: cond.icd || "",
+        icd_label: cond.icd_label || "",
+        icd_status: cond.icd_status || "",
         route: cond.route,
         domain: cond._domain || "",
         urgent: cond.urgent || false,
@@ -1267,6 +1269,8 @@ function runDiagnosticEngine() {
     return {
       n: r.name,
       icd: r.icd,
+      icd_label: r.icd_label,
+      icd_status: r.icd_status,
       prob: r.score,
       cat: r.route,
       domain: r.domain,

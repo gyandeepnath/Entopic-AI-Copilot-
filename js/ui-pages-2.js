@@ -385,16 +385,32 @@ function pgCode() {
     h += '<p style="color:var(--sv);padding:12px">No codes available — enter clinical data first.</p>';
   } else {
     var filtered = V.dxList.filter(function(d) { return d.prob > 0.05; }).slice(0, 8);
+    var anyProvisional = false;
     for (var ci = 0; ci < filtered.length; ci++) {
       var d = filtered[ci];
+      var codeCell = d.icd
+        ? '<span style="font-family:var(--mono);font-weight:600" title="' + (d.icd_label || '') + '">' + d.icd + '</span>'
+        : '<span style="color:var(--sv);font-style:italic" title="No default code mapped yet">— </span>';
+      var flag = '';
+      if (d.icd && d.icd_status === 'NEEDS_CLINICAL_REVIEW') {
+        anyProvisional = true;
+        flag = '<span title="Provisional default (unspecified laterality/stage) — verify before use" ' +
+               'style="color:var(--wn,#b8860b);font-size:.6rem;font-weight:600">⚠ verify</span>';
+      }
       h += '<div style="display:flex;gap:8px;padding:8px 0;border-bottom:1px solid var(--fg);font-size:.72rem;align-items:center">' +
-        '<span style="font-family:var(--mono);font-weight:600;min-width:56px">' + d.icd + '</span>' +
+        '<span style="min-width:60px">' + codeCell + '</span>' +
         '<span style="flex:1">' + d.n + '</span>' +
+        flag +
         '<select style="font-size:.62rem;padding:2px 4px;border:1px solid var(--fg);border-radius:2px">' +
           '<option>OU</option><option>OD</option><option>OS</option><option>Unspecified</option>' +
         '</select>' +
         '<span style="font-family:var(--mono);font-size:.62rem;min-width:30px;text-align:right">' + (d.prob * 100).toFixed(0) + '%</span>' +
       '</div>';
+    }
+    if (anyProvisional) {
+      h += '<p style="color:var(--sv);font-size:.6rem;padding:8px 0 0">' +
+        '⚠ Codes are provisional ICD-10-CM defaults (unspecified eye/stage) for clinician review. ' +
+        'Confirm the code and set laterality/stage before finalizing. Advisory only — not a billing decision.</p>';
     }
   }
 
