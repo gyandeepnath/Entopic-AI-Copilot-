@@ -6,6 +6,31 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-07-04 — Session 2 (increment D1): Medication tokens actually reach the engine
+
+**What**
+
+- `js/engine.js` — `collectTokens` now calls `getMedicationTokens()` as
+  source 10 (guarded with `typeof` so the engine runs without the module).
+  The medication-checker's engine bridge existed but was **never invoked**:
+  drug-derived tokens (`steroid_history`, `raised_iop_risk`, `dryness`)
+  never reached scoring. Concretely, "Drug-induced Cataract (Steroid)"
+  *requires* `steroid_history` — it was mathematically impossible for it to
+  ever appear. Now a steroid user with PSC signs ranks it first (0.83).
+- `tools/lib/load-engine.js` — harness loads `medication-checker.js`.
+- 2 new golden vignettes (steroid-cataract reachable; engine safe without
+  medication data).
+
+**Why**
+
+Found while building the token registry's producer inventory: mechanical
+source-tracing showed `getMedicationTokens` had zero call sites. This is
+exactly the class of dead-wiring bug the registry is meant to surface.
+
+**Verified:** 38/38 tests pass.
+
+---
+
 ## 2026-07-04 — Session 2 (increment C): Free-text negation handling
 
 **What**

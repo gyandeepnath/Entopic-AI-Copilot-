@@ -410,6 +410,16 @@ function collectTokens() {
     if (mdOd < -6 || mdOs < -6) addToken("visual_field_defect");
   }
 
+  /* ── SOURCE 10: Systemic medication effects ──
+     getMedicationTokens (medication-checker.js) maps the patient's drug
+     list to risk tokens (steroid_history, raised_iop_risk, dryness, ...).
+     It existed but was never invoked, so conditions requiring these
+     tokens (e.g. Steroid-Induced Cataract) could never fire. Guarded so
+     the engine still runs if the feature module isn't loaded. */
+  if (typeof getMedicationTokens === "function") {
+    addTokens(getMedicationTokens());
+  }
+
   return tokens;
 }
 

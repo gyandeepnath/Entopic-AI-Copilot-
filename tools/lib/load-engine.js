@@ -37,6 +37,7 @@ const LOAD_ORDER = [
   "knowledge/medications.js",
   "knowledge/loader.js",
   "js/data-model.js",
+  "js/medication-checker.js", /* defines getMedicationTokens (engine source 10) */
   "js/engine.js"
 ];
 

@@ -179,6 +179,29 @@ test("measurement auto-derivation produces the expected tokens", () => {
   assert.ok(t.indexOf("older_age") >= 0, "age≥60 → older_age");
 });
 
+/* ═══ Medication bridge (engine source 10) ═══ */
+
+test("systemic steroid use → steroid_history token → steroid cataract reachable", () => {
+  const out = eng.runCase(
+    {
+      hxM: { medications: "prednisolone 10mg daily" },
+      symptoms: ["glare", "near_blur"],
+      sl: { od: { psc: "2" }, os: { psc: "1" } },
+      temporal: { duration: "months" }
+    },
+    { age: "48" }
+  );
+  assert.ok(out.tokens.indexOf("steroid_history") >= 0,
+    "medication checker feeds steroid_history into the engine");
+  assert.ok(hasDx(out, "Drug-induced Cataract"),
+    "steroid-induced cataract appears in the differential");
+});
+
+test("engine still runs when medication module data is absent", () => {
+  const out = eng.runCase({ symptoms: ["glare"] });
+  assert.ok(out.dxList.length >= 0, "no crash without medications");
+});
+
 /* ═══ Output contract: dxList shape the UI depends on ═══ */
 
 test("dxList entries carry the fields the advisory panel renders", () => {
