@@ -419,8 +419,35 @@ function collectTokens() {
 /* Regex-based token extraction from natural language               */
 /* ═══════════════════════════════════════════════════════════════ */
 
+/* Remove negated phrases before token extraction, so "denies pain" or
+   "no flashes" do not emit pain/flashes tokens.
+   Strategy: split into clauses at punctuation and contrast conjunctions;
+   inside each clause, drop everything from a negation marker to the end
+   of the clause. Deliberately conservative — only the negated clause tail
+   is dropped, so "no flashes, floaters since Monday" still emits floaters
+   (over-alerting is safer than under-alerting for red flags). */
+function stripNegatedPhrases(text) {
+  var clauses = String(text).split(/[,;.!?]|\bbut\b|\bexcept\b|\bhowever\b/i);
+  var NEG = /\b(no|not|denies|denied|denying|deny|without|never|nil)\b/i;
+  var kept = [];
+  for (var i = 0; i < clauses.length; i++) {
+    var clause = clauses[i];
+    var m = clause.match(NEG);
+    if (m) {
+      /* keep any text before the negation marker, drop the rest */
+      kept.push(clause.slice(0, m.index));
+    } else {
+      kept.push(clause);
+    }
+  }
+  return kept.join(", ");
+}
+
 function parseComplaintText(text) {
   var t = [];
+
+  /* Negation handling: strip "no X" / "denies X" phrases up front */
+  text = stripNegatedPhrases(text);
 
   /* Vision */
   if (/blur|blurr|fuzzy|hazy/i.test(text))          t.push("blur");
@@ -431,11 +458,13 @@ function parseComplaintText(text) {
   if (/fluctuat|comes and goes|variable/i.test(text)) t.push("fluctuating_blur");
 
   /* Pain */
-  if (/pain|sore|ache|hurt/i.test(text))             t.push("pain");
+  /* (?!less) keeps "painless" from emitting pain */
+  if (/pain(?!less)|sore|ache|hurt/i.test(text))     t.push("pain");
   if (/burn|sting/i.test(text))                       t.push("burning");
   if (/dry|dried/i.test(text))                        t.push("dryness");
   if (/itch/i.test(text))                             t.push("itching_dominant");
-  if (/red|bloodshot|pink/i.test(text))               t.push("redness");
+  /* \bred\b avoids matching "reduced" */
+  if (/\bred\b|redness|red eye|bloodshot|pink/i.test(text)) t.push("redness");
   if (/grit|sand|scratch/i.test(text))                t.push("grittiness");
   if (/foreign body|something in/i.test(text))        t.push("foreign_body_sensation");
 

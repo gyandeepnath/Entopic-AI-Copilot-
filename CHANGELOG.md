@@ -6,6 +6,33 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-07-04 — Session 2 (increment C): Free-text negation handling
+
+**What**
+
+- `js/engine.js` — `parseComplaintText` now strips negated phrases before
+  token extraction (`stripNegatedPhrases`): "no pain", "denies flashes",
+  "without discharge" no longer emit the negated tokens. The splitter is
+  deliberately conservative — only the negated clause tail is dropped, so
+  "no flashes, floaters since Monday" still emits `floaters` (over-alerting
+  is safer than under-alerting for red flags).
+- Two false-positive regex fixes: "reduced vision" no longer emits `redness`
+  (\bred\b), "painless" no longer emits `pain` (pain(?!less)).
+- `tests/engine-freetext.test.js` — 10 new tests: negation cases, the two
+  false-positive fixes, positive-phrasing sensitivity controls, and two
+  end-to-end checks that negated red flags don't fire the retinal alert
+  while positive phrasing still does.
+
+**Why**
+
+Gap 6 in ARCHITECTURE.md: the regex parser had no negation handling, so a
+recorded "denies pain" actively pushed the differential toward painful
+conditions. This was the smallest bounded fix with real clinical impact.
+
+**Verified:** 36/36 tests pass; golden vignettes unchanged.
+
+---
+
 ## 2026-07-04 — Session 2 (increment B): Exclusion matcher fixed, urgent conditions un-suppressible
 
 **What**
