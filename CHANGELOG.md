@@ -6,6 +6,36 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-07-05 — Session 3: Supabase integration exploration (ideas document, no build)
+
+**What**
+
+- `docs/SUPABASE_EXPLORATION.md` — a founder-requested exploration of what a
+  Supabase backend could provide *around* the local-first app: automatic
+  backup via an outbox sync, real auth + clinic/roles/RLS multi-tenancy,
+  multi-device clinic flow (technician pre-testing → doctor's lane via
+  Realtime), PII/clinical separation at the database, the anonymized-registry
+  → calibration/validation flywheel, signed KB-version distribution with a
+  founder review page, an Edge-Function LLM proxy (moves the API key
+  server-side and *enforces* de-identification), Storage for
+  drawings/OCT/fundus images, clinic analytics, and (much later)
+  patient-facing intake. Includes a "what Supabase must NEVER become"
+  section (no diagnostic-path dependency, no PII/analytics mixing, no
+  server-side scoring) and a sequenced, independently-shippable roadmap
+  with cost notes (steps 0–5 fit the free tier).
+
+**Why**
+
+The founder confirmed everything stays stored locally but asked for the full
+range of ideas a Supabase integration could provide. This records the
+exploration durably so the eventual go/no-go is an informed decision.
+
+**Deliberately NOT done (guardrail):** no Supabase org/project created, no
+tier chosen, no spend, no architecture committed. Awaiting the founder's
+call on the recommended first arc (IndexedDB → Auth/RLS → outbox sync).
+
+---
+
 ## 2026-07-04 — Session 2 (increment I): ICD-10 coverage completed — all 130 conditions
 
 **What**
