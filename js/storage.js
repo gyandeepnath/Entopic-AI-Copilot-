@@ -29,6 +29,9 @@ function loadStore(key, fallback) {
 function saveStore(key, data) {
   try {
     localStorage.setItem(STORE_PREFIX + key, JSON.stringify(data));
+    /* Redundant copy into the IndexedDB safety mirror (async, never blocks;
+       see storage-mirror.js). Enables auto-recovery if localStorage is wiped. */
+    if (typeof mirrorStore === "function") mirrorStore(key, data);
   } catch (e) {
     console.error("Storage write error [" + key + "]:", e);
     /* If quota exceeded, warn user */
@@ -41,6 +44,7 @@ function saveStore(key, data) {
 function removeStore(key) {
   try {
     localStorage.removeItem(STORE_PREFIX + key);
+    if (typeof mirrorRemove === "function") mirrorRemove(key);
   } catch (e) {
     console.error("Storage remove error [" + key + "]:", e);
   }

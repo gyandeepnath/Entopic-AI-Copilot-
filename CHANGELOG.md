@@ -6,6 +6,42 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-07-05 — Session 3 (increment J): IndexedDB safety mirror — clinic data survives a wiped browser store
+
+**What**
+
+- `js/storage-mirror.js` (new) — every clinic-data write (users, patients,
+  visits, settings, registry queue) is now also mirrored into **IndexedDB**
+  (hundreds of MB, a different browser-eviction class than localStorage).
+  At boot, if localStorage is found empty while the mirror has data, the app
+  **restores everything automatically and reloads once** (session-flag
+  loop guard). Mirror writes are async fire-and-forget — they can never
+  block or fail a save. The API key is deliberately not mirrored.
+- `js/storage.js` — two guarded hook lines in `saveStore`/`removeStore`
+  (works unchanged if the mirror script is absent). localStorage remains the
+  primary store; no API or behavior change on the happy path.
+- `index.html` — one script tag (mirror loads before storage.js).
+- `tests/storage-mirror.test.js` (4 tests): pure recovery-decision logic
+  (never fires with local data present / on fresh installs / twice per
+  session), safe no-op loading without a browser, hook wiring, script order.
+
+**Why**
+
+The founder confirmed everything stays stored locally — so local storage
+must stop being a single point of failure. Today "clear browsing data"
+destroys the entire clinic. This is the biggest data-loss risk in the app,
+fixed additively, fully offline, with zero UI or workflow change. It also
+de-risks the future full IndexedDB migration (Phase 4) and any later cloud
+backup: both now have a local redundancy layer beneath them.
+
+**Verified:** 67/67 unit tests pass; browser smoke clean; and a full
+end-to-end disaster drill in headless Chromium — seed data through the real
+save path → confirm mirror contents → wipe localStorage completely → reload
+→ **all patients/visits/users restored automatically**, second reload does
+not loop.
+
+---
+
 ## 2026-07-05 — Session 3: Supabase integration exploration (ideas document, no build)
 
 **What**
