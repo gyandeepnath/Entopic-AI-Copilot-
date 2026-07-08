@@ -6,6 +6,51 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-07-05 — Session 3 (increment K): Engine indexed for 100x knowledge-base scale
+
+**What**
+
+- `knowledge/loader.js` — precomputed KB indexes rebuilt by
+  `rebuildKbIndexes()` (so a cloud-grown KB can refresh them):
+  `KB_ROUTE_INDEX` (route→conditions), `KB_REQ_TOKEN_INDEX` (any required
+  token→conditions), `KB_REQ_FIRST_INDEX`, `KB_NAME_INDEX` (O(1)
+  `findCondition`), `KB_NOREQ_CONDS`.
+- `js/engine.js` — the two hot paths no longer scan the whole KB every run:
+  - **Scoring** now iterates only conditions that require a *present* token
+    (via `KB_REQ_TOKEN_INDEX`) and sit on an active route. Since the engine
+    already forces score 0 unless a required token matched, this yields
+    *identical* results — but cost scales with the evidence, not the KB.
+  - **Data-driven route activation** uses `KB_REQ_FIRST_INDEX` instead of a
+    full scan.
+  - `scoreCondition` / `generateEvidence` take a shared token `Set` for O(1)
+    membership instead of `Array.indexOf`.
+  - A deterministic tie-break by `_index` makes ordering independent of
+    iteration/indexing. Full-scan fallbacks retained if indexes are absent.
+- `tests/engine-scale.test.js` (3 tests): results **identical** at 1x vs 100x
+  (13k conditions), red-flags still fire inside a 100x KB, and a perf ceiling
+  (100x run < 40 ms) to prevent regressions.
+
+**Why**
+
+The founder wants the KB to grow ~100x. Measured before: a 13,000-condition
+KB took **~144 ms per keystroke** — unusable. The engine ran O(N) scans on
+every data change.
+
+**Verified (looping benchmark):** realistic large-KB benchmark (distinct
+conditions, so a given encounter matches a small slice):
+
+| KB size | before | after |
+|---|---|---|
+| 130 (1x) | 0.77 ms | 0.32 ms |
+| 13,000 (100x) | 143.8 ms | **3.97 ms** (~37x faster) |
+| 65,000 (500x) | — | 26 ms |
+| 130,000 (1000x) | — | 56 ms |
+
+Top diagnosis and problem foci identical across all sizes. 70/70 tests pass;
+browser smoke clean; token registry in sync.
+
+---
+
 ## 2026-07-05 — Session 3 (increment J): IndexedDB safety mirror — clinic data survives a wiped browser store
 
 **What**

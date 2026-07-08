@@ -741,8 +741,28 @@ function selectRoutes(tokens) {
      never turned on and they could never be scored (audit: 50/130
      conditions were self-unreachable). Here: if ALL of a condition's
      required tokens are present, its route must be active so it can be
-     scored. Self-maintains as the KB grows; scoring still gates ranking. */
-  if (typeof KNOWLEDGE_ALL !== "undefined") {
+     scored. Self-maintains as the KB grows; scoring still gates ranking.
+
+     Scaling: rather than scanning the whole KB every run, use
+     KB_REQ_FIRST_INDEX to consider only conditions whose FIRST required
+     token is actually present (a tiny candidate set), then confirm the rest.
+     Falls back to a full scan if the index is unavailable. */
+  var routeTokSet = new Set(tokens);
+  if (typeof KB_REQ_FIRST_INDEX !== "undefined") {
+    for (var pti = 0; pti < tokens.length; pti++) {
+      var candidates = KB_REQ_FIRST_INDEX[tokens[pti]];
+      if (!candidates) continue;
+      for (var pci = 0; pci < candidates.length; pci++) {
+        var cand = candidates[pci];
+        if (routes.indexOf(cand.route) >= 0) continue;
+        var allReq = true;
+        for (var pri = 0; pri < cand.req.length; pri++) {
+          if (!routeTokSet.has(cand.req[pri])) { allReq = false; break; }
+        }
+        if (allReq) addRoute(cand.route);
+      }
+    }
+  } else if (typeof KNOWLEDGE_ALL !== "undefined") {
     for (var ci = 0; ci < KNOWLEDGE_ALL.length; ci++) {
       var cond = KNOWLEDGE_ALL[ci];
       if (routes.indexOf(cond.route) >= 0) continue;
@@ -777,7 +797,13 @@ var SCORE_WEIGHTS = {
   temporal_mismatch: -0.5
 };
 
-function scoreCondition(condition, tokens) {
+function scoreCondition(condition, tokens, tokenSet) {
+
+  /* O(1) membership: build a Set once if the caller didn't pass one.
+     (Callers in the hot loop pass a shared Set for speed at scale.) */
+  var has = tokenSet
+    ? function (t) { return tokenSet.has(t); }
+    : function (t) { return has(t); };
 
   var score = 0;
   var maxPossible = 0;
@@ -790,7 +816,7 @@ function scoreCondition(condition, tokens) {
   /* Required tokens */
   for (var ri = 0; ri < condition.req.length; ri++) {
     maxPossible += SCORE_WEIGHTS.required;
-    if (tokens.indexOf(condition.req[ri]) >= 0) {
+    if (has(condition.req[ri])) {
       score += SCORE_WEIGHTS.required;
       reqMatched++;
     } else {
@@ -801,7 +827,7 @@ function scoreCondition(condition, tokens) {
   /* Supportive tokens */
   for (var si = 0; si < condition.sup.length; si++) {
     maxPossible += SCORE_WEIGHTS.supportive;
-    if (tokens.indexOf(condition.sup[si]) >= 0) {
+    if (has(condition.sup[si])) {
       score += SCORE_WEIGHTS.supportive;
       supMatched++;
     }
@@ -809,7 +835,7 @@ function scoreCondition(condition, tokens) {
 
   /* Contradicting tokens */
   for (var ci = 0; ci < condition.con.length; ci++) {
-    if (tokens.indexOf(condition.con[ci]) >= 0) {
+    if (has(condition.con[ci])) {
       score += SCORE_WEIGHTS.contra;
       conMatched++;
     }
@@ -818,7 +844,7 @@ function scoreCondition(condition, tokens) {
   /* Temporal matching */
   if (condition.temporal && condition.temporal.length > 0) {
     for (var ti = 0; ti < condition.temporal.length; ti++) {
-      if (tokens.indexOf(condition.temporal[ti]) >= 0) {
+      if (has(condition.temporal[ti])) {
         score += SCORE_WEIGHTS.temporal_match;
         tempMatch = true;
         break;
@@ -826,8 +852,8 @@ function scoreCondition(condition, tokens) {
     }
     /* Temporal mismatch penalty */
     if (!tempMatch) {
-      var hasAcute = tokens.indexOf("acute") >= 0 || tokens.indexOf("acute_bias") >= 0;
-      var hasChronic = tokens.indexOf("chronic") >= 0 || tokens.indexOf("chronic_bias") >= 0;
+      var hasAcute = has("acute") || has("acute_bias");
+      var hasChronic = has("chronic") || has("chronic_bias");
       var condAcute = condition.temporal.indexOf("acute") >= 0;
       var condChronic = condition.temporal.indexOf("chronic") >= 0;
 
@@ -930,14 +956,18 @@ function applyExclusions(results, tokens) {
 /* trail showing what matched, what's missing, and what to check   */
 /* ═══════════════════════════════════════════════════════════════ */
 
-function generateEvidence(condition, tokens, scoreResult) {
+function generateEvidence(condition, tokens, scoreResult, tokenSet) {
+  var has = tokenSet
+    ? function (t) { return tokenSet.has(t); }
+    : function (t) { return has(t); };
+
   var matched = [];
   var missing = [];
   var contradicted = [];
 
   /* Required */
   for (var ri = 0; ri < condition.req.length; ri++) {
-    if (tokens.indexOf(condition.req[ri]) >= 0) {
+    if (has(condition.req[ri])) {
       matched.push(condition.req[ri]);
     } else {
       missing.push(condition.req[ri]);
@@ -946,14 +976,14 @@ function generateEvidence(condition, tokens, scoreResult) {
 
   /* Supportive */
   for (var si = 0; si < condition.sup.length; si++) {
-    if (tokens.indexOf(condition.sup[si]) >= 0) {
+    if (has(condition.sup[si])) {
       matched.push(condition.sup[si]);
     }
   }
 
   /* Contradicting */
   for (var ci = 0; ci < condition.con.length; ci++) {
-    if (tokens.indexOf(condition.con[ci]) >= 0) {
+    if (has(condition.con[ci])) {
       contradicted.push(condition.con[ci]);
     }
   }
@@ -1284,43 +1314,84 @@ function runDiagnosticEngine() {
     }
   }
 
-  /* Score every condition in the knowledge base */
-  if (typeof KNOWLEDGE_ALL !== "undefined") {
+  /* Build the candidate set to score:
+       - all conditions on the active routes (via KB_ROUTE_INDEX — O(active)
+         instead of scanning the whole KB), plus
+       - any gated conditions not already covered by an active route.
+     A shared token Set makes each scoreCondition/generateEvidence O(tokens)
+     instead of O(tokens × list). This is what keeps the engine responsive at
+     thousands of conditions. Falls back to a full KB scan if the index is
+     absent (behaviour-preserving). */
+  var scoreTokenSet = new Set(tokens);
+
+  function scoreOne(cond, isGated) {
+    var scoreResult = scoreCondition(cond, tokens, scoreTokenSet);
+    if (scoreResult.score <= 0 && !isGated) return;
+    if (isGated && scoreResult.score > 0) {
+      scoreResult.score = Math.min(1, scoreResult.score * 1.3);
+    }
+    var evidence = generateEvidence(cond, tokens, scoreResult, scoreTokenSet);
+    results.push({
+      name: cond.name,
+      score: scoreResult.score,
+      icd: cond.icd || "",
+      icd_label: cond.icd_label || "",
+      icd_status: cond.icd_status || "",
+      route: cond.route,
+      domain: cond._domain || "",
+      urgent: cond.urgent || false,
+      _index: cond._index,
+      _scoreDetail: scoreResult,
+      _evidence: evidence,
+      _gateReason: gatedNames[cond.name] || null
+    });
+  }
+
+  if (typeof KB_REQ_TOKEN_INDEX !== "undefined") {
+    var seen = {};
+    var activeRoute = {};
+    for (var ar = 0; ar < routes.length; ar++) activeRoute[routes[ar]] = true;
+
+    /* Candidates = conditions that require at least one PRESENT token and
+       sit on an active route. Because scoreCondition forces score 0 unless a
+       required token matched, this yields exactly the same results as
+       scanning every on-route condition — but touches only the handful of
+       conditions the current evidence can actually support, so cost scales
+       with the evidence, not the KB size. */
+    for (var pt = 0; pt < tokens.length; pt++) {
+      var reqConds = KB_REQ_TOKEN_INDEX[tokens[pt]];
+      if (!reqConds) continue;
+      for (var rq = 0; rq < reqConds.length; rq++) {
+        var cc = reqConds[rq];
+        if (seen[cc.name]) continue;
+        if (!activeRoute[cc.route] && gatedNames[cc.name] === undefined) continue;
+        seen[cc.name] = true;
+        scoreOne(cc, gatedNames[cc.name] !== undefined);
+      }
+    }
+    /* Conditions with no required token (rare) — consider on active routes. */
+    if (typeof KB_NOREQ_CONDS !== "undefined") {
+      for (var nq = 0; nq < KB_NOREQ_CONDS.length; nq++) {
+        var nc = KB_NOREQ_CONDS[nq];
+        if (seen[nc.name]) continue;
+        if (!activeRoute[nc.route] && gatedNames[nc.name] === undefined) continue;
+        seen[nc.name] = true;
+        scoreOne(nc, gatedNames[nc.name] !== undefined);
+      }
+    }
+    /* Gated conditions not otherwise covered (e.g. urgent gates). */
+    for (var gname in gatedNames) {
+      if (seen[gname]) continue;
+      var gc = findCondition(gname);
+      if (gc) { seen[gname] = true; scoreOne(gc, true); }
+    }
+  } else if (typeof KNOWLEDGE_ALL !== "undefined") {
     for (var ki = 0; ki < KNOWLEDGE_ALL.length; ki++) {
       var cond = KNOWLEDGE_ALL[ki];
-
-      /* Only score conditions on active routes (or gated conditions) */
       var onRoute = routes.indexOf(cond.route) >= 0;
       var isGated = gatedNames[cond.name] !== undefined;
-
       if (!onRoute && !isGated) continue;
-
-      var scoreResult = scoreCondition(cond, tokens);
-
-      /* Skip zero scores unless gated */
-      if (scoreResult.score <= 0 && !isGated) continue;
-
-      /* Boost gated conditions */
-      if (isGated && scoreResult.score > 0) {
-        scoreResult.score = Math.min(1, scoreResult.score * 1.3);
-      }
-
-      /* Generate evidence */
-      var evidence = generateEvidence(cond, tokens, scoreResult);
-
-      results.push({
-        name: cond.name,
-        score: scoreResult.score,
-        icd: cond.icd || "",
-        icd_label: cond.icd_label || "",
-        icd_status: cond.icd_status || "",
-        route: cond.route,
-        domain: cond._domain || "",
-        urgent: cond.urgent || false,
-        _scoreDetail: scoreResult,
-        _evidence: evidence,
-        _gateReason: gatedNames[cond.name] || null
-      });
+      scoreOne(cond, isGated);
     }
   }
 
@@ -1332,7 +1403,10 @@ function runDiagnosticEngine() {
     /* Urgent conditions get priority if score is close */
     if (a.urgent && !b.urgent && a.score > 0.2) return -1;
     if (b.urgent && !a.urgent && b.score > 0.2) return 1;
-    return b.score - a.score;
+    if (b.score !== a.score) return b.score - a.score;
+    /* Deterministic tie-break by KB index — makes the differential order
+       independent of how conditions were iterated/indexed. */
+    return (a._index || 0) - (b._index || 0);
   });
 
   /* Store results */

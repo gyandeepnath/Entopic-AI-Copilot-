@@ -158,10 +158,65 @@ var KB_TOKEN_STATS = {};
 
 
 /* ═══════════════════════════════════════════════════════════════ */
+/* PERFORMANCE INDEXES (scale to 100x+ conditions)                 */
+/*                                                                  */
+/* The engine runs on every keystroke. Linear scans of KNOWLEDGE_ALL */
+/* are fine at 130 conditions but O(N) per run becomes the wall at   */
+/* thousands. These precomputed indexes let the engine touch only    */
+/* the conditions relevant to the current evidence.                  */
+/*                                                                  */
+/*  KB_ROUTE_INDEX      route → conditions[] (KB order preserved)    */
+/*  KB_REQ_FIRST_INDEX  first required token → conditions[] that     */
+/*                      require it (drives fast route activation)    */
+/* Both are rebuilt by rebuildKbIndexes(), so cloud-loaded / grown   */
+/* knowledge bases can refresh them.                                */
+/* ═══════════════════════════════════════════════════════════════ */
+
+var KB_ROUTE_INDEX = {};       /* route → conditions[] */
+var KB_REQ_FIRST_INDEX = {};   /* first required token → conditions[] */
+var KB_REQ_TOKEN_INDEX = {};   /* ANY required token → conditions[] */
+var KB_NOREQ_CONDS = [];       /* conditions with no required token (rare) */
+var KB_NAME_INDEX = {};        /* condition name → condition (O(1) lookup) */
+
+function rebuildKbIndexes() {
+  KB_ROUTE_INDEX = {};
+  KB_REQ_FIRST_INDEX = {};
+  KB_REQ_TOKEN_INDEX = {};
+  KB_NOREQ_CONDS = [];
+  KB_NAME_INDEX = {};
+  for (var i = 0; i < KNOWLEDGE_ALL.length; i++) {
+    var c = KNOWLEDGE_ALL[i];
+    KB_NAME_INDEX[c.name] = c;
+    if (!KB_ROUTE_INDEX[c.route]) KB_ROUTE_INDEX[c.route] = [];
+    KB_ROUTE_INDEX[c.route].push(c);
+    if (c.req && c.req.length > 0) {
+      var t = c.req[0];
+      if (!KB_REQ_FIRST_INDEX[t]) KB_REQ_FIRST_INDEX[t] = [];
+      KB_REQ_FIRST_INDEX[t].push(c);
+      for (var r = 0; r < c.req.length; r++) {
+        var rt = c.req[r];
+        if (!KB_REQ_TOKEN_INDEX[rt]) KB_REQ_TOKEN_INDEX[rt] = [];
+        KB_REQ_TOKEN_INDEX[rt].push(c);
+      }
+    } else {
+      /* A condition with no required token can score from supportive
+         evidence alone; it must always be considered on its route. */
+      KB_NOREQ_CONDS.push(c);
+    }
+  }
+}
+rebuildKbIndexes();
+
+
+/* ═══════════════════════════════════════════════════════════════ */
 /* HELPER: Get conditions by route                                 */
 /* ═══════════════════════════════════════════════════════════════ */
 
 function getConditionsByRoute(route) {
+  /* Use the index when available (O(1) lookup vs O(N) filter). */
+  if (typeof KB_ROUTE_INDEX !== "undefined" && KB_ROUTE_INDEX[route]) {
+    return KB_ROUTE_INDEX[route].slice();
+  }
   return KNOWLEDGE_ALL.filter(function(c) {
     return c.route === route;
   });
@@ -184,6 +239,10 @@ function getUrgentConditions() {
 /* ═══════════════════════════════════════════════════════════════ */
 
 function findCondition(name) {
+  /* O(1) via the name index when available (built by rebuildKbIndexes). */
+  if (typeof KB_NAME_INDEX !== "undefined" && KB_NAME_INDEX[name] !== undefined) {
+    return KB_NAME_INDEX[name];
+  }
   for (var i = 0; i < KNOWLEDGE_ALL.length; i++) {
     if (KNOWLEDGE_ALL[i].name === name) return KNOWLEDGE_ALL[i];
   }
