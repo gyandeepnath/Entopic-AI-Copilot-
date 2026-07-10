@@ -32,6 +32,9 @@ function saveStore(key, data) {
     /* Redundant copy into the IndexedDB safety mirror (async, never blocks;
        see storage-mirror.js). Enables auto-recovery if localStorage is wiped. */
     if (typeof mirrorStore === "function") mirrorStore(key, data);
+    /* Queue for cloud backup/sync when signed in (async, never blocks;
+       see cloud-sync.js). No-op when offline/signed out/disabled. */
+    if (typeof cloudEnqueue === "function") cloudEnqueue(key);
   } catch (e) {
     console.error("Storage write error [" + key + "]:", e);
     /* If quota exceeded, warn user */

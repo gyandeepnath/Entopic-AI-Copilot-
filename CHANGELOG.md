@@ -6,6 +6,56 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-07-05 — Session 3 (increment L): Supabase backend — multi-tenant sync, auth, live dashboard, cloud KB
+
+**What**
+
+- **Supabase project `entopic`** created (free tier, $0/mo, confirmed before
+  proceeding). Schema via migrations: `clinics`, `clinic_members` (roles),
+  `patients`, `visits`, de-identified `encounters`, and `kb_conditions` /
+  `kb_versions` (the KB authoring/growth platform). **RLS on every table**;
+  Realtime enabled on patients/visits with `REPLICA IDENTITY FULL` so change
+  events are RLS-filtered per clinic. Security-definer helpers revoked from
+  `anon` (advisor clean).
+- **Client** (`js/cloud-config.js`, `js/cloud-sync.js`) — plain fetch +
+  WebSocket, no SDK/CDN. Email/password auth, clinic create/join, an
+  offline-first outbox (push patients/visits when online), pull + Realtime
+  merge (last-writer-wins), token refresh, polling fallback, status surface.
+  Wired into `storage.js` (one guarded line, like the IndexedDB mirror) and a
+  new dashboard **"Cloud Sync & Multi-User"** card (`js/app.js`).
+- `tools/seed-cloud-kb.js` — generates idempotent upsert SQL to push the full
+  local KB (and a published `kb_versions` bundle) into the cloud.
+- `docs/CLOUD_SETUP.md` — what's built, the verification table, and the manual
+  two-browser live-sync runbook.
+- `tests/cloud-sync.test.js` (9 tests): LWW merge, open-exam-visit protection,
+  no echo loop, enqueue/gating, disabled-dormant, status states.
+
+**Why**
+
+The founder greenlit the full arc: multi-user, live dashboard updates, and a
+KB built to grow 100x. This delivers the backend foundation while keeping the
+offline-first exam untouched.
+
+**Verified**
+
+- **Tenant isolation proven server-side** by impersonating two users in two
+  clinics via JWT claims: Dr A saw only Clinic A's patient, Dr B only Clinic
+  B's, and Dr A's cross-tenant **insert was blocked** (0 intruder rows).
+- Realtime publication + replica identity confirmed; KB round-trip proven
+  (sample seeded, incl. a VERIFIED review-status row).
+- 78/78 unit tests pass; browser smoke + cloud-card render clean; app fully
+  functional offline (signed-out card, nothing queued).
+
+**Honest limitation:** the live browser↔Supabase WebSocket round-trip could
+not be exercised from this build sandbox (its egress proxy blocks the project
+domain). It is covered by the `docs/CLOUD_SETUP.md` runbook — run once on a
+normal network. The security-critical half (RLS isolation) IS proven here.
+
+**Guardrails:** no server-side diagnosis; PII/registry separated; engine never
+a network dependency; free tier only.
+
+---
+
 ## 2026-07-05 — Session 3 (increment K): Engine indexed for 100x knowledge-base scale
 
 **What**

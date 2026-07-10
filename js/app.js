@@ -257,8 +257,88 @@ function renderHome() {
       '<div class="home-settings-title">📁 Data Management</div>' +
       '<div class="home-settings-desc">Import a previous Entopic backup file</div>' +
       '<input type="file" accept=".json" onchange="if(this.files[0])importData(this.files[0])" style="font-size:.62rem">' +
-    '</div>';
+    '</div>' +
+
+    /* Settings — Cloud Sync */
+    renderCloudCard();
 }
+
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* CLOUD SYNC CARD (optional backup + multi-user)                  */
+/* Local-first: the app runs identically without any of this.       */
+/* ═══════════════════════════════════════════════════════════════ */
+
+function renderCloudCard() {
+  if (typeof cloudStatus !== "function") return "";
+  var s = cloudStatus();
+  var dot = { live: "#2e7d32", polling: "#b8860b", signedout: "#888",
+              noclinic: "#b8860b", disabled: "#888" }[s.state] || "#888";
+  var body = "";
+
+  if (s.state === "disabled") {
+    body = '<div class="home-settings-status">Cloud sync is turned off. All data stays on this device.</div>';
+  } else if (s.state === "signedout") {
+    body =
+      '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">' +
+        '<input id="cloudEmail" type="email" placeholder="email" style="font-size:.62rem;padding:3px 5px;border:1px solid var(--fg);border-radius:2px">' +
+        '<input id="cloudPass" type="password" placeholder="password" style="font-size:.62rem;padding:3px 5px;border:1px solid var(--fg);border-radius:2px">' +
+        '<button class="btn btn-p" style="font-size:.6rem" onclick="cloudUiSignIn()">Sign in</button>' +
+        '<button class="btn btn-s" style="font-size:.6rem" onclick="cloudUiSignUp()">Create account</button>' +
+      '</div>' +
+      '<div id="cloudMsg" class="home-settings-status" style="color:var(--md)">Sign in to back up and sync across devices. Your exam works offline regardless.</div>';
+  } else if (s.state === "noclinic") {
+    body =
+      '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">' +
+        '<input id="cloudClinicName" placeholder="Clinic name" style="font-size:.62rem;padding:3px 5px;border:1px solid var(--fg);border-radius:2px">' +
+        '<button class="btn btn-p" style="font-size:.6rem" onclick="cloudUiCreateClinic()">Create clinic</button>' +
+        '<button class="btn btn-s" style="font-size:.6rem" onclick="cloudUiSignOut()">Sign out</button>' +
+      '</div>' +
+      '<div id="cloudMsg" class="home-settings-status">Signed in as ' + escH(s.email || "") + '. Create your clinic to start syncing.</div>';
+  } else {
+    body =
+      '<div class="home-settings-status">Signed in as ' + escH(s.email || "") + ' · ' + escH(s.label) + '</div>' +
+      '<div style="display:flex;gap:6px;margin-top:4px">' +
+        '<button class="btn btn-s" style="font-size:.6rem" onclick="cloudUiSyncNow()">Sync now</button>' +
+        '<button class="btn btn-s" style="font-size:.6rem" onclick="cloudUiSignOut()">Sign out</button>' +
+      '</div>';
+  }
+
+  return '<div class="home-settings" style="margin-top:8px">' +
+    '<div class="home-settings-title">' +
+      '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:' + dot + ';margin-right:5px"></span>' +
+      '☁ Cloud Sync &amp; Multi-User</div>' +
+    '<div class="home-settings-desc">Optional backup and live sync across devices/clinicians. Offline-first: the exam never waits on the network.</div>' +
+    body +
+  '</div>';
+}
+
+function cloudUiMsg(text, ok) {
+  var el = document.getElementById("cloudMsg");
+  if (el) { el.textContent = text; el.style.color = ok ? "var(--sl)" : "var(--md)"; }
+}
+function cloudUiSignIn() {
+  var e = (document.getElementById("cloudEmail") || {}).value || "";
+  var p = (document.getElementById("cloudPass") || {}).value || "";
+  if (!e || !p) { cloudUiMsg("Enter email and password.", false); return; }
+  cloudUiMsg("Signing in…", true);
+  cloudSignIn(e, p, function (err) { if (err) cloudUiMsg("Sign-in failed: " + err.message, false); else renderHome(); });
+}
+function cloudUiSignUp() {
+  var e = (document.getElementById("cloudEmail") || {}).value || "";
+  var p = (document.getElementById("cloudPass") || {}).value || "";
+  if (!e || !p) { cloudUiMsg("Enter email and password.", false); return; }
+  cloudUiMsg("Creating account…", true);
+  cloudSignUp(e, p, function (err) { if (err) cloudUiMsg("Sign-up failed: " + err.message, false); else renderHome(); });
+}
+function cloudUiCreateClinic() {
+  var n = (document.getElementById("cloudClinicName") || {}).value || "";
+  if (!n) { cloudUiMsg("Enter a clinic name.", false); return; }
+  cloudUiMsg("Creating clinic…", true);
+  cloudCreateClinic(n, function (err) { if (err) cloudUiMsg("Failed: " + err.message, false); else renderHome(); });
+}
+function cloudUiSignOut() { cloudSignOut(); renderHome(); }
+function cloudUiSyncNow() { if (typeof cloudPull === "function") cloudPull(function () { renderHome(); }); }
 
 
 /* ═══════════════════════════════════════════════════════════════ */
