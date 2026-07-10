@@ -6,6 +6,33 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-07-05 — Session 3 (increment M): Backend security hardening (RLS helpers, advisor clean)
+
+**What**
+
+- Moved the three `SECURITY DEFINER` RLS helper functions
+  (`is_clinic_member`, `is_clinic_admin`, `clinic_member_count`) out of the
+  API-exposed `public` schema into a `private` schema, so PostgREST no longer
+  exposes them as `/rest/v1/rpc/*` endpoints. Granted `EXECUTE` back to
+  `authenticated` (RLS policy evaluation requires it) and `USAGE` on the
+  `private` schema; revoked from `anon`/`public`.
+- Verified RLS still enforces correctly after the move, and the 6
+  security-definer advisor warnings are now cleared.
+
+**Why**
+
+The Supabase security advisor flagged the helpers as publicly callable via RPC
+(a minor information-disclosure surface). The `private`-schema pattern is
+Supabase's recommended fix and removes the exposure without weakening RLS.
+
+**Verified (looping):** re-ran the tenant-isolation proof with a fresh user
+after the change — the signed-in user saw exactly their own clinic's patients
+(RLS evaluates the moved helpers correctly). Advisor re-run: the 6 warnings are
+gone; only a low-priority Auth toggle (leaked-password protection) remains,
+noted in NEEDS_REVIEW. Test fixtures cleaned up; KB sample intact.
+
+---
+
 ## 2026-07-05 — Session 3 (increment L): Supabase backend — multi-tenant sync, auth, live dashboard, cloud KB
 
 **What**

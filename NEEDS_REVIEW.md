@@ -88,11 +88,25 @@ regression guard. Flagging here so it's a decision, not a silent default.
 
 ## For later (architecture — needs a decision + possibly spend)
 
-### 🟦 Backend / persistence provider (ARCHITECTURE.md Part II.C)
-Moving off `localStorage` (5 MB ceiling) to IndexedDB (local) and a synced
-backend (the doc recommends Supabase) is a provider + spend decision. Not
-started — awaiting your go-ahead per the "check in before money/provider"
-guardrail.
+### 🟦 Backend / persistence (Supabase) — BUILT (free tier)
+Done, at your go-ahead: Supabase project `entopic` (free tier, $0/mo), full
+schema + RLS + Realtime, and an offline-first client sync layer. Tenant
+isolation is proven server-side. See `docs/CLOUD_SETUP.md`. Open items for you:
+- **Run the live two-browser sync test** once on a normal network (the build
+  sandbox couldn't reach the project domain to test the WebSocket live). Steps
+  are in `docs/CLOUD_SETUP.md`.
+- **Multi-clinician invites**: today the clinic *creator* self-enrolls; adding
+  teammates to an existing clinic needs an invite flow (next backend step).
+- **Enable leaked-password protection** (Supabase Auth → one toggle;
+  HaveIBeenPwned check). Minor, recommended.
+- **Push the full KB to the cloud** table when ready:
+  `node tools/seed-cloud-kb.js` (idempotent upsert). A 5-condition sample is
+  seeded now to prove the round-trip.
+
+### 🟦 Local persistence hardening — DONE
+IndexedDB safety mirror (increment J) removes the "clear cache = lose clinic"
+risk. A full IndexedDB primary store (replacing localStorage) remains a future
+option but is lower priority now that the mirror + cloud backup exist.
 
 ### 🟦 Offline-first: fonts load from a CDN
 `index.html` pulls web fonts from Google Fonts. Cosmetic (system-font
