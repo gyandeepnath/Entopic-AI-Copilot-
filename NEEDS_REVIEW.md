@@ -103,6 +103,26 @@ isolation is proven server-side. See `docs/CLOUD_SETUP.md`. Open items for you:
   `node tools/seed-cloud-kb.js` (idempotent upsert). A 5-condition sample is
   seeded now to prove the round-trip.
 
+### 🟦 Registry flywheel (de-identified encounters → cloud) — READY, awaiting go-ahead
+Every completed exam already builds a **fully de-identified** encounter record
+(`buildAnonymizedEncounter` in `js/storage.js`: age *bracket* not DOB, sex,
+symptom/finding/diagnosis tokens, treatment *category* — no names, no free
+text, no PII) and queues it locally in `registry_queue`. Nothing drains that
+queue yet, so it just accumulates on-device.
+
+Wiring it to the existing cloud `encounters` table would give you an anonymized
+clinical registry — the raw material for calibrating the scoring engine against
+real presentations (the "sparse-definition score inflation" item above needs
+exactly this kind of data). It's a bounded, offline-first addition (same outbox
+pattern as patient sync).
+
+**Why engineering did not just switch it on:** it starts a *new outbound flow
+of clinical data* to the cloud. Even fully de-identified, that's your call to
+make, not a silent default. If you want it, say so and it gets built + tested
+behind an explicit opt-in toggle (off by default). The de-identification is
+already in place and unit-testable; the live round-trip needs a normal network
+to verify (this sandbox can't reach the project domain).
+
 ### 🟦 Local persistence hardening — DONE
 IndexedDB safety mirror (increment J) removes the "clear cache = lose clinic"
 risk. A full IndexedDB primary store (replacing localStorage) remains a future
