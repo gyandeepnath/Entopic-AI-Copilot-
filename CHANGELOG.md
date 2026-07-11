@@ -6,6 +6,29 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-07-11 — Session 3 (increment O): Update Claude API model to current release
+
+**What**
+
+- `js/claude.js` — the interpretive-remarks call now uses the current Sonnet
+  model (`claude-sonnet-5`) instead of `claude-sonnet-4-20250514`, which is a
+  deprecated/dated identifier and would eventually stop being served.
+
+**Why**
+
+The Claude API path is downstream-only (interpretive remarks + speech parsing;
+never diagnosis — that stays deterministic in the engine offline), and it is
+optional and spend-sensitive for the founder. A like-for-like move to the
+current Sonnet line keeps that lightweight, low-cost behaviour while removing a
+stale, soon-to-break model string. No request shape, headers, or firewall
+around the LLM changed — the engine still runs fully without the API.
+
+**Verified:** No behavioural change to test — the request body only swaps the
+model string; the existing suite still passes (no code path depends on the
+model ID). The offline diagnostic path is untouched.
+
+---
+
 ## 2026-07-05 — Session 3 (increment N): Fix stored-XSS in free-text fields
 
 **What**

@@ -30,7 +30,7 @@ function callClaudeAPI(systemPrompt, userPrompt, maxTokens, onSuccess, onError) 
   }
 
   var body = {
-    model: "claude-sonnet-4-20250514",
+    model: "claude-sonnet-5",
     max_tokens: maxTokens || 800,
     system: systemPrompt,
     messages: [
