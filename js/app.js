@@ -755,9 +755,18 @@ function escH(s) {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
-/* Shortcut for value attributes in page renderers */
+/* Escape user text for BOTH attribute values and element bodies.
+   Must escape < and > too: many call sites drop esc() output inside a
+   <textarea>…</textarea> body, where a quotes-only escape lets
+   "</textarea><img onerror=…>" break out (stored XSS — and remote
+   free-text from another clinician now renders here via cloud sync).
+   Full escaping is safe in every context these strings appear in. */
 function esc(s) {
-  return (s || "").replace(/"/g, "&quot;");
+  return String(s == null ? "" : s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 }
 
 

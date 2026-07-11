@@ -6,6 +6,34 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-07-05 — Session 3 (increment N): Fix stored-XSS in free-text fields
+
+**What**
+
+- `js/app.js` — `esc()` now fully HTML-escapes (`&`, `<`, `>`, `"`) instead of
+  escaping quotes only. It is used at 115 render sites, including **16 clinical
+  free-text `<textarea>` bodies** (chief complaint, history, medications,
+  allergies, every "notes" field, the plan). A quotes-only escape let input
+  like `</textarea><img src=x onerror=…>` break out of the textarea and execute
+  — a stored-XSS hole.
+- `tests/escaping.test.js` (5 tests) pins full-escaping, correct `&`-first
+  ordering, and null/number handling.
+
+**Why**
+
+Real vulnerability, and its blast radius just grew: with cloud sync, another
+clinician's free text (or a pasted patient complaint) now renders on your
+screen, so unescaped markup is executable stored XSS across a clinic. Full
+escaping is safe in both attribute and element-body contexts (these are always
+raw user strings), so upgrading the one helper closes every site at once.
+
+**Verified:** 83/83 unit tests pass. Headless-Chromium test: a malicious chief
+complaint / medication / plan payload is entity-encoded in the rendered
+textareas — the injected `onerror`/`<script>` handlers do **not** fire and no
+`</textarea>` breakout survives.
+
+---
+
 ## 2026-07-05 — Session 3 (increment M): Backend security hardening (RLS helpers, advisor clean)
 
 **What**
