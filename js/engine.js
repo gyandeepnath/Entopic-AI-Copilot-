@@ -353,19 +353,26 @@ function collectTokens() {
 
   /* Slit lamp specific fields */
   if (V.sl) {
-    /* TBUT */
+    /* TBUT — emits the symptom-domain token AND the objective-test token
+       (TBUT_reduced) so a measured result is scored as confirmation, not
+       just a repeat of what the patient already reported. */
     var butOd = parseFloat(V.sl.od.but) || 999;
     var butOs = parseFloat(V.sl.os.but) || 999;
     var butMin = Math.min(butOd, butOs);
-    if (butMin < 10 && butMin < 999) addToken("dryness");
-    if (butMin < 5 && butMin < 999) addToken("dryness");
+    if (butMin < 10 && butMin < 999) {
+      addToken("dryness");
+      addToken("TBUT_reduced");
+      addToken("tear_film_instability");
+    }
 
-    /* Schirmer */
+    /* Schirmer — same pattern: symptom token + objective-test token */
     var schOd = parseFloat(V.sl.od.schirmer) || 999;
     var schOs = parseFloat(V.sl.os.schirmer) || 999;
     var schMin = Math.min(schOd, schOs);
-    if (schMin < 10 && schMin < 999) addToken("reduced_tearing");
-    if (schMin < 5 && schMin < 999) addToken("reduced_tearing");
+    if (schMin < 10 && schMin < 999) {
+      addToken("reduced_tearing");
+      addToken("schirmer_low");
+    }
 
     /* LOCS grading */
     var nsOd = parseInt(V.sl.od.ns) || 0;
@@ -789,12 +796,29 @@ function selectRoutes(tokens) {
 /* Scores each condition against the current token set             */
 /* ═══════════════════════════════════════════════════════════════ */
 
+/* ── Scoring constants ──
+   These are STRUCTURAL engineering constants (how evidence classes are
+   mixed), not clinical statistics — no sensitivity/LR values are claimed.
+   Shares say how much each evidence class can contribute to the score;
+   saturation (n/(n+k)) gives diminishing returns on matched counts so a
+   condition's score depends on how much evidence MATCHED, never on how
+   many tokens its definition happens to list (the old normalize-by-own-
+   maximum method let leaner definitions outscore richer ones on identical
+   evidence). Calibration against real outcome data is future work. */
 var SCORE_WEIGHTS = {
-  required:  3,
-  supportive: 1,
-  contra:    -3,
-  temporal_match: 0.5,
-  temporal_mismatch: -0.5
+  req_share:  0.60,   /* fraction of required criteria matched (dominant) */
+  sup_share:  0.25,   /* saturating credit for matched supportive tokens */
+  test_share: 0.15,   /* saturating credit for matched objective tests */
+  sup_k:  2,          /* sup saturation half-point: 2 matches → half credit */
+  test_k: 1,          /* test saturation half-point: 1 match → half credit */
+  /* conditions with no required tokens can never exceed ~0.70 on
+     supportive/test evidence alone */
+  noreq_sup_share: 0.45,
+  noreq_test_share: 0.25,
+  contra_factor: 0.55,     /* multiplied in once per matched contradiction */
+  temporal_match: 1.08,
+  temporal_mismatch: 0.85,
+  sparse_evidence: 0.5     /* fewer than 2 tokens in the whole encounter */
 };
 
 function scoreCondition(condition, tokens, tokenSet) {
@@ -805,93 +829,96 @@ function scoreCondition(condition, tokens, tokenSet) {
     ? function (t) { return tokenSet.has(t); }
     : function (t) { return tokens.indexOf(t) >= 0; };
 
-  var score = 0;
-  var maxPossible = 0;
   var reqMatched = 0;
   var reqMissing = 0;
   var supMatched = 0;
   var conMatched = 0;
+  var testsMatched = 0;
   var tempMatch = false;
 
   /* Required tokens */
   for (var ri = 0; ri < condition.req.length; ri++) {
-    maxPossible += SCORE_WEIGHTS.required;
-    if (has(condition.req[ri])) {
-      score += SCORE_WEIGHTS.required;
-      reqMatched++;
-    } else {
-      reqMissing++;
-    }
+    if (has(condition.req[ri])) reqMatched++;
+    else reqMissing++;
   }
 
   /* Supportive tokens */
   for (var si = 0; si < condition.sup.length; si++) {
-    maxPossible += SCORE_WEIGHTS.supportive;
-    if (has(condition.sup[si])) {
-      score += SCORE_WEIGHTS.supportive;
-      supMatched++;
-    }
+    if (has(condition.sup[si])) supMatched++;
   }
 
   /* Contradicting tokens */
   for (var ci = 0; ci < condition.con.length; ci++) {
-    if (has(condition.con[ci])) {
-      score += SCORE_WEIGHTS.contra;
-      conMatched++;
-    }
+    if (has(condition.con[ci])) conMatched++;
   }
 
-  /* Temporal matching */
+  /* Objective test/sign tokens (condition.tests). When the tokenizer has
+     emitted one (e.g. TBUT_reduced from a measured TBUT), it counts as
+     confirmatory evidence — so the score sharpens as the exam proceeds
+     from symptoms to objective findings. */
+  var testList = condition.tests || [];
+  for (var xi = 0; xi < testList.length; xi++) {
+    if (has(testList[xi])) testsMatched++;
+  }
+
+  /* Temporal matching (same detection as before, applied multiplicatively) */
+  var tempMismatch = false;
   if (condition.temporal && condition.temporal.length > 0) {
     for (var ti = 0; ti < condition.temporal.length; ti++) {
-      if (has(condition.temporal[ti])) {
-        score += SCORE_WEIGHTS.temporal_match;
-        tempMatch = true;
-        break;
-      }
+      if (has(condition.temporal[ti])) { tempMatch = true; break; }
     }
-    /* Temporal mismatch penalty */
     if (!tempMatch) {
       var hasAcute = has("acute") || has("acute_bias");
       var hasChronic = has("chronic") || has("chronic_bias");
       var condAcute = condition.temporal.indexOf("acute") >= 0;
       var condChronic = condition.temporal.indexOf("chronic") >= 0;
-
-      if (hasAcute && condChronic && !condAcute) {
-        score += SCORE_WEIGHTS.temporal_mismatch;
-      }
-      if (hasChronic && condAcute && !condChronic) {
-        score += SCORE_WEIGHTS.temporal_mismatch;
-      }
+      if (hasAcute && condChronic && !condAcute) tempMismatch = true;
+      if (hasChronic && condAcute && !condChronic) tempMismatch = true;
     }
   }
 
-  /* Calculate normalized score */
-  var normalized = maxPossible > 0 ? score / maxPossible : 0;
-
-  /* Penalties */
-  if (reqMissing > 0) normalized *= 0.7;
-  if (reqMissing > 1) normalized *= 0.5;
-  if (conMatched > 0) normalized *= 0.6;
-  if (tokens.length < 2) normalized *= 0.5;
-
-  /* Cap */
-  normalized = Math.max(0, Math.min(1, normalized));
-
-  /* All required tokens missing = zero */
-  if (reqMatched === 0 && condition.req.length > 0) {
-    normalized = 0;
+  /* ── Combine ──
+     Required criteria dominate; supportive and objective-test evidence
+     add saturating credit that depends only on how many MATCHED. */
+  var base;
+  var supSat = supMatched / (supMatched + SCORE_WEIGHTS.sup_k);
+  var testSat = testsMatched / (testsMatched + SCORE_WEIGHTS.test_k);
+  if (condition.req.length > 0) {
+    base = SCORE_WEIGHTS.req_share * (reqMatched / condition.req.length) +
+           SCORE_WEIGHTS.sup_share * supSat +
+           SCORE_WEIGHTS.test_share * testSat;
+  } else {
+    base = SCORE_WEIGHTS.noreq_sup_share * supSat +
+           SCORE_WEIGHTS.noreq_test_share * testSat;
   }
 
+  /* Contradictions: multiplicative, once per matched contradiction —
+     two contradictions hurt much more than one. */
+  if (conMatched > 0) base *= Math.pow(SCORE_WEIGHTS.contra_factor, conMatched);
+
+  /* Temporal fit nudges the score; it never dominates. */
+  if (tempMatch) base *= SCORE_WEIGHTS.temporal_match;
+  else if (tempMismatch) base *= SCORE_WEIGHTS.temporal_mismatch;
+
+  /* Very sparse encounters can't produce confident calls. */
+  if (tokens.length < 2) base *= SCORE_WEIGHTS.sparse_evidence;
+
+  /* All required tokens missing = zero (hard rule, unchanged) */
+  if (reqMatched === 0 && condition.req.length > 0) base = 0;
+
+  base = Math.max(0, Math.min(1, base));
+
   return {
-    score: normalized,
+    score: base,
     reqMatched: reqMatched,
     reqMissing: reqMissing,
     supMatched: supMatched,
     conMatched: conMatched,
+    testsMatched: testsMatched,
     tempMatch: tempMatch,
-    maxPossible: maxPossible,
-    rawScore: score
+    /* kept for display compatibility: score is already normalized 0..1 */
+    maxPossible: 1,
+    rawScore: base
   };
 }
 
@@ -988,11 +1015,14 @@ function generateEvidence(condition, tokens, scoreResult, tokenSet) {
     }
   }
 
-  /* Suggested tests */
+  /* Objective tests: a matched test token is confirmatory evidence (show
+     it in `matched`); only tests NOT yet matched are suggested — so the
+     "what to check next" list shrinks as the workup proceeds. */
   var suggestedTests = [];
   if (condition.tests) {
     for (var ti = 0; ti < condition.tests.length; ti++) {
-      suggestedTests.push(condition.tests[ti]);
+      if (has(condition.tests[ti])) matched.push(condition.tests[ti]);
+      else suggestedTests.push(condition.tests[ti]);
     }
   }
 

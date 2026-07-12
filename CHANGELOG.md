@@ -6,6 +6,54 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-07-12 — Session 3 (increment Q): Scoring rework — matched-evidence scoring + objective-test confirmation
+
+**Founder-authorized** (this was the NEEDS_REVIEW "sparse-definition score
+inflation" item, deliberately parked until his go-ahead; he asked for exactly
+this rework).
+
+**What**
+
+- `js/engine.js` `scoreCondition` — replaced normalize-by-own-maximum with a
+  structural mix: required-criteria fraction (60%) + saturating credit for
+  *matched* supportive evidence (25%) + saturating credit for *matched*
+  objective tests (15%). A condition's score now depends only on what
+  MATCHED — never on how many tokens its definition happens to list, which
+  was the mechanism that let leaner definitions outscore richer ones on
+  identical evidence. Contradictions are now multiplicative per-match
+  (×0.55 each; two contradictions hurt far more than one). Temporal
+  fit/mismatch is a small multiplier (×1.08 / ×0.85). Conditions with no
+  required tokens cap at ~0.70 on sup/test evidence alone. Hard rules kept:
+  all-required-missing → 0; sparse encounters halved; red-flag alerts remain
+  a separate, unconditional stage.
+- `js/engine.js` tokenizer — measured TBUT now emits `TBUT_reduced` +
+  `tear_film_instability` (and Schirmer emits `schirmer_low`) alongside the
+  symptom-domain tokens, so objective results are scored as CONFIRMATION
+  instead of a no-op re-add of what the patient already said. This is the
+  "accuracy improves as the exam proceeds" mechanism: `tests` tokens in the
+  KB were previously never produced and never scored.
+- `generateEvidence` — matched tests count as matched evidence in the glass
+  box; the suggested-tests list now shows only tests NOT yet done (shrinks
+  as the workup proceeds). Flow map shows a `tests:` count.
+
+**Why** — the old method's rankings were provably distorted by definition
+richness; the founder asked for scoring accuracy work and hugely expandable
+KB (where inconsistent definition richness across thousands of entries would
+have amplified the distortion). All constants are documented as structural
+engineering values, not claimed clinical statistics; calibration against
+real data remains future work (the registry flywheel).
+
+**Verified** — before/after panel of 7 vignettes: the documented inflation
+case now ranks Dry Eye (MGD) 0.89 > Aqueous 0.74 > Exposure Keratopathy 0.68
+(was: Exposure Keratopathy first); AACC still tops its presentation at 1.00;
+Retinal Tear still tops flashes+floaters; non-specific "Conjunctival
+Hyperemia" no longer ties specific diagnoses. ALL golden clinical vignettes
+passed UNCHANGED (no expectation edits needed); 89/89 tests green after
+registry regeneration (TBUT_reduced/schirmer_low/tear_film_instability now
+have producers).
+
+---
+
 ## 2026-07-12 — Session 3 (increment P): Full-build critical audit — 4 real bugs found and fixed
 
 A deliberate verification pass over every module (engine, KB loader, storage,

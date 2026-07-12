@@ -211,8 +211,10 @@ var TOKEN_REGISTRY = {
     "reachable": false
   },
   "TBUT_reduced": {
-    "type_hint": "unknown",
-    "sources": [],
+    "type_hint": "derived_measurement_or_history",
+    "sources": [
+      "engine_derived"
+    ],
     "usage": {
       "req": 0,
       "sup": 0,
@@ -220,7 +222,7 @@ var TOKEN_REGISTRY = {
       "temporal": 0,
       "tests": 1
     },
-    "reachable": false
+    "reachable": true
   },
   "abduction_defect": {
     "type_hint": "unknown",
@@ -5419,8 +5421,10 @@ var TOKEN_REGISTRY = {
     "reachable": false
   },
   "schirmer_low": {
-    "type_hint": "unknown",
-    "sources": [],
+    "type_hint": "derived_measurement_or_history",
+    "sources": [
+      "engine_derived"
+    ],
     "usage": {
       "req": 0,
       "sup": 0,
@@ -5428,7 +5432,7 @@ var TOKEN_REGISTRY = {
       "temporal": 0,
       "tests": 1
     },
-    "reachable": false
+    "reachable": true
   },
   "screen_use_exacerbation": {
     "type_hint": "symptom",
@@ -6005,8 +6009,10 @@ var TOKEN_REGISTRY = {
     "reachable": false
   },
   "tear_film_instability": {
-    "type_hint": "unknown",
-    "sources": [],
+    "type_hint": "derived_measurement_or_history",
+    "sources": [
+      "engine_derived"
+    ],
     "usage": {
       "req": 0,
       "sup": 0,
@@ -6014,7 +6020,7 @@ var TOKEN_REGISTRY = {
       "temporal": 0,
       "tests": 1
     },
-    "reachable": false
+    "reachable": true
   },
   "tear_meniscus_low": {
     "type_hint": "unknown",
@@ -6669,7 +6675,7 @@ var TOKEN_REGISTRY = {
 
 var TOKEN_REGISTRY_STATS = {
   "total": 490,
-  "reachable": 252,
+  "reachable": 255,
   "unreachable_required": [],
   "unreachable_supportive": [
     "IOL_present",
@@ -6743,6 +6749,6 @@ var TOKEN_REGISTRY_STATS = {
     "young_male",
     "younger_age"
   ],
-  "test_label_only": 163,
+  "test_label_only": 160,
   "produced_never_consumed": 19
 };

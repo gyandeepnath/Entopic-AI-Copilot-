@@ -353,6 +353,7 @@ function renderScoringLayer() {
     h += '<span style="font-weight:500">' + r.name + '</span>';
     h += '<span style="color:var(--sv)"> req:' + (sd.reqMatched || 0) + '/' + ((sd.reqMatched || 0) + (sd.reqMissing || 0)) + '</span>';
     h += '<span style="color:var(--sv)"> sup:' + (sd.supMatched || 0) + '</span>';
+    if (sd.testsMatched) h += '<span style="color:var(--sv)"> tests:' + sd.testsMatched + '</span>';
     if (sd.conMatched > 0) h += '<span style="color:var(--md)"> con:-' + sd.conMatched + '</span>';
     if (sd.tempMatch) h += '<span style="color:var(--sl)"> temp✓</span>';
     if (r._gateReason) h += '<span style="color:var(--md)"> GATED</span>';
