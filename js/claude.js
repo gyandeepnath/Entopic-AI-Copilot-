@@ -197,9 +197,10 @@ function displayInterpretiveRemarks(text) {
 function buildClinicalSummary() {
   var s = "";
 
-  /* Patient */
-  s += "Patient: " + (P.first_name || "") + " " + (P.last_name || "");
-  s += ", Age: " + (P.age || "?") + ", Sex: " + (P.sex || "?") + "\n";
+  /* Patient — de-identified. PII (name/MRN/DOB/contact) must NEVER be sent
+     to the LLM API; age + sex are the only demographics with clinical value
+     for interpretive remarks. */
+  s += "Patient: Age " + (P.age || "?") + ", Sex " + (P.sex || "?") + "\n";
 
   /* CC */
   if (V.cc) s += "CC: " + V.cc + "\n";

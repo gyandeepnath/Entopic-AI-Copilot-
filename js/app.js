@@ -378,6 +378,7 @@ function newPatient() {
   var mrn = "EP-" + Date.now().toString(36).toUpperCase();
 
   P = blankPatient(pid, mrn);
+  P.updated = P.created; /* per-record stamp for cloud LWW */
   V = blankVisit();
   CP = pid;
   CV = vid;
@@ -394,7 +395,8 @@ function newPatient() {
     patient_id: pid,
     data: V,
     status: "in_progress",
-    date: new Date().toISOString()
+    date: new Date().toISOString(),
+    updated: new Date().toISOString()
   });
   saveVisits(visits);
 
@@ -431,7 +433,8 @@ function openPatient(pid) {
       patient_id: pid,
       data: V,
       status: "in_progress",
-      date: new Date().toISOString()
+      date: new Date().toISOString(),
+      updated: new Date().toISOString()
     });
     saveVisits(visits);
   }

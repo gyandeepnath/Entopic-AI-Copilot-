@@ -174,11 +174,20 @@ function doSave() {
   var patients = loadPatients();
   for (var j = 0; j < patients.length; j++) {
     if (patients[j].id === CP) {
-      /* Update patient fields without replacing the whole object */
+      /* Update patient fields without replacing the whole object.
+         Stamp `updated` only when the record actually changed — cloud sync
+         uses this per-record stamp for last-writer-wins, so an untouched
+         patient must keep its old stamp (a fresh stamp on every save would
+         let this device silently overwrite another device's newer edit). */
+      var before = JSON.stringify(patients[j]);
       for (var k in P) {
         if (P.hasOwnProperty(k)) {
           patients[j][k] = P[k];
         }
+      }
+      if (JSON.stringify(patients[j]) !== before) {
+        P.updated = new Date().toISOString();
+        patients[j].updated = P.updated;
       }
       break;
     }

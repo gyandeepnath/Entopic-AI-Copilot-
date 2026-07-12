@@ -6,6 +6,75 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-07-12 — Session 3 (increment P): Full-build critical audit — 4 real bugs found and fixed
+
+A deliberate verification pass over every module (engine, KB loader, storage,
+mirror, cloud sync, UI renderers, LLM wrapper) plus an end-to-end headless-
+browser audit of the whole app. Four genuine defects found; all fixed, all
+pinned by new tests.
+
+**1. Flow map crash (stack overflow) — `js/engine.js`**
+The scale optimization (increment K) left a broken fallback in
+`scoreCondition`/`generateEvidence`: when called *without* a shared token Set,
+the membership helper recursed into itself infinitely. The glass-box flow
+map's exclusion layer calls exactly that shape — opening it crashed with a
+RangeError. Fallback now does the intended linear scan. New test
+(`tests/engine-noset.test.js`) pins both call shapes to identical results
+across the whole KB.
+
+**2. Flow map could misreport urgent conditions as excluded — `js/ui-flowmap.js`**
+The exclusion layer re-runs scoring for display but dropped the `urgent` flag,
+so the engine's "urgent conditions are never suppressed" protection didn't
+apply to the *display* — the map could show an urgent condition struck
+through as excluded when the engine actually kept it. The re-run now carries
+`urgent`, matching the real pass. (Display-only; the actual differential and
+alerts were never affected.)
+
+**3. Multi-device data-loss race in cloud sync — `js/cloud-sync.js` + `js/storage.js` + `js/app.js`**
+`cloudDrain` stamped **every** patient with "now" on **every** push, so any
+save on device A made all A's records look newest; device B's LWW merge would
+then overwrite B's own not-yet-pushed edits with stale data — silent data
+loss. Now: patients/visits carry a per-record `updated` stamp (set at
+creation and, in `doSave`, only when the record actually changed), and drain
+pushes each record's own stamp — never "now". Stampless legacy records push
+the epoch so they can never claim to be newest. Pinned by new drain and
+doSave stamping tests (`tests/cloud-sync.test.js`, `tests/storage-stamp.test.js`).
+
+**4. Stale clinical exclusion rules after runtime KB growth — `knowledge/loader.js`**
+`KB_EXCLUSION_MAP` (used by the engine's exclusion stage), `KB_ROUTES`, and
+`KB_TOKEN_STATS` were built once at load and NOT refreshed by
+`rebuildKbIndexes()` — a cloud-loaded/grown KB would run with outdated
+exclusion rules. All derived registries now rebuild together. (The first
+attempt exposed a var-hoisting wipe — initializers running after the build
+erased it — so the initial build call now lives at the end of the file, with
+a comment explaining why. Verified: growth + rebuild refreshes everything.)
+
+**Also in this pass**
+- `js/claude.js` — the interpretive-remarks prompt sent the **patient's full
+  name** to the LLM API, violating the PII guardrail. The summary is now
+  de-identified (age + sex only). Pinned by `tests/llm-privacy.test.js`.
+- `index.html` — removed the prefilled default password ("12345") from the
+  account-setup form.
+
+**Verified:** 89/89 unit tests pass. End-to-end headless-Chromium audit of the
+real app: boots with zero console errors; signup → login → new patient →
+urgent presentation (flashes+floaters+sudden vision loss, IOP 45) → all three
+red-flag alerts fire, differential ranks Retinal Tear (urgent) first; flow map
++ exclusion layer render without crashing; XSS payload stays inert;
+persistence round-trips across reload with the new per-record stamps. Supabase
+security advisors: clean (0 findings).
+
+**Known limitations documented (not silently fixed):** LWW compares timestamp
+strings lexically (server `+00:00` vs local `Z` formats can misorder within
+the same millisecond — negligible in practice); the server upsert itself is
+last-push-wins (client-side LWW mitigates; a server-side guard is future
+work); the Realtime socket doesn't refresh its JWT mid-connection (after
+token expiry the 12 s polling fallback covers liveness). Local app login
+remains a device-local convenience gate (plaintext in localStorage) — see
+NEEDS_REVIEW.
+
+---
+
 ## 2026-07-11 — Session 3 (increment O): Update Claude API model to current release
 
 **What**

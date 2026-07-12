@@ -116,6 +116,40 @@ test("disabled config → sync fully dormant", () => {
   assert.ok(!sb.CLOUD.dirty.patients, "disabled → nothing queued");
 });
 
+test("drain pushes each record's OWN stamp — never 'now' for untouched records", () => {
+  /* If drain stamped every record with the current time, any save on one
+     device would make ALL its records look "newest" and silently overwrite
+     other devices' unpushed edits (LWW data loss). */
+  const calls = [];
+  const sb = makeSandbox({
+    patients: [
+      { id: "p1", first_name: "A", updated: "2026-07-01T08:00:00.000Z" },
+      { id: "p2", first_name: "B", created: "2026-06-01T08:00:00.000Z" }, /* legacy: no updated */
+      { id: "p3", first_name: "C" } /* no stamps at all */
+    ],
+    visits: [
+      { id: "v1", patient_id: "p1", updated: "2026-07-02T09:00:00.000Z" },
+      { id: "v2", patient_id: "p1", date: "2026-07-03T10:00:00.000Z" } /* legacy: date only */
+    ]
+  });
+  sb.fetch = function (url, opts) {
+    calls.push({ url, body: JSON.parse(opts.body) });
+    return { then: function () { return { catch: function () {} }; } };
+  };
+  sb.CLOUD.session = { access_token: "t", refresh_token: "r", user_id: "u", email: "e" };
+  sb.CLOUD.clinicId = "c1";
+  sb.CLOUD.dirty = { patients: true, visits: true };
+  sb.cloudDrain();
+
+  const pats = calls.find((c) => c.url.indexOf("/patients") >= 0).body;
+  assert.strictEqual(pats[0].updated_at, "2026-07-01T08:00:00.000Z", "uses record.updated");
+  assert.strictEqual(pats[1].updated_at, "2026-06-01T08:00:00.000Z", "falls back to created");
+  assert.strictEqual(pats[2].updated_at, new Date(0).toISOString(), "stampless legacy record gets epoch (never claims to be newest)");
+  const vis = calls.find((c) => c.url.indexOf("/visits") >= 0).body;
+  assert.strictEqual(vis[0].updated_at, "2026-07-02T09:00:00.000Z", "visit uses updated");
+  assert.strictEqual(vis[1].updated_at, "2026-07-03T10:00:00.000Z", "visit falls back to date");
+});
+
 test("status reflects signed-out and no-clinic states", () => {
   const sb = makeSandbox();
   assert.strictEqual(sb.cloudStatus().state, "signedout");

@@ -799,11 +799,11 @@ var SCORE_WEIGHTS = {
 
 function scoreCondition(condition, tokens, tokenSet) {
 
-  /* O(1) membership: build a Set once if the caller didn't pass one.
-     (Callers in the hot loop pass a shared Set for speed at scale.) */
+  /* O(1) membership when the caller passes a shared Set (the hot loop
+     does); otherwise fall back to a linear scan of the token list. */
   var has = tokenSet
     ? function (t) { return tokenSet.has(t); }
-    : function (t) { return has(t); };
+    : function (t) { return tokens.indexOf(t) >= 0; };
 
   var score = 0;
   var maxPossible = 0;
@@ -959,7 +959,7 @@ function applyExclusions(results, tokens) {
 function generateEvidence(condition, tokens, scoreResult, tokenSet) {
   var has = tokenSet
     ? function (t) { return tokenSet.has(t); }
-    : function (t) { return has(t); };
+    : function (t) { return tokens.indexOf(t) >= 0; };
 
   var matched = [];
   var missing = [];

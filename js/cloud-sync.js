@@ -186,8 +186,12 @@ function cloudEnqueue(key) {
 function cloudDrain() {
   if (!cloudSignedIn()) return; /* dirty flags stay set; retried on next start */
   if (CLOUD.dirty.patients) {
+    /* Per-record stamps: a record that wasn't touched keeps its old
+       updated_at, so peers' LWW merge won't see it as "newer" and
+       overwrite their own unpushed edits. Never stamp "now" here. */
     var patients = loadPatients().map(function (p) {
-      return { id: p.id, clinic_id: CLOUD.clinicId, data: p, updated_at: new Date().toISOString() };
+      return { id: p.id, clinic_id: CLOUD.clinicId, data: p,
+               updated_at: p.updated || p.created || new Date(0).toISOString() };
     });
     if (patients.length) {
       cloudApi("/rest/v1/patients?on_conflict=id", {
@@ -198,7 +202,7 @@ function cloudDrain() {
   if (CLOUD.dirty.visits) {
     var visits = loadVisits().map(function (v) {
       return { id: v.id, clinic_id: CLOUD.clinicId, patient_id: v.patient_id, data: v,
-               updated_at: v.updated || new Date().toISOString() };
+               updated_at: v.updated || v.date || new Date(0).toISOString() };
     });
     if (visits.length) {
       cloudApi("/rest/v1/visits?on_conflict=id", {

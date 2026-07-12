@@ -128,6 +128,19 @@ IndexedDB safety mirror (increment J) removes the "clear cache = lose clinic"
 risk. A full IndexedDB primary store (replacing localStorage) remains a future
 option but is lower priority now that the mirror + cloud backup exist.
 
+### 🟦 Local app login is a convenience gate, not a security boundary
+The in-app username/password (the very first screen) is stored **in plain
+text in the browser's localStorage**, and all clinic data in localStorage is
+readable by anyone with access to the device profile anyway. So this login
+deters casual access only — it is not encryption and not real authentication.
+(The **cloud** login is real authentication — Supabase Auth with proper
+hashing.) Options, in increasing effort: (a) accept it as a device-local gate
+and say so in the UI; (b) hash the stored password (stops shoulder-surfing
+the storage, still doesn't protect the data itself); (c) encrypt clinic data
+at rest with a key derived from the password — real protection, but a
+forgotten password then means unrecoverable local data. Recommendation: (a)
+now, revisit (c) if devices are shared. Your call.
+
 ### 🟦 Offline-first: fonts load from a CDN
 `index.html` pulls web fonts from Google Fonts. Cosmetic (system-font
 fallback works), but it's a network dependency in an offline-first app.

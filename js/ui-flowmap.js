@@ -390,7 +390,11 @@ function renderExclusionLayer() {
       if (routes.indexOf(cond.route) < 0) continue;
       var sr = scoreCondition(cond, tokens);
       if (sr.score > 0) {
-        allResults.push({ name: cond.name, score: sr.score, route: cond.route });
+        /* Carry `urgent` so this display-only re-run applies the same
+           "urgent is never excluded" protection as the real engine pass —
+           otherwise the flow map could show an urgent condition as
+           excluded when the engine actually kept it. */
+        allResults.push({ name: cond.name, score: sr.score, route: cond.route, urgent: cond.urgent || false });
       }
     }
   }

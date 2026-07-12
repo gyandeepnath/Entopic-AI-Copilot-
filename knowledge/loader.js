@@ -104,7 +104,10 @@ var KB_META = {
 
 var KB_ROUTES = {};
 
-(function buildRouteRegistry() {
+/* (Re)built inside rebuildKbIndexes() below, so a KB that is grown or
+   reloaded at runtime refreshes this alongside the performance indexes. */
+function rebuildRouteRegistry() {
+  KB_ROUTES = {};
   for (var i = 0; i < KNOWLEDGE_ALL.length; i++) {
     var route = KNOWLEDGE_ALL[i].route;
     if (!KB_ROUTES[route]) {
@@ -112,7 +115,7 @@ var KB_ROUTES = {};
     }
     KB_ROUTES[route].push(KNOWLEDGE_ALL[i].name);
   }
-})();
+}
 
 
 /* ═══════════════════════════════════════════════════════════════ */
@@ -122,7 +125,8 @@ var KB_ROUTES = {};
 
 var KB_TOKEN_STATS = {};
 
-(function buildTokenStats() {
+/* (Re)built inside rebuildKbIndexes() below. */
+function rebuildTokenStats() {
   var allReq = {};
   var allSup = {};
   var allCon = {};
@@ -154,7 +158,7 @@ var KB_TOKEN_STATS = {};
     totalSupportive: Object.keys(allSup).length,
     totalContradicting: Object.keys(allCon).length
   };
-})();
+}
 
 
 /* ═══════════════════════════════════════════════════════════════ */
@@ -204,8 +208,17 @@ function rebuildKbIndexes() {
       KB_NOREQ_CONDS.push(c);
     }
   }
+  /* Derived registries the engine and UI read must refresh together with
+     the performance indexes — a grown/cloud-loaded KB with a stale
+     exclusion map would apply outdated clinical exclusion rules.
+     (Function declarations hoist, so these are callable here.) */
+  rebuildRouteRegistry();
+  rebuildTokenStats();
+  rebuildExclusionMap();
 }
-rebuildKbIndexes();
+/* NOTE: the initial rebuildKbIndexes() call is at the END of this file —
+   it must run after every `var X = {}` declaration it populates, or the
+   later initializers would wipe the built registries (var hoisting). */
 
 
 /* ═══════════════════════════════════════════════════════════════ */
@@ -268,11 +281,22 @@ function conditionsRequiringToken(token) {
 
 var KB_EXCLUSION_MAP = {};
 
-(function buildExclusionMap() {
+/* (Re)built inside rebuildKbIndexes(). */
+function rebuildExclusionMap() {
+  KB_EXCLUSION_MAP = {};
   for (var i = 0; i < KNOWLEDGE_ALL.length; i++) {
     var c = KNOWLEDGE_ALL[i];
     if (c.exclusions && c.exclusions.length > 0) {
       KB_EXCLUSION_MAP[c.name] = c.exclusions.slice();
     }
   }
-})();
+}
+
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* INITIAL BUILD                                                    */
+/* Must stay at the very end of this file: it populates registries   */
+/* whose `var X = {}` declarations appear above — running it any      */
+/* earlier lets a later initializer wipe what it built.               */
+/* ═══════════════════════════════════════════════════════════════ */
+rebuildKbIndexes();
