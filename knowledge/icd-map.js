@@ -30,6 +30,24 @@
 
 var ICD_MAP = {
 
+  /* ═══ Expansion 2026-07-12 (founder-requested) — all codes verified real
+     and billable via ICD-10 tool; default to unspecified eye/laterality.
+     Every entry NEEDS_CLINICAL_REVIEW like the rest of the map. ═══ */
+  "Orbital Cellulitis":
+    { icd10: "H05.019", label: "Cellulitis of unspecified orbit", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "sight/life-threatening; laterality per patient (H05.011 R / H05.012 L)", verified: "2026-07-12 ICD-10-CM 2026" },
+  "Endophthalmitis":
+    { icd10: "H44.009", label: "Unspecified purulent endophthalmitis, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "purulent bucket; post-op vs endogenous vs parasitic differ (H44.1-)", verified: "2026-07-12 ICD-10-CM 2026" },
+  "Scleritis":
+    { icd10: "H15.009", label: "Unspecified scleritis, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "anterior H15.01- is more specific; code systemic association separately", verified: "2026-07-12 ICD-10-CM 2026" },
+  "Episcleritis":
+    { icd10: "H15.109", label: "Unspecified episcleritis, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "nodular H15.12- if nodular", verified: "2026-07-12 ICD-10-CM 2026" },
+  "Thyroid Eye Disease":
+    { icd10: "H05.20", label: "Unspecified exophthalmos", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "site code only; code Graves/thyroid dysfunction (E05.-) and any optic neuropathy separately; H06.2- for dysthyroid exophthalmos may be preferable", verified: "2026-07-12 ICD-10-CM 2026" },
+  "Horner Syndrome":
+    { icd10: "G90.2", label: "Horner's syndrome", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "neurologic code; underlying cause must be sought and coded", verified: "2026-07-12 ICD-10-CM 2026" },
+  "Migraine with Visual Aura":
+    { icd10: "G43.109", label: "Migraine with aura, not intractable, without status migrainosus", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "neurologic code; ophthalmic exam typically normal", verified: "2026-07-12 ICD-10-CM 2026" },
+
   /* ═══ Glaucoma ═══ */
   "Primary Open Angle Glaucoma (POAG)":
     { icd10: "H40.1190", label: "Primary open-angle glaucoma, unspecified eye, stage unspecified", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", verified: "2026-07-04 ICD-10-CM 2026" },

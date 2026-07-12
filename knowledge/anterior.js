@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════ */
 /* KNOWLEDGE BASE — ANTERIOR / UVEITIS DOMAIN                     */
-/* 10 conditions — Added by system                                 */
+/* 13 conditions — Added by system                                 */
 /* ═══════════════════════════════════════════════════════════════ */
 
 var KB_ANTERIOR = [
@@ -114,6 +114,47 @@ var KB_ANTERIOR = [
   "temporal": ["acute"],
   "tests": ["hypopyon_level", "cells_present"],
   "urgent": true,
+  "exclusions": []
+},
+
+/* NEEDS_CLINICAL_REVIEW (added 2026-07-12, founder-requested expansion):
+   the next three entries are AI-authored textbook feature sets — verify
+   tokens, urgency flags and the scleritis→episcleritis exclusion. */
+{
+  "name": "Endophthalmitis",
+  "route": "urgent",
+  "req": ["pain_severe", "reduced_vision"],
+  "sup": ["post_surgery", "hypopyon_visible", "redness", "photophobia", "lid_swelling_diffuse", "vision_hazy"],
+  "con": [],
+  "temporal": ["acute"],
+  "tests": ["B_scan_ultrasound", "AC_cells_flare"],
+  "urgent": true,
+  "exclusions": []
+},
+
+{
+  "name": "Scleritis",
+  "route": "anterior",
+  "req": ["deep_boring_pain"],
+  "sup": ["pain_worse_night", "redness", "sectoral_redness", "tenderness", "photophobia", "watering", "autoimmune_history"],
+  "con": ["itching_dominant", "purulent_discharge"],
+  "temporal": ["progressive"],
+  "tests": ["phenylephrine_no_blanch", "scleral_edema"],
+  "urgent": true,
+  /* a high-scoring scleritis picture supersedes episcleritis — founder to
+     confirm (episcleritis is benign; scleritis is the sight-threatening one) */
+  "exclusions": ["episcleritis"]
+},
+
+{
+  "name": "Episcleritis",
+  "route": "anterior",
+  "req": ["sectoral_redness"],
+  "sup": ["redness", "watering", "photophobia_mild"],
+  "con": ["pain_severe", "purulent_discharge", "reduced_vision"],
+  "temporal": ["acute", "intermittent"],
+  "tests": ["phenylephrine_blanch"],
+  "urgent": false,
   "exclusions": []
 }
 

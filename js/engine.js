@@ -136,6 +136,26 @@ function collectTokens() {
   }
 
 
+  /* Autoimmune history → token used by Scleritis and others */
+  if (V.hxM && V.hxM.autoimmune) addToken("autoimmune_history");
+
+  /* Pupils: anisocoria + which-is-larger (Horner vs CN III discriminator).
+     od_l / os_l are the light-reaction pupil sizes (mm). */
+  if (V.pupil) {
+    var pod = parseFloat(V.pupil.od_l) || 0;
+    var pos = parseFloat(V.pupil.os_l) || 0;
+    if (pod > 0 && pos > 0 && Math.abs(pod - pos) >= 1) addToken("anisocoria");
+  }
+
+  /* Proptosis / lid retraction from the exophthalmometry fields, when present. */
+  if (V.orbit) {
+    var exOd = parseFloat(V.orbit.exoph_od) || 0;
+    var exOs = parseFloat(V.orbit.exoph_os) || 0;
+    if (exOd >= 21 || exOs >= 21 || Math.abs(exOd - exOs) >= 2) addToken("proptosis");
+    if (V.orbit.lid_retraction) addToken("lid_retraction");
+  }
+
+
   /* ── SOURCE 7: Ocular history flags ── */
   if (V.hxO && V.hxO.flags) {
     for (var oi = 0; oi < V.hxO.flags.length; oi++) {

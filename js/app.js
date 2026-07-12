@@ -347,6 +347,18 @@ function cloudUiSyncNow() { if (typeof cloudPull === "function") cloudPull(funct
 
 function showKBInfo() {
   var h = "";
+  /* Version + remote-update status (kb-remote.js) */
+  if (typeof kbRemoteStatus === "function") {
+    var ks = kbRemoteStatus();
+    h += '<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--fg)">' +
+      '<span style="font-size:.6rem;color:var(--sl)">v' + escH(ks.version) + ' · ' + escH(ks.source) +
+      ' · ' + ks.conditions + ' conditions' +
+      (ks.pending ? ' · <b>update ' + escH(ks.pending) + ' ready — applies on next restart</b>' : '') +
+      '</span>' +
+      '<button class="btn btn-s" style="font-size:.55rem;padding:2px 6px" onclick="kbUiCheckUpdates()">Check for updates</button>' +
+      '<span id="kbUpdMsg" style="font-size:.55rem;color:var(--md)"></span>' +
+      '</div>';
+  }
   if (typeof KNOWLEDGE_DOMAINS !== "undefined") {
     for (var domain in KNOWLEDGE_DOMAINS) {
       var conds = KNOWLEDGE_DOMAINS[domain];
@@ -365,6 +377,25 @@ function showKBInfo() {
   }
   document.getElementById("kbInfoContent").innerHTML = h;
   openModal("modalKBInfo");
+}
+
+function kbUiCheckUpdates() {
+  var msg = document.getElementById("kbUpdMsg");
+  if (msg) msg.textContent = "Checking…";
+  if (typeof kbRemoteCheck !== "function") { if (msg) msg.textContent = "Unavailable."; return; }
+  kbRemoteCheck(function (err, outcome) {
+    if (!msg) return;
+    var text = {
+      applied: "Updated! Reopen this window to see the new list.",
+      deferred: "Update downloaded — applies after this exam / on restart.",
+      current: "Already up to date.",
+      none: "No published updates.",
+      rejected: "Update rejected (failed safety validation) — kept current KB.",
+      disabled: "Cloud is disabled.",
+      error: "Couldn't reach the update server (offline?)."
+    }[outcome] || outcome;
+    msg.textContent = text;
+  });
 }
 
 

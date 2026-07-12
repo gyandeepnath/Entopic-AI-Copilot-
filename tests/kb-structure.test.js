@@ -22,10 +22,10 @@ test("knowledge base loads", () => {
 });
 
 test("current counts are frozen (guard against silent drops)", () => {
-  assert.strictEqual(ALL.length, 130, "expected 130 conditions");
+  assert.strictEqual(ALL.length, 137, "expected 137 conditions");
   assert.strictEqual(Object.keys(kb.KNOWLEDGE_DOMAINS).length, 9, "expected 9 domains");
   const urgent = ALL.filter((c) => c.urgent).length;
-  assert.strictEqual(urgent, 17, "expected 17 urgent-flagged conditions");
+  assert.strictEqual(urgent, 21, "expected 21 urgent-flagged conditions");
 });
 
 test("every condition is structurally well-formed", () => {

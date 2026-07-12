@@ -89,11 +89,12 @@ var KNOWLEDGE_ALL = [];
 /* ═══════════════════════════════════════════════════════════════ */
 
 var KB_META = {
-  version: "1.0.0",
-  date: "2026-03-29",
+  version: "1.1.0",
+  date: "2026-07-12",
   conditions: KNOWLEDGE_ALL.length,
   domains: Object.keys(KNOWLEDGE_DOMAINS).length,
-  author: "Entopic Clinical Team"
+  author: "Entopic Clinical Team",
+  source: "bundled"
 };
 
 

@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════ */
 /* KNOWLEDGE BASE — SURFACE DOMAIN                                 */
-/* 29 conditions — DO NOT MODIFY                                   */
+/* 30 conditions — DO NOT MODIFY                                   */
 /* ═══════════════════════════════════════════════════════════════ */
 
 var KB_SURFACE = [
@@ -208,12 +208,11 @@ var KB_SURFACE = [
   "con": ["proptosis", "restricted_motility"],
   "temporal": ["acute"],
   "tests": ["clinical_exam"],
-  /* NEEDS_CLINICAL_REVIEW: "orbital_cellulitis" does not exist in the KB, so
-     this exclusion can never fire. The intent also looks inverted — if it
-     did fire it would suppress orbital cellulitis (the sight/life-threatening
-     one) whenever preseptal scores high. Founder to decide whether to ADD
-     orbital cellulitis as an urgent condition instead of excluding it. */
-  "exclusions": ["orbital_cellulitis"]
+  /* Resolved 2026-07-12: Orbital Cellulitis now exists as an urgent condition
+     and carries the correct-direction exclusion (orbital supersedes preseptal).
+     The old inverted exclusion here is removed. Preseptal also `con`-tags
+     proptosis/restricted_motility so orbital signs push its own score down. */
+  "exclusions": []
 },
 
 {
@@ -317,6 +316,26 @@ var KB_SURFACE = [
   "con": ["pain", "vision_loss"],
   "tests": ["slitlamp_general"],
   "exclusions": []
+},
+
+/* NEEDS_CLINICAL_REVIEW (added 2026-07-12, founder-requested expansion):
+   textbook feature set, AI-authored — verify tokens, urgency and the
+   exclusion of preseptal cellulitis before trusting rankings. Resolves the
+   NEEDS_REVIEW dead-end (preseptal's exclusion pointed at a condition that
+   didn't exist). Orbital cellulitis is sight/life-threatening. */
+{
+  "name": "Orbital Cellulitis",
+  "route": "urgent",
+  "req": ["lid_swelling_diffuse", "pain_eye_movement"],
+  "sup": ["proptosis", "restricted_motility", "fever", "redness", "reduced_vision", "diplopia", "tenderness"],
+  "con": [],
+  "temporal": ["acute"],
+  "tests": ["CT_orbits_imaging", "RAPD_check"],
+  "urgent": true,
+  /* orbital findings supersede a preseptal picture; preseptal is not urgent
+     so this exclusion CAN suppress it when orbital scores high — founder to
+     confirm that is the wanted behaviour */
+  "exclusions": ["preseptal_cellulitis"]
 }
 
 ];

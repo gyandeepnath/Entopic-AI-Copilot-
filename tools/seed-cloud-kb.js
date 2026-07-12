@@ -65,10 +65,7 @@ function build() {
     "  icd_label=excluded.icd_label, provenance=excluded.provenance, updated_at=now();\n";
 
   if (versionArg) {
-    const bundle = {};
-    for (const [domain, conds] of Object.entries(kb.KNOWLEDGE_DOMAINS)) {
-      bundle[domain] = conds.map(({ _domain, _index, ...rest }) => rest);
-    }
+    const bundle = buildBundle();
     sql += "\ninsert into public.kb_versions (version, notes, bundle, published)\n" +
       "values (" + sqlStr(versionArg) + ", 'seeded from local KB', " +
       sqlStr(JSON.stringify(bundle)) + "::jsonb, true)\n" +
@@ -78,10 +75,22 @@ function build() {
   return { sql, count: rows.length };
 }
 
+/* The exact bundle shape written to kb_versions.bundle — the same object the
+   in-app remote-updater (js/kb-remote.js) downloads and validates. Exported
+   so a test can prove the publish/consume contract without a network. */
+function buildBundle() {
+  const kb = loadKnowledgeBase();
+  const bundle = {};
+  for (const [domain, conds] of Object.entries(kb.KNOWLEDGE_DOMAINS)) {
+    bundle[domain] = conds.map(({ _domain, _index, ...rest }) => rest);
+  }
+  return bundle;
+}
+
 if (require.main === module) {
   const { sql, count } = build();
   process.stdout.write(sql);
   process.stderr.write("\n-- " + count + " conditions" + (versionArg ? " + version " + versionArg : "") + "\n");
 }
 
-module.exports = { build };
+module.exports = { build, buildBundle };

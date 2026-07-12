@@ -38,6 +38,32 @@ marked `caution` in the file are the judgment calls that most need your eye:
 Laterality/stage capture in the UI is still a product decision (the coding
 page currently shows a laterality dropdown but doesn't yet drive the code).
 
+### 🟧 Seven new conditions (2026-07-12 expansion) — verify before trusting
+Added to reduce dangerous KB gaps; each is an **AI-authored textbook feature
+set**, provisional until you confirm. Flagged inline in the KB files too.
+- **Orbital Cellulitis** (urgent) — req `lid_swelling_diffuse` +
+  `pain_eye_movement`; excludes preseptal cellulitis (correct direction).
+  Confirm the feature set and that suppressing preseptal when orbital scores
+  high is what you want.
+- **Endophthalmitis** (urgent) — req `pain_severe` + `reduced_vision`, sup
+  includes `post_surgery`, `hypopyon_visible`. Confirm.
+- **Scleritis** (urgent) vs **Episcleritis** (benign) — scleritis req
+  `deep_boring_pain`; excludes episcleritis when it scores high. Confirm the
+  discriminators (deep boring pain, pain worse at night, phenylephrine
+  no-blanch) and that scleritis should be flagged urgent.
+- **Thyroid Eye Disease** — req `proptosis`; sup `thyroid_history`,
+  `lid_retraction`, restrictive diplopia. Confirm.
+- **Horner Syndrome** (urgent) — req `ptosis` + `anisocoria`; **`con:
+  diplopia`** is the discriminator vs CN III palsy — confirm that's clinically
+  right. Confirm urgency (an acute painful Horner can be a carotid
+  dissection).
+- **Migraine with Visual Aura** — req `scintillating_scotoma`; `con: redness,
+  field_loss`. Confirm.
+
+ICD-10 codes for all seven were looked up as real/billable (FY2026) but
+default to unspecified eye/laterality and some are site/neurologic buckets —
+same review status as the rest of `icd-map.js`.
+
 ### 🟥 Leukocoria alert wording
 `js/engine.js` now fires an urgent alert on the `leukocoria` token:
 > "Leukocoria — URGENT referral: rule out retinoblastoma / congenital cataract"
@@ -45,44 +71,40 @@ page currently shows a laterality dropdown but doesn't yet drive the code).
 Engineering added this phrasing. Please confirm the wording and the referral
 urgency are what you want a clinician to see.
 
-### 🟧 Unresolvable exclusion targets (2 remaining)
-Two exclusion rules point at conditions that don't exist in the KB, so they
-can never fire (flagged inline with `NEEDS_CLINICAL_REVIEW`):
+### 🟧 Unresolvable exclusion targets (1 remaining)
+One exclusion rule still points at a condition that doesn't exist in the KB,
+so it can never fire (flagged inline with `NEEDS_CLINICAL_REVIEW`):
 - **Dry Eye (Evaporative/MGD)** excludes `acute_keratitis` — no such condition.
   Which keratitis (if any) should this suppress?
-- **Preseptal Cellulitis** excludes `orbital_cellulitis` — no such condition,
-  and the intent looks inverted (it would suppress the sight-threatening one).
-  Recommendation: **add Orbital Cellulitis as an urgent condition** rather than
-  excluding it. Your call.
+
+~~Preseptal Cellulitis excludes `orbital_cellulitis`~~ — **RESOLVED
+2026-07-12**: Orbital Cellulitis added as an urgent condition with the
+correct-direction exclusion; the inverted rule was removed.
 
 ---
 
 ## Scoring / methodology (affects diagnostic ranking — your call)
 
-### 🟧 Sparse-definition score inflation
-The engine normalizes each condition's score against *its own* maximum
-possible score. A side effect: a condition with **fewer supportive tokens**
-scores higher than a richer one on identical evidence, because its denominator
-is smaller. Concrete, reproducible example — classic chronic dry-eye
-presentation (`dryness, burning, worse_evening, grittiness`, TBUT 4/5s):
+### 🟧 Sparse-definition score inflation — RESOLVED 2026-07-12 (please sanity-check)
+**Fixed** at your go-ahead. The engine no longer normalizes against each
+condition's own maximum (the mechanism that let leaner definitions win).
+Score is now: required-criteria fraction (60%) + saturating credit for
+*matched* supportive tokens (25%) + saturating credit for *matched* objective
+tests (15%), with per-contradiction penalties and a small temporal
+multiplier. The textbook dry-eye picture now ranks correctly:
 
-| Condition | Supportive tokens defined | Score |
+| Condition | Old score | New score |
 |---|---|---|
-| Exposure Keratopathy (Surface Related) | 3 | **0.67** |
-| Dry Eye Disease – Aqueous Deficient | 4 | 0.64 |
-| Dry Eye Disease – Evaporative (MGD) | 6 | 0.61 |
+| Dry Eye Disease – Evaporative (MGD) | 0.61 (3rd) | **0.89 (1st)** |
+| Dry Eye Disease – Aqueous Deficient | 0.64 | 0.74 |
+| Exposure Keratopathy (Surface Related) | **0.67 (1st)** | 0.68 |
 
-Exposure keratopathy leads a textbook dry-eye picture purely because its KB
-entry is leaner. This is the "universal scoring constants" weakness
-(ARCHITECTURE.md gap 5) showing through the **normalization method**, not the
-weight values. It affects rankings across the whole KB.
-
-**Why engineering did not just "fix" it:** any change to the scoring formula
-reorders every differential — a clinical-output change — and the doc
-sequences this as Phase 3 (per-domain weights, then likelihood-ratio scoring)
-which needs your calibration data to do defensibly. Recommendation: tackle it
-as part of that planned scoring rework, with the golden-vignette suite as the
-regression guard. Flagging here so it's a decision, not a silent default.
+All golden vignettes passed unchanged. **What still needs you:** the weights
+(0.60/0.25/0.15, contradiction ×0.55, temporal ×1.08/0.85) are *structural
+engineering constants*, not calibrated clinical statistics. Turning them into
+likelihood-ratio-style values needs real outcome data — that's what the
+registry flywheel is for. Please eyeball a handful of differentials against
+your clinical judgment and tell me if any ranking feels off.
 
 ---
 

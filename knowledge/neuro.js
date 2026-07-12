@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════ */
 /* KNOWLEDGE BASE — NEURO-OPHTHALMIC DOMAIN                        */
-/* 13 conditions — DO NOT MODIFY                                   */
+/* 16 conditions — DO NOT MODIFY                                   */
 /* ═══════════════════════════════════════════════════════════════ */
 
 var KB_NEURO = [
@@ -149,6 +149,47 @@ var KB_NEURO = [
   "con": [],
   "temporal": ["variable"],
   "tests": ["normal_fundus", "neuro_imaging"],
+  "exclusions": []
+},
+
+/* NEEDS_CLINICAL_REVIEW (added 2026-07-12, founder-requested expansion):
+   the next three entries are AI-authored textbook feature sets — verify
+   tokens, urgency flags and the Horner con:diplopia discriminator. */
+{
+  "name": "Thyroid Eye Disease",
+  "route": "neuro",
+  "req": ["proptosis"],
+  "sup": ["thyroid_history", "lid_retraction", "diplopia", "restricted_motility", "vertical_diplopia", "grittiness", "dryness", "redness"],
+  "con": [],
+  "temporal": ["chronic", "progressive"],
+  "tests": ["exophthalmometry", "thyroid_function_tests"],
+  "urgent": false,
+  "exclusions": []
+},
+
+{
+  "name": "Horner Syndrome",
+  "route": "neuro",
+  "req": ["ptosis", "anisocoria"],
+  "sup": ["headache"],
+  /* CN III palsy causes ptosis WITH diplopia; Horner does not — founder to
+     confirm this discriminator */
+  "con": ["diplopia"],
+  "temporal": [],
+  "tests": ["apraclonidine_test", "anisocoria_dark_greater"],
+  "urgent": true,
+  "exclusions": []
+},
+
+{
+  "name": "Migraine with Visual Aura",
+  "route": "neuro",
+  "req": ["scintillating_scotoma"],
+  "sup": ["headache", "transient_vision_loss", "vomiting", "photophobia"],
+  "con": ["redness", "field_loss"],
+  "temporal": ["intermittent"],
+  "tests": [],
+  "urgent": false,
   "exclusions": []
 }
 

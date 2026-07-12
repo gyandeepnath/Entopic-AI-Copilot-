@@ -6,6 +6,99 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-07-12 — Session 3 (increment S): Knowledge-base expansion (+7 conditions, +tokens, dead-ends resolved)
+
+**Founder-authorized** (asked to expand the KB, tokens, and scoring).
+
+**What** — added 7 clinically important conditions the KB was missing, all
+across three domains, each with a reachability test proving a plausible
+presentation surfaces it:
+- **Orbital Cellulitis** (urgent) — and this **resolves the NEEDS_REVIEW
+  dead-end**: Preseptal Cellulitis's exclusion used to point at a
+  non-existent `orbital_cellulitis` (could never fire, and was inverted).
+  Now orbital exists, is urgent (so it can never be suppressed), carries the
+  correct-direction `orbital → excludes → preseptal`, and preseptal
+  `con`-tags proptosis/restricted_motility so orbital signs lower its score.
+- **Endophthalmitis** (urgent), **Scleritis** (urgent) + **Episcleritis**
+  (benign) with a scleritis→episcleritis exclusion, **Thyroid Eye Disease**,
+  **Horner Syndrome** (urgent) with a `con: diplopia` discriminator vs CN III
+  palsy, **Migraine with Visual Aura**.
+- New presenting tokens wired end-to-end (UI symptom list → tokenizer →
+  KB): `proptosis`, `lid_retraction`, `anisocoria`, `deep_boring_pain`,
+  `pain_worse_night`, `sectoral_redness`, `scintillating_scotoma`. New
+  tokenizer producers: autoimmune history → `autoimmune_history`; pupil
+  size diff → `anisocoria`; a new optional orbit/exophthalmometry field set
+  → `proptosis`/`lid_retraction`.
+- All 7 ICD-10 codes looked up and verified real + billable (FY2026) via the
+  ICD tool; each flagged `NEEDS_CLINICAL_REVIEW` like the rest of the map.
+
+KB is now **137 conditions / 21 urgent / 9 domains** (was 130 / 17). Frozen
+count guard and KB file headers updated.
+
+**Why** — these are common/urgent entities a real ophthalmic tool must not
+miss (orbital cellulitis, endophthalmitis, scleritis, TED). The new scoring
+(increment Q) plus objective-test tokens make the additions rank sensibly.
+
+**Verified** — new suite `tests/engine-new-conditions.test.js` (9 tests): each
+condition surfaces from a plausible presentation; orbital outranks preseptal
+when orbital signs present and is never suppressed; scleritis outranks
+episcleritis; Horner's score drops when diplopia (CN III sign) is present;
+red flags unchanged. Full suite 107/107; e2e browser audit passes (137
+conditions, 0 console errors, all three red flags fire).
+
+**NEEDS_CLINICAL_REVIEW** — the 7 new entries are AI-authored textbook feature
+sets. Founder to verify tokens, urgency flags, and the two new exclusions
+before trusting their rankings (flagged inline in each KB file and in
+NEEDS_REVIEW).
+
+---
+
+## 2026-07-12 — Session 3 (increment R): Remotely-updatable knowledge base
+
+**Founder-authorized** (asked for the KB to be remotely updatable "as many
+times as possible" for expansion/correction/re-wiring).
+
+**What** — `js/kb-remote.js` (new) lets the build owner publish KB updates to
+the cloud and have every installation pick them up with no app rebuild:
+- **Publish** (owner only): `node tools/seed-cloud-kb.js --version X.Y.Z` →
+  apply the SQL (writes `kb_versions`, a published, world-readable bundle).
+  There is **no client write path** to the KB tables — RLS is read-only.
+- **Consume**: at boot the app applies the newest **cached** bundle (works
+  fully offline), then checks the cloud in the background and every 12 h.
+  A newer valid bundle is downloaded, cached, and applied; the KB globals
+  are swapped **in place** and every index rebuilt (increment P made this
+  safe), so the running engine picks it up.
+- **Safety rails** (all fail-closed): a bundle is rejected unless it is
+  structurally valid, has ≥100 conditions, has no duplicate names, and
+  **retains every urgent condition the shipped app knows** (protects
+  sight-threatening entries from accidental deletion — they can still be
+  edited). A bundle downloaded while an exam is open is **deferred** to the
+  next boot so the differential never shifts mid-exam. Red-flag alerts and
+  the advisory-only framing live in **code, not the KB**, so no bundle can
+  disable them.
+- Dashboard KB-info modal shows the live version/source/count and a "Check
+  for updates" button; a pending deferred update is surfaced.
+
+**Why** — the founder is the clinical authority and will correct/expand the
+KB continuously; he must be able to ship those changes to all users without
+an engineer in the loop, and without ever weakening offline-first or safety.
+
+**Verified** — `tests/kb-remote.test.js` (9 tests): validator accepts the real
+KB, fails closed on malformed/gutted/urgent-dropping/duplicate bundles;
+version compare + apply/defer/skip decision matrix; in-place swap rebuilds
+indexes and the REAL engine runs on the updated KB; red flags survive an
+update; ICD backfill applies; and a **publish/consume contract test** proves
+the bundle `tools/seed-cloud-kb.js` emits is exactly what `js/kb-remote.js`
+accepts (guards against the two tools drifting apart). Cloud `kb_versions`
+RLS re-confirmed read-only with no client write path.
+
+**Not verifiable from this sandbox** — the live in-app HTTP fetch from
+`kb_versions` (egress to the project domain is blocked here). The founder
+runs the one-command publish on a normal network; the fetch/validate/apply
+logic it feeds is unit-tested above. Documented in CLOUD_SETUP.md.
+
+---
+
 ## 2026-07-12 — Session 3 (increment Q): Scoring rework — matched-evidence scoring + objective-test confirmation
 
 **Founder-authorized** (this was the NEEDS_REVIEW "sparse-definition score

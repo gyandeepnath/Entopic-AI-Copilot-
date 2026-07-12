@@ -265,6 +265,7 @@ var SYM_CATS = {
     central_blur:        "Central vision blurred",
     central_scotoma:     "Dark spot in center",
     color_vision_loss:   "Colour vision change",
+    scintillating_scotoma: "Shimmering / zig-zag light patch",
     reduced_contrast:    "Reduced contrast / washed out",
     night_blindness:     "Difficulty seeing at dark / night",
     morning_blur:        "Blurred vision on waking"
@@ -299,6 +300,8 @@ var SYM_CATS = {
     pain_moderate:       "Moderate pain",
     pain_morning:        "Pain on waking",
     pain_eye_movement:   "Pain on eye movement",
+    deep_boring_pain:    "Deep, boring / aching pain",
+    pain_worse_night:    "Pain worse at night / wakes from sleep",
     burning:             "Burning / stinging",
     fb_sensation:        "Foreign body sensation",
     grittiness:          "Gritty / sandy feeling",
@@ -315,6 +318,7 @@ var SYM_CATS = {
   /* ── 7. EXTERNAL / SURFACE ── */
   "External & Surface": {
     redness:             "Redness",
+    sectoral_redness:    "Redness in one sector / patch",
     chronic_redness:     "Persistent redness",
     dryness:             "Dryness",
     itching_dominant:    "Itching (main symptom)",
@@ -343,7 +347,10 @@ var SYM_CATS = {
     ptosis:                 "Drooping eyelid",
     fever:                  "Fever (systemic)",
     cracking_skin:          "Cracking skin at lid corners",
-    localized_swelling:     "Localized swelling"
+    localized_swelling:     "Localized swelling",
+    proptosis:              "Bulging / protruding eye",
+    lid_retraction:         "Upper lid pulled back (staring)",
+    anisocoria:             "Unequal pupil sizes"
   },
 
   /* ── 9. FLOATERS & FLASHES ── */
@@ -770,6 +777,15 @@ function blankVisit() {
       saccades: "Normal", pursuits: "Normal",
       hirsch: "Ortho",
       nystagmus: "None",
+      notes: ""
+    },
+
+    /* Orbit / exophthalmometry (drives proptosis / lid_retraction tokens for
+       Thyroid Eye Disease, Orbital Cellulitis). Optional — blank by default;
+       the engine only reads these when present. */
+    orbit: {
+      exoph_od: "", exoph_os: "",
+      lid_retraction: false,
       notes: ""
     },
 
