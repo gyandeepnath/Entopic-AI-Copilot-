@@ -55,6 +55,23 @@ test("every expansion entry passes the linter with ZERO errors", () => {
   assert.deepStrictEqual(offenders, [], "entries with lint errors:\n" + offenders.join("\n"));
 });
 
+test("RICHNESS: every expansion condition carries contradicting findings + a deep profile", () => {
+  /* Fold quality into the batches: a NEW condition is only allowed in if it
+     has real rule-out power (contradicting findings) and a reasonably deep
+     profile — no thin sketches. Keeps the founder's standard enforced as the
+     KB grows. */
+  const thinCon = [], thinProfile = [];
+  for (const c of expansionList) {
+    if (!(c.con || []).length) thinCon.push(c.name);
+    const fire = new Set([...(c.req || []), ...(c.sup || []), ...(c.con || []), ...(c.temporal || []), ...(c.tests || [])]
+      .filter((t) => REG[t] && REG[t].reachable !== false)).size;
+    if (fire < 8) thinProfile.push(c.name + " (" + fire + ")");
+  }
+  assert.deepStrictEqual(thinCon, [], "expansion conditions missing contradicting findings:\n" + thinCon.join("\n"));
+  assert.ok(thinProfile.length <= 6,
+    "too many thin (<8 firing) expansion conditions — enrich them:\n" + thinProfile.join("\n"));
+});
+
 test("every REQUIRED token in the batch is reachable (no dead conditions)", () => {
   const dead = [];
   for (const c of expansionList) {

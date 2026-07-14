@@ -6,6 +6,58 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-07-13 — Session 4 (increment Y): KB-wide richness — deep, integrated token profiles for every condition
+
+**Founder standard:** every condition must carry a rich, fully-integrated set
+of findings (supportive AND contradicting) — not a thin sketch — "the
+diagnostic engine should be absolutely perfect." Baseline was poor: **0/249
+conditions had ≥20 firing tokens, 200 were under 8, 191 had no contradicting
+findings**, and the reachable vocabulary was only 279.
+
+**What**
+
+- **Vocabulary enabler** — wired all 172 selectable slit-lamp/fundus findings
+  to emit their own canonical sign token (not just generic pain/blur), so every
+  observable sign is a precise firing token. Reachable vocabulary **279 → 428**.
+  This is the raw material for RELEVANT depth (vs padding).
+- **Richness standard in the shared linter** (`js/kb-authoring.js`) — the
+  editor now warns live when a condition has too few firing findings or no
+  contradicting findings, and targets ~20 for a fully-integrated profile.
+- **Enriched every remaining curated domain** as bounded rewrites — Glaucoma,
+  Refractive, Binocular, Lens, Surface & Lids (on top of Retina/Neuro/Cornea
+  from increment X). Refractive errors and benign lid/conjunctival lesions gain
+  rich CONTRADICTING profiles (any pathology red-flag rules them out) — exactly
+  the rule-out power the engine lacked.
+- **Enriched all 112 provisional expansion conditions** — deeper supportive
+  findings + real contradicting features per condition. No bulk padding: every
+  added token is a genuine feature or genuine contra for that specific
+  condition.
+- **Folded the standard into the gate + guard** — the batch gate
+  (`kb-expansion.test.js`) now REQUIRES new conditions to have contradicting
+  findings and a non-thin profile; the token-health guard caps dead tokens
+  (≤3), no-con conditions (≤20), thin (<8 firing, ≤50), and holds a KB mean
+  firing floor (≥10). Caps ratchet down as enrichment continues.
+
+**Result (whole KB):** dead sup/con tokens **79 → 1**; conditions with no
+contradicting findings **191 → 17**; conditions under 8 firing tokens
+**200 → 43** (the rest are focused urgent/trauma entries where fewer findings
+is clinically appropriate); **mean firing tokens roughly doubled to ~11.3**,
+with most conditions now in the 12–15 band.
+
+**Verified** — full suite **142/142** (incl. the stress/fuzz suite —
+red-flag un-suppressibility, determinism, KB-wide reachability all still hold
+at the new richness) and both e2e browser audits pass. All enriched/authored
+conditions remain **NEEDS_CLINICAL_REVIEW**.
+
+**Honest status vs the ~20 target:** the KB is now dramatically richer and
+almost entirely free of dead/irrelevant tokens, but the *mean* is ~11–13, not
+20. Pushing every one of 249 to a literal 20 with only real, relevant tokens is
+a continued, per-condition pass (and some focused conditions top out lower by
+nature) — the standard is now enforced and measured so it keeps climbing
+without regressing.
+
+---
+
 ## 2026-07-13 — Session 4 (increment X): KB token-health cleanup (founder-flagged)
 
 **Founder flagged** that a significant portion of conditions had no / very
