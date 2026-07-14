@@ -412,6 +412,34 @@ var TOKEN_REGISTRY = {
     },
     "reachable": false
   },
+  "anterior_synechiae": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
+  "aphakia": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
   "apraclonidine_test": {
     "type_hint": "unknown",
     "sources": [],
@@ -432,6 +460,34 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 1,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
+  "arteriolar_narrowing": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
+  "asteroid_hyalosis": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
       "sup": 0,
       "con": 0,
       "temporal": 0,
@@ -509,6 +565,20 @@ var TOKEN_REGISTRY = {
     },
     "reachable": true
   },
+  "av_nicking": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
   "band_keratopathy": {
     "type_hint": "unknown",
     "sources": [],
@@ -577,6 +647,20 @@ var TOKEN_REGISTRY = {
     },
     "reachable": true
   },
+  "blepharitis_anterior": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
   "blepharitis_history": {
     "type_hint": "derived_measurement_or_history",
     "sources": [
@@ -586,6 +670,20 @@ var TOKEN_REGISTRY = {
     "usage": {
       "req": 0,
       "sup": 1,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
+  "blepharitis_posterior": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -647,6 +745,20 @@ var TOKEN_REGISTRY = {
     },
     "reachable": false
   },
+  "bullae_blisters": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
   "burning": {
     "type_hint": "sign",
     "sources": [
@@ -658,6 +770,34 @@ var TOKEN_REGISTRY = {
     "usage": {
       "req": 0,
       "sup": 7,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
+  "busacca_nodules": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
+  "c_d_asymmetry_0_2": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -697,6 +837,76 @@ var TOKEN_REGISTRY = {
     "usage": {
       "req": 0,
       "sup": 3,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
+  "cells_0_5": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
+  "cells_1": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
+  "cells_2": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
+  "cells_3": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
+  "cells_4": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -750,6 +960,20 @@ var TOKEN_REGISTRY = {
     },
     "reachable": true
   },
+  "chalazion": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
   "chemical_splash": {
     "type_hint": "symptom",
     "sources": [
@@ -757,6 +981,20 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 1,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
+  "chemosis": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
       "sup": 0,
       "con": 0,
       "temporal": 0,
@@ -789,6 +1027,62 @@ var TOKEN_REGISTRY = {
       "tests": 1
     },
     "reachable": false
+  },
+  "choroidal_folds": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
+  "choroidal_lesion_elevated": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
+  "choroidal_nevus_flat": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
+  "choroidal_rupture": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
   },
   "chronic": {
     "type_hint": "derived_measurement_or_history",
@@ -922,8 +1216,10 @@ var TOKEN_REGISTRY = {
     "reachable": true
   },
   "cobblestone_papillae": {
-    "type_hint": "unknown",
-    "sources": [],
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
     "usage": {
       "req": 0,
       "sup": 0,
@@ -931,11 +1227,13 @@ var TOKEN_REGISTRY = {
       "temporal": 0,
       "tests": 1
     },
-    "reachable": false
+    "reachable": true
   },
   "collarettes": {
-    "type_hint": "unknown",
-    "sources": [],
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
     "usage": {
       "req": 0,
       "sup": 0,
@@ -943,7 +1241,7 @@ var TOKEN_REGISTRY = {
       "temporal": 0,
       "tests": 1
     },
-    "reachable": false
+    "reachable": true
   },
   "color_vision_loss": {
     "type_hint": "derived_measurement_or_history",
@@ -962,9 +1260,25 @@ var TOKEN_REGISTRY = {
     },
     "reachable": true
   },
+  "conjunctival_cyst": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
   "conjunctival_edema": {
-    "type_hint": "unknown",
-    "sources": [],
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
     "usage": {
       "req": 0,
       "sup": 0,
@@ -972,7 +1286,21 @@ var TOKEN_REGISTRY = {
       "temporal": 0,
       "tests": 1
     },
-    "reachable": false
+    "reachable": true
+  },
+  "conjunctival_foreign_body": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
   },
   "conjunctival_growth_cornea": {
     "type_hint": "sign",
@@ -1106,6 +1434,20 @@ var TOKEN_REGISTRY = {
     },
     "reachable": true
   },
+  "corneal_foreign_body": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
   "corneal_infiltrate": {
     "type_hint": "unknown",
     "sources": [],
@@ -1130,6 +1472,20 @@ var TOKEN_REGISTRY = {
     },
     "reachable": false
   },
+  "corneal_neovascularization": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
   "corneal_opacity": {
     "type_hint": "sign",
     "sources": [
@@ -1153,6 +1509,48 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 2,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
+  "corneal_opacity_central": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
+  "corneal_opacity_peripheral": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
+  "corneal_scar": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
       "sup": 0,
       "con": 0,
       "temporal": 0,
@@ -1195,6 +1593,62 @@ var TOKEN_REGISTRY = {
       "con": 0,
       "temporal": 0,
       "tests": 1
+    },
+    "reachable": true
+  },
+  "corneal_thinning_central": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
+  "corneal_thinning_generalized": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
+  "corneal_thinning_inferior": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
+  "cortical_opacity": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
     },
     "reachable": true
   },
@@ -1282,6 +1736,20 @@ var TOKEN_REGISTRY = {
     },
     "reachable": true
   },
+  "cylindrical_dandruff_demodex": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
   "cystic_spaces": {
     "type_hint": "unknown",
     "sources": [],
@@ -1293,6 +1761,20 @@ var TOKEN_REGISTRY = {
       "tests": 1
     },
     "reachable": false
+  },
+  "cystoid_macular_edema_cme": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
   },
   "dark_spots": {
     "type_hint": "symptom",
@@ -1324,8 +1806,10 @@ var TOKEN_REGISTRY = {
     "reachable": true
   },
   "dendritic_ulcer": {
-    "type_hint": "unknown",
-    "sources": [],
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
     "usage": {
       "req": 0,
       "sup": 0,
@@ -1333,7 +1817,7 @@ var TOKEN_REGISTRY = {
       "temporal": 0,
       "tests": 1
     },
-    "reachable": false
+    "reachable": true
   },
   "dermatomal_rash": {
     "type_hint": "unknown",
@@ -1348,8 +1832,10 @@ var TOKEN_REGISTRY = {
     "reachable": false
   },
   "descemet_folds": {
-    "type_hint": "unknown",
-    "sources": [],
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
     "usage": {
       "req": 0,
       "sup": 0,
@@ -1357,7 +1843,7 @@ var TOKEN_REGISTRY = {
       "temporal": 0,
       "tests": 1
     },
-    "reachable": false
+    "reachable": true
   },
   "detached_retina": {
     "type_hint": "unknown",
@@ -1476,6 +1962,34 @@ var TOKEN_REGISTRY = {
     },
     "reachable": true
   },
+  "diffuse_injection": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
+  "dilated_tortuous_veins": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
   "dilated_veins": {
     "type_hint": "unknown",
     "sources": [],
@@ -1519,6 +2033,34 @@ var TOKEN_REGISTRY = {
     },
     "reachable": true
   },
+  "disc_edema_bilateral": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
+  "disc_edema_unilateral": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
   "disc_hemorrhage": {
     "type_hint": "sign",
     "sources": [
@@ -1527,6 +2069,34 @@ var TOKEN_REGISTRY = {
     "usage": {
       "req": 0,
       "sup": 2,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
+  "disc_pallor_partial": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
+  "disc_pallor_total": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -1636,6 +2206,20 @@ var TOKEN_REGISTRY = {
     },
     "reachable": true
   },
+  "dot_blot_hemorrhages": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
   "double_vision_near": {
     "type_hint": "symptom",
     "sources": [
@@ -1663,6 +2247,48 @@ var TOKEN_REGISTRY = {
     },
     "reachable": false
   },
+  "drusen_large_125_m": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
+  "drusen_medium_63_125_m": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
+  "drusen_small_63_m": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
   "dryness": {
     "type_hint": "derived_measurement_or_history",
     "sources": [
@@ -1676,6 +2302,20 @@ var TOKEN_REGISTRY = {
     "usage": {
       "req": 4,
       "sup": 9,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
+  "ectropion": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -1736,6 +2376,20 @@ var TOKEN_REGISTRY = {
     },
     "reachable": false
   },
+  "entropion": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
   "episodic": {
     "type_hint": "unknown",
     "sources": [],
@@ -1761,8 +2415,10 @@ var TOKEN_REGISTRY = {
     "reachable": false
   },
   "epithelial_defect": {
-    "type_hint": "unknown",
-    "sources": [],
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
     "usage": {
       "req": 0,
       "sup": 0,
@@ -1770,7 +2426,7 @@ var TOKEN_REGISTRY = {
       "temporal": 0,
       "tests": 2
     },
-    "reachable": false
+    "reachable": true
   },
   "epithelial_instability": {
     "type_hint": "unknown",
@@ -1783,6 +2439,20 @@ var TOKEN_REGISTRY = {
       "tests": 1
     },
     "reachable": false
+  },
+  "erm_macular_pucker": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
   },
   "eso_deviation_near": {
     "type_hint": "unknown",
@@ -2104,6 +2774,76 @@ var TOKEN_REGISTRY = {
     },
     "reachable": true
   },
+  "flame_hemorrhages": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
+  "flare_1": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
+  "flare_2": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
+  "flare_3": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
+  "flare_4": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
   "flare_present": {
     "type_hint": "sign",
     "sources": [
@@ -2146,6 +2886,20 @@ var TOKEN_REGISTRY = {
       "tests": 1
     },
     "reachable": false
+  },
+  "fleischer_ring": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
   },
   "floaters": {
     "type_hint": "sign",
@@ -2228,6 +2982,20 @@ var TOKEN_REGISTRY = {
     },
     "reachable": false
   },
+  "follicles": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
   "follicles_present": {
     "type_hint": "unknown",
     "sources": [],
@@ -2282,6 +3050,20 @@ var TOKEN_REGISTRY = {
     },
     "reachable": false
   },
+  "foveal_reflex_absent": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
   "fundal_involvement": {
     "type_hint": "unknown",
     "sources": [],
@@ -2314,6 +3096,20 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 1,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
+  "geographic_atrophy": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
       "sup": 0,
       "con": 0,
       "temporal": 0,
@@ -2478,8 +3274,10 @@ var TOKEN_REGISTRY = {
     "reachable": true
   },
   "guttata": {
-    "type_hint": "unknown",
-    "sources": [],
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
     "usage": {
       "req": 0,
       "sup": 0,
@@ -2487,7 +3285,7 @@ var TOKEN_REGISTRY = {
       "temporal": 0,
       "tests": 1
     },
-    "reachable": false
+    "reachable": true
   },
   "halos": {
     "type_hint": "sign",
@@ -2500,6 +3298,20 @@ var TOKEN_REGISTRY = {
     "usage": {
       "req": 0,
       "sup": 7,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
+  "hard_exudates": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -2562,6 +3374,20 @@ var TOKEN_REGISTRY = {
       "tests": 2
     },
     "reachable": false
+  },
+  "heterochromia": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
   },
   "high_ACA_ratio": {
     "type_hint": "derived_measurement_or_history",
@@ -2646,6 +3472,20 @@ var TOKEN_REGISTRY = {
     },
     "reachable": true
   },
+  "hordeolum_stye": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
   "horizontal_diplopia": {
     "type_hint": "symptom",
     "sources": [
@@ -2703,6 +3543,20 @@ var TOKEN_REGISTRY = {
     },
     "reachable": true
   },
+  "hyphema": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
   "hyphema_possible": {
     "type_hint": "unknown",
     "sources": [],
@@ -2722,6 +3576,20 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 1,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
+  "hypopyon": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
       "sup": 0,
       "con": 0,
       "temporal": 0,
@@ -2830,6 +3698,20 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 1,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
+  "increased_c_d_ratio": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
       "sup": 0,
       "con": 0,
       "temporal": 0,
@@ -2951,6 +3833,48 @@ var TOKEN_REGISTRY = {
     },
     "reachable": true
   },
+  "iol_decentered": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
+  "iol_in_bag": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
+  "iol_sulcus": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
   "iridodonesis": {
     "type_hint": "unknown",
     "sources": [],
@@ -2963,6 +3887,20 @@ var TOKEN_REGISTRY = {
     },
     "reachable": false
   },
+  "iris_atrophy": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
   "iris_transillumination": {
     "type_hint": "unknown",
     "sources": [],
@@ -2974,6 +3912,20 @@ var TOKEN_REGISTRY = {
       "tests": 1
     },
     "reachable": false
+  },
+  "irma": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
   },
   "irregular_astigmatism": {
     "type_hint": "sign",
@@ -2990,6 +3942,20 @@ var TOKEN_REGISTRY = {
     },
     "reachable": true
   },
+  "irregular_corneal_surface": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
   "irritation": {
     "type_hint": "sign",
     "sources": [
@@ -3000,6 +3966,20 @@ var TOKEN_REGISTRY = {
     "usage": {
       "req": 0,
       "sup": 7,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
+  "isnt_rule_violation": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -3064,9 +4044,25 @@ var TOKEN_REGISTRY = {
     },
     "reachable": false
   },
+  "koeppe_nodules": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
   "krukenberg_spindle": {
-    "type_hint": "unknown",
-    "sources": [],
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
     "usage": {
       "req": 0,
       "sup": 1,
@@ -3074,7 +4070,7 @@ var TOKEN_REGISTRY = {
       "temporal": 0,
       "tests": 0
     },
-    "reachable": false
+    "reachable": true
   },
   "lacrimal_regurgitation": {
     "type_hint": "unknown",
@@ -3115,8 +4111,10 @@ var TOKEN_REGISTRY = {
     "reachable": true
   },
   "lash_debris": {
-    "type_hint": "unknown",
-    "sources": [],
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
     "usage": {
       "req": 0,
       "sup": 0,
@@ -3124,7 +4122,7 @@ var TOKEN_REGISTRY = {
       "temporal": 0,
       "tests": 1
     },
-    "reachable": false
+    "reachable": true
   },
   "lash_direction_exam": {
     "type_hint": "unknown",
@@ -3177,6 +4175,20 @@ var TOKEN_REGISTRY = {
     },
     "reachable": false
   },
+  "lateral_canthus_inflammation": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
   "lateral_canthus_irritation": {
     "type_hint": "sign",
     "sources": [
@@ -3185,6 +4197,20 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 1,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
+  "lattice_degeneration": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
       "sup": 0,
       "con": 0,
       "temporal": 0,
@@ -3269,6 +4295,20 @@ var TOKEN_REGISTRY = {
     },
     "reachable": true
   },
+  "leukocoria_white_pupillary_reflex": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
   "lid_crusting": {
     "type_hint": "sign",
     "sources": [
@@ -3279,6 +4319,34 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 1,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
+  "lid_edema_diffuse": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
+  "lid_edema_localized": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
       "sup": 0,
       "con": 0,
       "temporal": 0,
@@ -3523,6 +4591,34 @@ var TOKEN_REGISTRY = {
     },
     "reachable": true
   },
+  "macular_edema_clinical": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
+  "macular_hole": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
   "macular_pucker": {
     "type_hint": "unknown",
     "sources": [],
@@ -3546,6 +4642,34 @@ var TOKEN_REGISTRY = {
       "con": 0,
       "temporal": 0,
       "tests": 5
+    },
+    "reachable": true
+  },
+  "macular_star": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
+  "madarosis_lash_loss": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
     },
     "reachable": true
   },
@@ -3593,8 +4717,10 @@ var TOKEN_REGISTRY = {
     "reachable": true
   },
   "meibomian_gland_dropout": {
-    "type_hint": "unknown",
-    "sources": [],
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
     "usage": {
       "req": 0,
       "sup": 0,
@@ -3602,7 +4728,21 @@ var TOKEN_REGISTRY = {
       "temporal": 0,
       "tests": 1
     },
-    "reachable": false
+    "reachable": true
+  },
+  "meibomian_gland_plugging": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
   },
   "meibum_quality_poor": {
     "type_hint": "unknown",
@@ -3616,6 +4756,34 @@ var TOKEN_REGISTRY = {
     },
     "reachable": false
   },
+  "meibum_quality_poor_granular": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
+  "meibum_quality_poor_thick_paste": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
   "microaneurysm": {
     "type_hint": "unknown",
     "sources": [],
@@ -3627,6 +4795,20 @@ var TOKEN_REGISTRY = {
       "tests": 1
     },
     "reachable": false
+  },
+  "microaneurysms": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
   },
   "micropsia": {
     "type_hint": "symptom",
@@ -3932,6 +5114,20 @@ var TOKEN_REGISTRY = {
     },
     "reachable": false
   },
+  "nrr_notching": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
   "nrr_thinning": {
     "type_hint": "derived_measurement_or_history",
     "sources": [
@@ -3958,6 +5154,90 @@ var TOKEN_REGISTRY = {
       "tests": 1
     },
     "reachable": false
+  },
+  "nuclear_sclerosis_grade_1": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
+  "nuclear_sclerosis_grade_2": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
+  "nuclear_sclerosis_grade_3": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
+  "nuclear_sclerosis_grade_4": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
+  "nvd_neovascularization_disc": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
+  "nve_neovascularization_elsewhere": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
   },
   "nystagmus_other_eye": {
     "type_hint": "lexical",
@@ -4210,6 +5490,34 @@ var TOKEN_REGISTRY = {
     },
     "reachable": true
   },
+  "pannus": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
+  "papillae": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
   "papillae_present": {
     "type_hint": "unknown",
     "sources": [],
@@ -4222,6 +5530,62 @@ var TOKEN_REGISTRY = {
     },
     "reachable": false
   },
+  "pavingstone_degeneration": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
+  "pco": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
+  "peripapillary_atrophy_alpha_zone": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
+  "peripapillary_atrophy_beta_zone": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
   "peripheral_corneal_ring": {
     "type_hint": "sign",
     "sources": [
@@ -4230,6 +5594,20 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 1,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
+  "peripheral_corneal_ring_arcus": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
       "sup": 0,
       "con": 0,
       "temporal": 0,
@@ -4294,8 +5672,10 @@ var TOKEN_REGISTRY = {
     "reachable": false
   },
   "phacodonesis": {
-    "type_hint": "unknown",
-    "sources": [],
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
     "usage": {
       "req": 0,
       "sup": 0,
@@ -4303,7 +5683,7 @@ var TOKEN_REGISTRY = {
       "temporal": 0,
       "tests": 1
     },
-    "reachable": false
+    "reachable": true
   },
   "phenylephrine_blanch": {
     "type_hint": "unknown",
@@ -4391,6 +5771,20 @@ var TOKEN_REGISTRY = {
     },
     "reachable": true
   },
+  "pinguecula": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
   "plus_acceptance": {
     "type_hint": "unknown",
     "sources": [],
@@ -4442,6 +5836,20 @@ var TOKEN_REGISTRY = {
       "con": 0,
       "temporal": 0,
       "tests": 1
+    },
+    "reachable": true
+  },
+  "preauricular_lymph_node": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
     },
     "reachable": true
   },
@@ -4518,6 +5926,34 @@ var TOKEN_REGISTRY = {
     },
     "reachable": true
   },
+  "psc_opacity": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
+  "pterygium": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
   "ptosis": {
     "type_hint": "sign",
     "sources": [
@@ -4564,6 +6000,20 @@ var TOKEN_REGISTRY = {
     },
     "reachable": true
   },
+  "punctate_staining_spk": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
   "pupil_abnormal": {
     "type_hint": "unknown",
     "sources": [],
@@ -4601,6 +6051,20 @@ var TOKEN_REGISTRY = {
       "req": 1,
       "sup": 0,
       "con": 11,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
+  "pvd_weiss_ring": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
       "temporal": 0,
       "tests": 0
     },
@@ -4985,8 +6449,10 @@ var TOKEN_REGISTRY = {
     "reachable": true
   },
   "retinal_break": {
-    "type_hint": "unknown",
-    "sources": [],
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
     "usage": {
       "req": 0,
       "sup": 0,
@@ -4994,7 +6460,35 @@ var TOKEN_REGISTRY = {
       "temporal": 0,
       "tests": 1
     },
-    "reachable": false
+    "reachable": true
+  },
+  "retinal_detachment_partial": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
+  "retinal_detachment_total": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
   },
   "retinal_ischemia": {
     "type_hint": "sign",
@@ -5004,6 +6498,34 @@ var TOKEN_REGISTRY = {
     "usage": {
       "req": 1,
       "sup": 2,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
+  "retinal_tear_horseshoe": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
+  "retinal_tear_operculated": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -5034,6 +6556,20 @@ var TOKEN_REGISTRY = {
     },
     "reachable": false
   },
+  "retinoschisis": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
   "risk_detachment": {
     "type_hint": "derived_measurement_or_history",
     "sources": [
@@ -5059,6 +6595,20 @@ var TOKEN_REGISTRY = {
     "usage": {
       "req": 0,
       "sup": 2,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
+  "rpe_changes": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -5104,6 +6654,34 @@ var TOKEN_REGISTRY = {
       "con": 0,
       "temporal": 0,
       "tests": 2
+    },
+    "reachable": true
+  },
+  "schirmer_reduced_10mm": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
+  "schirmer_severely_reduced_5mm": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
     },
     "reachable": true
   },
@@ -5181,8 +6759,10 @@ var TOKEN_REGISTRY = {
     "reachable": true
   },
   "sectoral_hemorrhage": {
-    "type_hint": "unknown",
-    "sources": [],
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
     "usage": {
       "req": 0,
       "sup": 0,
@@ -5190,7 +6770,21 @@ var TOKEN_REGISTRY = {
       "temporal": 0,
       "tests": 1
     },
-    "reachable": false
+    "reachable": true
+  },
+  "sectoral_injection": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
   },
   "sectoral_redness": {
     "type_hint": "symptom",
@@ -5221,6 +6815,20 @@ var TOKEN_REGISTRY = {
     },
     "reachable": true
   },
+  "shafer_sign_tobacco_dust": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
   "shallow_ac": {
     "type_hint": "derived_measurement_or_history",
     "sources": [
@@ -5233,6 +6841,20 @@ var TOKEN_REGISTRY = {
       "con": 1,
       "temporal": 0,
       "tests": 1
+    },
+    "reachable": true
+  },
+  "silver_copper_wiring": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
     },
     "reachable": true
   },
@@ -5447,8 +7069,10 @@ var TOKEN_REGISTRY = {
     "reachable": true
   },
   "stromal_infiltrate": {
-    "type_hint": "unknown",
-    "sources": [],
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
     "usage": {
       "req": 0,
       "sup": 0,
@@ -5456,7 +7080,7 @@ var TOKEN_REGISTRY = {
       "temporal": 0,
       "tests": 1
     },
-    "reachable": false
+    "reachable": true
   },
   "stromal_inflammation": {
     "type_hint": "lexical",
@@ -5511,6 +7135,20 @@ var TOKEN_REGISTRY = {
     },
     "reachable": true
   },
+  "subconjunctival_hemorrhage": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
   "subepithelial_nodules": {
     "type_hint": "sign",
     "sources": [
@@ -5526,9 +7164,25 @@ var TOKEN_REGISTRY = {
     },
     "reachable": true
   },
+  "subluxation": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
   "subretinal_fluid": {
-    "type_hint": "unknown",
-    "sources": [],
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
     "usage": {
       "req": 0,
       "sup": 0,
@@ -5536,7 +7190,21 @@ var TOKEN_REGISTRY = {
       "temporal": 0,
       "tests": 3
     },
-    "reachable": false
+    "reachable": true
+  },
+  "subretinal_hemorrhage_cnv": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
   },
   "sudden_floaters": {
     "type_hint": "sign",
@@ -5639,6 +7307,62 @@ var TOKEN_REGISTRY = {
     },
     "reachable": false
   },
+  "tbut_reduced_10s": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
+  "tbut_severely_reduced_5s": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
+  "tear_film_debris": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
+  "tear_film_foamy": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
   "tear_film_instability": {
     "type_hint": "derived_measurement_or_history",
     "sources": [
@@ -5653,9 +7377,25 @@ var TOKEN_REGISTRY = {
     },
     "reachable": true
   },
+  "tear_meniscus_absent": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
   "tear_meniscus_low": {
-    "type_hint": "unknown",
-    "sources": [],
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
     "usage": {
       "req": 0,
       "sup": 0,
@@ -5663,7 +7403,7 @@ var TOKEN_REGISTRY = {
       "temporal": 0,
       "tests": 1
     },
-    "reachable": false
+    "reachable": true
   },
   "tear_overflow": {
     "type_hint": "unknown",
@@ -5788,6 +7528,20 @@ var TOKEN_REGISTRY = {
     },
     "reachable": true
   },
+  "tilted_disc": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
   "topography_abnormal": {
     "type_hint": "unknown",
     "sources": [],
@@ -5841,6 +7595,20 @@ var TOKEN_REGISTRY = {
     },
     "reachable": true
   },
+  "transillumination_defects": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
   "trauma_history": {
     "type_hint": "derived_measurement_or_history",
     "sources": [
@@ -5851,6 +7619,20 @@ var TOKEN_REGISTRY = {
     "usage": {
       "req": 6,
       "sup": 3,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
+  "trichiasis": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -5989,6 +7771,34 @@ var TOKEN_REGISTRY = {
     },
     "reachable": false
   },
+  "venous_beading": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
+  "venous_looping": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
   "vertical_diplopia": {
     "type_hint": "symptom",
     "sources": [
@@ -6091,8 +7901,10 @@ var TOKEN_REGISTRY = {
     "reachable": false
   },
   "vitreous_cells": {
-    "type_hint": "unknown",
-    "sources": [],
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
     "usage": {
       "req": 0,
       "sup": 0,
@@ -6100,7 +7912,7 @@ var TOKEN_REGISTRY = {
       "temporal": 0,
       "tests": 2
     },
-    "reachable": false
+    "reachable": true
   },
   "vitreous_haze": {
     "type_hint": "unknown",
@@ -6114,6 +7926,34 @@ var TOKEN_REGISTRY = {
     },
     "reachable": false
   },
+  "vitreous_hemorrhage": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
+  "vitreous_opacity": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
   "vitreous_separation": {
     "type_hint": "unknown",
     "sources": [],
@@ -6125,6 +7965,20 @@ var TOKEN_REGISTRY = {
       "tests": 1
     },
     "reachable": false
+  },
+  "vogt_striae": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
   },
   "vomiting": {
     "type_hint": "symptom",
@@ -6183,6 +8037,34 @@ var TOKEN_REGISTRY = {
       "tests": 1
     },
     "reachable": false
+  },
+  "white_cataract": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
+  "white_without_pressure": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
   },
   "worse_distance": {
     "type_hint": "symptom",
@@ -6245,14 +8127,13 @@ var TOKEN_REGISTRY = {
 };
 
 var TOKEN_REGISTRY_STATS = {
-  "total": 450,
-  "reachable": 279,
+  "total": 582,
+  "reachable": 428,
   "unreachable_required": [],
   "unreachable_supportive": [
     "acute_discharge",
     "distance_symptoms",
     "exposure_symptoms",
-    "krukenberg_spindle",
     "lid_margin_changes",
     "mid_dilated_pupil",
     "near_symptoms",
@@ -6260,6 +8141,6 @@ var TOKEN_REGISTRY_STATS = {
     "unilateral_asymmetric",
     "unilateral_start"
   ],
-  "test_label_only": 157,
-  "produced_never_consumed": 12
+  "test_label_only": 141,
+  "produced_never_consumed": 144
 };
