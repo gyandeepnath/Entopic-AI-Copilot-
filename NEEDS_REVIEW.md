@@ -32,8 +32,9 @@ process, not a one-shot dump. Two reasons engineering paced it this way:
    therefore pairs more condition batches with **expanding the exam's input
    surface** (more symptoms/signs/measurements → more tokens), so the added
    conditions stay distinct. That input-surface growth is the recommended next
-   engineering increment. **Decision for you:** happy with this
-   quality-gated trajectory, or do you want raw volume prioritized sooner?
+   engineering increment. **DECIDED (2026-07-13): quality-gated trajectory** —
+   grow in validated batches paired with exam-input enrichment; no raw-volume
+   dumping. Cloud/owner publish setup deferred (wanted for the future).
 
 ### 🟧 ICD-10 code mappings — ALL 130 conditions now coded
 Every code in `knowledge/icd-map.js` was looked up and validated as a real,

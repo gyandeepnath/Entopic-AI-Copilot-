@@ -87,7 +87,7 @@ var FINDING_TOKEN_MAP = {
   "Flare — 3+":                     ["pain_severe", "photophobia"],
   "Flare — 4+":                     ["pain_severe", "photophobia"],
   "Hypopyon":                        ["hypopyon_visible", "pain_severe"],
-  "Hyphema":                         ["pain", "trauma_history"],
+  "Hyphema":                         ["pain", "trauma_history", "hyphema_visible"],
   "Fibrin":                          ["pain", "photophobia"],
   "Pigment dispersion":              ["pigment_dispersion"],
 
@@ -145,7 +145,7 @@ var FINDING_TOKEN_MAP = {
   "NVD (neovascularization disc)":   ["retinal_ischemia"],
   "Peripapillary atrophy — alpha zone": [],
   "Peripapillary atrophy — beta zone": ["field_defect"],
-  "Optic pit":                       [],
+  "Optic pit":                       ["optic_pit"],
   "Tilted disc":                     [],
 
   /* ═══ FUNDUS — Macula ═══ */
@@ -162,14 +162,14 @@ var FINDING_TOKEN_MAP = {
   "Macular hole":                    ["central_blur", "central_scotoma"],
   "Foveal reflex absent":           ["central_blur"],
   "Macular star":                    [],
-  "Cherry red spot":                 ["sudden_vision_loss"],
+  "Cherry red spot":                 ["sudden_vision_loss", "cherry_red_spot"],
 
   /* ═══ FUNDUS — Vasculature ═══ */
   "Microaneurysms":                  ["blur", "diabetes_history"],
   "Dot-blot hemorrhages":           ["blur"],
   "Flame hemorrhages":               ["blur"],
   "Hard exudates":                   ["blur"],
-  "Cotton wool spots":               ["blur"],
+  "Cotton wool spots":               ["blur", "cotton_wool_spots"],
   "Venous beading":                  ["retinal_ischemia"],
   "Venous looping":                  ["retinal_ischemia"],
   "IRMA":                           ["retinal_ischemia"],

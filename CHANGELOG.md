@@ -6,6 +6,53 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-07-13 — Session 4 (increment W): Stress/fuzz harness + input-surface enrichment + batch 3 (+24 → 249)
+
+**Founder direction:** quality-gated trajectory + "stress test everything."
+
+**What**
+
+- `tests/stress.test.js` (new, 8 heavy checks) — hammers the whole diagnostic
+  path and pins the invariants that must never break as the KB grows:
+  **3000 random fuzz visits** (never crash, always a bounded/sorted/valid
+  differential with scores in [0,1]); **determinism** (same input → same
+  output); **red-flag un-suppressibility** — each of the 9 urgent alerts must
+  fire buried in heavy random noise (150 iterations each) AND in an
+  "everything-on" visit; **KB-wide reachability** (every one of the 249
+  conditions can surface — no dead entries anywhere); **adversarial/malformed
+  input** (nulls, junk tokens, 500-item arrays, NaN IOP — no crash); **2000
+  validator fuzz drafts**; and a **performance** ceiling. Deterministic PRNG so
+  any failure reproduces.
+- **Input-surface enrichment** (the quality-gated way to add distinct
+  conditions): wired 11 new producible tokens — new patient symptoms
+  (`recent_eye_trauma`, `chemical_splash`, `high_speed_particle`,
+  `jaw_claudication`, `scalp_tenderness`, `oscillopsia`, + a new "Trauma &
+  Injury" symptom category) and gave real tokens to fundus signs that produced
+  nothing or too little (`optic_pit` was **dead**; `cotton_wool_spots`,
+  `cherry_red_spot`, `hyphema_visible` now emit specific signs). Reachable
+  tokens 262 → 273.
+- `knowledge/expansion.js` — **batch 3 adds 24 conditions** built on those new
+  signals so they're genuinely distinct, not near-duplicates: ocular trauma
+  (Chemical Eye Burn, Open Globe, Traumatic Hyphema, Intraocular Foreign Body,
+  Corneal Laceration, Orbital Blowout, Traumatic Optic Neuropathy, Choroidal
+  Rupture, Siderosis, …), systemic/vascular (Malignant Hypertensive
+  Retinopathy, Purtscher, **Occult/Systemic Giant Cell Arteritis** — catches
+  GCA from jaw claudication + scalp tenderness *before* vision loss), nystagmus
+  syndromes, Optic Pit Maculopathy, and immune corneal disease (Mooren, PUK).
+  KB now **249 conditions** (curated 137 + expansion 112).
+
+**Verified** — full suite **135/135** incl. the new stress suite; expansion
+gate green; both e2e browser audits pass (main app 249 conditions, 0 console
+errors; editor still correct). Spot-checks: Chemical Eye Burn tops its
+presentation (0.75, urgent); Occult GCA tops its systemic presentation (0.72,
+urgent). All red-flag invariants proven un-suppressible under fuzzing.
+
+**Status toward 5x:** 249 = **1.82x**. Batch 3 is all
+NEEDS_CLINICAL_REVIEW. The trauma symptom category is now visible in the exam's
+symptom picker (renders dynamically).
+
+---
+
 ## 2026-07-13 — Session 4 (increment V): Expansion batch 2 (+38 → 225) + differential-noise floor
 
 **What**

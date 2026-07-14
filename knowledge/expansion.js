@@ -329,6 +329,94 @@ var KB_EXPANSION = [
   "con": [], "temporal": ["chronic"], "tests": [], "exclusions": [] },
 { "name": "Posterior Polar Cataract", "domain": "Lens", "route": "lens",
   "req": ["gradual_blur", "glare"], "sup": ["family_history", "difficulty_near"],
-  "con": [], "temporal": ["chronic"], "tests": [], "exclusions": [] }
+  "con": [], "temporal": ["chronic"], "tests": [], "exclusions": [] },
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* BATCH 3 (2026-07-13) — paired with input-surface enrichment (new */
+/* trauma/systemic symptom tokens + newly-wired fundus signs). Same */
+/* rules; provisional / NEEDS_CLINICAL_REVIEW.                      */
+/* ═══════════════════════════════════════════════════════════════ */
+
+/* ── Ocular trauma (mostly urgent) ── */
+{ "name": "Chemical Eye Burn", "domain": "Cornea", "route": "urgent",
+  "req": ["chemical_splash"], "sup": ["pain_severe", "redness", "reduced_vision", "watering", "photophobia"],
+  "con": [], "temporal": ["acute"], "tests": [], "urgent": true, "exclusions": [] },
+{ "name": "Open Globe Injury", "domain": "Cornea", "route": "urgent",
+  "req": ["recent_eye_trauma", "reduced_vision"], "sup": ["pain_severe", "redness"],
+  "con": [], "temporal": ["acute"], "tests": [], "urgent": true, "exclusions": [] },
+{ "name": "Traumatic Hyphema", "domain": "Anterior / Uveitis", "route": "urgent",
+  "req": ["hyphema_visible"], "sup": ["recent_eye_trauma", "pain", "reduced_vision", "photophobia"],
+  "con": [], "temporal": ["acute"], "tests": [], "urgent": true, "exclusions": [] },
+{ "name": "Intraocular Foreign Body", "domain": "Cornea", "route": "urgent",
+  "req": ["high_speed_particle", "pain"], "sup": ["reduced_vision", "redness", "foreign_body_sensation"],
+  "con": [], "temporal": ["acute"], "tests": [], "urgent": true, "exclusions": [] },
+{ "name": "Corneal Laceration", "domain": "Cornea", "route": "urgent",
+  "req": ["recent_eye_trauma", "pain_severe"], "sup": ["watering", "redness", "reduced_vision", "photophobia"],
+  "con": [], "temporal": ["acute"], "tests": [], "urgent": true, "exclusions": [] },
+{ "name": "Orbital Blowout Fracture", "domain": "Neuro-Ophthalmic", "route": "urgent",
+  "req": ["recent_eye_trauma", "vertical_diplopia"], "sup": ["restricted_motility", "reduced_vision"],
+  "con": [], "temporal": ["acute"], "tests": [], "urgent": true, "exclusions": [] },
+{ "name": "Traumatic Optic Neuropathy", "domain": "Neuro-Ophthalmic", "route": "urgent",
+  "req": ["recent_eye_trauma", "color_vision_loss"], "sup": ["reduced_vision", "central_scotoma"],
+  "con": [], "temporal": ["acute"], "tests": [], "urgent": true, "exclusions": [] },
+{ "name": "Traumatic Mydriasis", "domain": "Neuro-Ophthalmic", "route": "neuro",
+  "req": ["recent_eye_trauma", "anisocoria"], "sup": ["photophobia_mild", "difficulty_focusing"],
+  "con": [], "temporal": ["acute"], "tests": [], "exclusions": [] },
+{ "name": "Choroidal Rupture", "domain": "Retina", "route": "retina",
+  "req": ["recent_eye_trauma", "central_blur"], "sup": ["reduced_vision", "distortion"],
+  "con": [], "temporal": ["acute"], "tests": [], "exclusions": [] },
+{ "name": "Ocular Siderosis (Retained IOFB)", "domain": "Retina", "route": "retina",
+  "req": ["high_speed_particle", "gradual_blur"], "sup": ["night_blindness", "reduced_vision"],
+  "con": [], "temporal": ["chronic", "progressive"], "tests": [], "exclusions": [] },
+{ "name": "Thermal Eyelid Burn", "domain": "Surface & Lids", "route": "surface",
+  "req": ["recent_eye_trauma", "localized_lid_swelling"], "sup": ["pain", "redness"],
+  "con": [], "temporal": ["acute"], "tests": [], "exclusions": [] },
+
+/* ── Systemic / vascular retinopathy ── */
+{ "name": "Malignant Hypertensive Retinopathy", "domain": "Retina", "route": "urgent",
+  "req": ["cotton_wool_spots", "hypertension_history"], "sup": ["reduced_vision", "headache", "distortion"],
+  "con": [], "temporal": ["subacute"], "tests": [], "urgent": true, "exclusions": [] },
+{ "name": "Purtscher Retinopathy", "domain": "Retina", "route": "retina",
+  "req": ["cotton_wool_spots", "recent_eye_trauma"], "sup": ["reduced_vision", "central_scotoma"],
+  "con": [], "temporal": ["acute"], "tests": [], "exclusions": [] },
+{ "name": "Giant Cell Arteritis (Occult / Systemic)", "domain": "Neuro-Ophthalmic", "route": "urgent",
+  "req": ["jaw_claudication", "scalp_tenderness"], "sup": ["older_age", "headache", "transient_vision_loss"],
+  "con": [], "temporal": ["subacute"], "tests": [], "urgent": true, "exclusions": [] },
+
+/* ── Optic nerve / retina (newly-wired signs) ── */
+{ "name": "Optic Pit Maculopathy", "domain": "Retina", "route": "retina",
+  "req": ["optic_pit"], "sup": ["central_blur", "distortion", "reduced_vision", "micropsia"],
+  "con": [], "temporal": ["chronic"], "tests": ["macular_screening_needed"], "exclusions": [] },
+
+/* ── Neuro-ophthalmology (nystagmus / oscillopsia) ── */
+{ "name": "Acquired Pendular Nystagmus", "domain": "Neuro-Ophthalmic", "route": "neuro",
+  "req": ["oscillopsia"], "sup": ["reduced_vision", "ms_history", "visual_disturbance"],
+  "con": [], "temporal": ["chronic"], "tests": [], "exclusions": [] },
+{ "name": "Spasmus Nutans", "domain": "Neuro-Ophthalmic", "route": "neuro",
+  "req": ["oscillopsia", "young_age"], "sup": ["head_tilt", "visual_disturbance"],
+  "con": [], "temporal": ["chronic"], "tests": [], "exclusions": [] },
+{ "name": "Superior Oblique Myokymia", "domain": "Neuro-Ophthalmic", "route": "neuro",
+  "req": ["oscillopsia", "intermittent_diplopia"], "sup": ["vertical_diplopia", "visual_disturbance"],
+  "con": [], "temporal": ["intermittent"], "tests": [], "exclusions": [] },
+
+/* ── Cornea / ocular surface (immune / surgical) ── */
+{ "name": "Ocular Rosacea", "domain": "Surface & Lids", "route": "surface",
+  "req": ["chronic_redness", "lid_margin_irregularity"], "sup": ["burning", "dryness", "recurrent_episode"],
+  "con": [], "temporal": ["chronic", "recurrent"], "tests": [], "exclusions": [] },
+{ "name": "Mooren Ulcer", "domain": "Cornea", "route": "urgent",
+  "req": ["peripheral_infiltrate", "pain_severe"], "sup": ["redness", "reduced_vision", "photophobia"],
+  "con": [], "temporal": ["progressive"], "tests": [], "urgent": true, "exclusions": [] },
+{ "name": "Peripheral Ulcerative Keratitis", "domain": "Cornea", "route": "urgent",
+  "req": ["peripheral_infiltrate", "autoimmune_history"], "sup": ["pain", "redness", "reduced_vision"],
+  "con": [], "temporal": ["subacute", "progressive"], "tests": [], "urgent": true, "exclusions": [] },
+{ "name": "Toxic Anterior Segment Syndrome", "domain": "Anterior / Uveitis", "route": "urgent",
+  "req": ["post_surgery", "corneal_edema"], "sup": ["redness", "reduced_vision", "pain"],
+  "con": [], "temporal": ["acute"], "tests": [], "urgent": true, "exclusions": [] },
+{ "name": "Vernal Shield Ulcer", "domain": "Cornea", "route": "anterior",
+  "req": ["itching_dominant", "corneal_opacity"], "sup": ["photophobia", "reduced_vision", "young_age"],
+  "con": [], "temporal": ["recurrent"], "tests": [], "exclusions": [] },
+{ "name": "Contact Lens Acute Red Eye (CLARE)", "domain": "Cornea", "route": "anterior",
+  "req": ["contact_lens_use", "redness"], "sup": ["pain", "photophobia", "watering", "reduced_wear_time"],
+  "con": [], "temporal": ["acute"], "tests": [], "exclusions": [] }
 
 ];

@@ -266,6 +266,7 @@ var SYM_CATS = {
     central_scotoma:     "Dark spot in center",
     color_vision_loss:   "Colour vision change",
     scintillating_scotoma: "Shimmering / zig-zag light patch",
+    oscillopsia:         "Objects appear to shake / wobble",
     reduced_contrast:    "Reduced contrast / washed out",
     night_blindness:     "Difficulty seeing at dark / night",
     morning_blur:        "Blurred vision on waking"
@@ -312,7 +313,17 @@ var SYM_CATS = {
     tenderness:          "Tenderness around eye",
     photophobia:         "Light sensitivity",
     photophobia_mild:    "Mild light sensitivity",
+    jaw_claudication:    "Jaw pain / cramping when chewing",
+    scalp_tenderness:    "Tender scalp / temples",
     contact_lens_discomfort: "Discomfort with contact lenses"
+  },
+
+  /* ── TRAUMA & INJURY ── */
+  "Trauma & Injury": {
+    recent_eye_trauma:   "Recent blow / injury to the eye",
+    chemical_splash:     "Chemical / liquid splashed into eye",
+    high_speed_particle: "Metal grinding / high-speed particle hit eye",
+    foreign_body_high_speed: "Something struck the eye at speed"
   },
 
   /* ── 7. EXTERNAL / SURFACE ── */
