@@ -87,7 +87,10 @@ test("end-to-end: high-scoring POAG cannot suppress Acute Angle Closure Crisis",
     {
       symptoms: ["pain_severe", "halos", "nausea_vomiting"],
       iop: { od: "46", os: "24" },
-      fun: { od: { cd_v: "0.7" }, os: { cd_v: "0.5" } },
+      /* glaucomatous disc findings so POAG scores >=0.5 even after the KB
+         enrichment added `halos` (an angle-closure symptom) as a POAG
+         contradictor — this keeps the vignette exercising the exclusion. */
+      fun: { od: { cd_v: "0.7", findings: ["NRR thinning", "Disc hemorrhage"] }, os: { cd_v: "0.5" }, findings: ["NRR thinning", "Disc hemorrhage"] },
       inv: { vf_md_od: "-4.5" },
       hxF: { glaucoma: true },
       temporal: { course: "worsening" }

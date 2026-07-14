@@ -203,11 +203,40 @@ function kbLintCondition(draft, ctx) {
     if (!hit) warn("dead_exclusion", "Exclusion \"" + ex + "\" doesn't match any condition in the KB, so it can never fire. Use the exact condition name or a snake_case fragment of it.");
   });
 
+  /* — richness (the "rich, fully-integrated profile" standard) —
+     Count FIRING tokens: distinct tokens across req/sup/con/temporal/tests
+     that an exam input can actually produce (reachable). The engine reasons
+     best when each condition carries a deep, differentiating profile: a good
+     spread of supportive features AND contradicting ones (what argues
+     against it — this is what lets the engine rule the condition OUT).
+     Targets: >=20 firing tokens, >=10 supportive, some contradicting. */
+  var firingSet = {};
+  ["req", "sup", "con", "temporal", "tests"].forEach(function (f) {
+    c[f].forEach(function (t) {
+      var ti = tokenInfo[t];
+      /* reachable if we have no token info (offline lint) OR it's marked reachable */
+      if (!tokenInfo || Object.keys(tokenInfo).length === 0 || (ti && ti.reachable !== false)) firingSet[t] = true;
+    });
+  });
+  var firing = Object.keys(firingSet).length;
+  var richness = { firing: firing, sup: c.sup.length, con: c.con.length, req: c.req.length };
+  if (firing < 12) {
+    warn("too_thin", "Only " + firing + " firing findings — too thin for reliable ranking. Aim for ~20 (a rich spread of supportive AND contradicting findings). Add the features that support this AND the red-flags that argue against it.");
+  } else if (firing < 20) {
+    info("richness", firing + " firing findings — good; ~20 is the target for a fully-integrated profile. Consider more contradicting findings (what rules this out).");
+  }
+  if (c.con.length === 0) {
+    warn("no_contradicting", "No contradicting findings — the engine can't lower this diagnosis when features that argue against it are present. Add the red-flags / rival features it should be ruled out by.");
+  }
+  if (c.sup.length < 5 && c.req.length > 0) {
+    info("few_supportive", "Only " + c.sup.length + " supportive findings — add more of the features that raise confidence in this diagnosis.");
+  }
+
   /* — provisional reminder — */
   if (!c.icd) info("no_icd", "No ICD-10 code yet — that's fine; it'll be flagged for review. Add one from the coding tool when you can.");
   info("provisional", "Saved entries are marked NEEDS_CLINICAL_REVIEW until you verify them.");
 
-  return { normalized: c, errors: errors, warnings: warnings, infos: infos, similar: similar };
+  return { normalized: c, errors: errors, warnings: warnings, infos: infos, similar: similar, richness: richness };
 }
 
 /* ── browser context builder: reads the loaded globals ── */
