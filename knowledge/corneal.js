@@ -1,7 +1,14 @@
 /* ═══════════════════════════════════════════════════════════════ */
 /* KNOWLEDGE BASE — CORNEAL DOMAIN                                 */
-/* 25 conditions — DO NOT MODIFY                                   */
+/* 25 conditions.                                                   */
+/*                                                                  */
+/* ENRICHED 2026-07-13 (NEEDS_CLINICAL_REVIEW): supportive/          */
+/* contradicting tokens expanded for differentiation; dead tokens    */
+/* (e.g. "skin_rash", "recurrent_pain", "non_healing_epithelium",    */
+/* "blisters_epithelium", "protrusion") replaced with reachable       */
+/* equivalents. Required tokens unchanged. Founder to verify.        */
 /* ═══════════════════════════════════════════════════════════════ */
+"use strict";
 
 var KB_CORNEAL = [
 
@@ -9,8 +16,8 @@ var KB_CORNEAL = [
   "name": "Corneal Abrasion",
   "route": "anterior",
   "req": ["pain_acute"],
-  "sup": ["foreign_body_sensation", "watering", "photophobia_mild", "trauma_history"],
-  "con": ["chronic_course"],
+  "sup": ["foreign_body_sensation", "watering", "photophobia_mild", "trauma_history", "recent_eye_trauma"],
+  "con": ["gradual_onset", "itching_dominant"],
   "temporal": ["acute"],
   "tests": ["fluorescein_positive", "epithelial_defect"],
   "exclusions": ["dry_eye", "allergic_conjunctivitis"]
@@ -21,8 +28,8 @@ var KB_CORNEAL = [
   "route": "urgent",
   "req": ["pain_severe"],
   "sup": ["photophobia", "redness", "reduced_vision", "contact_lens_use"],
-  "con": [],
-  "temporal": ["acute", "rapid_progression"],
+  "con": ["itching_dominant", "gradual_onset"],
+  "temporal": ["acute"],
   "tests": ["corneal_infiltrate", "fluorescein_ulcer", "anterior_chamber_reaction"],
   "urgent": true,
   "exclusions": []
@@ -32,8 +39,8 @@ var KB_CORNEAL = [
   "name": "Herpes Simplex Keratitis",
   "route": "anterior",
   "req": ["pain_moderate"],
-  "sup": ["photophobia", "watering", "recurrent_episode"],
-  "con": ["purulent_discharge"],
+  "sup": ["photophobia", "watering", "recurrent_episode", "reduced_corneal_sensation"],
+  "con": ["purulent_discharge", "itching_dominant"],
   "temporal": ["recurrent"],
   "tests": ["dendritic_ulcer", "fluorescein_branching"],
   "exclusions": []
@@ -43,8 +50,8 @@ var KB_CORNEAL = [
   "name": "Herpes Zoster Ophthalmicus (Corneal)",
   "route": "anterior",
   "req": ["pain_severe"],
-  "sup": ["skin_rash", "photophobia", "reduced_sensation"],
-  "con": [],
+  "sup": ["photophobia", "reduced_corneal_sensation", "older_age", "redness"],
+  "con": ["itching_dominant"],
   "temporal": ["acute"],
   "tests": ["dermatomal_rash", "corneal_involvement"],
   "exclusions": []
@@ -54,8 +61,8 @@ var KB_CORNEAL = [
   "name": "Corneal Ulcer",
   "route": "urgent",
   "req": ["pain_severe"],
-  "sup": ["photophobia", "reduced_vision", "redness"],
-  "con": [],
+  "sup": ["photophobia", "reduced_vision", "redness", "contact_lens_use"],
+  "con": ["itching_dominant"],
   "temporal": ["acute"],
   "tests": ["epithelial_defect", "stromal_infiltrate", "fluorescein_positive"],
   "urgent": true,
@@ -66,8 +73,8 @@ var KB_CORNEAL = [
   "name": "Corneal Edema",
   "route": "anterior",
   "req": ["blur"],
-  "sup": ["halos", "morning_blur", "glare"],
-  "con": ["itching_dominant"],
+  "sup": ["halos", "morning_blur", "glare", "reduced_vision"],
+  "con": ["itching_dominant", "night_blindness"],
   "temporal": ["gradual"],
   "tests": ["stromal_swelling", "descemet_folds"],
   "exclusions": []
@@ -77,8 +84,8 @@ var KB_CORNEAL = [
   "name": "Recurrent Corneal Erosion",
   "route": "anterior",
   "req": ["pain_morning"],
-  "sup": ["recurrent_pain", "watering", "foreign_body_sensation"],
-  "con": [],
+  "sup": ["recurrent_episode", "watering", "foreign_body_sensation", "photophobia_mild"],
+  "con": ["gradual_blur"],
   "temporal": ["recurrent"],
   "tests": ["epithelial_instability"],
   "exclusions": []
@@ -88,8 +95,8 @@ var KB_CORNEAL = [
   "name": "Keratoconus",
   "route": "anterior",
   "req": ["irregular_astigmatism"],
-  "sup": ["progressive_blur", "glare", "ghosting"],
-  "con": ["pain_severe"],
+  "sup": ["progressive_blur", "glare", "ghosting", "young_age"],
+  "con": ["pain_severe", "redness"],
   "temporal": ["progressive"],
   "tests": ["topography_abnormal", "corneal_thinning"],
   "exclusions": []
@@ -99,8 +106,8 @@ var KB_CORNEAL = [
   "name": "Fuchs Endothelial Dystrophy",
   "route": "anterior",
   "req": ["morning_blur"],
-  "sup": ["glare", "halos"],
-  "con": [],
+  "sup": ["glare", "halos", "older_age", "reduced_vision"],
+  "con": ["pain_severe", "redness"],
   "temporal": ["progressive"],
   "tests": ["guttata", "endothelial_loss"],
   "exclusions": []
@@ -110,8 +117,8 @@ var KB_CORNEAL = [
   "name": "Contact Lens Related Keratitis",
   "route": "anterior",
   "req": ["contact_lens_use"],
-  "sup": ["pain", "redness", "photophobia"],
-  "con": [],
+  "sup": ["pain", "redness", "photophobia", "reduced_wear_time"],
+  "con": ["itching_dominant"],
   "temporal": ["acute"],
   "tests": ["corneal_staining"],
   "exclusions": []
@@ -121,8 +128,8 @@ var KB_CORNEAL = [
   "name": "Band Keratopathy",
   "route": "anterior",
   "req": ["corneal_opacity_band"],
-  "sup": ["chronic_irritation", "reduced_vision"],
-  "con": [],
+  "sup": ["chronic_irritation", "reduced_vision", "foreign_body_sensation"],
+  "con": ["pain_severe"],
   "temporal": ["chronic"],
   "tests": ["calcium_deposition", "interpalpebral_band"],
   "exclusions": []
@@ -132,8 +139,8 @@ var KB_CORNEAL = [
   "name": "Arcus Senilis",
   "route": "anterior",
   "req": ["peripheral_corneal_ring"],
-  "sup": ["age_related"],
-  "con": ["pain", "vision_loss"],
+  "sup": ["age_related", "older_age"],
+  "con": ["pain", "reduced_vision"],
   "temporal": ["chronic"],
   "tests": ["lipid_ring"],
   "exclusions": []
@@ -143,8 +150,8 @@ var KB_CORNEAL = [
   "name": "Corneal Scar",
   "route": "anterior",
   "req": ["corneal_opacity"],
-  "sup": ["reduced_vision", "history_trauma_or_infection"],
-  "con": ["pain_acute"],
+  "sup": ["reduced_vision", "history_trauma_or_infection", "glare"],
+  "con": ["pain_acute", "redness"],
   "temporal": ["chronic"],
   "tests": ["opacity_localized"],
   "exclusions": []
@@ -154,8 +161,8 @@ var KB_CORNEAL = [
   "name": "Marginal Keratitis",
   "route": "anterior",
   "req": ["peripheral_infiltrate"],
-  "sup": ["pain", "redness", "blepharitis_history"],
-  "con": [],
+  "sup": ["pain", "redness", "blepharitis_history", "foreign_body_sensation"],
+  "con": ["reduced_vision"],
   "temporal": ["subacute"],
   "tests": ["peripheral_ulceration"],
   "exclusions": []
@@ -165,8 +172,8 @@ var KB_CORNEAL = [
   "name": "Phlyctenular Keratoconjunctivitis",
   "route": "anterior",
   "req": ["limbal_nodule"],
-  "sup": ["photophobia", "watering", "pain"],
-  "con": [],
+  "sup": ["photophobia", "watering", "pain", "young_age"],
+  "con": ["purulent_discharge"],
   "temporal": ["recurrent"],
   "tests": ["nodular_lesion"],
   "exclusions": []
@@ -176,7 +183,7 @@ var KB_CORNEAL = [
   "name": "Interstitial Keratitis",
   "route": "anterior",
   "req": ["stromal_inflammation"],
-  "sup": ["pain", "photophobia", "reduced_vision"],
+  "sup": ["pain", "photophobia", "reduced_vision", "redness"],
   "con": [],
   "temporal": ["chronic"],
   "tests": ["stromal_opacity"],
@@ -187,7 +194,7 @@ var KB_CORNEAL = [
   "name": "Neurotrophic Keratitis",
   "route": "anterior",
   "req": ["reduced_corneal_sensation"],
-  "sup": ["non_healing_epithelium", "minimal_pain"],
+  "sup": ["reduced_vision", "chronic_irritation", "redness"],
   "con": ["pain_severe"],
   "temporal": ["chronic"],
   "tests": ["corneal_sensitivity_test"],
@@ -198,8 +205,8 @@ var KB_CORNEAL = [
   "name": "Bullous Keratopathy",
   "route": "anterior",
   "req": ["corneal_edema"],
-  "sup": ["pain", "blisters_epithelium", "reduced_vision"],
-  "con": [],
+  "sup": ["pain", "reduced_vision", "morning_blur", "glare"],
+  "con": ["itching_dominant"],
   "temporal": ["chronic"],
   "tests": ["epithelial_bullae"],
   "exclusions": []
@@ -209,8 +216,8 @@ var KB_CORNEAL = [
   "name": "Corneal Neovascularization",
   "route": "anterior",
   "req": ["new_vessels_cornea"],
-  "sup": ["chronic_irritation", "contact_lens_history"],
-  "con": [],
+  "sup": ["chronic_irritation", "contact_lens_history", "reduced_vision"],
+  "con": ["pain_severe"],
   "temporal": ["chronic"],
   "tests": ["vascular_ingrowth"],
   "exclusions": []
@@ -220,8 +227,8 @@ var KB_CORNEAL = [
   "name": "Pellucid Marginal Degeneration",
   "route": "anterior",
   "req": ["inferior_corneal_thinning"],
-  "sup": ["high_astigmatism", "blur"],
-  "con": [],
+  "sup": ["irregular_astigmatism", "blur", "progressive_blur"],
+  "con": ["pain_severe", "redness"],
   "temporal": ["progressive"],
   "tests": ["topography_pattern"],
   "exclusions": []
@@ -231,8 +238,8 @@ var KB_CORNEAL = [
   "name": "Keratoglobus",
   "route": "anterior",
   "req": ["generalized_corneal_thinning"],
-  "sup": ["protrusion", "blur"],
-  "con": [],
+  "sup": ["blur", "irregular_astigmatism", "progressive_blur"],
+  "con": ["pain_severe", "redness"],
   "temporal": ["chronic"],
   "tests": ["global_thinning"],
   "exclusions": []
@@ -242,8 +249,8 @@ var KB_CORNEAL = [
   "name": "Salzmann Nodular Degeneration",
   "route": "anterior",
   "req": ["subepithelial_nodules"],
-  "sup": ["irregular_surface", "blur"],
-  "con": [],
+  "sup": ["blur", "foreign_body_sensation", "glare"],
+  "con": ["pain_severe"],
   "temporal": ["chronic"],
   "tests": ["nodular_elevation"],
   "exclusions": []
@@ -253,8 +260,8 @@ var KB_CORNEAL = [
   "name": "Thygeson Superficial Punctate Keratitis",
   "route": "anterior",
   "req": ["punctate_epithelial_lesions"],
-  "sup": ["photophobia", "foreign_body_sensation", "minimal_redness"],
-  "con": [],
+  "sup": ["photophobia", "foreign_body_sensation", "watering", "recurrent_episode"],
+  "con": ["purulent_discharge", "reduced_vision"],
   "temporal": ["recurrent"],
   "tests": ["punctate_staining"],
   "exclusions": []
@@ -264,8 +271,8 @@ var KB_CORNEAL = [
   "name": "Superficial Punctate Keratitis",
   "route": "anterior",
   "req": ["punctate_staining"],
-  "sup": ["dryness", "irritation"],
-  "con": [],
+  "sup": ["dryness", "irritation", "foreign_body_sensation", "photophobia_mild"],
+  "con": ["purulent_discharge"],
   "temporal": ["acute"],
   "tests": ["fluorescein_multiple_spots"],
   "exclusions": []
@@ -275,8 +282,8 @@ var KB_CORNEAL = [
   "name": "Exposure Keratitis",
   "route": "anterior",
   "req": ["corneal_exposure"],
-  "sup": ["dryness", "irritation", "incomplete_blink"],
-  "con": [],
+  "sup": ["dryness", "irritation", "incomplete_blink", "foreign_body_sensation"],
+  "con": ["itching_dominant"],
   "temporal": ["chronic"],
   "tests": ["inferior_staining"],
   "exclusions": []

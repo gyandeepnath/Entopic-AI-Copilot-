@@ -25,30 +25,38 @@ all**, limiting the engine's ability to rule diagnoses *out*.
   evidence now actually fires).
 - **Loader de-dupe** — token lists are de-duplicated on load, so remapping /
   editing can never create a duplicate that double-counts as evidence.
-- **Enriched Retina (22) and Neuro (16)** — bounded clean rewrites giving each
-  condition a richer, DIFFERENTIATING profile: added reachable supportive
-  tokens and, crucially, **contradicting tokens** (e.g. CRAO now `con:
-  pain_severe`; Dry AMD `con: distortion` so a distortion-dominant picture
-  favours Wet AMD; cranial-nerve palsies contradict each other's diplopia
-  axis). Dead tokens stripped. Required tokens unchanged so routing/behaviour
-  and every golden vignette are preserved.
+- **Enriched Retina (22), Neuro (16) and Cornea (25)** — bounded clean rewrites
+  giving each condition a richer, DIFFERENTIATING profile: added reachable
+  supportive tokens and, crucially, **contradicting tokens** (e.g. CRAO now
+  `con: pain_severe`; Dry AMD `con: distortion` so a distortion-dominant
+  picture favours Wet AMD; cranial-nerve palsies contradict each other's
+  diplopia axis; keratitis entries `con: itching_dominant`). Dead tokens
+  stripped. Required tokens unchanged so routing/behaviour and every golden
+  vignette are preserved.
+- **Wired real slit-lamp signs that produced nothing** — the "Ciliary flush",
+  "Cells — n+", "Flare — n+", "Posterior/Anterior synechiae", "Fibrin"
+  findings now emit their specific sign tokens (`ciliary_flush`,
+  `cells_present`, `flare_present`, `synechiae`, `fibrin`), so the uveitis
+  conditions' evidence finally fires. Anterior/Uveitis + Lens dead tokens then
+  remapped to reachable equivalents.
 - **`tests/kb-token-health.test.js` (new, 4 checks)** — makes token quality a
   permanent, measured standard: no dead REQUIRED token anywhere; dead sup/con
-  usages capped (≤45, was 79) and meant to trend down; thin conditions capped
-  (≤35, was 58); no stray no-required-token entries. Caps tighten as
-  enrichment continues.
+  usages capped (now **≤12**, was 79) and meant to keep trending down; thin
+  conditions capped (now **≤32**, was 58); no stray no-required-token entries.
 
-**Result so far:** thin conditions **58 → 33**; dead sup/con usages **79 →
-44**; no-con **191 → 180**. Wet-vs-Dry AMD and CRAO-vs-AION now separate
-correctly on their presentations.
+**Result:** thin conditions **58 → 30**; dead sup/con usages **79 → 10** (an
+87% cut); no-con **191 → 163**. Wet-vs-Dry AMD and CRAO-vs-AION separate
+correctly; uveitis conditions now score on AC cells/flush/synechiae.
 
 **Verified** — full suite **139/139** (incl. stress + the new health guard);
-e2e browser audit passes (249 conditions, red flags fire). All enriched
-conditions are **NEEDS_CLINICAL_REVIEW** (AI-modified clinical content).
+both e2e browser audits pass (249 conditions, red flags fire, editor correct).
+All enriched conditions are **NEEDS_CLINICAL_REVIEW** (AI-modified clinical
+content).
 
-**Ongoing:** the other domains (glaucoma, lens, binocular, refractive, cornea,
-surface) and broad contradicting-token coverage are the next enrichment
-passes — same bounded-rewrite method, guarded by the health test.
+**Ongoing:** the remaining domains (glaucoma, lens details, binocular,
+refractive, surface) and broader contradicting-token coverage (163 conditions
+still have none) are the next enrichment passes — same bounded-rewrite method,
+guarded by the health test.
 
 ---
 

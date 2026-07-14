@@ -39,14 +39,14 @@ test("dead supportive/contradicting token usages stay capped (currently ~44, tre
     if (dead.length) { deadUse += dead.length; offenders.push(c.name + ": " + dead.join(",")); }
   }
   /* CAP — lower this as enrichment continues; do not raise it. */
-  assert.ok(deadUse <= 45, "too many dead sup/con tokens (" + deadUse + " > 45):\n" + offenders.join("\n"));
+  assert.ok(deadUse <= 12, "too many dead sup/con tokens (" + deadUse + " > 12):\n" + offenders.join("\n"));
 });
 
 test("thin conditions (<=3 total req+sup+con tokens) stay capped (currently ~33, trending down)", () => {
   const thin = ALL.filter((c) => ((c.req || []).length + (c.sup || []).length + (c.con || []).length) <= 3)
                   .map((c) => c.name);
   /* CAP — lower this as enrichment continues; do not raise it. */
-  assert.ok(thin.length <= 35, "too many thin conditions (" + thin.length + " > 35):\n" + thin.join("\n"));
+  assert.ok(thin.length <= 32, "too many thin conditions (" + thin.length + " > 32):\n" + thin.join("\n"));
 });
 
 test("every condition has at least one required token OR is intentionally no-req", () => {
