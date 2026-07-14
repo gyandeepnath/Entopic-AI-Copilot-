@@ -6,6 +6,41 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-07-13 — Session 4 (increment V): Expansion batch 2 (+38 → 225) + differential-noise floor
+
+**What**
+
+- `knowledge/expansion.js` — batch 2 adds **38 more provisional conditions**
+  (strabismus/amblyopia, accommodative/vergence, conjunctival & scleral lesions
+  incl. neoplasia, lacrimal, more cornea, retinal vascular/dystrophic, neuro
+  motility, glaucoma/lens). KB is now **225 conditions** (curated 137 +
+  expansion 88). All pass the batch gate.
+- **Differential display floor** (`js/engine.js`): the shown differential now
+  filters out marginal partial-matches (score < 0.15) BUT always keeps
+  safety-gated conditions (e.g. Retinal Detachment on flashes+floaters) and
+  never returns empty when there was signal. Without this, a larger KB's
+  "shares one symptom" entries (a condition matching only one of its two
+  required tokens scores ~0.14) crowded the list and could bury a gated
+  red-flag diagnosis. Surfaced by batch 2; fixed generally.
+
+**Why** — these two engine refinements (this floor + increment U's
+missing-required penalty) are what let the KB grow without the differential
+getting noisier: additions only appear when they genuinely fit.
+
+**Verified** — full suite **127/127**; both e2e browser audits pass (main app:
+225 conditions, red flags fire; editor: valid condition scored, contradiction
+blocked, near-duplicate warned — and it now correctly BLOCKS re-authoring a
+name already in the KB). flashes+floaters differential is clean with Retinal
+Detachment still surfaced. All expansion entries remain NEEDS_CLINICAL_REVIEW.
+
+**Status toward 5x:** 225 = 1.64x. The pipeline is proven and each batch is now
+smooth; reaching 5x continues the same gated process (and, past a few hundred,
+will pair with expanding the exam's input/token surface so conditions stay
+distinguishable rather than becoming mutual near-duplicates — flagged for the
+next sessions).
+
+---
+
 ## 2026-07-13 — Session 4 (increment U): KB expansion infrastructure + provisional batch 1 (+50)
 
 **Founder-authorized** ("expand at least 5x"). This lays the machine for

@@ -1473,8 +1473,26 @@ function runDiagnosticEngine() {
   /* Store results */
   ENGINE_STATE.results = results;
 
+  /* ── Build the shown differential ──
+     Filter out marginal partial matches before taking the top 8. A condition
+     that only partially matched its REQUIRED tokens scores low-but-nonzero;
+     as the KB grows, many such "has one shared symptom" entries would
+     otherwise crowd out the real candidates (and bury safety-gated ones).
+     Keep anything that (a) clears a small confidence floor, or (b) was
+     surfaced by the decision-tree safety gate (e.g. Retinal Detachment on
+     flashes+floaters) — those must always be shown regardless of score. */
+  var DX_FLOOR = 0.15;
+  var shownResults = results.filter(function (r) {
+    return r.score >= DX_FLOOR || r._gateReason;
+  });
+  /* never return empty-handed when there WAS signal: if the floor removed
+     everything, fall back to the single best-scoring result. */
+  if (shownResults.length === 0 && results.length > 0 && results[0].score > 0) {
+    shownResults = [results[0]];
+  }
+
   /* ── Convert to V.dxList format ── */
-  V.dxList = results.slice(0, 8).map(function(r) {
+  V.dxList = shownResults.slice(0, 8).map(function(r) {
     var ev = r._evidence || { matched: [], missing: [], contradicted: [], suggestedTests: [] };
     var conf = interpretConfidence(r.score);
 
