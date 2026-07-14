@@ -11,6 +11,30 @@ Legend: 🟥 clinical-safety-adjacent · 🟧 clinical accuracy · 🟦 product/
 
 ## Clinical content to verify
 
+### 🟧 Expansion batches (88 provisional conditions) — review via the editor
+`knowledge/expansion.js` holds **88 AI-drafted conditions** (batches 1 & 2)
+that grew the KB from 137 → **225**. Every one is structurally valid, can
+actually fire, and doesn't perturb the curated differentials (all enforced by
+`tests/kb-expansion.test.js`) — but the **clinical content is provisional**:
+the token choices are textbook approximations from the existing vocabulary, and
+none have ICD codes yet. Please review them (ideally in the **Knowledge Base
+Editor** → open each, correct tokens/urgency, add an ICD code, save). They are
+segregated in one file, so anything you dislike is trivial to fix or drop.
+
+**Reaching "at least 5x" (≈685):** this is deliberately an ongoing, gated
+process, not a one-shot dump. Two reasons engineering paced it this way:
+1. **Safety** — mass-generating hundreds of "verified-looking" conditions
+   would violate the never-fabricate rule; the gated editor+seeder pipeline
+   keeps every addition provisional and structurally sound.
+2. **Distinguishability** — with the current ~262 producible tokens, past a
+   few hundred conditions new entries start becoming mutual near-duplicates the
+   engine can't tell apart (which would *hurt* accuracy). Getting cleanly to 5x
+   therefore pairs more condition batches with **expanding the exam's input
+   surface** (more symptoms/signs/measurements → more tokens), so the added
+   conditions stay distinct. That input-surface growth is the recommended next
+   engineering increment. **Decision for you:** happy with this
+   quality-gated trajectory, or do you want raw volume prioritized sooner?
+
 ### 🟧 ICD-10 code mappings — ALL 130 conditions now coded
 Every code in `knowledge/icd-map.js` was looked up and validated as a real,
 billable ICD-10-CM 2026 code via the ICD-10 tool — but a *valid* code is not
