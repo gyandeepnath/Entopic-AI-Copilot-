@@ -10,9 +10,9 @@ var KB_GLAUCOMA = [
   "route": "glaucoma",
   "req": ["field_defect"],
   "sup": ["high_iop", "increased_cd", "cd_asymmetry", "nrr_thinning", "disc_hemorrhage", "family_history"],
-  "con": ["acute_pain", "shallow_ac"],
+  "con": ["pain_acute", "shallow_ac"],
   "temporal": ["chronic", "progressive"],
-  "tests": ["visual_field_defect", "RNFL_thinning", "optic_disc_change", "IOP_elevated"],
+  "tests": ["visual_field_defect", "RNFL_thinning", "optic_disc_change", "high_iop"],
   "exclusions": ["acute_angle_closure"]
 },
 
@@ -23,7 +23,7 @@ var KB_GLAUCOMA = [
   "sup": ["high_iop", "narrow_angle", "hyperopia"],
   "con": [],
   "temporal": ["chronic"],
-  "tests": ["gonioscopy_narrow", "IOP_elevated", "van_herick_narrow"],
+  "tests": ["gonioscopy_narrow", "high_iop", "van_herick_narrow"],
   "exclusions": []
 },
 
@@ -31,7 +31,7 @@ var KB_GLAUCOMA = [
   "name": "Acute Angle Closure Crisis",
   "route": "urgent",
   "req": ["pain_severe"],
-  "sup": ["halos", "redness", "nausea_vomiting", "reduced_vision", "mid_dilated_pupil"],
+  "sup": ["halos", "redness", "vomiting", "reduced_vision", "mid_dilated_pupil"],
   "con": [],
   "temporal": ["acute"],
   "tests": ["IOP_very_high", "shallow_ac", "corneal_edema"],
@@ -57,7 +57,7 @@ var KB_GLAUCOMA = [
   "sup": ["family_history", "thin_cornea", "increased_cd"],
   "con": ["field_defect"],
   "temporal": ["chronic"],
-  "tests": ["IOP_elevated", "pachymetry_thin", "baseline_fields"],
+  "tests": ["high_iop", "pachymetry_thin", "baseline_fields"],
   "exclusions": []
 },
 
@@ -68,7 +68,7 @@ var KB_GLAUCOMA = [
   "sup": ["high_iop", "krukenberg_spindle", "myopia", "young_age"],
   "con": [],
   "temporal": ["chronic"],
-  "tests": ["gonioscopy_pigment", "IOP_elevated"],
+  "tests": ["gonioscopy_pigment", "high_iop"],
   "exclusions": []
 },
 
@@ -79,7 +79,7 @@ var KB_GLAUCOMA = [
   "sup": ["high_iop", "older_age", "unilateral_asymmetric"],
   "con": [],
   "temporal": ["chronic"],
-  "tests": ["IOP_elevated", "pxf_on_lens"],
+  "tests": ["high_iop", "pxf_on_lens"],
   "exclusions": []
 },
 

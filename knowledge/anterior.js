@@ -76,10 +76,10 @@ var KB_ANTERIOR = [
   "name": "Herpetic Anterior Uveitis",
   "route": "anterior",
   "req": ["pain"],
-  "sup": ["photophobia", "reduced_corneal_sensation", "raised_iop", "sector_iris_atrophy"],
+  "sup": ["photophobia", "reduced_corneal_sensation", "high_iop", "sector_iris_atrophy"],
   "con": [],
   "temporal": ["recurrent"],
-  "tests": ["stellate_KPs", "iris_transillumination", "IOP_elevated"],
+  "tests": ["stellate_KPs", "iris_transillumination", "high_iop"],
   "exclusions": []
 },
 
@@ -101,7 +101,7 @@ var KB_ANTERIOR = [
   "sup": ["mature_cataract", "phacolytic", "reduced_vision"],
   "con": [],
   "temporal": ["acute"],
-  "tests": ["cells_present", "hypermature_lens", "IOP_elevated"],
+  "tests": ["cells_present", "hypermature_lens", "high_iop"],
   "exclusions": []
 },
 

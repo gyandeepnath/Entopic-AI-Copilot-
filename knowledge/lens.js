@@ -10,9 +10,9 @@ var KB_LENS = [
   "route": "lens",
   "req": ["gradual_blur"],
   "sup": ["glare", "reduced_contrast", "myopic_shift", "older_age", "monocular_diplopia"],
-  "con": ["acute_onset"],
+  "con": ["sudden_onset"],
   "temporal": ["progressive"],
-  "tests": ["nuclear_opacity", "LOCS_grading", "reduced_VA"],
+  "tests": ["nuclear_opacity", "LOCS_grading", "reduced_vision"],
   "exclusions": []
 },
 
@@ -21,7 +21,7 @@ var KB_LENS = [
   "route": "lens",
   "req": ["glare"],
   "sup": ["gradual_blur", "monocular_diplopia", "older_age"],
-  "con": ["acute_onset"],
+  "con": ["sudden_onset"],
   "temporal": ["progressive"],
   "tests": ["cortical_spokes", "LOCS_grading"],
   "exclusions": []
@@ -34,7 +34,7 @@ var KB_LENS = [
   "sup": ["glare", "difficulty_reading", "steroid_history", "younger_age"],
   "con": [],
   "temporal": ["progressive"],
-  "tests": ["PSC_opacity", "LOCS_grading", "reduced_near_VA"],
+  "tests": ["PSC_opacity", "LOCS_grading", "near_blur"],
   "exclusions": []
 },
 
@@ -56,7 +56,7 @@ var KB_LENS = [
   "sup": ["pediatric", "family_history", "nystagmus"],
   "con": [],
   "temporal": ["chronic"],
-  "tests": ["red_reflex_absent", "lens_opacity"],
+  "tests": ["leukocoria", "lens_opacity"],
   "exclusions": []
 },
 
@@ -78,7 +78,7 @@ var KB_LENS = [
   "sup": ["glare", "reduced_vision", "IOL_present"],
   "con": [],
   "temporal": ["progressive"],
-  "tests": ["capsule_opacity", "reduced_VA"],
+  "tests": ["capsule_opacity", "reduced_vision"],
   "exclusions": []
 },
 
@@ -86,7 +86,7 @@ var KB_LENS = [
   "name": "Lens Subluxation / Dislocation",
   "route": "urgent",
   "req": ["lens_displacement"],
-  "sup": ["monocular_diplopia", "fluctuating_vision", "marfan_association", "trauma_history"],
+  "sup": ["monocular_diplopia", "fluctuating_blur", "marfan_association", "trauma_history"],
   "con": [],
   "temporal": ["variable"],
   "tests": ["lens_decentration", "phacodonesis", "iridodonesis"],

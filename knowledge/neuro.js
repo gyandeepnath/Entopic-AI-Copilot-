@@ -1,7 +1,15 @@
 /* ═══════════════════════════════════════════════════════════════ */
 /* KNOWLEDGE BASE — NEURO-OPHTHALMIC DOMAIN                        */
-/* 16 conditions — DO NOT MODIFY                                   */
+/* 16 conditions.                                                   */
+/*                                                                  */
+/* ENRICHED 2026-07-13 (NEEDS_CLINICAL_REVIEW): supportive and       */
+/* contradicting tokens expanded for differentiation; dead tokens    */
+/* (e.g. "painless", "same_side_both_eyes", "brain_origin") replaced */
+/* with reachable equivalents. Required tokens unchanged. Founder to  */
+/* verify. The 2026-07-12 additions (TED, Horner, Migraine) are also  */
+/* still marked for review.                                          */
 /* ═══════════════════════════════════════════════════════════════ */
+"use strict";
 
 var KB_NEURO = [
 
@@ -9,10 +17,10 @@ var KB_NEURO = [
   "name": "Optic Neuritis",
   "route": "neuro",
   "req": ["vision_loss"],
-  "sup": ["pain_eye_movement", "color_vision_loss", "young_age"],
-  "con": ["severe_pain_constant"],
+  "sup": ["pain_eye_movement", "color_vision_loss", "young_age", "reduced_contrast", "central_scotoma"],
+  "con": ["pain_severe", "older_age"],
   "temporal": ["acute"],
-  "tests": ["RAPD", "reduced_color_vision", "normal_or_swollen_disc"],
+  "tests": ["RAPD", "color_vision_loss", "normal_or_swollen_disc"],
   "exclusions": []
 },
 
@@ -20,8 +28,8 @@ var KB_NEURO = [
   "name": "Ischemic Optic Neuropathy (AION)",
   "route": "urgent",
   "req": ["sudden_vision_loss"],
-  "sup": ["painless", "older_age"],
-  "con": [],
+  "sup": ["older_age", "field_defect", "color_vision_loss"],
+  "con": ["pain_severe", "young_age"],
   "temporal": ["acute"],
   "tests": ["disc_edema", "altitudinal_field_defect"],
   "urgent": true,
@@ -32,10 +40,10 @@ var KB_NEURO = [
   "name": "Compressive Optic Neuropathy",
   "route": "urgent",
   "req": ["progressive_vision_loss"],
-  "sup": ["field_defect", "color_vision_loss"],
-  "con": [],
+  "sup": ["field_defect", "color_vision_loss", "reduced_contrast", "proptosis"],
+  "con": ["sudden_onset"],
   "temporal": ["progressive"],
-  "tests": ["optic_atrophy", "visual_field_defect"],
+  "tests": ["pale_disc", "visual_field_defect"],
   "urgent": true,
   "exclusions": []
 },
@@ -44,8 +52,8 @@ var KB_NEURO = [
   "name": "Papilledema",
   "route": "urgent",
   "req": ["bilateral_disc_swelling"],
-  "sup": ["headache", "vomiting", "transient_vision_blur"],
-  "con": [],
+  "sup": ["headache", "vomiting", "transient_vision_loss"],
+  "con": ["sudden_vision_loss"],
   "temporal": ["progressive"],
   "tests": ["disc_edema", "raised_intracranial_pressure"],
   "urgent": true,
@@ -56,8 +64,8 @@ var KB_NEURO = [
   "name": "Third Cranial Nerve Palsy",
   "route": "urgent",
   "req": ["ptosis"],
-  "sup": ["diplopia", "eye_down_out", "pupil_involvement"],
-  "con": [],
+  "sup": ["diplopia", "eye_down_out", "pupil_involvement", "headache"],
+  "con": ["worse_evening"],
   "temporal": ["acute"],
   "tests": ["motility_defect", "pupil_abnormal"],
   "urgent": true,
@@ -68,8 +76,8 @@ var KB_NEURO = [
   "name": "Sixth Cranial Nerve Palsy",
   "route": "neuro",
   "req": ["horizontal_diplopia"],
-  "sup": ["limited_abduction", "worse_distance"],
-  "con": [],
+  "sup": ["limited_abduction", "worse_distance", "diplopia"],
+  "con": ["vertical_diplopia"],
   "temporal": ["acute"],
   "tests": ["abduction_defect"],
   "exclusions": []
@@ -79,8 +87,8 @@ var KB_NEURO = [
   "name": "Fourth Cranial Nerve Palsy",
   "route": "neuro",
   "req": ["vertical_diplopia"],
-  "sup": ["head_tilt", "reading_difficulty"],
-  "con": [],
+  "sup": ["head_tilt", "reading_difficulty", "diplopia"],
+  "con": ["horizontal_diplopia"],
   "temporal": ["chronic"],
   "tests": ["superior_oblique_defect"],
   "exclusions": []
@@ -90,7 +98,7 @@ var KB_NEURO = [
   "name": "Internuclear Ophthalmoplegia (INO)",
   "route": "neuro",
   "req": ["adduction_deficit"],
-  "sup": ["nystagmus_other_eye", "diplopia"],
+  "sup": ["nystagmus_other_eye", "diplopia", "ms_history"],
   "con": [],
   "temporal": ["acute"],
   "tests": ["MLF_lesion_sign"],
@@ -101,8 +109,8 @@ var KB_NEURO = [
   "name": "Homonymous Hemianopia",
   "route": "neuro",
   "req": ["field_loss_half"],
-  "sup": ["same_side_both_eyes"],
-  "con": [],
+  "sup": ["sudden_onset", "older_age", "hypertension_history"],
+  "con": ["temporal_field_loss"],
   "temporal": ["acute"],
   "tests": ["visual_field_test"],
   "exclusions": []
@@ -112,8 +120,8 @@ var KB_NEURO = [
   "name": "Bitemporal Hemianopia",
   "route": "neuro",
   "req": ["temporal_field_loss"],
-  "sup": ["both_eyes"],
-  "con": [],
+  "sup": ["headache", "reduced_vision", "color_vision_loss"],
+  "con": ["field_loss_half"],
   "temporal": ["progressive"],
   "tests": ["chiasmal_lesion_pattern"],
   "exclusions": []
@@ -123,7 +131,7 @@ var KB_NEURO = [
   "name": "Quadrantanopia",
   "route": "neuro",
   "req": ["quadrant_field_loss"],
-  "sup": ["localized_defect"],
+  "sup": ["sudden_onset", "headache"],
   "con": [],
   "temporal": ["acute"],
   "tests": ["visual_field_localization"],
@@ -134,10 +142,10 @@ var KB_NEURO = [
   "name": "Optic Atrophy",
   "route": "neuro",
   "req": ["vision_loss"],
-  "sup": ["pale_disc", "reduced_contrast"],
-  "con": [],
+  "sup": ["pale_disc", "reduced_contrast", "color_vision_loss", "field_defect"],
+  "con": ["redness"],
   "temporal": ["chronic"],
-  "tests": ["optic_disc_pallor"],
+  "tests": ["pale_disc"],
   "exclusions": []
 },
 
@@ -145,22 +153,20 @@ var KB_NEURO = [
   "name": "Cortical Visual Impairment",
   "route": "neuro",
   "req": ["vision_loss"],
-  "sup": ["normal_eye_exam", "brain_origin"],
-  "con": [],
+  "sup": ["young_age", "field_defect", "visual_disturbance"],
+  "con": ["redness", "pain"],
   "temporal": ["variable"],
   "tests": ["normal_fundus", "neuro_imaging"],
   "exclusions": []
 },
 
-/* NEEDS_CLINICAL_REVIEW (added 2026-07-12, founder-requested expansion):
-   the next three entries are AI-authored textbook feature sets — verify
-   tokens, urgency flags and the Horner con:diplopia discriminator. */
+/* NEEDS_CLINICAL_REVIEW (2026-07-12 additions) */
 {
   "name": "Thyroid Eye Disease",
   "route": "neuro",
   "req": ["proptosis"],
   "sup": ["thyroid_history", "lid_retraction", "diplopia", "restricted_motility", "vertical_diplopia", "grittiness", "dryness", "redness"],
-  "con": [],
+  "con": ["sudden_vision_loss"],
   "temporal": ["chronic", "progressive"],
   "tests": ["exophthalmometry", "thyroid_function_tests"],
   "urgent": false,
@@ -171,7 +177,7 @@ var KB_NEURO = [
   "name": "Horner Syndrome",
   "route": "neuro",
   "req": ["ptosis", "anisocoria"],
-  "sup": ["headache"],
+  "sup": ["headache", "pain"],
   /* CN III palsy causes ptosis WITH diplopia; Horner does not — founder to
      confirm this discriminator */
   "con": ["diplopia"],

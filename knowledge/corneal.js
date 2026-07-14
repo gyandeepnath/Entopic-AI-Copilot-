@@ -144,7 +144,7 @@ var KB_CORNEAL = [
   "route": "anterior",
   "req": ["corneal_opacity"],
   "sup": ["reduced_vision", "history_trauma_or_infection"],
-  "con": ["acute_pain"],
+  "con": ["pain_acute"],
   "temporal": ["chronic"],
   "tests": ["opacity_localized"],
   "exclusions": []

@@ -68,6 +68,20 @@ if (typeof KB_EXPANSION !== "undefined") {
       if (!cond.tests)      cond.tests = [];
       if (!cond.exclusions) cond.exclusions = [];
 
+      /* De-duplicate token lists. A duplicate token would be counted twice by
+         the scorer (inflating a condition's evidence), and duplicates can
+         arise from KB editing or synonym remapping. Keep first occurrence. */
+      (function dedupeFields() {
+        var fields = ["req", "sup", "con", "temporal", "tests", "exclusions"];
+        for (var f = 0; f < fields.length; f++) {
+          var arr = cond[fields[f]], seen = {}, out = [];
+          for (var k = 0; k < arr.length; k++) {
+            if (!seen[arr[k]]) { seen[arr[k]] = true; out.push(arr[k]); }
+          }
+          cond[fields[f]] = out;
+        }
+      })();
+
       /* Backfill ICD-10 code from the (provisional, review-flagged) map.
          The engine and coding page read cond.icd directly; keep any code
          already present on the condition. */

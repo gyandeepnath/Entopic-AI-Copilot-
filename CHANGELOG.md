@@ -6,6 +6,52 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-07-13 — Session 4 (increment X): KB token-health cleanup (founder-flagged)
+
+**Founder flagged** that a significant portion of conditions had no / very
+limited / irrelevant tokens. An audit confirmed it: **58 "thin" conditions**
+(≤3 total tokens) and **79 "dead" supportive/contradicting token usages** —
+tokens that look like evidence but that *no exam input produces*, so they never
+affect scoring (e.g. `metamorphopsia` instead of the real `distortion`,
+`reduced_acuity` instead of `reduced_vision`, `IOP_elevated` instead of
+`high_iop`, `nausea_vomiting` instead of `vomiting`, plus `painless`,
+`asymptomatic`, …). Also **191/249 conditions had no contradicting token at
+all**, limiting the engine's ability to rule diagnoses *out*.
+
+**What**
+
+- **Synonym remap** — replaced 35 dead sup/con/temporal tokens across the
+  curated files with their correct reachable equivalents (a condition's stated
+  evidence now actually fires).
+- **Loader de-dupe** — token lists are de-duplicated on load, so remapping /
+  editing can never create a duplicate that double-counts as evidence.
+- **Enriched Retina (22) and Neuro (16)** — bounded clean rewrites giving each
+  condition a richer, DIFFERENTIATING profile: added reachable supportive
+  tokens and, crucially, **contradicting tokens** (e.g. CRAO now `con:
+  pain_severe`; Dry AMD `con: distortion` so a distortion-dominant picture
+  favours Wet AMD; cranial-nerve palsies contradict each other's diplopia
+  axis). Dead tokens stripped. Required tokens unchanged so routing/behaviour
+  and every golden vignette are preserved.
+- **`tests/kb-token-health.test.js` (new, 4 checks)** — makes token quality a
+  permanent, measured standard: no dead REQUIRED token anywhere; dead sup/con
+  usages capped (≤45, was 79) and meant to trend down; thin conditions capped
+  (≤35, was 58); no stray no-required-token entries. Caps tighten as
+  enrichment continues.
+
+**Result so far:** thin conditions **58 → 33**; dead sup/con usages **79 →
+44**; no-con **191 → 180**. Wet-vs-Dry AMD and CRAO-vs-AION now separate
+correctly on their presentations.
+
+**Verified** — full suite **139/139** (incl. stress + the new health guard);
+e2e browser audit passes (249 conditions, red flags fire). All enriched
+conditions are **NEEDS_CLINICAL_REVIEW** (AI-modified clinical content).
+
+**Ongoing:** the other domains (glaucoma, lens, binocular, refractive, cornea,
+surface) and broad contradicting-token coverage are the next enrichment
+passes — same bounded-rewrite method, guarded by the health test.
+
+---
+
 ## 2026-07-13 — Session 4 (increment W): Stress/fuzz harness + input-surface enrichment + batch 3 (+24 → 249)
 
 **Founder direction:** quality-gated trajectory + "stress test everything."
