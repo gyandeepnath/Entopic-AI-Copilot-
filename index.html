@@ -107,6 +107,21 @@
 
 
 <!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- PAGE 2b: KNOWLEDGE BASE EDITOR (owner-only, no coding)         -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="page" id="pgKbEditor">
+  <div class="home-bar">
+    <span class="home-bar-logo">Entopic</span>
+    <span class="home-bar-clinic">Knowledge Base Editor</span>
+    <span class="home-bar-spacer"></span>
+    <span class="hdr-badge">Advisory content — provisional</span>
+    <span class="hdr-home" onclick="closeKbEditor()">← Home</span>
+  </div>
+  <div class="kbe-wrap" id="kbEditorContent"></div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
 <!-- PAGE 3: EXAM APP (3-column grid)                               -->
 <!-- ═══════════════════════════════════════════════════════════════ -->
 <div class="page page-exam" id="pgExam">
@@ -214,6 +229,7 @@
 <script src="knowledge/token-registry.js"></script>
 <script src="knowledge/icd-map.js"></script>
 <script src="knowledge/loader.js"></script>
+<script src="js/kb-authoring.js"></script>
 
 <!-- Core -->
 <script src="js/data-model.js"></script>
@@ -231,6 +247,7 @@
 <script src="js/ui-pages-2.js"></script>
 <script src="js/ui-report.js"></script>
 <script src="js/ui-flowmap.js"></script>
+<script src="js/ui-kb-editor.js"></script>
 
 <!-- Features -->
 <script src="js/speech.js"></script>

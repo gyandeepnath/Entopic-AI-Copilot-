@@ -236,6 +236,8 @@ function kbRemoteCheck(cb) {
       return;
     }
     kbApplyBundle(row.bundle, row.version, row.notes);
+    /* keep any local edits not yet in the published bundle */
+    try { kbReplayLocalEdits(); } catch (e3) {}
     console.log("Entopic KB updated remotely to " + row.version +
       " (" + KNOWLEDGE_ALL.length + " conditions)");
     try {
@@ -248,6 +250,102 @@ function kbRemoteCheck(cb) {
     KB_REMOTE.lastError = String(err && err.message || err);
     cb && cb(err, "error");
   });
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* LOCAL AUTHORING SUPPORT                                          */
+/* Conditions the owner authors in the editor are applied to the     */
+/* running KB immediately and cached here so they survive a reload    */
+/* AND are re-applied after a remote bundle loads (a remote bundle    */
+/* replaces KNOWLEDGE_ALL wholesale, which would otherwise drop       */
+/* not-yet-published local edits). Once an edit appears in a          */
+/* published bundle, it's redundant here and can be cleared.          */
+/* ═══════════════════════════════════════════════════════════════ */
+var KB_LOCAL_EDITS_KEY = "entopic_kb_local_edits";
+
+function kbLocalEditsLoad() {
+  if (typeof localStorage === "undefined") return [];
+  try { return JSON.parse(localStorage.getItem(KB_LOCAL_EDITS_KEY) || "[]") || []; }
+  catch (e) { return []; }
+}
+function kbLocalEditsSave(arr) {
+  if (typeof localStorage === "undefined") return;
+  try { localStorage.setItem(KB_LOCAL_EDITS_KEY, JSON.stringify(arr || [])); } catch (e) {}
+}
+
+/* Upsert one condition into the live KB by name, rebuild all indexes, and
+   (unless replayOnly) persist it to the local-edits cache. Returns the KB
+   size. The condition object is the engine's native format (from the
+   authoring compiler). */
+function kbApplyLocalConditionUpsert(cond, replayOnly) {
+  if (!cond || !cond.name) return (typeof KNOWLEDGE_ALL !== "undefined" ? KNOWLEDGE_ALL.length : 0);
+  if (!cond.req) cond.req = [];
+  if (!cond.sup) cond.sup = [];
+  if (!cond.con) cond.con = [];
+  if (!cond.temporal) cond.temporal = [];
+  if (!cond.tests) cond.tests = [];
+  if (!cond.exclusions) cond.exclusions = [];
+  var domain = cond._domain || cond.domain || "Authored";
+  cond._domain = domain;
+  /* ICD backfill (same rule as the loader) */
+  if (typeof ICD_MAP !== "undefined" && ICD_MAP[cond.name]) {
+    if (!cond.icd) cond.icd = ICD_MAP[cond.name].icd10;
+    if (!cond.icd_label) cond.icd_label = ICD_MAP[cond.name].label;
+    if (!cond.icd_status) cond.icd_status = ICD_MAP[cond.name].status;
+  }
+
+  /* replace in KNOWLEDGE_ALL by name, else append */
+  var replaced = false, i;
+  for (i = 0; i < KNOWLEDGE_ALL.length; i++) {
+    if (KNOWLEDGE_ALL[i].name === cond.name) { cond._index = KNOWLEDGE_ALL[i]._index; KNOWLEDGE_ALL[i] = cond; replaced = true; break; }
+  }
+  if (!replaced) { cond._index = KNOWLEDGE_ALL.length; KNOWLEDGE_ALL.push(cond); }
+
+  /* keep the domain buckets consistent (used by the KB info modal) */
+  if (typeof KNOWLEDGE_DOMAINS !== "undefined") {
+    for (var d in KNOWLEDGE_DOMAINS) {
+      if (!KNOWLEDGE_DOMAINS.hasOwnProperty(d)) continue;
+      var list = KNOWLEDGE_DOMAINS[d];
+      for (var j = list.length - 1; j >= 0; j--) if (list[j].name === cond.name) list.splice(j, 1);
+    }
+    if (!KNOWLEDGE_DOMAINS[domain]) KNOWLEDGE_DOMAINS[domain] = [];
+    KNOWLEDGE_DOMAINS[domain].push(cond);
+  }
+
+  if (typeof rebuildKbIndexes === "function") rebuildKbIndexes();
+
+  if (!replayOnly) {
+    var edits = kbLocalEditsLoad();
+    var found = false;
+    for (i = 0; i < edits.length; i++) if (edits[i].name === cond.name) { edits[i] = cond; found = true; break; }
+    if (!found) edits.push(cond);
+    kbLocalEditsSave(edits);
+  }
+  return KNOWLEDGE_ALL.length;
+}
+
+/* Re-apply all cached local edits (called at boot after any bundle load). */
+function kbReplayLocalEdits() {
+  var edits = kbLocalEditsLoad();
+  for (var i = 0; i < edits.length; i++) kbApplyLocalConditionUpsert(edits[i], true);
+  return edits.length;
+}
+
+/* Export the CURRENT live KB as a publishable bundle (domain → conditions[]),
+   matching the shape validateKbBundle expects and kbApplyBundle consumes. */
+function kbExportCurrentBundle() {
+  var bundle = {};
+  if (typeof KNOWLEDGE_DOMAINS !== "undefined") {
+    for (var d in KNOWLEDGE_DOMAINS) {
+      if (!KNOWLEDGE_DOMAINS.hasOwnProperty(d)) continue;
+      bundle[d] = KNOWLEDGE_DOMAINS[d].map(function (c) {
+        var copy = {};
+        for (var k in c) { if (c.hasOwnProperty(k) && k !== "_domain" && k !== "_index") copy[k] = c[k]; }
+        return copy;
+      });
+    }
+  }
+  return bundle;
 }
 
 /* ── status for the UI ── */
@@ -282,6 +380,13 @@ function kbRemoteStatus() {
   } catch (e) {
     console.error("Cached KB bundle apply failed; using bundled KB:", e);
   }
+  /* Re-apply the owner's not-yet-published local edits on top of whatever
+     KB (bundled or cached-remote) is now live, so authoring survives reloads
+     and remote updates. */
+  try {
+    var replayed = kbReplayLocalEdits();
+    if (replayed) console.log("Entopic: re-applied " + replayed + " local KB edit(s).");
+  } catch (e2) { console.error("Local KB edit replay failed:", e2); }
   if (typeof window !== "undefined" && typeof setTimeout === "function") {
     setTimeout(function () { kbRemoteCheck(); }, 3000);
     if (typeof setInterval === "function") {

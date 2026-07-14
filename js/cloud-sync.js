@@ -323,6 +323,31 @@ function cloudStop() {
   CLOUD.wsOk = false;
 }
 
+/* ── KB authoring (owner-only; the server's RLS allowlist is the real gate,
+   this client path just surfaces it). Writes go to the same kb_conditions /
+   kb_versions tables the remote-update pipeline reads. ── */
+function cloudKbIsEditor(cb) {
+  if (!cloudSignedIn()) { cb && cb(false); return; }
+  /* kb_editors RLS returns the caller's own row only if they're an editor. */
+  cloudApi("/rest/v1/kb_editors?select=user_id&limit=1", {}, function (err, rows) {
+    cb && cb(!err && rows && rows.length > 0);
+  });
+}
+function cloudKbUpsertCondition(row, cb) {
+  if (!cloudSignedIn()) { cb && cb(new Error("sign in required")); return; }
+  cloudApi("/rest/v1/kb_conditions?on_conflict=name", {
+    method: "POST", body: [row], prefer: "resolution=merge-duplicates,return=minimal"
+  }, function (err) { cb && cb(err || null); });
+}
+function cloudKbPublishVersion(version, notes, bundle, cb) {
+  if (!cloudSignedIn()) { cb && cb(new Error("sign in required")); return; }
+  cloudApi("/rest/v1/kb_versions?on_conflict=version", {
+    method: "POST",
+    body: [{ version: version, notes: notes || "", bundle: bundle, published: true }],
+    prefer: "resolution=merge-duplicates,return=minimal"
+  }, function (err) { cb && cb(err || null); });
+}
+
 /* ── status for the UI ── */
 function cloudStatus() {
   if (!cloudEnabled()) return { state: "disabled", label: "Cloud sync off — local only" };

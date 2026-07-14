@@ -6,6 +6,77 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-07-13 — Session 4 (increment T): No-code KB Editor + owner-only cloud write path
+
+**Founder-authorized.** He asked for a UI to author the knowledge base without
+coding — fill fields, they become working engine conditions — with live
+warnings for duplicates, contradictions, and illogical/dead entries; saving to
+an owner-only cloud path. Decisions he made this session: *editor first, then a
+big provisional seed*; *owner-only cloud write with one-click publish*.
+
+**What**
+
+- `js/kb-authoring.js` (new) — the KB **compiler + linter**, pure and
+  unit-tested, shared by the editor AND the (coming) bulk seeder so they can
+  never disagree. Turns filled fields → the engine's native condition object
+  (the field *is* the code — no lossy codegen step). Lints for: duplicate
+  name (error), **near-duplicate** (similar name *and/or* high req+sup token
+  overlap → warn), **contradictions** (same token in req&con or sup&con →
+  error), acute+chronic clash, urgent-without-hallmark, self/dead exclusions,
+  and the founder's headline ask — **"this can never fire"**: a required token
+  nothing in the exam produces is flagged loudly (reuses the token registry's
+  reachability). Errors block a clean save; warnings are advisory.
+- `js/ui-kb-editor.js` + `pgKbEditor` page + editor CSS — the owner-facing
+  form: name/domain/route, token pickers with autocomplete from the existing
+  vocabulary (so you reuse tokens instead of minting near-duplicates), urgent
+  toggle, exclusions, ICD. A **live checks panel** runs the linter as you type,
+  plus a preview of the exact stored object. "Save to my KB" applies to the
+  running engine immediately (offline) and upserts to the cloud when you're the
+  owner; "Publish to all devices" snapshots the whole KB as a new version
+  through the remote-update pipeline (increment R).
+- `js/kb-remote.js` — local-authoring support: authored conditions are applied
+  in place, persisted to a local-edits cache, and **re-applied after any
+  remote bundle load** so not-yet-published edits are never dropped;
+  `kbExportCurrentBundle()` for publishing.
+- **Owner-only cloud write path** (Supabase): a `kb_editors` allowlist, a
+  `private.is_kb_editor()` SECURITY DEFINER check (mirrors the existing
+  `private.is_clinic_*` helpers, kept off the API surface), and editor-only
+  INSERT/UPDATE policies on `kb_conditions`/`kb_versions`. Public stays
+  read-only; no client DELETE. The editor entry point appears only for the
+  owner.
+
+**Why** — the founder is the clinical authority and a non-engineer; he must be
+able to grow/correct the KB continuously without touching code, and be warned
+before shipping something contradictory or dead. This is also the safe engine
+for reaching 5x volume: everything authored is flagged NEEDS_CLINICAL_REVIEW,
+red-flag alerts stay in engine code (no bundle can disable them), and writes
+are RLS-gated to the owner.
+
+**Verified**
+- `tests/kb-authoring.test.js` (14 tests): every lint rule, incl. duplicate,
+  near-duplicate, req/con contradiction, unreachable ("can never fire")
+  required token, dead/self exclusion, edit-self-not-duplicate.
+- **Owner-write RLS proven server-side** by JWT impersonation: a non-editor is
+  BLOCKED from inserting (0 rows); the editor can upsert a condition and
+  publish a version (incl. the ON CONFLICT re-publish path, which needed an
+  editor read policy so drafts are visible). Security advisors: clean.
+- **Editor driven in a real browser** (headless Chromium): owner sees the
+  button; a valid condition validates, saves, and is **immediately scored by
+  the engine**; it persists to the local-edits cache; a req/con contradiction
+  is blocked (save disabled); a near-duplicate of the richer real MGD entry is
+  warned (not blocked); red flags still fire. Full suite 121/121; main-app
+  audit still passes (137 conds, 0 console errors).
+
+**Setup the founder needs to do once** (documented in CLOUD_SETUP.md): sign in
+to his cloud account, then be added to `kb_editors` (one SQL line / I can do it
+via MCP once he gives his auth email). Until then he can author locally with
+the `entopic_kb_editor_local` override; cloud publish needs the allowlist.
+
+**Next (increment U):** the 5x provisional content seed — drafted through this
+same validated pipeline, real ICD codes, all review-flagged.
+
+---
+
 ## 2026-07-12 — Session 3 (increment S): Knowledge-base expansion (+7 conditions, +tokens, dead-ends resolved)
 
 **Founder-authorized** (asked to expand the KB, tokens, and scoring).

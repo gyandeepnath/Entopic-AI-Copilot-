@@ -250,6 +250,7 @@ function renderHome() {
       '<div class="home-settings-title">📋 Knowledge Base</div>' +
       '<div class="home-settings-desc">' + kbCondCount + ' conditions across ' + (typeof KNOWLEDGE_DOMAINS !== "undefined" ? Object.keys(KNOWLEDGE_DOMAINS).length : "—") + ' domains</div>' +
       '<button class="btn btn-s" onclick="showKBInfo()" style="font-size:.62rem">View Details</button>' +
+      '<span id="kbEditorCardSlot"></span>' +
     '</div>' +
 
     /* Settings — Import */
@@ -261,6 +262,16 @@ function renderHome() {
 
     /* Settings — Cloud Sync */
     renderCloudCard();
+
+  /* Reveal the KB Editor button only for the build owner (async check). */
+  if (typeof kbEditorAllowed === "function") {
+    kbEditorAllowed(function (allowed) {
+      var slot = document.getElementById("kbEditorCardSlot");
+      if (slot && allowed) {
+        slot.innerHTML = ' <button class="btn btn-p" onclick="openKbEditor()" style="font-size:.62rem;margin-left:6px">✎ Edit / Add conditions</button>';
+      }
+    });
+  }
 }
 
 

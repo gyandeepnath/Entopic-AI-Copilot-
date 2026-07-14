@@ -98,6 +98,39 @@ network itself.
 
 ---
 
+## Becoming the Knowledge Base owner/editor (one-time)
+
+The in-app **Knowledge Base Editor** (dashboard → "Edit / Add conditions") lets
+you author conditions with no coding — fill fields, get live warnings, save.
+Saving to the cloud and publishing to all devices is restricted to an **owner
+allowlist** enforced by the database (RLS), so no clinic can edit the shared
+diagnostic KB.
+
+To enable your account as the owner/editor, once:
+
+1. Sign in to your Entopic cloud account (dashboard → Cloud Sync).
+2. Add your auth user to the editor allowlist (either tell me your sign-in
+   email and I'll run it via the Supabase MCP, or run this SQL yourself):
+
+   ```sql
+   insert into public.kb_editors (user_id, email)
+   select id, email from auth.users where email = 'YOUR_SIGNIN_EMAIL'
+   on conflict (user_id) do nothing;
+   ```
+
+3. Reopen the dashboard — the "✎ Edit / Add conditions" button appears.
+
+Before that (or fully offline) you can still author on **this device only** by
+setting `localStorage.entopic_kb_editor_local = "1"` in the browser console;
+those edits stay local until you sign in as owner and publish.
+
+**Publishing:** in the editor, "Publish to all devices" snapshots the whole KB
+as a new version; every installation downloads and applies it on next open
+(fail-closed validation, never mid-exam, red flags always preserved — see
+increment R).
+
+---
+
 ## Guardrails honoured
 
 - No diagnostic logic runs server-side; scoring stays deterministic on-device.
