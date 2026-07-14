@@ -21,11 +21,24 @@ test("knowledge base loads", () => {
   assert.ok(ALL.length > 0, "KNOWLEDGE_ALL should be non-empty");
 });
 
-test("current counts are frozen (guard against silent drops)", () => {
-  assert.strictEqual(ALL.length, 137, "expected 137 conditions");
-  assert.strictEqual(Object.keys(kb.KNOWLEDGE_DOMAINS).length, 9, "expected 9 domains");
-  const urgent = ALL.filter((c) => c.urgent).length;
-  assert.strictEqual(urgent, 21, "expected 21 urgent-flagged conditions");
+test("curated conditions are frozen (guard against silent drops); expansion may grow", () => {
+  /* The original curated conditions live in the domain files; the provisional
+     expansion (knowledge/expansion.js) grows over time toward ~5x, so we
+     freeze the CURATED count (no silent drops) and only require the total to
+     be at least that. */
+  const vm = require("node:vm");
+  const fs = require("node:fs");
+  const p = require("node:path");
+  const sb = {};
+  vm.createContext(sb);
+  vm.runInContext(fs.readFileSync(p.resolve(__dirname, "..", "knowledge", "expansion.js"), "utf8") + "\nthis.__x=KB_EXPANSION;", sb);
+  const expansionNames = new Set(sb.__x.map((c) => c.name));
+  const curated = ALL.filter((c) => !expansionNames.has(c.name));
+
+  assert.strictEqual(curated.length, 137, "expected 137 curated conditions");
+  assert.strictEqual(curated.filter((c) => c.urgent).length, 21, "expected 21 curated urgent conditions");
+  assert.ok(ALL.length >= 137, "total KB must not shrink below the curated set");
+  assert.ok(Object.keys(kb.KNOWLEDGE_DOMAINS).length >= 9, "expected at least 9 domains");
 });
 
 test("every condition is structurally well-formed", () => {

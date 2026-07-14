@@ -35,6 +35,7 @@ const LOAD_ORDER = [
   "medications.js",
   "token-registry.js", /* generated — see tools/gen-token-registry.js */
   "icd-map.js",
+  "expansion.js",      /* provisional expansion batch (folded in by loader.js) */
   "loader.js"
 ];
 

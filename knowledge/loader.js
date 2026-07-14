@@ -33,6 +33,19 @@ if (typeof KB_LENS       !== "undefined") KNOWLEDGE_DOMAINS["Lens"]             
 
 var KNOWLEDGE_ALL = [];
 
+/* Fold in the provisional expansion batch (knowledge/expansion.js), if
+   present, by each entry's own `domain`. Kept in a separate file so the
+   curated original conditions stay pristine and the AI-drafted,
+   review-flagged batch is easy to audit or remove. Loads before this file. */
+if (typeof KB_EXPANSION !== "undefined") {
+  for (var _xi = 0; _xi < KB_EXPANSION.length; _xi++) {
+    var _xc = KB_EXPANSION[_xi];
+    var _xd = _xc.domain || "Expanded";
+    if (!KNOWLEDGE_DOMAINS[_xd]) KNOWLEDGE_DOMAINS[_xd] = [];
+    KNOWLEDGE_DOMAINS[_xd].push(_xc);
+  }
+}
+
 (function assembleKnowledgeBase() {
   var totalConditions = 0;
   var totalUrgent = 0;

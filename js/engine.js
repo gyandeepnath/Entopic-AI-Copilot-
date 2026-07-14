@@ -836,6 +836,7 @@ var SCORE_WEIGHTS = {
   noreq_sup_share: 0.45,
   noreq_test_share: 0.25,
   contra_factor: 0.55,     /* multiplied in once per matched contradiction */
+  req_missing_factor: 0.45, /* multiplied in once per ABSENT required token */
   temporal_match: 1.08,
   temporal_mismatch: 0.85,
   sparse_evidence: 0.5     /* fewer than 2 tokens in the whole encounter */
@@ -910,6 +911,16 @@ function scoreCondition(condition, tokens, tokenSet) {
   } else {
     base = SCORE_WEIGHTS.noreq_sup_share * supSat +
            SCORE_WEIGHTS.noreq_test_share * testSat;
+  }
+
+  /* Missing REQUIRED tokens penalize hard — "required" means required. A
+     condition that lists two hallmarks but only has one present is a much
+     weaker call than the linear req-fraction alone implies, and (if urgent)
+     must not float to the top on a single shared token. Multiplicative per
+     missing required token. Conditions whose full req set is present are
+     untouched. */
+  if (reqMissing > 0 && condition.req.length > 0) {
+    base *= Math.pow(SCORE_WEIGHTS.req_missing_factor, reqMissing);
   }
 
   /* Contradictions: multiplicative, once per matched contradiction —

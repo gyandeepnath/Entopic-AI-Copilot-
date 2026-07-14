@@ -6,6 +6,56 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-07-13 — Session 4 (increment U): KB expansion infrastructure + provisional batch 1 (+50)
+
+**Founder-authorized** ("expand at least 5x"). This lays the machine for
+volume and lands the first validated batch.
+
+**What**
+
+- `knowledge/expansion.js` (new) — a segregated, clearly-provisional batch of
+  **50 AI-drafted conditions** across retina, uveitis, cornea, glaucoma,
+  neuro-ophthalmology, lens, oculoplastics and strabismus (e.g. Diabetic
+  Macular Edema, Proliferative Diabetic Retinopathy, Giant Cell Arteritis,
+  Idiopathic Intracranial Hypertension, Acanthamoeba/Fungal Keratitis, corneal
+  dystrophies, Ocular Myasthenia, Adie pupil, Sympathetic Ophthalmia, …). Kept
+  in its own file so the curated 137 stay pristine and the batch is easy to
+  audit or remove. Folded into the KB by the loader. KB is now **187
+  conditions**.
+- `tests/kb-expansion.test.js` (new, 6 checks) — the **gate every future batch
+  must pass**: zero lint errors (via the shared authoring compiler), every
+  required token reachable (no dead entries), no name collisions with the
+  curated set, the REAL engine surfaces each entry from its own evidence, and
+  red flags still fire.
+- **Scoring refinement** (`js/engine.js`): missing **required** tokens now
+  penalize multiplicatively (`req_missing_factor` 0.45 per absent hallmark).
+  "Required" now means required — a two-hallmark condition with only one token
+  present no longer floats up (this is what kept new urgent entries like
+  Phacomorphic Angle Closure from perturbing the POAG/AACC differentials).
+  Every golden vignette stayed green.
+
+**Design rules the batch obeys** (enforced by the gate): required tokens are
+drawn only from the 262 already-reachable tokens (so each condition can
+actually fire with no new input wiring), and a generic hallmark (e.g.
+`high_iop`) is always paired with a distinguishing token (e.g.
+`steroid_history`) so additions don't pollute unrelated differentials. ICD
+codes are intentionally deferred to the founder's review step (whole batch is
+NEEDS_CLINICAL_REVIEW).
+
+**Verified** — full suite **127/127**; the expansion gate passes; main-app
+headless audit passes (187 conditions, 0 console errors, all red flags fire).
+Clinically sanity-checked: diabetic + floaters → Proliferative Diabetic
+Retinopathy tops (0.72, urgent); elderly sudden vision loss → Giant Cell
+Arteritis surfaces alongside AION; POAG and AACC rank correctly.
+
+**NEEDS_CLINICAL_REVIEW** — all 50 are provisional textbook drafts; the founder
+verifies tokens/urgency/ICD (via the editor). **This is 1.36x; reaching 5x is
+an ongoing, gated process** — each further batch is drafted the same way and
+must pass the same gate. Frozen-count guard changed to protect the *curated*
+137 from silent drops while letting the expansion grow.
+
+---
+
 ## 2026-07-13 — Session 4 (increment T): No-code KB Editor + owner-only cloud write path
 
 **Founder-authorized.** He asked for a UI to author the knowledge base without

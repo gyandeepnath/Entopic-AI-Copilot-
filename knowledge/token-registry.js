@@ -294,7 +294,7 @@ var TOKEN_REGISTRY = {
       "req": 0,
       "sup": 0,
       "con": 0,
-      "temporal": 39,
+      "temporal": 47,
       "tests": 0
     },
     "reachable": true
@@ -464,7 +464,7 @@ var TOKEN_REGISTRY = {
       "symptom_chip"
     ],
     "usage": {
-      "req": 1,
+      "req": 2,
       "sup": 0,
       "con": 0,
       "temporal": 0,
@@ -532,7 +532,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 0,
-      "sup": 0,
+      "sup": 2,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -598,7 +598,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 0,
-      "sup": 1,
+      "sup": 3,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -677,7 +677,7 @@ var TOKEN_REGISTRY = {
       "finding_map"
     ],
     "usage": {
-      "req": 1,
+      "req": 2,
       "sup": 0,
       "con": 0,
       "temporal": 0,
@@ -732,8 +732,8 @@ var TOKEN_REGISTRY = {
       "free_text"
     ],
     "usage": {
-      "req": 5,
-      "sup": 10,
+      "req": 6,
+      "sup": 11,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -840,7 +840,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 0,
-      "sup": 1,
+      "sup": 2,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -867,8 +867,8 @@ var TOKEN_REGISTRY = {
       "symptom_chip"
     ],
     "usage": {
-      "req": 6,
-      "sup": 1,
+      "req": 9,
+      "sup": 7,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -884,8 +884,8 @@ var TOKEN_REGISTRY = {
       "symptom_chip"
     ],
     "usage": {
-      "req": 0,
-      "sup": 1,
+      "req": 5,
+      "sup": 2,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -938,7 +938,7 @@ var TOKEN_REGISTRY = {
       "req": 0,
       "sup": 0,
       "con": 0,
-      "temporal": 45,
+      "temporal": 72,
       "tests": 0
     },
     "reachable": true
@@ -977,8 +977,8 @@ var TOKEN_REGISTRY = {
       "symptom_chip"
     ],
     "usage": {
-      "req": 0,
-      "sup": 3,
+      "req": 2,
+      "sup": 7,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -1062,7 +1062,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 0,
-      "sup": 2,
+      "sup": 3,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -1102,8 +1102,8 @@ var TOKEN_REGISTRY = {
       "symptom_chip"
     ],
     "usage": {
-      "req": 0,
-      "sup": 2,
+      "req": 1,
+      "sup": 6,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -1156,7 +1156,7 @@ var TOKEN_REGISTRY = {
       "symptom_chip"
     ],
     "usage": {
-      "req": 0,
+      "req": 1,
       "sup": 1,
       "con": 1,
       "temporal": 0,
@@ -1216,7 +1216,7 @@ var TOKEN_REGISTRY = {
       "engine_derived"
     ],
     "usage": {
-      "req": 1,
+      "req": 2,
       "sup": 1,
       "con": 0,
       "temporal": 0,
@@ -1285,7 +1285,7 @@ var TOKEN_REGISTRY = {
       "finding_map"
     ],
     "usage": {
-      "req": 1,
+      "req": 3,
       "sup": 0,
       "con": 0,
       "temporal": 0,
@@ -1448,7 +1448,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 0,
-      "sup": 1,
+      "sup": 2,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -1461,7 +1461,7 @@ var TOKEN_REGISTRY = {
       "symptom_chip"
     ],
     "usage": {
-      "req": 1,
+      "req": 2,
       "sup": 0,
       "con": 0,
       "temporal": 0,
@@ -1525,7 +1525,7 @@ var TOKEN_REGISTRY = {
       "finding_map"
     ],
     "usage": {
-      "req": 0,
+      "req": 2,
       "sup": 2,
       "con": 0,
       "temporal": 0,
@@ -1556,7 +1556,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 0,
-      "sup": 1,
+      "sup": 2,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -1644,7 +1644,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 0,
-      "sup": 5,
+      "sup": 7,
       "con": 1,
       "temporal": 0,
       "tests": 0
@@ -1661,7 +1661,7 @@ var TOKEN_REGISTRY = {
       "sup": 0,
       "con": 0,
       "temporal": 0,
-      "tests": 2
+      "tests": 4
     },
     "reachable": true
   },
@@ -1687,7 +1687,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 0,
-      "sup": 1,
+      "sup": 2,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -1774,8 +1774,8 @@ var TOKEN_REGISTRY = {
       "symptom_chip"
     ],
     "usage": {
-      "req": 2,
-      "sup": 5,
+      "req": 5,
+      "sup": 8,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -1820,7 +1820,7 @@ var TOKEN_REGISTRY = {
       "symptom_chip"
     ],
     "usage": {
-      "req": 3,
+      "req": 4,
       "sup": 8,
       "con": 0,
       "temporal": 0,
@@ -2015,7 +2015,7 @@ var TOKEN_REGISTRY = {
       "engine_derived"
     ],
     "usage": {
-      "req": 1,
+      "req": 2,
       "sup": 0,
       "con": 0,
       "temporal": 0,
@@ -2042,7 +2042,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 0,
-      "sup": 0,
+      "sup": 1,
       "con": 0,
       "temporal": 0,
       "tests": 1
@@ -2122,7 +2122,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 1,
-      "sup": 2,
+      "sup": 3,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -2136,8 +2136,8 @@ var TOKEN_REGISTRY = {
       "engine_derived"
     ],
     "usage": {
-      "req": 0,
-      "sup": 4,
+      "req": 6,
+      "sup": 6,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -2152,7 +2152,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 0,
-      "sup": 3,
+      "sup": 4,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -2298,8 +2298,8 @@ var TOKEN_REGISTRY = {
       "symptom_chip"
     ],
     "usage": {
-      "req": 2,
-      "sup": 4,
+      "req": 5,
+      "sup": 7,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -2315,7 +2315,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 0,
-      "sup": 2,
+      "sup": 3,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -2402,8 +2402,8 @@ var TOKEN_REGISTRY = {
       "free_text"
     ],
     "usage": {
-      "req": 1,
-      "sup": 6,
+      "req": 3,
+      "sup": 9,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -2503,7 +2503,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 1,
-      "sup": 7,
+      "sup": 10,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -2579,8 +2579,8 @@ var TOKEN_REGISTRY = {
       "finding_map"
     ],
     "usage": {
-      "req": 1,
-      "sup": 1,
+      "req": 2,
+      "sup": 3,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -2622,7 +2622,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 0,
-      "sup": 2,
+      "sup": 3,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -2651,7 +2651,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 0,
-      "sup": 3,
+      "sup": 4,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -2680,8 +2680,8 @@ var TOKEN_REGISTRY = {
       "symptom_chip"
     ],
     "usage": {
-      "req": 0,
-      "sup": 7,
+      "req": 1,
+      "sup": 9,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -2696,7 +2696,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 0,
-      "sup": 1,
+      "sup": 2,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -2747,7 +2747,7 @@ var TOKEN_REGISTRY = {
       "engine_derived"
     ],
     "usage": {
-      "req": 1,
+      "req": 5,
       "sup": 5,
       "con": 1,
       "temporal": 0,
@@ -2845,8 +2845,8 @@ var TOKEN_REGISTRY = {
       "finding_map"
     ],
     "usage": {
-      "req": 0,
-      "sup": 1,
+      "req": 1,
+      "sup": 2,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -2984,7 +2984,7 @@ var TOKEN_REGISTRY = {
       "sup": 2,
       "con": 0,
       "temporal": 0,
-      "tests": 0
+      "tests": 3
     },
     "reachable": true
   },
@@ -3025,7 +3025,7 @@ var TOKEN_REGISTRY = {
       "req": 0,
       "sup": 0,
       "con": 0,
-      "temporal": 5,
+      "temporal": 7,
       "tests": 0
     },
     "reachable": true
@@ -3037,7 +3037,7 @@ var TOKEN_REGISTRY = {
       "symptom_chip"
     ],
     "usage": {
-      "req": 0,
+      "req": 1,
       "sup": 1,
       "con": 0,
       "temporal": 0,
@@ -3053,7 +3053,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 1,
-      "sup": 0,
+      "sup": 1,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -3118,7 +3118,7 @@ var TOKEN_REGISTRY = {
       "finding_map"
     ],
     "usage": {
-      "req": 1,
+      "req": 2,
       "sup": 0,
       "con": 0,
       "temporal": 0,
@@ -3147,7 +3147,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 0,
-      "sup": 5,
+      "sup": 6,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -3292,7 +3292,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 1,
-      "sup": 0,
+      "sup": 1,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -3703,7 +3703,7 @@ var TOKEN_REGISTRY = {
       "sup": 0,
       "con": 0,
       "temporal": 0,
-      "tests": 0
+      "tests": 4
     },
     "reachable": true
   },
@@ -3739,7 +3739,7 @@ var TOKEN_REGISTRY = {
       "symptom_chip"
     ],
     "usage": {
-      "req": 1,
+      "req": 2,
       "sup": 0,
       "con": 0,
       "temporal": 0,
@@ -3830,7 +3830,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 0,
-      "sup": 1,
+      "sup": 4,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -3974,7 +3974,7 @@ var TOKEN_REGISTRY = {
       "symptom_chip"
     ],
     "usage": {
-      "req": 0,
+      "req": 1,
       "sup": 1,
       "con": 0,
       "temporal": 0,
@@ -4014,8 +4014,8 @@ var TOKEN_REGISTRY = {
       "engine_derived"
     ],
     "usage": {
-      "req": 0,
-      "sup": 1,
+      "req": 1,
+      "sup": 2,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -4040,7 +4040,7 @@ var TOKEN_REGISTRY = {
       "engine_derived"
     ],
     "usage": {
-      "req": 0,
+      "req": 1,
       "sup": 1,
       "con": 0,
       "temporal": 0,
@@ -4140,7 +4140,7 @@ var TOKEN_REGISTRY = {
       "symptom_chip"
     ],
     "usage": {
-      "req": 1,
+      "req": 2,
       "sup": 0,
       "con": 0,
       "temporal": 0,
@@ -4245,7 +4245,7 @@ var TOKEN_REGISTRY = {
       "sup": 2,
       "con": 0,
       "temporal": 0,
-      "tests": 0
+      "tests": 1
     },
     "reachable": true
   },
@@ -4294,8 +4294,8 @@ var TOKEN_REGISTRY = {
       "engine_derived"
     ],
     "usage": {
-      "req": 0,
-      "sup": 4,
+      "req": 2,
+      "sup": 9,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -4387,8 +4387,8 @@ var TOKEN_REGISTRY = {
       "symptom_chip"
     ],
     "usage": {
-      "req": 7,
-      "sup": 8,
+      "req": 8,
+      "sup": 11,
       "con": 4,
       "temporal": 0,
       "tests": 0
@@ -4431,8 +4431,8 @@ var TOKEN_REGISTRY = {
       "symptom_chip"
     ],
     "usage": {
-      "req": 1,
-      "sup": 1,
+      "req": 2,
+      "sup": 2,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -4462,8 +4462,8 @@ var TOKEN_REGISTRY = {
       "symptom_chip"
     ],
     "usage": {
-      "req": 1,
-      "sup": 0,
+      "req": 2,
+      "sup": 1,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -4478,9 +4478,9 @@ var TOKEN_REGISTRY = {
       "symptom_chip"
     ],
     "usage": {
-      "req": 5,
-      "sup": 1,
-      "con": 4,
+      "req": 7,
+      "sup": 2,
+      "con": 6,
       "temporal": 0,
       "tests": 0
     },
@@ -4493,7 +4493,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 0,
-      "sup": 1,
+      "sup": 2,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -4520,7 +4520,7 @@ var TOKEN_REGISTRY = {
       "symptom_chip"
     ],
     "usage": {
-      "req": 1,
+      "req": 2,
       "sup": 0,
       "con": 0,
       "temporal": 0,
@@ -4591,7 +4591,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 1,
-      "sup": 0,
+      "sup": 2,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -4605,8 +4605,8 @@ var TOKEN_REGISTRY = {
       "symptom_chip"
     ],
     "usage": {
-      "req": 0,
-      "sup": 1,
+      "req": 1,
+      "sup": 2,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -4698,7 +4698,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 3,
-      "sup": 16,
+      "sup": 22,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -4713,7 +4713,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 0,
-      "sup": 2,
+      "sup": 5,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -4794,7 +4794,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 0,
-      "sup": 2,
+      "sup": 3,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -4837,7 +4837,7 @@ var TOKEN_REGISTRY = {
       "req": 0,
       "sup": 0,
       "con": 0,
-      "temporal": 20,
+      "temporal": 37,
       "tests": 0
     },
     "reachable": true
@@ -4849,7 +4849,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 0,
-      "sup": 1,
+      "sup": 2,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -4864,7 +4864,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 1,
-      "sup": 0,
+      "sup": 1,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -4878,7 +4878,7 @@ var TOKEN_REGISTRY = {
       "symptom_chip"
     ],
     "usage": {
-      "req": 1,
+      "req": 2,
       "sup": 1,
       "con": 1,
       "temporal": 0,
@@ -4907,9 +4907,9 @@ var TOKEN_REGISTRY = {
       "symptom_chip"
     ],
     "usage": {
-      "req": 2,
+      "req": 3,
       "sup": 0,
-      "con": 0,
+      "con": 1,
       "temporal": 0,
       "tests": 0
     },
@@ -4921,7 +4921,7 @@ var TOKEN_REGISTRY = {
       "dictionary"
     ],
     "usage": {
-      "req": 1,
+      "req": 2,
       "sup": 0,
       "con": 0,
       "temporal": 0,
@@ -4980,7 +4980,7 @@ var TOKEN_REGISTRY = {
     "usage": {
       "req": 1,
       "sup": 0,
-      "con": 6,
+      "con": 8,
       "temporal": 0,
       "tests": 0
     },
@@ -5072,7 +5072,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 0,
-      "sup": 0,
+      "sup": 1,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -5156,7 +5156,7 @@ var TOKEN_REGISTRY = {
       "req": 0,
       "sup": 1,
       "con": 0,
-      "temporal": 7,
+      "temporal": 14,
       "tests": 0
     },
     "reachable": true
@@ -5169,8 +5169,8 @@ var TOKEN_REGISTRY = {
       "finding_map"
     ],
     "usage": {
-      "req": 0,
-      "sup": 2,
+      "req": 4,
+      "sup": 5,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -5226,7 +5226,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 1,
-      "sup": 23,
+      "sup": 30,
       "con": 1,
       "temporal": 0,
       "tests": 0
@@ -5307,7 +5307,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 0,
-      "sup": 2,
+      "sup": 4,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -5409,7 +5409,7 @@ var TOKEN_REGISTRY = {
       "sup": 0,
       "con": 0,
       "temporal": 0,
-      "tests": 1
+      "tests": 2
     },
     "reachable": true
   },
@@ -5421,8 +5421,8 @@ var TOKEN_REGISTRY = {
       "symptom_chip"
     ],
     "usage": {
-      "req": 1,
-      "sup": 16,
+      "req": 4,
+      "sup": 34,
       "con": 1,
       "temporal": 0,
       "tests": 0
@@ -5463,7 +5463,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 0,
-      "sup": 2,
+      "sup": 3,
       "con": 1,
       "temporal": 0,
       "tests": 0
@@ -5488,8 +5488,8 @@ var TOKEN_REGISTRY = {
       "finding_map"
     ],
     "usage": {
-      "req": 0,
-      "sup": 1,
+      "req": 1,
+      "sup": 2,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -5599,7 +5599,7 @@ var TOKEN_REGISTRY = {
       "sup": 0,
       "con": 0,
       "temporal": 0,
-      "tests": 1
+      "tests": 2
     },
     "reachable": true
   },
@@ -5912,7 +5912,7 @@ var TOKEN_REGISTRY = {
       "symptom_chip"
     ],
     "usage": {
-      "req": 0,
+      "req": 1,
       "sup": 1,
       "con": 0,
       "temporal": 0,
@@ -5965,7 +5965,7 @@ var TOKEN_REGISTRY = {
       "medication"
     ],
     "usage": {
-      "req": 1,
+      "req": 2,
       "sup": 1,
       "con": 0,
       "temporal": 0,
@@ -5991,7 +5991,7 @@ var TOKEN_REGISTRY = {
       "dictionary"
     ],
     "usage": {
-      "req": 0,
+      "req": 1,
       "sup": 1,
       "con": 0,
       "temporal": 0,
@@ -6074,7 +6074,7 @@ var TOKEN_REGISTRY = {
       "req": 0,
       "sup": 0,
       "con": 0,
-      "temporal": 2,
+      "temporal": 10,
       "tests": 0
     },
     "reachable": true
@@ -6127,7 +6127,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 1,
-      "sup": 0,
+      "sup": 1,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -6142,7 +6142,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 0,
-      "sup": 5,
+      "sup": 6,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -6157,7 +6157,7 @@ var TOKEN_REGISTRY = {
       "symptom_chip"
     ],
     "usage": {
-      "req": 2,
+      "req": 3,
       "sup": 0,
       "con": 1,
       "temporal": 0,
@@ -6186,7 +6186,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 0,
-      "sup": 1,
+      "sup": 2,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -6264,7 +6264,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 0,
-      "sup": 2,
+      "sup": 3,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -6290,7 +6290,7 @@ var TOKEN_REGISTRY = {
       "symptom_chip"
     ],
     "usage": {
-      "req": 1,
+      "req": 2,
       "sup": 0,
       "con": 0,
       "temporal": 0,
@@ -6370,7 +6370,7 @@ var TOKEN_REGISTRY = {
       "engine_derived"
     ],
     "usage": {
-      "req": 0,
+      "req": 1,
       "sup": 1,
       "con": 0,
       "temporal": 0,
@@ -6408,7 +6408,7 @@ var TOKEN_REGISTRY = {
       "medication"
     ],
     "usage": {
-      "req": 0,
+      "req": 1,
       "sup": 0,
       "con": 0,
       "temporal": 0,
@@ -6436,7 +6436,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 1,
-      "sup": 1,
+      "sup": 3,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -6451,7 +6451,7 @@ var TOKEN_REGISTRY = {
       "finding_map"
     ],
     "usage": {
-      "req": 1,
+      "req": 5,
       "sup": 3,
       "con": 0,
       "temporal": 0,
@@ -6497,7 +6497,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 0,
-      "sup": 1,
+      "sup": 2,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -6572,7 +6572,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 1,
-      "sup": 1,
+      "sup": 2,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -6627,7 +6627,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 0,
-      "sup": 2,
+      "sup": 4,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -6676,7 +6676,7 @@ var TOKEN_REGISTRY = {
       "sup": 0,
       "con": 0,
       "temporal": 0,
-      "tests": 3
+      "tests": 5
     },
     "reachable": true
   },
@@ -6760,7 +6760,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 0,
-      "sup": 2,
+      "sup": 3,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -6776,7 +6776,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 0,
-      "sup": 10,
+      "sup": 12,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -6833,8 +6833,8 @@ var TOKEN_REGISTRY = {
       "symptom_chip"
     ],
     "usage": {
-      "req": 0,
-      "sup": 1,
+      "req": 1,
+      "sup": 2,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -6848,8 +6848,8 @@ var TOKEN_REGISTRY = {
       "engine_derived"
     ],
     "usage": {
-      "req": 0,
-      "sup": 4,
+      "req": 3,
+      "sup": 10,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -6970,5 +6970,5 @@ var TOKEN_REGISTRY_STATS = {
     "younger_age"
   ],
   "test_label_only": 171,
-  "produced_never_consumed": 17
+  "produced_never_consumed": 13
 };
