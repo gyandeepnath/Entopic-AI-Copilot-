@@ -122,6 +122,29 @@ key). Diagnostic reasoning stays fully deterministic and offline.
 **Verified again** — full suite **145/145** (adds the new cross-conflict guard);
 both e2e browser audits pass.
 
+**Then: dead-test-token remap + expansion batch 5.**
+
+- **Remapped dead `tests` tokens to reachable equivalents.** Many `tests`
+  entries were free-text labels with no input producer — unenterable, so they
+  could never confirm a condition, earn test-share, or feed the new next-test
+  loop. Remapped 74 usages (37 distinct) to their unambiguous reachable
+  equivalents — pure synonym/typo fixes, no clinical-meaning change
+  (`weiss_ring`→`pvd_weiss_ring`, `microaneurysm`→`microaneurysms`,
+  `RAPD`→`RAPD_positive`, `corneal_infiltrate`→`stromal_infiltrate`, …).
+  Deduped the resulting collisions and other pre-existing duplicate tokens.
+  **Distinct dead test tokens 133 → 96**, capped by a new token-health guard.
+- **Expansion batch 5 — 12 more conditions**, each with a specific required
+  token + clinically-meaningful contradictors so they slot in without
+  cross-firing: Posner-Schlossman, ICE syndrome, malignant glaucoma,
+  neuroretinitis, papillophlebitis, Tolosa-Hunt, cavernous sinus thrombosis,
+  chlamydial conjunctivitis, ocular cicatricial pemphigoid, toxic
+  keratoconjunctivitis, APMPPE, and PIC. All rank #1–#2 on their own
+  presentation (78–88%); cross-conflict audit unchanged. **KB now 270
+  conditions.** All batch-5 entries are **NEEDS_CLINICAL_REVIEW** (urgency
+  flags especially).
+
+**Verified** — full suite **154/154**; both e2e browser audits pass.
+
 ---
 
 ## 2026-07-13 — Session 4 (increment Y): KB-wide richness — deep, integrated token profiles for every condition

@@ -432,6 +432,54 @@ var KB_EXPANSION = [
 /* Neuro-orbital */
 { "name": "Carotid-Cavernous Fistula", "domain": "Neuro-Ophthalmic", "route": "urgent",
   "req": ["proptosis", "dilated_tortuous_veins"], "sup": ["redness", "diplopia", "high_iop", "chronic_redness", "chemosis", "conjunctival_edema"],
-  "con": ["itching_dominant", "purulent_discharge", "gradual_blur"], "temporal": ["chronic", "subacute"], "tests": ["restricted_motility"], "urgent": true, "exclusions": [] }
+  "con": ["itching_dominant", "purulent_discharge", "gradual_blur"], "temporal": ["chronic", "subacute"], "tests": ["restricted_motility"], "urgent": true, "exclusions": [] },
+
+/* ═══ BATCH 5 (2026-07-15) — high-yield gaps, specific required tokens +
+   clinically-meaningful contradictors so they slot in without cross-firing.
+   Provisional / NEEDS_CLINICAL_REVIEW; urgency flags need founder sign-off. ═══ */
+
+/* Glaucoma / anterior-segment */
+{ "name": "Posner-Schlossman Syndrome (Glaucomatocyclitic Crisis)", "domain": "Glaucoma", "route": "glaucoma",
+  "req": ["high_iop", "recurrent_episode"], "sup": ["halos", "blur", "pain", "corneal_edema", "cells_present", "reduced_vision"],
+  "con": ["synechiae", "itching_dominant", "purulent_discharge"], "temporal": ["recurrent", "acute"], "tests": ["IOP_very_high", "cells_present"], "exclusions": [] },
+{ "name": "Iridocorneal Endothelial (ICE) Syndrome", "domain": "Glaucoma", "route": "glaucoma",
+  "req": ["corneal_edema", "iris_atrophy"], "sup": ["high_iop", "blur", "reduced_vision", "glare", "older_age", "heterochromia"],
+  "con": ["pain_severe", "itching_dominant", "bilateral"], "temporal": ["chronic", "progressive"], "tests": ["guttata"], "exclusions": [] },
+{ "name": "Malignant Glaucoma (Aqueous Misdirection)", "domain": "Glaucoma", "route": "urgent",
+  "req": ["high_iop", "post_surgery"], "sup": ["shallow_ac", "pain", "reduced_vision", "blur", "redness"],
+  "con": ["itching_dominant", "gradual_onset", "normal_iop"], "temporal": ["acute", "subacute"], "tests": ["IOP_very_high", "shallow_ac"], "urgent": true, "exclusions": [] },
+
+/* Neuro-ophthalmic / orbital */
+{ "name": "Neuroretinitis", "domain": "Neuro-Ophthalmic", "route": "neuro",
+  "req": ["reduced_vision", "disc_edema"], "sup": ["central_scotoma", "color_vision_loss", "macular_star", "recent_viral_history", "RAPD_positive"],
+  "con": ["pain_severe", "itching_dominant", "night_blindness"], "temporal": ["acute"], "tests": ["macular_star", "disc_edema"], "exclusions": [] },
+{ "name": "Papillophlebitis", "domain": "Neuro-Ophthalmic", "route": "neuro",
+  "req": ["disc_edema", "young_age"], "sup": ["blur", "reduced_vision", "flame_hemorrhages", "dilated_tortuous_veins", "transient_vision_loss"],
+  "con": ["pain_severe", "older_age", "itching_dominant"], "temporal": ["acute", "subacute"], "tests": ["disc_edema"], "exclusions": [] },
+{ "name": "Tolosa-Hunt Syndrome", "domain": "Neuro-Ophthalmic", "route": "neuro",
+  "req": ["pain_eye_movement", "diplopia"], "sup": ["ptosis", "restricted_motility", "headache", "pain", "recurrent_episode"],
+  "con": ["itching_dominant", "redness", "gradual_onset"], "temporal": ["acute", "recurrent"], "tests": ["restricted_motility"], "exclusions": [] },
+{ "name": "Cavernous Sinus Thrombosis", "domain": "Neuro-Ophthalmic", "route": "urgent",
+  "req": ["proptosis", "diplopia"], "sup": ["ptosis", "pain", "restricted_motility", "headache", "reduced_vision", "fever"],
+  "con": ["itching_dominant", "gradual_onset", "chronic_irritation"], "temporal": ["acute"], "tests": ["restricted_motility"], "urgent": true, "exclusions": [] },
+
+/* Ocular surface */
+{ "name": "Chlamydial (Adult Inclusion) Conjunctivitis", "domain": "Surface & Lids", "route": "surface",
+  "req": ["follicles", "chronic_redness"], "sup": ["watery_discharge", "preauricular_node", "foreign_body_sensation", "recurrent_episode", "watering"],
+  "con": ["itching_dominant", "purulent_discharge", "sudden_onset"], "temporal": ["chronic", "subacute"], "tests": ["follicles", "preauricular_lymph_node"], "exclusions": [] },
+{ "name": "Ocular Cicatricial Pemphigoid", "domain": "Surface & Lids", "route": "surface",
+  "req": ["chronic_redness", "dryness"], "sup": ["foreign_body_sensation", "reduced_tearing", "recurrent_episode", "trichiasis", "entropion"],
+  "con": ["itching_dominant", "sudden_onset", "purulent_discharge"], "temporal": ["chronic", "progressive"], "tests": [], "exclusions": [] },
+{ "name": "Toxic Keratoconjunctivitis (Medicamentosa)", "domain": "Surface & Lids", "route": "surface",
+  "req": ["chronic_redness", "punctate_staining"], "sup": ["foreign_body_sensation", "burning", "follicles", "chronic_irritation", "tearing"],
+  "con": ["itching_dominant", "purulent_discharge", "sudden_onset"], "temporal": ["chronic"], "tests": ["punctate_staining"], "exclusions": [] },
+
+/* Medical retina — inflammatory / white-dot */
+{ "name": "APMPPE (Acute Posterior Multifocal Placoid Pigment Epitheliopathy)", "domain": "Retina", "route": "retina",
+  "req": ["central_scotoma", "recent_viral_history"], "sup": ["reduced_vision", "young_age", "bilateral", "central_blur", "photophobia_mild"],
+  "con": ["older_age", "pain", "redness", "night_blindness"], "temporal": ["acute"], "tests": ["macular_screening_needed"], "exclusions": [] },
+{ "name": "Punctate Inner Choroidopathy (PIC)", "domain": "Retina", "route": "retina",
+  "req": ["central_scotoma", "myopia"], "sup": ["central_blur", "young_age", "distortion", "reduced_vision", "photophobia_mild"],
+  "con": ["older_age", "pain", "redness", "night_blindness"], "temporal": ["subacute", "recurrent"], "tests": ["macular_screening_needed"], "exclusions": [] }
 
 ];
