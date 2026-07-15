@@ -6,6 +6,42 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-07-15 — Session 5 (increment AA): diagnostic refinement loop — "what to check next"
+
+**Founder ask:** since Entopic gives a ranked differential rather than a bare
+probabilistic diagnosis, the UI should surface the most likely candidate by
+ranking AND suggest the next test to run, looping to sharpen the diagnosis.
+
+**What**
+
+- **Leading Impression** headline in the advisory panel — states the top-RANKED
+  candidate plainly (name, confidence word, %) with the un-negotiable
+  "Advisory only — clinical correlation required. Not a definitive diagnosis."
+  caveat right on it. Makes the ranking-based most-likely explicit without ever
+  dressing it up as a probabilistic verdict.
+- **Next-test recommender** (`computeNextTests`, new engine stage 12) — the
+  refinement loop. When ≥2 candidates genuinely compete (within 0.30 of the
+  leader), it finds the findings that best DISCRIMINATE them: confirm the
+  leader, or rule out a close rival. Each suggestion shows what it supports /
+  argues against and links to the exam step where it's recorded — clicking
+  re-runs the engine (via existing `nav()`), so the list refines as the workup
+  proceeds. Fully deterministic and inspectable; **no LLM, no probabilistic
+  guessing in the diagnostic path.**
+- **Trustworthy by construction:** only suggests findings that can actually be
+  ENTERED (reachable tokens — a suggestion you can't act on is useless); stays
+  quiet when one diagnosis already dominates; skips onset/course tokens
+  (captured at intake); labels tokens from their canonical finding name only
+  (no mislabeling a generic token as one specific sign).
+- **"Narrow the Diagnosis"** section renders the suggestions as clickable rows.
+
+**Verified** — 8 new dedicated tests (enterable-only, quiet-when-dominant,
+fires-on-competition with a real discriminator, deterministic, valid targets,
+loop-actually-refines) + full suite **153/153**; a headless-browser check
+confirms the Leading Impression + Narrow-the-Diagnosis panels render and a
+suggestion navigates and re-runs the engine. Offline path intact.
+
+---
+
 ## 2026-07-15 — Session 5 (increment Z): cross-condition conflict audit — stop conditions "fighting" and producing junk differentials
 
 **Founder ask:** "Cross check each condition and tokens — make sure all these

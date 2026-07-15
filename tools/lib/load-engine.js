@@ -88,6 +88,7 @@ function createEngine(options) {
       dxList: V.dxList,
       alerts: V.alerts,
       nudges: V.nudges,
+      nextTests: V.nextTests,
       tokens: context.ENGINE_STATE.tokens.slice(),
       routes: context.ENGINE_STATE.routes.slice(),
       V: V

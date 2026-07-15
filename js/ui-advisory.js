@@ -84,6 +84,24 @@ function renderAdvisory() {
 
   /* ═══ DIFFERENTIAL DIAGNOSES ═══ */
   if (V.dxList && V.dxList.length > 0) {
+    /* Leading impression — the top-RANKED differential, stated plainly with
+       the advisory-only caveat. Entopic never returns a bare probabilistic
+       "diagnosis"; it names the most likely candidate by ranking and leaves
+       the call to the clinician. */
+    var lead = V.dxList[0];
+    var leadPct = (lead.prob * 100).toFixed(0);
+    var leadConf = (lead.evidence && lead.evidence.confidence) ? lead.evidence.confidence : "";
+    h += '<div class="adv-sec">Leading Impression</div>';
+    h += '<div class="dx-row" style="flex-direction:column;align-items:stretch;gap:3px;padding:6px 8px;border:1px solid var(--fg);border-radius:var(--r)' +
+      (lead.urgent ? ';border-left:3px solid var(--ur,#c0392b)' : '') + '">';
+    h += '<div style="display:flex;align-items:center;gap:6px">';
+    h += '<div class="dx-n" style="flex:1;font-weight:600">' + lead.n + (lead.urgent ? ' <span style="color:var(--ur,#c0392b);font-size:.5rem">· URGENT</span>' : '') + '</div>';
+    h += '<div class="dx-pct">' + leadPct + '%</div>';
+    h += '</div>';
+    if (leadConf) h += '<div style="font-size:.5rem;color:var(--sv)">' + leadConf + ' confidence · most likely by ranking</div>';
+    h += '<div style="font-size:.5rem;color:var(--sv);font-style:italic">Advisory only — clinical correlation required. Not a definitive diagnosis.</div>';
+    h += '</div>';
+
     h += '<div class="adv-sec">Differentials</div>';
 
     var maxToShow = Math.min(V.dxList.length, 6);
@@ -127,6 +145,27 @@ function renderAdvisory() {
 
     if (V.dxList.length > maxToShow) {
       h += '<div style="font-size:.54rem;color:var(--sv);text-align:center;padding:4px">+' + (V.dxList.length - maxToShow) + ' more — see Diagnosis page</div>';
+    }
+
+    /* ═══ NARROW THE DIAGNOSIS (refinement loop) ═══
+       The discriminating findings that would most separate the leading
+       candidates. Click one to jump to where it's recorded; entering it
+       re-runs the engine and this list refines. */
+    if (V.nextTests && V.nextTests.length > 0) {
+      h += '<div class="adv-sec">Narrow the Diagnosis <span style="color:var(--sv);font-weight:400">· check next</span></div>';
+      for (var nt = 0; nt < V.nextTests.length; nt++) {
+        var t = V.nextTests[nt];
+        h += '<div class="nudge" style="display:flex;flex-direction:column;align-items:stretch;gap:2px" onclick="nav(\'' + t.target + '\')">';
+        h += '<div style="display:flex;align-items:center;gap:6px">';
+        h += '<span style="flex:1">🔬 ' + t.label + (t.isTest ? '' : '') + '</span>';
+        h += '<span style="font-size:.48rem;color:var(--sv);text-transform:uppercase">→ ' + t.target.replace(/_/g, " ") + '</span>';
+        h += '</div>';
+        var impact = '';
+        if (t.confirms && t.confirms.length) impact += '<span class="matched">supports ' + t.confirms[0] + (t.confirms.length > 1 ? ' +' + (t.confirms.length - 1) : '') + '</span>';
+        if (t.excludes && t.excludes.length) impact += (impact ? ' · ' : '') + '<span class="missing">argues against ' + t.excludes[0] + (t.excludes.length > 1 ? ' +' + (t.excludes.length - 1) : '') + '</span>';
+        if (impact) h += '<div style="font-size:.5rem">' + impact + '</div>';
+        h += '</div>';
+      }
     }
 
   } else {
