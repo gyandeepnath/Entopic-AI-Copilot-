@@ -102,6 +102,17 @@ test("the REAL engine surfaces each expansion condition from its own evidence", 
   assert.ok(misses.length <= 2, "too many expansion entries never surface: " + misses.join(", "));
 });
 
+test("every expansion condition carries a RUNTIME review flag (founder review queue reads this)", () => {
+  /* The provisional contract must exist in the running app, not just in file
+     comments — the KB editor's Review Queue lists conditions by this flag,
+     and the founder's "mark verified" flips it (persisted as a local edit). */
+  const unflagged = [];
+  for (const c of ALL) {
+    if (isExpansion(c) && c.review_status !== "NEEDS_CLINICAL_REVIEW") unflagged.push(c.name);
+  }
+  assert.deepStrictEqual(unflagged, [], "expansion conditions missing runtime review flag:\n" + unflagged.join("\n"));
+});
+
 test("red-flag alerts still fire after the expansion", () => {
   const eng = createEngine();
   assert.ok(eng.runCase({ symptoms: ["flashes", "floaters"] }).alerts.some((a) => a.l === "urgent"));

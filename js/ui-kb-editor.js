@@ -67,6 +67,94 @@ function kbEditorDomains() {
           "Refractive", "Glaucoma", "Anterior / Uveitis", "Lens"];
 }
 
+/* ── FOUNDER REVIEW QUEUE ──
+   Every AI-drafted or edited condition carries review_status =
+   "NEEDS_CLINICAL_REVIEW" until the clinician verifies it. This queue is how
+   the founder finds them: urgent entries first (their urgency flags are the
+   riskiest thing to leave unreviewed), then alphabetical. */
+function kbReviewQueue() {
+  if (typeof KNOWLEDGE_ALL === "undefined") return [];
+  var q = [];
+  for (var i = 0; i < KNOWLEDGE_ALL.length; i++) {
+    var c = KNOWLEDGE_ALL[i];
+    if (c.review_status === "NEEDS_CLINICAL_REVIEW") q.push(c);
+  }
+  q.sort(function (a, b) {
+    if (!!a.urgent !== !!b.urgent) return a.urgent ? -1 : 1;
+    return a.name < b.name ? -1 : (a.name > b.name ? 1 : 0);
+  });
+  return q;
+}
+
+function kbRenderReviewQueue() {
+  var el = document.getElementById("kbeReviewQueue");
+  if (!el) return;
+  var q = kbReviewQueue();
+  var title = document.getElementById("kbeReviewTitle");
+  if (title) title.textContent = "Review Queue (" + q.length + " awaiting your verification)";
+  if (!q.length) {
+    el.innerHTML = '<div class="kbe-check kbe-ok"><span>✓</span><span>Nothing awaiting review.</span></div>';
+    return;
+  }
+  var h = "";
+  for (var i = 0; i < Math.min(q.length, 400); i++) {
+    var c = q[i];
+    h += '<div class="kbe-queue-item" onclick="openKbEditor(' + "'" + esc(c.name).replace(/'/g, "\\'") + "'" + ')" ' +
+      'style="cursor:pointer;padding:3px 6px;border-bottom:1px solid var(--fg);font-size:.6rem;display:flex;gap:6px;align-items:center">' +
+      (c.urgent ? '<span style="color:var(--ur,#c0392b);font-weight:700" title="urgent flag needs sign-off">⚑</span>' : '<span style="opacity:.35">·</span>') +
+      '<span style="flex:1">' + esc(c.name) + '</span>' +
+      '<span style="color:var(--sv);font-size:.5rem">' + esc(c._domain || c.domain || "") + '</span>' +
+      '</div>';
+  }
+  el.innerHTML = h;
+}
+
+/* Mark the condition being edited as clinically verified. This is a clinical
+   attestation by the signed-in clinician — it deliberately does NOT go
+   through the authoring compiler (which stamps everything provisional).
+   It flips the review fields on the LIVE condition and persists it as a
+   local edit (and to the cloud when signed in as owner). */
+function kbEditorMarkVerified() {
+  var name = KB_EDITOR.editingName;
+  if (!name) { kbEditorMsg("Open an existing condition first — verification applies to a saved entry.", "err"); return; }
+  var live = (typeof findCondition === "function") ? findCondition(name) : null;
+  if (!live) { kbEditorMsg("Condition not found in the live KB.", "err"); return; }
+  var ok = window.confirm(
+    "Mark “" + name + "” as clinically verified?\n\n" +
+    "This records that YOU have reviewed its tokens, urgency flag and profile. " +
+    "Any later edit makes it provisional again.");
+  if (!ok) return;
+  live.review_status = "VERIFIED_BY_CLINICIAN";
+  live.review_verified_on = new Date().toISOString().slice(0, 10);
+  if (typeof kbApplyLocalConditionUpsert === "function") kbApplyLocalConditionUpsert(live);
+  if (KB_EDITOR.isCloudEditor && typeof cloudKbUpsertCondition === "function") {
+    var row = kbEditorCloudRow(live);
+    row.review_status = "VERIFIED_BY_CLINICIAN";
+    cloudKbUpsertCondition(row, function (err) {
+      kbEditorMsg(err ? "Verified locally. Cloud update failed: " + err.message
+                      : "Verified ✓ (saved locally + cloud).", err ? "err" : "ok");
+    });
+  } else {
+    kbEditorMsg("Verified ✓ (saved on this device).", "ok");
+  }
+  kbRenderReviewQueue();
+  var st = document.getElementById("kbeReviewStatus");
+  if (st) st.innerHTML = kbEditorStatusHtml(live);
+}
+
+function kbEditorStatusHtml(cond) {
+  if (!cond) return "";
+  if (cond.review_status === "VERIFIED_BY_CLINICIAN") {
+    return '<span style="color:var(--ok,#27ae60)">✓ Clinically verified' +
+      (cond.review_verified_on ? " on " + esc(cond.review_verified_on) : "") + '</span>';
+  }
+  if (cond.review_status === "NEEDS_CLINICAL_REVIEW") {
+    return '<span style="color:var(--wa,#e67e22)">⚠ Provisional — needs your clinical review' +
+      (cond.urgent ? ' (incl. its URGENT flag)' : '') + '</span>';
+  }
+  return '<span style="color:var(--sv)">Curated entry (original KB)</span>';
+}
+
 function renderKbEditor(draft) {
   draft = draft || { name: "", route: "", domain: "", urgent: false, icd: "", icd_label: "",
                      req: [], sup: [], con: [], temporal: [], tests: [], exclusions: [] };
@@ -118,8 +206,14 @@ function renderKbEditor(draft) {
           '<div class="kbe-field kbe-grow"><label>ICD-10 label</label><input id="kbeIcdLabel" value="' + esc(draft.icd_label) + '" oninput="kbEditorValidate()"></div>' +
         '</div>' +
 
+        '<div id="kbeReviewStatus" style="font-size:.6rem;padding:2px 0">' +
+          kbEditorStatusHtml(KB_EDITOR.editingName && typeof findCondition === "function" ? findCondition(KB_EDITOR.editingName) : null) +
+        '</div>' +
+
         '<div class="kbe-actions">' +
           '<button class="btn btn-p" onclick="kbEditorSave()" id="kbeSaveBtn">Save to my KB</button>' +
+          (KB_EDITOR.editingName ?
+            '<button class="btn btn-s" onclick="kbEditorMarkVerified()" id="kbeVerifyBtn" title="Record that you have clinically reviewed this condition">Mark clinically verified ✓</button>' : '') +
           '<button class="btn btn-s" onclick="kbEditorPublish()" id="kbePublishBtn" title="Push a new KB version to every device">Publish to all devices…</button>' +
           '<button class="btn btn-s" onclick="closeKbEditor()">Close</button>' +
           '<span id="kbeSaveMsg" class="kbe-savemsg"></span>' +
@@ -127,6 +221,8 @@ function renderKbEditor(draft) {
       '</div>' +
 
       '<div class="kbe-side">' +
+        '<div class="kbe-panel-title" id="kbeReviewTitle">Review Queue</div>' +
+        '<div id="kbeReviewQueue" style="max-height:180px;overflow-y:auto;border:1px solid var(--fg);border-radius:var(--r);margin-bottom:8px"></div>' +
         '<div class="kbe-panel-title">Live checks</div>' +
         '<div id="kbeChecks" class="kbe-checks"></div>' +
         '<div class="kbe-panel-title">Preview (what the engine stores)</div>' +
@@ -136,6 +232,7 @@ function renderKbEditor(draft) {
 
   document.getElementById("kbEditorContent").innerHTML = h;
   kbEditorValidate();
+  kbRenderReviewQueue();
 }
 
 /* Read the form into a draft object. */

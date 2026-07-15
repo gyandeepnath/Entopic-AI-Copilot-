@@ -41,6 +41,11 @@ if (typeof KB_EXPANSION !== "undefined") {
   for (var _xi = 0; _xi < KB_EXPANSION.length; _xi++) {
     var _xc = KB_EXPANSION[_xi];
     var _xd = _xc.domain || "Expanded";
+    /* Runtime review flag — the whole expansion batch is AI-drafted and
+       provisional until the clinician verifies it. The KB editor's Review
+       Queue reads this; a founder "mark verified" is saved as a local edit,
+       which replays AFTER this loader runs and so overrides the stamp. */
+    if (!_xc.review_status) _xc.review_status = "NEEDS_CLINICAL_REVIEW";
     if (!KNOWLEDGE_DOMAINS[_xd]) KNOWLEDGE_DOMAINS[_xd] = [];
     KNOWLEDGE_DOMAINS[_xd].push(_xc);
   }

@@ -58,8 +58,13 @@ function kbNormalizeDraft(draft) {
   for (var f = 0; f < KB_ARRAY_FIELDS.length; f++) {
     out[KB_ARRAY_FIELDS[f]] = cleanList(draft[KB_ARRAY_FIELDS[f]]);
   }
-  /* every authored/edited clinical entry is provisional until verified */
+  /* every authored/edited clinical entry is provisional until verified —
+     editing a previously-verified condition makes it provisional AGAIN
+     (the founder must re-verify what changed). The separate "mark
+     clinically verified" action in the KB editor is the only way to set
+     review_status to verified, and it bypasses this compiler on purpose. */
   out.icd_status = "NEEDS_CLINICAL_REVIEW";
+  out.review_status = "NEEDS_CLINICAL_REVIEW";
   return out;
 }
 
