@@ -131,8 +131,16 @@
     <span class="hdr-logo">Entopic</span>
     <span class="hdr-pat" id="hdrPat"></span>
     <span class="hdr-badge">Advisory Only</span>
+    <!-- Diagnostic engine — always reachable; on narrow screens it opens the
+         advisory as a slide-over drawer, on wide screens it opens the full map -->
+    <span class="hdr-engine" id="hdrEngine" onclick="toggleEngineView()" title="Diagnostic engine — live">
+      <span class="hdr-engine-dot"></span>Engine<span class="hdr-engine-badge" id="hdrEngineBadge"></span>
+    </span>
     <span class="hdr-home" onclick="goHome()">← Home</span>
   </header>
+
+  <!-- Backdrop for the engine drawer on narrow screens -->
+  <div id="engineBackdrop" onclick="document.body.classList.remove('engine-open')"></div>
 
   <!-- Sidebar Navigation (22 steps) -->
   <nav class="sidebar-nav" id="sidebarEl"></nav>

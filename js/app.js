@@ -541,6 +541,10 @@ function stopAutoSave() {
 /* ═══════════════════════════════════════════════════════════════ */
 
 function nav(stepId) {
+  /* Close the engine drawer (narrow screens) so navigating to record a finding
+     reveals the exam step; harmless when the drawer isn't open. */
+  if (document.body) document.body.classList.remove("engine-open");
+
   /* Mark current step done if it has data */
   markDone(V.step);
 

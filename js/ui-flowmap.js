@@ -67,66 +67,259 @@ function renderFlowMap() {
     '<span style="width:7px;height:7px;border-radius:50%;background:#27ae60;display:inline-block;box-shadow:0 0 0 0 rgba(39,174,96,.5);animation:entopicPulse 1.6s infinite"></span>' +
     'Diagnostic Engine · live' +
     '<span style="flex:1"></span>' +
+    '<button onclick="openEngineMap()" style="background:none;border:none;color:var(--md);font-size:.5rem;cursor:pointer;text-decoration:underline" title="Open the full reasoning map">expand ⤢</button>' +
     '<button onclick="toggleFlowMap()" style="background:none;border:none;color:var(--sv);font-size:.5rem;cursor:pointer;text-decoration:underline">hide</button>' +
     '</div>' +
     '<div style="font-size:.5rem;color:var(--sv);margin:-2px 0 6px">Re-evaluates every time you enter a finding — tokens → matches → differential → what to check next.</div>';
 
-  /* Flow container */
-  h += '<div style="border:1px solid var(--fg);border-radius:var(--rl);overflow:hidden;font-size:.58rem">';
+  /* ═══ THE LIVE LOOP (compact node-graph) ═══
+     Inputs → leading match → what to check next, connected — the engine's
+     current "thought" at a glance. Click a node to jump to where you record it. */
+  h += renderInlineGraph();
 
-
-  /* ═══ LAYER 1: ACTIVE TOKENS ═══ */
-  h += renderFlowLayer(
-    "1. Tokens Collected",
-    "#f0f0f0",
-    renderTokenLayer()
-  );
-
-  /* ═══ LAYER 2: ROUTES ACTIVATED ═══ */
-  h += renderFlowLayer(
-    "2. Routes Activated",
-    "#eef0f2",
-    renderRouteLayer()
-  );
-
-  /* ═══ LAYER 3: DECISION TREE GATES ═══ */
-  h += renderFlowLayer(
-    "3. Decision Tree Gates",
-    "#f0eef2",
-    renderGateLayer()
-  );
-
-  /* ═══ LAYER 4: SCORING ═══ */
-  h += renderFlowLayer(
-    "4. Condition Scoring",
-    "#eef2f0",
-    renderScoringLayer()
-  );
-
-  /* ═══ LAYER 5: EXCLUSIONS ═══ */
-  h += renderFlowLayer(
-    "5. Exclusions Applied",
-    "#f2f0ee",
-    renderExclusionLayer()
-  );
-
-  /* ═══ LAYER 6: FINAL RESULT ═══ */
-  h += renderFlowLayer(
-    "6. Final Differential",
-    "#eef2ee",
-    renderResultLayer()
-  );
-
-
-  h += '</div>'; /* close flow container */
-
-  /* Flow arrows between layers */
+  /* ═══ PIPELINE DETAIL (the original glass-box layers, collapsible) ═══
+     Kept for full provenance — every stage the engine ran, inspectable. */
+  h += '<details style="margin-top:8px">' +
+    '<summary style="font-size:.52rem;color:var(--sv);cursor:pointer;list-style:none">▸ Pipeline detail (tokens · routes · gates · scoring · exclusions)</summary>';
+  h += '<div style="border:1px solid var(--fg);border-radius:var(--rl);overflow:hidden;font-size:.58rem;margin-top:6px">';
+  h += renderFlowLayer("1. Tokens Collected", "#f0f0f0", renderTokenLayer());
+  h += renderFlowLayer("2. Routes Activated", "#eef0f2", renderRouteLayer());
+  h += renderFlowLayer("3. Decision Tree Gates", "#f0eef2", renderGateLayer());
+  h += renderFlowLayer("4. Condition Scoring", "#eef2f0", renderScoringLayer());
+  h += renderFlowLayer("5. Exclusions Applied", "#f2f0ee", renderExclusionLayer());
+  h += renderFlowLayer("6. Final Differential", "#eef2ee", renderResultLayer());
+  h += '</div>';
   h += '<div style="text-align:center;font-size:.5rem;color:var(--sv);padding:4px 0">Pipeline: COLLECT → NORMALIZE → TEMPORAL → GATE → ROUTE → SCORE → EXCLUDE → RANK</div>';
+  h += '</details>';
 
   h += '</div>'; /* close outer container */
 
   return h;
 }
+
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* INLINE NODE-GRAPH — the live loop, compact (fits the 310px panel) */
+/* Three connected tiers: INPUTS → LEADING MATCH(es) → CHECK NEXT.    */
+/* All data is already computed by the engine; this only presents it. */
+/* ═══════════════════════════════════════════════════════════════ */
+
+function renderInlineGraph() {
+  var tokens = (typeof ENGINE_STATE !== "undefined" && ENGINE_STATE.tokens) ? ENGINE_STATE.tokens : [];
+  var dx = (V.dxList || []);
+  if (tokens.length === 0 || dx.length === 0) {
+    return '<div style="padding:10px;font-size:.56rem;color:var(--sv);text-align:center;border:1px dashed var(--ms);border-radius:var(--r)">Enter findings — the live map fills in as evidence arrives.</div>';
+  }
+
+  var connector = '<div style="text-align:center;color:var(--ms);font-size:.7rem;line-height:1;margin:1px 0">↓</div>';
+  var h = '<div style="border:1px solid var(--fg);border-radius:var(--rl);padding:8px;background:var(--bg2,transparent)">';
+
+  /* — Tier 1: INPUTS — a compact chip cloud of the current tokens — */
+  h += '<div style="font-size:.46rem;text-transform:uppercase;letter-spacing:.6px;color:var(--sv);margin-bottom:3px">Inputs · ' + tokens.length + ' tokens</div>';
+  h += '<div style="display:flex;flex-wrap:wrap;gap:2px;max-height:46px;overflow:hidden">';
+  for (var i = 0; i < Math.min(tokens.length, 14); i++) {
+    h += '<span style="padding:1px 5px;background:var(--fg);border-radius:2px;font-size:.5rem;color:var(--ink)">' + esc(tokens[i].replace(/_/g, " ")) + '</span>';
+  }
+  if (tokens.length > 14) h += '<span style="padding:1px 5px;font-size:.5rem;color:var(--sv)">+' + (tokens.length - 14) + '</span>';
+  h += '</div>';
+
+  h += connector;
+
+  /* — Tier 2: LEADING MATCH — the top candidate as a node with a confidence
+       ring, plus up to two close rivals as smaller nodes — */
+  var lead = dx[0];
+  h += '<div style="display:flex;align-items:center;gap:8px;padding:6px;border:1px solid ' + (lead.urgent ? 'var(--ur,#c0392b)' : 'var(--bk,#333)') + ';border-radius:var(--r);background:var(--card,transparent)">';
+  h += confRing(lead.prob, lead.urgent);
+  h += '<div style="flex:1;min-width:0">';
+  h += '<div style="font-weight:600;font-size:.62rem;line-height:1.1">' + esc(lead.n) + (lead.urgent ? ' <span style="color:var(--ur,#c0392b);font-size:.46rem">URGENT</span>' : '') + '</div>';
+  var ev = lead.evidence || {};
+  if (ev.matched && ev.matched.length) h += '<div style="font-size:.48rem;color:var(--ok,#27ae60);margin-top:1px">✓ ' + esc(ev.matched.slice(0, 3).join(", ")) + (ev.matched.length > 3 ? " +" + (ev.matched.length - 3) : "") + '</div>';
+  if (ev.contradicted && ev.contradicted.length) h += '<div style="font-size:.48rem;color:var(--ur,#c0392b)">✕ ' + esc(ev.contradicted.slice(0, 2).join(", ")) + '</div>';
+  h += '</div></div>';
+
+  /* close rivals within 0.15 of the leader */
+  var rivals = [];
+  for (var r = 1; r < dx.length && rivals.length < 2; r++) {
+    if (dx[r].prob >= lead.prob - 0.15) rivals.push(dx[r]);
+  }
+  if (rivals.length) {
+    h += '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">';
+    for (var rv = 0; rv < rivals.length; rv++) {
+      h += '<span style="font-size:.5rem;color:var(--sv);border:1px solid var(--fg);border-radius:10px;padding:1px 6px">vs ' + esc(rivals[rv].n) + ' ' + (rivals[rv].prob * 100).toFixed(0) + '%</span>';
+    }
+    h += '</div>';
+  }
+
+  /* — Tier 3: CHECK NEXT — the discriminators that would move the needle — */
+  var nt = (V.nextTests || []);
+  if (nt.length) {
+    h += connector;
+    h += '<div style="font-size:.46rem;text-transform:uppercase;letter-spacing:.6px;color:var(--sv);margin-bottom:3px">Check next → raises confidence</div>';
+    for (var n = 0; n < Math.min(nt.length, 3); n++) {
+      var t = nt[n];
+      h += '<div onclick="nav(\'' + t.target + '\')" style="cursor:pointer;display:flex;align-items:center;gap:5px;padding:3px 5px;border:1px dashed var(--ms);border-radius:var(--r);margin-bottom:3px">' +
+        '<span style="font-size:.6rem">🔬</span>' +
+        '<span style="flex:1;font-size:.54rem">' + esc(t.label) + '</span>' +
+        '<span style="font-size:.44rem;color:var(--sv);text-transform:uppercase">→ ' + esc(t.target.replace(/_/g, " ")) + '</span>' +
+        '</div>';
+    }
+  } else {
+    h += connector;
+    h += '<div style="font-size:.5rem;color:var(--sv);text-align:center;padding:2px">Leading diagnosis is clear — no discriminating test needed.</div>';
+  }
+
+  h += '</div>';
+  return h;
+}
+
+/* Small SVG confidence donut. */
+function confRing(prob, urgent) {
+  var pct = Math.max(0, Math.min(1, prob || 0));
+  var R = 15, C = 2 * Math.PI * R;
+  var col = urgent ? '#c0392b' : (pct >= 0.6 ? '#27ae60' : pct >= 0.35 ? '#e67e22' : '#999');
+  var dash = (pct * C).toFixed(1) + ' ' + C.toFixed(1);
+  return '<svg width="40" height="40" viewBox="0 0 40 40" style="flex:none">' +
+    '<circle cx="20" cy="20" r="' + R + '" fill="none" stroke="var(--fg,#ddd)" stroke-width="4"/>' +
+    '<circle cx="20" cy="20" r="' + R + '" fill="none" stroke="' + col + '" stroke-width="4" stroke-linecap="round" ' +
+      'stroke-dasharray="' + dash + '" transform="rotate(-90 20 20)"/>' +
+    '<text x="20" y="23" text-anchor="middle" font-size="10" font-weight="700" fill="' + col + '">' + (pct * 100).toFixed(0) + '</text>' +
+    '</svg>';
+}
+
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* FULL-SCREEN NODE-GRAPH OVERLAY                                   */
+/* Inputs (left) → candidate conditions (middle, sized by           */
+/* confidence) → next-data (right), with edges coloured green       */
+/* (supports) / red (contradicts). Drawn as inline SVG (offline).   */
+/* Reachable even when the side panel is hidden (tablet/chairside).  */
+/* ═══════════════════════════════════════════════════════════════ */
+
+function openEngineMap() {
+  var host = document.getElementById("engineMapOverlay");
+  if (!host) {
+    host = document.createElement("div");
+    host.id = "engineMapOverlay";
+    host.className = "engine-map-overlay";
+    host.addEventListener("click", function (e) { if (e.target === host) closeEngineMap(); });
+    document.body.appendChild(host);
+    document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeEngineMap(); });
+  }
+  host.innerHTML = renderEngineMapInner();
+  host.style.display = "flex";
+}
+function closeEngineMap() {
+  var host = document.getElementById("engineMapOverlay");
+  if (host) host.style.display = "none";
+}
+/* navigate from a node, closing the overlay first */
+function engineMapNav(step) { closeEngineMap(); if (typeof nav === "function") nav(step); }
+
+function renderEngineMapInner() {
+  var h = '<div class="engine-map-box">';
+  h += '<div class="engine-map-head">' +
+    '<span style="width:8px;height:8px;border-radius:50%;background:#27ae60;display:inline-block;animation:entopicPulse 1.6s infinite"></span>' +
+    '<b>Diagnostic Engine — reasoning map</b>' +
+    '<span style="flex:1"></span>' +
+    '<span style="font-size:.62rem;color:var(--sv)">Advisory only — clinical correlation required</span>' +
+    '<button onclick="closeEngineMap()" class="engine-map-x" aria-label="Close">✕</button>' +
+    '</div>';
+  h += '<div class="engine-map-legend">' +
+    '<span><span class="emk-dot" style="background:#27ae60"></span> supports</span>' +
+    '<span><span class="emk-dot" style="background:#c0392b"></span> contradicts</span>' +
+    '<span><span class="emk-dot" style="background:#333"></span> candidate (size = confidence)</span>' +
+    '<span>🔬 = check next (click to record)</span>' +
+    '</div>';
+  h += '<div class="engine-map-svgwrap">' + renderEngineMapSVG() + '</div>';
+  return h + '</div>';
+}
+
+function renderEngineMapSVG() {
+  var tokens = (typeof ENGINE_STATE !== "undefined" && ENGINE_STATE.tokens) ? ENGINE_STATE.tokens.slice() : [];
+  var dx = (V.dxList || []).slice(0, 6);
+  var nexts = (V.nextTests || []).slice(0, 5);
+  if (!tokens.length || !dx.length) {
+    return '<div style="padding:40px;text-align:center;color:var(--sv)">No data yet — enter findings to see the engine reason.</div>';
+  }
+
+  /* Which tokens are relevant to the shown conditions (matched or contradicted)?
+     Prioritise those; fill up to 14 with the rest so the picture stays readable. */
+  var rel = {};
+  dx.forEach(function (d) {
+    var ev = d.evidence || {};
+    (ev.matched || []).forEach(function (t) { rel[t] = true; });
+    (ev.contradicted || []).forEach(function (t) { rel[t] = true; });
+  });
+  var relTokens = tokens.filter(function (t) { return rel[t]; });
+  var otherTokens = tokens.filter(function (t) { return !rel[t]; });
+  var shownTokens = relTokens.concat(otherTokens).slice(0, 14);
+
+  var W = 960, padY = 44;
+  var rows = Math.max(shownTokens.length, dx.length * 2, nexts.length, 4);
+  var H = padY * 2 + (rows - 1) * 40 + 20;
+  var xTok = 120, xCond = 470, xNext = 720;
+
+  function ys(n, i) { return n <= 1 ? H / 2 : padY + i * ((H - 2 * padY) / (n - 1)); }
+  var tokY = {}, condY = {};
+  shownTokens.forEach(function (t, i) { tokY[t] = ys(shownTokens.length, i); });
+  dx.forEach(function (d, i) { condY[d.n] = ys(dx.length, i) + 0; });
+
+  var edges = "", nodes = "";
+
+  /* token → condition edges (green supports / red contradicts) */
+  dx.forEach(function (d) {
+    var ev = d.evidence || {}, cy = condY[d.n];
+    (ev.matched || []).forEach(function (t) {
+      if (tokY[t] === undefined) return;
+      edges += '<line x1="' + xTok + '" y1="' + tokY[t] + '" x2="' + (xCond - 34) + '" y2="' + cy + '" stroke="#27ae60" stroke-width="1" opacity="0.5"/>';
+    });
+    (ev.contradicted || []).forEach(function (t) {
+      if (tokY[t] === undefined) return;
+      edges += '<line x1="' + xTok + '" y1="' + tokY[t] + '" x2="' + (xCond - 34) + '" y2="' + cy + '" stroke="#c0392b" stroke-width="1.2" stroke-dasharray="3 2" opacity="0.6"/>';
+    });
+  });
+  /* condition → next-data edges */
+  nexts.forEach(function (nt, i) {
+    var ny = ys(nexts.length, i);
+    (nt.confirms || []).forEach(function (nm) { if (condY[nm] !== undefined) edges += '<line x1="' + (xCond + 34) + '" y1="' + condY[nm] + '" x2="' + xNext + '" y2="' + ny + '" stroke="#27ae60" stroke-width="1" opacity="0.45"/>'; });
+    (nt.excludes || []).forEach(function (nm) { if (condY[nm] !== undefined) edges += '<line x1="' + (xCond + 34) + '" y1="' + condY[nm] + '" x2="' + xNext + '" y2="' + ny + '" stroke="#c0392b" stroke-width="1" stroke-dasharray="3 2" opacity="0.5"/>'; });
+  });
+
+  /* token nodes */
+  shownTokens.forEach(function (t) {
+    var y = tokY[t];
+    nodes += '<circle cx="' + xTok + '" cy="' + y + '" r="3.5" fill="#7a7a7a"/>';
+    nodes += '<text x="' + (xTok - 8) + '" y="' + (y + 3) + '" text-anchor="end" font-size="11" fill="var(--ink,#222)">' + esc(clip(t.replace(/_/g, " "), 22)) + '</text>';
+  });
+  /* column header */
+  nodes += '<text x="' + xTok + '" y="20" text-anchor="end" font-size="11" font-weight="700" fill="#888">INPUTS</text>';
+  nodes += '<text x="' + xCond + '" y="20" text-anchor="middle" font-size="11" font-weight="700" fill="#888">CANDIDATES</text>';
+  nodes += '<text x="' + xNext + '" y="20" text-anchor="start" font-size="11" font-weight="700" fill="#888">CHECK NEXT</text>';
+
+  /* condition nodes */
+  dx.forEach(function (d, i) {
+    var y = condY[d.n], pct = d.prob, isLead = i === 0;
+    var rr = 12 + pct * 20;
+    var col = d.urgent ? '#c0392b' : (pct >= 0.6 ? '#27ae60' : pct >= 0.35 ? '#e67e22' : '#999');
+    nodes += '<circle cx="' + xCond + '" cy="' + y + '" r="' + rr.toFixed(1) + '" fill="' + col + '" fill-opacity="0.14" stroke="' + col + '" stroke-width="' + (isLead ? 3 : 1.5) + '"/>';
+    nodes += '<text x="' + xCond + '" y="' + (y + 4) + '" text-anchor="middle" font-size="11" font-weight="700" fill="' + col + '">' + (pct * 100).toFixed(0) + '%</text>';
+    nodes += '<text x="' + xCond + '" y="' + (y + rr + 12) + '" text-anchor="middle" font-size="10.5" font-weight="' + (isLead ? 700 : 400) + '" fill="var(--ink,#222)">' + esc(clip(d.n, 30)) + (d.urgent ? ' ⚠' : '') + '</text>';
+  });
+
+  /* next-data nodes (clickable) */
+  nexts.forEach(function (nt, i) {
+    var y = ys(nexts.length, i);
+    nodes += '<g style="cursor:pointer" onclick="engineMapNav(\'' + nt.target + '\')">';
+    nodes += '<rect x="' + xNext + '" y="' + (y - 11) + '" width="' + (W - xNext - 12) + '" height="22" rx="5" fill="#f3f3f3" stroke="#ccc"/>';
+    nodes += '<text x="' + (xNext + 8) + '" y="' + (y + 4) + '" font-size="11" fill="#222">🔬 ' + esc(clip(nt.label, 24)) + '</text>';
+    nodes += '</g>';
+  });
+
+  return '<svg viewBox="0 0 ' + W + ' ' + H + '" width="100%" preserveAspectRatio="xMidYMid meet" style="min-width:640px">' +
+    edges + nodes + '</svg>';
+}
+
+function clip(s, n) { s = String(s); return s.length > n ? s.slice(0, n - 1) + "…" : s; }
 
 
 /* ═══════════════════════════════════════════════════════════════ */
@@ -483,7 +676,7 @@ function renderResultLayer() {
 /* Store original renderAdvisory */
 var _originalRenderAdvisory = typeof renderAdvisory === "function" ? renderAdvisory : null;
 
-/* Override renderAdvisory to append flow map */
+/* Override renderAdvisory to append flow map + refresh the header badge */
 renderAdvisory = function() {
   /* Call original */
   if (_originalRenderAdvisory) {
@@ -495,4 +688,32 @@ renderAdvisory = function() {
   if (advEl) {
     advEl.innerHTML += renderFlowMap();
   }
+
+  /* Keep the always-visible header engine badge current. */
+  updateEngineBadge();
 };
+
+/* The header "Engine" control: on a narrow/tablet screen (where the panel is a
+   drawer) it slides the copilot in/out; on a wide screen (panel already docked)
+   it opens the full-screen reasoning map. Either way the engine is one tap
+   away at every size — fixing the old behaviour where it vanished ≤1000px. */
+function toggleEngineView() {
+  var narrow = window.matchMedia && window.matchMedia("(max-width: 1000px)").matches;
+  if (narrow) {
+    document.body.classList.toggle("engine-open");
+  } else {
+    openEngineMap();
+  }
+}
+
+/* Live confidence badge in the header — leading dx % and any red-flag count. */
+function updateEngineBadge() {
+  var el = document.getElementById("hdrEngineBadge");
+  if (!el) return;
+  var dx = (typeof V !== "undefined" && V.dxList) ? V.dxList : [];
+  var urgent = (typeof V !== "undefined" && V.alerts) ? V.alerts.filter(function (a) { return a.l === "urgent"; }).length : 0;
+  var parts = [];
+  if (dx.length) parts.push((dx[0].prob * 100).toFixed(0) + "%");
+  el.className = "hdr-engine-badge" + (urgent ? " urgent" : "");
+  el.textContent = (parts.length ? "· " + parts[0] : "") + (urgent ? " ⚠" + urgent : "");
+}

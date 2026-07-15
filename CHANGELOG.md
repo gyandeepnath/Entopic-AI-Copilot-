@@ -6,6 +6,51 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-07-15 — Session 5 (increment AD): live node-graph engine + always-reachable copilot
+
+**Founder report:** "I don't see the AI diagnostic engine on the right anymore
+— the live visual map / self-correcting loop." Two root causes found:
+
+1. The glass-box reasoning map had been **collapsed behind a toggle**
+   (`FLOWMAP_VISIBLE = false`) — the whole visual engine read as missing.
+2. Deeper: the advisory panel is **`display:none` on screens ≤1000px**
+   (`css/entopic.css`) — so on a tablet/narrow laptop (the chairside reality)
+   the entire copilot vanished.
+
+Both fixed; the engine view was also reworked into a live node-graph per the
+founder's choice. **Presentation/layout only — no engine, scoring, red-flag, or
+offline changes.**
+
+**A — Live node-graph reasoning map** (`js/ui-flowmap.js`):
+- Visible by default with a pulsing "Diagnostic Engine · live" header.
+- **Inline live loop** (fits the 310px panel): INPUTS (token chips) → the
+  leading match as a node with an SVG confidence ring + its supporting/
+  contradicting evidence → close rivals → **CHECK NEXT** discriminators (from
+  `V.nextTests`, clickable to the right exam step). Shows the loop at a glance.
+- **Full-screen node-graph overlay** ("expand ⤢"): inputs → candidate
+  conditions (sized/coloured by confidence, leader highlighted) with edges
+  coloured green (supports) / red-dashed (contradicts) → check-next nodes,
+  clickable. Inline SVG, no libraries (offline-first). Reachable at any width.
+- The original 6-stage pipeline is preserved as a collapsible "Pipeline detail"
+  for full provenance.
+
+**B — Engine reachable on every screen size** (`index.html`, `css/entopic.css`,
+`js/ui-flowmap.js`, `js/app.js`):
+- Persistent header **"● Engine · NN%"** button with a live confidence badge
+  (leading dx % + red-flag count), visible at all widths.
+- ≤1000px no longer hides the panel — it becomes a **slide-over drawer** the
+  button opens (dimmed backdrop; closes on navigation). On wide screens the
+  button opens the full-screen map. The whole copilot is now one tap away
+  chairside.
+
+**Verified** — 155/155 unit tests; e2e at **1440/900/600px** (engine reachable,
+node-graph renders, check-next navigates + re-runs engine, drawer opens/closes,
+**red flags fire**); e2e-audit, loop, and review-flow all pass; no console
+errors. (Rapid-capture / voice entry to reduce data-entry burden is planned as
+a founder-gated follow-up.)
+
+---
+
 ## 2026-07-15 — Session 5 (increment AC): founder review flow + expansion batch 6
 
 **Founder review flow (verified end-to-end).** Verification found the review
