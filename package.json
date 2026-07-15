@@ -1,6 +1,6 @@
 {
   "name": "entopic",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "description": "Entopic — offline-first ophthalmic exam copilot and clinical decision-support tool. The app itself is browser-only (open index.html); this package.json exists only to run dev tooling and tests in Node.",
   "scripts": {
