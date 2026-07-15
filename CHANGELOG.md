@@ -6,6 +6,38 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-07-15 — Session 5 (increment AC): founder review flow + expansion batch 6
+
+**Founder review flow (verified end-to-end).** Verification found the review
+contract existed only in file comments — provisional conditions had no runtime
+flag, no way to be *found*, and no way to be *marked verified* (the compiler
+re-stamps every save provisional). Completed it:
+
+- `loader.js` stamps every expansion condition `review_status =
+  NEEDS_CLINICAL_REVIEW` at runtime; local edits replay after the loader, so a
+  recorded verification overrides the stamp.
+- The KB editor now has a **Review Queue** — urgent entries first (their
+  urgency flags are the riskiest thing to leave unreviewed) with a live count;
+  clicking an entry opens it.
+- New **"Mark clinically verified"** action records `VERIFIED_BY_CLINICIAN` +
+  date on the live condition and persists it (local + cloud when owner is
+  signed in). It deliberately bypasses the compiler; any later edit re-flags
+  the condition provisional so changed content is always re-reviewed. A status
+  line shows provisional / verified / curated state.
+- Headless-browser e2e proves the whole loop: 133 provisional queued (36
+  urgent first) → open → verify → persist across reload → re-flag on edit;
+  engine + red flags intact.
+
+**Expansion batch 6 — 12 more conditions** (each specific-req + real
+contradictors, all surface #1–#2, no new cross-conflicts): molluscum (lid),
+conjunctivochalasis, corneal dermoid, descemetocele, asteroid hyalosis,
+vitreous amyloidosis, FEVR, phacolytic glaucoma, plateau iris syndrome, Duane
+retraction, Brown syndrome, infantile nystagmus. **KB now 282 conditions.**
+
+**Verified** — **155/155** tests; cross-conflict audit unchanged.
+
+---
+
 ## 2026-07-15 — Session 5 (increment AA): diagnostic refinement loop — "what to check next"
 
 **Founder ask:** since Entopic gives a ranked differential rather than a bare

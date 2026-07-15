@@ -480,6 +480,55 @@ var KB_EXPANSION = [
   "con": ["older_age", "pain", "redness", "night_blindness"], "temporal": ["acute"], "tests": ["macular_screening_needed"], "exclusions": [] },
 { "name": "Punctate Inner Choroidopathy (PIC)", "domain": "Retina", "route": "retina",
   "req": ["central_scotoma", "myopia"], "sup": ["central_blur", "young_age", "distortion", "reduced_vision", "photophobia_mild"],
-  "con": ["older_age", "pain", "redness", "night_blindness"], "temporal": ["subacute", "recurrent"], "tests": ["macular_screening_needed"], "exclusions": [] }
+  "con": ["older_age", "pain", "redness", "night_blindness"], "temporal": ["subacute", "recurrent"], "tests": ["macular_screening_needed"], "exclusions": [] },
+
+/* ═══ BATCH 6 (2026-07-15) — further high-yield gaps, specific required tokens
+   + real contradictors. Provisional / NEEDS_CLINICAL_REVIEW. ═══ */
+
+/* Ocular surface / lids */
+{ "name": "Molluscum Contagiosum (Lid)", "domain": "Surface & Lids", "route": "surface",
+  "req": ["painless_lid_nodule", "follicles"], "sup": ["chronic_redness", "watering", "foreign_body_sensation", "lid_margin_irregularity", "recurrent_episode"],
+  "con": ["pain_severe", "purulent_discharge", "reduced_vision"], "temporal": ["chronic"], "tests": ["follicles"], "exclusions": [] },
+{ "name": "Conjunctivochalasis", "domain": "Surface & Lids", "route": "surface",
+  "req": ["excess_tearing", "foreign_body_sensation"], "sup": ["chronic_irritation", "older_age", "dryness", "redness", "burning"],
+  "con": ["purulent_discharge", "itching_dominant", "sudden_onset"], "temporal": ["chronic"], "tests": [], "exclusions": [] },
+
+/* Cornea */
+{ "name": "Corneal Dermoid", "domain": "Cornea", "route": "anterior",
+  "req": ["limbal_nodule", "young_age"], "sup": ["astigmatism", "reduced_vision", "foreign_body_sensation", "chronic_irritation"],
+  "con": ["pain_severe", "redness", "purulent_discharge", "sudden_onset"], "temporal": ["chronic"], "tests": [], "exclusions": [] },
+{ "name": "Descemetocele", "domain": "Cornea", "route": "urgent",
+  "req": ["corneal_thinning_central", "reduced_vision"], "sup": ["pain", "redness", "photophobia", "history_trauma_or_infection", "foreign_body_sensation"],
+  "con": ["itching_dominant", "gradual_onset", "chronic_irritation"], "temporal": ["acute", "subacute"], "tests": [], "urgent": true, "exclusions": [] },
+
+/* Vitreoretinal */
+{ "name": "Asteroid Hyalosis", "domain": "Retina", "route": "retina",
+  "req": ["floaters", "asteroid_hyalosis"], "sup": ["older_age", "vitreous_opacity", "reduced_contrast", "blur"],
+  "con": ["pain", "redness", "flashes", "sudden_vision_loss", "field_loss"], "temporal": ["chronic"], "tests": ["asteroid_hyalosis"], "exclusions": [] },
+{ "name": "Vitreous Amyloidosis", "domain": "Retina", "route": "retina",
+  "req": ["floaters", "vitreous_opacity"], "sup": ["reduced_vision", "blur", "family_history", "vision_hazy", "gradual_blur"],
+  "con": ["pain", "redness", "sudden_vision_loss", "itching_dominant"], "temporal": ["chronic", "progressive"], "tests": ["vitreous_opacity"], "exclusions": [] },
+{ "name": "Familial Exudative Vitreoretinopathy (FEVR)", "domain": "Retina", "route": "retina",
+  "req": ["peripheral_degeneration", "family_history"], "sup": ["reduced_vision", "young_age", "retinal_break", "field_loss", "floaters"],
+  "con": ["older_age", "pain", "redness", "itching_dominant"], "temporal": ["chronic", "progressive"], "tests": [], "exclusions": [] },
+
+/* Glaucoma */
+{ "name": "Phacolytic Glaucoma", "domain": "Glaucoma", "route": "glaucoma",
+  "req": ["high_iop", "white_cataract"], "sup": ["pain", "redness", "reduced_vision", "blur", "older_age", "halos"],
+  "con": ["itching_dominant", "gradual_onset", "young_age"], "temporal": ["acute"], "tests": ["IOP_very_high"], "exclusions": [] },
+{ "name": "Plateau Iris Syndrome", "domain": "Glaucoma", "route": "glaucoma",
+  "req": ["angle_closure_risk", "narrow_angle"], "sup": ["halos", "high_iop", "intermittent", "blur", "young_age"],
+  "con": ["gradual_onset", "itching_dominant", "reduced_corneal_sensation"], "temporal": ["intermittent", "recurrent"], "tests": ["narrow_angle", "shallow_ac"], "exclusions": [] },
+
+/* Motility / binocular */
+{ "name": "Duane Retraction Syndrome", "domain": "Binocular Vision", "route": "binocular",
+  "req": ["limited_abduction", "young_age"], "sup": ["head_tilt", "diplopia", "eye_inward", "restricted_motility"],
+  "con": ["pain", "redness", "reduced_vision", "older_age"], "temporal": ["chronic"], "tests": ["restricted_motility"], "exclusions": [] },
+{ "name": "Brown Syndrome", "domain": "Binocular Vision", "route": "binocular",
+  "req": ["vertical_diplopia", "restricted_motility"], "sup": ["head_tilt", "diplopia", "young_age", "eye_down_out"],
+  "con": ["pain_severe", "redness", "reduced_vision", "older_age"], "temporal": ["chronic"], "tests": ["restricted_motility"], "exclusions": [] },
+{ "name": "Infantile (Congenital) Nystagmus", "domain": "Neuro-Ophthalmic", "route": "neuro",
+  "req": ["nystagmus_other_eye", "young_age"], "sup": ["reduced_vision", "head_tilt", "oscillopsia", "family_history"],
+  "con": ["pain", "redness", "older_age", "sudden_vision_loss"], "temporal": ["chronic"], "tests": [], "exclusions": [] }
 
 ];
