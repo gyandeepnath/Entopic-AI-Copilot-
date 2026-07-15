@@ -109,9 +109,6 @@ var KB_EXPANSION = [
 { "name": "Superior Limbic Keratoconjunctivitis", "domain": "Cornea", "route": "surface",
   "req": ["foreign_body_sensation", "thyroid_history"], "sup": ["redness", "watering", "chronic_irritation", "burning", "photophobia_mild", "recurrent_episode"],
   "con": ["purulent_discharge", "pain_severe", "reduced_vision"], "temporal": ["chronic", "recurrent"], "tests": [], "exclusions": [] },
-{ "name": "Thygeson Superficial Punctate Keratopathy", "domain": "Cornea", "route": "anterior",
-  "req": ["punctate_epithelial_lesions"], "sup": ["foreign_body_sensation", "photophobia_mild", "watering", "recurrent_episode", "burning", "irritation"],
-  "con": ["purulent_discharge", "pain_severe", "reduced_vision", "redness"], "temporal": ["chronic", "recurrent"], "tests": ["punctate_staining"], "exclusions": [] },
 
 /* ═══ GLAUCOMA ═══ */
 { "name": "Steroid-Induced Glaucoma", "domain": "Glaucoma", "route": "glaucoma",
@@ -393,6 +390,48 @@ var KB_EXPANSION = [
   "con": ["purulent_discharge", "older_age", "pain_severe"], "temporal": ["recurrent"], "tests": [], "exclusions": [] },
 { "name": "Contact Lens Acute Red Eye (CLARE)", "domain": "Cornea", "route": "anterior",
   "req": ["contact_lens_use", "redness"], "sup": ["pain", "photophobia", "watering", "reduced_wear_time", "foreign_body_sensation", "sudden_onset"],
-  "con": ["itching_dominant", "gradual_onset", "purulent_discharge"], "temporal": ["acute"], "tests": [], "exclusions": [] }
+  "con": ["itching_dominant", "gradual_onset", "purulent_discharge"], "temporal": ["acute"], "tests": [], "exclusions": [] },
+
+/* ═══ BATCH 4 (2026-07-15) — high-yield gaps, each with a SPECIFIC required
+   token so it can't cross-fire into unrelated presentations. Provisional /
+   NEEDS_CLINICAL_REVIEW; urgency flags in particular need founder sign-off. ═══ */
+
+/* Uveitis / inflammatory */
+{ "name": "Vogt-Koyanagi-Harada Disease", "domain": "Anterior / Uveitis", "route": "urgent",
+  "req": ["subretinal_fluid", "headache"], "sup": ["reduced_vision", "bilateral", "photophobia", "floaters", "redness", "recurrent_episode"],
+  "con": ["itching_dominant", "purulent_discharge", "gradual_onset"], "temporal": ["acute"], "tests": ["cells_present"], "urgent": true, "exclusions": [] },
+{ "name": "Behcet Disease (Ocular)", "domain": "Anterior / Uveitis", "route": "urgent",
+  "req": ["hypopyon", "recurrent_episode"], "sup": ["pain", "redness", "floaters", "reduced_vision", "photophobia", "retinal_ischemia"],
+  "con": ["itching_dominant", "gradual_onset", "purulent_discharge"], "temporal": ["recurrent", "acute"], "tests": ["cells_present"], "urgent": true, "exclusions": [] },
+
+/* Medical / vascular retina */
+{ "name": "Coats Disease", "domain": "Retina", "route": "retina",
+  "req": ["leukocoria", "young_age"], "sup": ["reduced_vision", "hard_exudates", "dilated_tortuous_veins", "floaters", "eye_inward"],
+  "con": ["older_age", "pain", "redness", "bilateral", "itching_dominant"], "temporal": ["progressive"], "tests": ["macular_screening_needed"], "exclusions": [] },
+{ "name": "Sickle Cell Retinopathy", "domain": "Retina", "route": "retina",
+  "req": ["nve_neovascularization_elsewhere", "retinal_ischemia"], "sup": ["floaters", "reduced_vision", "vitreous_hemorrhage", "sudden_floaters", "dark_spots"],
+  "con": ["pain", "redness", "itching_dominant", "gradual_onset"], "temporal": ["chronic", "progressive"], "tests": [], "exclusions": [] },
+{ "name": "Angioid Streaks", "domain": "Retina", "route": "retina",
+  "req": ["distortion", "subretinal_hemorrhage_cnv"], "sup": ["central_blur", "reduced_vision", "central_scotoma", "reduced_contrast", "micropsia"],
+  "con": ["pain", "redness", "night_blindness", "itching_dominant"], "temporal": ["chronic"], "tests": ["macular_screening_needed"], "exclusions": [] },
+{ "name": "Ocular Histoplasmosis Syndrome (POHS)", "domain": "Retina", "route": "retina",
+  "req": ["subretinal_hemorrhage_cnv", "peripapillary_atrophy_beta_zone"], "sup": ["central_blur", "distortion", "reduced_vision", "central_scotoma"],
+  "con": ["pain", "redness", "floaters", "itching_dominant"], "temporal": ["chronic"], "tests": ["macular_screening_needed"], "exclusions": [] },
+{ "name": "Multiple Evanescent White Dot Syndrome (MEWDS)", "domain": "Retina", "route": "retina",
+  "req": ["flashes", "young_age"], "sup": ["central_scotoma", "reduced_vision", "recent_viral_history", "temporal_field_loss", "central_blur"],
+  "con": ["pain", "redness", "older_age", "night_blindness"], "temporal": ["acute"], "tests": [], "exclusions": [] },
+
+/* Cornea / surgical */
+{ "name": "Corneal Graft Rejection", "domain": "Cornea", "route": "urgent",
+  "req": ["post_surgery", "corneal_edema"], "sup": ["redness", "pain", "reduced_vision", "photophobia", "ciliary_flush", "recurrent_episode"],
+  "con": ["itching_dominant", "purulent_discharge", "gradual_onset"], "temporal": ["acute", "subacute"], "tests": ["cells_present"], "urgent": true, "exclusions": [] },
+{ "name": "Uveitis-Glaucoma-Hyphema (UGH) Syndrome", "domain": "Glaucoma", "route": "anterior",
+  "req": ["hyphema", "post_surgery"], "sup": ["high_iop", "redness", "pain", "reduced_vision", "iol_sulcus", "recurrent_episode"],
+  "con": ["itching_dominant", "gradual_onset", "purulent_discharge"], "temporal": ["recurrent", "subacute"], "tests": ["iol_decentered", "cells_present"], "exclusions": [] },
+
+/* Neuro-orbital */
+{ "name": "Carotid-Cavernous Fistula", "domain": "Neuro-Ophthalmic", "route": "urgent",
+  "req": ["proptosis", "dilated_tortuous_veins"], "sup": ["redness", "diplopia", "high_iop", "chronic_redness", "chemosis", "conjunctival_edema"],
+  "con": ["itching_dominant", "purulent_discharge", "gradual_blur"], "temporal": ["chronic", "subacute"], "tests": ["restricted_motility"], "urgent": true, "exclusions": [] }
 
 ];

@@ -260,9 +260,9 @@ var KB_CORNEAL = [
   "name": "Thygeson Superficial Punctate Keratitis",
   "route": "anterior",
   "req": ["punctate_epithelial_lesions"],
-  "sup": ["photophobia", "foreign_body_sensation", "watering", "recurrent_episode"],
-  "con": ["purulent_discharge", "reduced_vision"],
-  "temporal": ["recurrent"],
+  "sup": ["photophobia", "foreign_body_sensation", "watering", "recurrent_episode", "burning", "irritation"],
+  "con": ["purulent_discharge", "reduced_vision", "pain_severe", "redness"],
+  "temporal": ["recurrent", "chronic"],
   "tests": ["punctate_staining"],
   "exclusions": []
 },

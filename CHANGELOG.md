@@ -63,6 +63,29 @@ Retinal Tear, POAG-cannot-suppress-AACC, and the 3000-visit fuzz all still
 hold; the fuzz well-formedness check was updated to mirror the new bounded sort
 key). Diagnostic reasoning stays fully deterministic and offline.
 
+**Then (same session): dedup + expansion batch 4.**
+
+- **Removed an accidental duplicate.** "Thygeson Superficial Punctate
+  Keratopathy" (expansion) and "Thygeson Superficial Punctate Keratitis"
+  (curated) are the same disease — the name-dedup check missed it because only
+  the last word differed. Folded the expansion version's richer findings into
+  the canonical curated entry and deleted the duplicate. KB back to a clean
+  count (no two entries for one entity here).
+- **Added 10 high-yield conditions (batch 4), each with a SPECIFIC required
+  token** so it surfaces cleanly and can't cross-fire into unrelated
+  presentations: Vogt-Koyanagi-Harada, Behçet (ocular), Coats disease, Sickle
+  cell retinopathy, Angioid streaks, Ocular histoplasmosis (POHS), MEWDS,
+  Corneal graft rejection, Uveitis-Glaucoma-Hyphema (UGH) syndrome, and
+  Carotid-cavernous fistula. Each carries a rich contradicting profile.
+- **Confirmed no new junk:** the cross-conflict audit is UNCHANGED after the
+  batch (buried 1, cross-domain junk 2 — all pre-existing benign near-ties); all
+  10 new conditions rank #1–#2 on their own presentation (0.77–0.79), behind
+  only genuine clinical neighbors. All remain **NEEDS_CLINICAL_REVIEW**, and
+  their urgency flags in particular need founder sign-off.
+
+**Verified again** — full suite **145/145** (adds the new cross-conflict guard);
+both e2e browser audits pass.
+
 ---
 
 ## 2026-07-13 — Session 4 (increment Y): KB-wide richness — deep, integrated token profiles for every condition
