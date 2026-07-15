@@ -66,7 +66,11 @@ test("IOP > 40 → critical IOP alert fires", () => {
 
 test("acute angle closure presentation → AACC tops differential + urgent IOP alert", () => {
   const out = eng.runCase({
-    symptoms: ["pain_severe", "halos", "nausea_vomiting", "reduced_vision"],
+    /* 'vomiting' is the real token the "Nausea / vomiting" symptom chip emits
+       (js/data-model.js) — the earlier 'nausea_vomiting' was a non-existent
+       token the engine silently ignored; it only passed because a since-removed
+       gate score-boost masked the missing match. */
+    symptoms: ["pain_severe", "halos", "vomiting", "reduced_vision"],
     iop: { od: "48", os: "16" }
   });
   assert.ok(out.dxList.length > 0);

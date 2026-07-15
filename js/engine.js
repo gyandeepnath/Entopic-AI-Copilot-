@@ -1388,9 +1388,15 @@ function runDiagnosticEngine() {
   function scoreOne(cond, isGated) {
     var scoreResult = scoreCondition(cond, tokens, scoreTokenSet);
     if (scoreResult.score <= 0 && !isGated) return;
-    if (isGated && scoreResult.score > 0) {
-      scoreResult.score = Math.min(1, scoreResult.score * 1.3);
-    }
+    /* Gating confers VISIBILITY, not inflated confidence. A gated condition is
+       force-surfaced for the clinician's consideration (its _gateReason lets it
+       bypass the DX_FLOOR display filter, and if urgent it gets the bounded
+       sort nudge) — but its probability must reflect the ACTUAL evidence match.
+       The old 1.3× score boost distorted ranking (e.g. floated a partially-
+       matched Anterior Uveitis above the better-matched keratitis on a
+       pain+photophobia presentation) and overstated displayed confidence.
+       Removing it keeps the differential honest; safety is unaffected because
+       red-flag ALERTS are computed separately and are un-suppressible. */
     var evidence = generateEvidence(cond, tokens, scoreResult, scoreTokenSet);
     results.push({
       name: cond.name,
@@ -1459,12 +1465,26 @@ function runDiagnosticEngine() {
   /* ── STAGE 8: Apply exclusions ── */
   results = applyExclusions(results, tokens);
 
-  /* ── Sort by score descending ── */
+  /* ── Sort by score descending, with a BOUNDED urgent nudge ──
+     Urgent conditions get a small sort-only bonus so that, when two
+     candidates are genuinely close, the safety-relevant one is shown
+     first. It must NOT let a barely-scoring urgent condition bury a
+     confident non-urgent diagnosis (that produced junk differentials —
+     a 0.21 urgent floating above a 0.79 real match). So the nudge is a
+     small additive bonus (not absolute priority), only applies once the
+     urgent condition has cleared a minimum plausibility, and is capped
+     well below the gap that separates a strong match from a weak one.
+     Patient safety does not rely on this ordering: urgent RED-FLAG
+     ALERTS are computed separately and are un-suppressible regardless of
+     where a condition lands in the differential list. */
+  var URGENT_SORT_BONUS = 0.08;
+  var URGENT_SORT_MIN = 0.15;
+  function sortKey(x) {
+    return x.score + (x.urgent && x.score >= URGENT_SORT_MIN ? URGENT_SORT_BONUS : 0);
+  }
   results.sort(function(a, b) {
-    /* Urgent conditions get priority if score is close */
-    if (a.urgent && !b.urgent && a.score > 0.2) return -1;
-    if (b.urgent && !a.urgent && b.score > 0.2) return 1;
-    if (b.score !== a.score) return b.score - a.score;
+    var ka = sortKey(a), kb = sortKey(b);
+    if (kb !== ka) return kb - ka;
     /* Deterministic tie-break by KB index — makes the differential order
        independent of how conditions were iterated/indexed. */
     return (a._index || 0) - (b._index || 0);

@@ -65,9 +65,10 @@ function assertWellFormed(out, label) {
   for (const d of dx) {
     assert.ok(d.prob >= 0 && d.prob <= 1, label + ": score in [0,1] (" + d.n + "=" + d.prob + ")");
     assert.ok(COND_NAMES.has(d.n), label + ": '" + d.n + "' is a real condition");
-    /* sorted: urgent-priority then score — approximate monotonicity of a
-       sort key that can't increase (urgent>0.2 floats up, else by score). */
-    const key = (d.urgent && d.prob > 0.2 ? 2 : 0) + d.prob;
+    /* sorted by the engine's bounded-urgent sort key: score plus a small
+       additive bonus (0.08) for urgent conditions that cleared the 0.15
+       plausibility floor. Mirror it here so ordering stays monotonic. */
+    const key = d.prob + (d.urgent && d.prob >= 0.15 ? 0.08 : 0);
     assert.ok(key <= prevKey + 1e-9, label + ": differential is ordered");
     prevKey = key;
   }

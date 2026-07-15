@@ -6,6 +6,65 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-07-15 — Session 5 (increment Z): cross-condition conflict audit — stop conditions "fighting" and producing junk differentials
+
+**Founder ask:** "Cross check each condition and tokens — make sure all these
+will work correctly and not fight/cross each other and produce a junk
+diagnosis. If needed refine the logic."
+
+**Audit built** — a new cross-condition conflict audit runs *every* condition's
+own textbook presentation (its req + sup) through the real engine and reports:
+(A) conditions BURIED — not in the top 3 of their own presentation; (B)
+CROSS-DOMAIN JUNK — an unrelated, non-urgent condition from another domain
+outscoring the target on its own presentation; (C) CONFUSABLE PAIRS — two
+conditions the engine can't tell apart (near-identical req+sup). Baseline was
+bad: **BURIED 14, CROSS-DOMAIN JUNK 5, plus one 100%-identical pair.**
+
+**Two engine-logic refinements (the real fixes):**
+
+1. **Absolute urgent priority → bounded urgent sort nudge.** The old sort gave
+   *any* urgent condition scoring >0.2 absolute priority over every non-urgent
+   one — so a 0.21 urgent floated above a 0.79 confident real match. That was
+   the primary junk source. Replaced with a small additive sort bonus (+0.08,
+   only once an urgent condition clears a 0.15 plausibility floor) so a strong
+   non-urgent diagnosis stays on top while a genuinely-close urgent still wins
+   near-ties. **Safety unchanged:** red-flag ALERTS are computed separately and
+   remain un-suppressible regardless of list order.
+
+2. **Gating now confers VISIBILITY, not inflated confidence.** Decision-tree
+   gates (e.g. "pain + photophobia → consider anterior inflammation") were
+   multiplying the gated conditions' scores by **1.3×**. That floated a
+   partially-matched Anterior Uveitis (raw 0.68 → 0.88) above the better-matched
+   keratitis on a corneal presentation, and overstated displayed confidence.
+   Removed the boost: gated conditions are still force-surfaced for
+   consideration (their gate reason bypasses the display floor, and urgent ones
+   get the sort nudge) but their probability now reflects the ACTUAL evidence.
+
+**Result:** BURIED **14 → 1**, CROSS-DOMAIN JUNK **5 → 2** — and every
+remainder is a genuine clinical near-tie within 0.02–0.04 (e.g. an urgent shown
+just above a 0.77 non-urgent, or Exposure Keratitis vs Exposure Keratopathy,
+which are the same entity). No unrelated winners left.
+
+**Latent test bug found & fixed:** the golden AACC vignette fed a non-existent
+token `nausea_vomiting` (the real chip emits `vomiting`, js/data-model.js). The
+engine silently ignored it; the test only passed because the now-removed gate
+boost masked the missing match. Corrected the vignette to the real token — AACC
+now clears >0.8 on genuine evidence, not on an artificial boost.
+
+**Escalated to founder (clinical-modeling decision, not fabricated):** the one
+100%-identical pair is **Microbial Keratitis ~ Corneal Ulcer** — clinically a
+microbial keratitis *is* an infective corneal ulcer. Whether to merge them or
+how to distinguish them (which name/ICD to keep) is a clinical call; the engine
+already tie-breaks them deterministically, so they sit adjacent (both
+"sight-threatening corneal ulcer") rather than flickering. Flagged for review.
+
+**Verified** — full suite **142/142** (golden AACC-tops, flashes+floaters →
+Retinal Tear, POAG-cannot-suppress-AACC, and the 3000-visit fuzz all still
+hold; the fuzz well-formedness check was updated to mirror the new bounded sort
+key). Diagnostic reasoning stays fully deterministic and offline.
+
+---
+
 ## 2026-07-13 — Session 4 (increment Y): KB-wide richness — deep, integrated token profiles for every condition
 
 **Founder standard:** every condition must carry a rich, fully-integrated set
