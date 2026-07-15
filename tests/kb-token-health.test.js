@@ -42,6 +42,18 @@ test("dead supportive/contradicting token usages stay capped (currently ~44, tre
   assert.ok(deadUse <= 3, "too many dead sup/con tokens (" + deadUse + " > 3):\n" + offenders.join("\n"));
 });
 
+test("dead TEST tokens stay capped (currently ~96, trending down)", () => {
+  /* A `tests` token with no producer can never be entered — so it can never
+     confirm its condition, never earn test-share, and (now) never appear in
+     the next-test recommender. These were authored as free-text test labels;
+     many have been remapped to reachable equivalents. Cap the remainder and
+     ratchet it down — never raise it. */
+  const dead = new Set();
+  for (const c of ALL) for (const t of (c.tests || [])) if (!reachable(t)) dead.add(t);
+  /* CAP — lower as remapping/authoring continues; do not raise it. */
+  assert.ok(dead.size <= 96, "distinct dead test tokens grew (" + dead.size + " > 96):\n" + [...dead].sort().join(", "));
+});
+
 test("thin conditions (<=3 total req+sup+con tokens) stay capped (near zero after enrichment)", () => {
   const thin = ALL.filter((c) => ((c.req || []).length + (c.sup || []).length + (c.con || []).length) <= 3)
                   .map((c) => c.name);

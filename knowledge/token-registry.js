@@ -10,30 +10,6 @@
 "use strict";
 
 var TOKEN_REGISTRY = {
-  "AC_cells_flare": {
-    "type_hint": "unknown",
-    "sources": [],
-    "usage": {
-      "req": 0,
-      "sup": 0,
-      "con": 0,
-      "temporal": 0,
-      "tests": 1
-    },
-    "reachable": false
-  },
-  "AV_nicking": {
-    "type_hint": "unknown",
-    "sources": [],
-    "usage": {
-      "req": 0,
-      "sup": 0,
-      "con": 0,
-      "temporal": 0,
-      "tests": 1
-    },
-    "reachable": false
-  },
   "B_scan_ultrasound": {
     "type_hint": "unknown",
     "sources": [],
@@ -59,18 +35,6 @@ var TOKEN_REGISTRY = {
     "reachable": false
   },
   "CT_orbits_imaging": {
-    "type_hint": "unknown",
-    "sources": [],
-    "usage": {
-      "req": 0,
-      "sup": 0,
-      "con": 0,
-      "temporal": 0,
-      "tests": 1
-    },
-    "reachable": false
-  },
-  "IOP_normal": {
     "type_hint": "unknown",
     "sources": [],
     "usage": {
@@ -134,30 +98,6 @@ var TOKEN_REGISTRY = {
     },
     "reachable": false
   },
-  "RAPD": {
-    "type_hint": "unknown",
-    "sources": [],
-    "usage": {
-      "req": 0,
-      "sup": 0,
-      "con": 0,
-      "temporal": 0,
-      "tests": 1
-    },
-    "reachable": false
-  },
-  "RAPD_check": {
-    "type_hint": "unknown",
-    "sources": [],
-    "usage": {
-      "req": 0,
-      "sup": 0,
-      "con": 0,
-      "temporal": 0,
-      "tests": 1
-    },
-    "reachable": false
-  },
   "RAPD_positive": {
     "type_hint": "derived_measurement_or_history",
     "sources": [
@@ -168,7 +108,7 @@ var TOKEN_REGISTRY = {
       "sup": 0,
       "con": 0,
       "temporal": 0,
-      "tests": 0
+      "tests": 2
     },
     "reachable": true
   },
@@ -186,18 +126,6 @@ var TOKEN_REGISTRY = {
     },
     "reachable": true
   },
-  "RPE_changes": {
-    "type_hint": "unknown",
-    "sources": [],
-    "usage": {
-      "req": 0,
-      "sup": 0,
-      "con": 0,
-      "temporal": 0,
-      "tests": 1
-    },
-    "reachable": false
-  },
   "TBUT_reduced": {
     "type_hint": "derived_measurement_or_history",
     "sources": [
@@ -211,18 +139,6 @@ var TOKEN_REGISTRY = {
       "tests": 1
     },
     "reachable": true
-  },
-  "abduction_defect": {
-    "type_hint": "unknown",
-    "sources": [],
-    "usage": {
-      "req": 0,
-      "sup": 0,
-      "con": 0,
-      "temporal": 0,
-      "tests": 1
-    },
-    "reachable": false
   },
   "acute": {
     "type_hint": "derived_measurement_or_history",
@@ -441,7 +357,7 @@ var TOKEN_REGISTRY = {
       "sup": 0,
       "con": 0,
       "temporal": 0,
-      "tests": 0
+      "tests": 1
     },
     "reachable": true
   },
@@ -503,18 +419,6 @@ var TOKEN_REGISTRY = {
     },
     "reachable": true
   },
-  "attenuated_vessels": {
-    "type_hint": "unknown",
-    "sources": [],
-    "usage": {
-      "req": 0,
-      "sup": 0,
-      "con": 0,
-      "temporal": 0,
-      "tests": 1
-    },
-    "reachable": false
-  },
   "autoimmune_history": {
     "type_hint": "derived_measurement_or_history",
     "sources": [
@@ -539,21 +443,9 @@ var TOKEN_REGISTRY = {
       "sup": 0,
       "con": 0,
       "temporal": 0,
-      "tests": 0
-    },
-    "reachable": true
-  },
-  "band_keratopathy": {
-    "type_hint": "unknown",
-    "sources": [],
-    "usage": {
-      "req": 0,
-      "sup": 0,
-      "con": 0,
-      "temporal": 0,
       "tests": 1
     },
-    "reachable": false
+    "reachable": true
   },
   "baseline_fields": {
     "type_hint": "unknown",
@@ -875,7 +767,7 @@ var TOKEN_REGISTRY = {
       "sup": 5,
       "con": 0,
       "temporal": 0,
-      "tests": 15
+      "tests": 16
     },
     "reachable": true
   },
@@ -1018,7 +910,7 @@ var TOKEN_REGISTRY = {
       "sup": 0,
       "con": 0,
       "temporal": 0,
-      "tests": 0
+      "tests": 1
     },
     "reachable": true
   },
@@ -1400,18 +1292,6 @@ var TOKEN_REGISTRY = {
     },
     "reachable": true
   },
-  "corneal_infiltrate": {
-    "type_hint": "unknown",
-    "sources": [],
-    "usage": {
-      "req": 0,
-      "sup": 0,
-      "con": 0,
-      "temporal": 0,
-      "tests": 1
-    },
-    "reachable": false
-  },
   "corneal_involvement": {
     "type_hint": "unknown",
     "sources": [],
@@ -1464,7 +1344,7 @@ var TOKEN_REGISTRY = {
       "sup": 0,
       "con": 0,
       "temporal": 0,
-      "tests": 0
+      "tests": 1
     },
     "reachable": true
   },
@@ -1785,18 +1665,6 @@ var TOKEN_REGISTRY = {
     },
     "reachable": true
   },
-  "detached_retina": {
-    "type_hint": "unknown",
-    "sources": [],
-    "usage": {
-      "req": 0,
-      "sup": 0,
-      "con": 0,
-      "temporal": 0,
-      "tests": 1
-    },
-    "reachable": false
-  },
   "diabetes_history": {
     "type_hint": "derived_measurement_or_history",
     "sources": [
@@ -1926,21 +1794,9 @@ var TOKEN_REGISTRY = {
       "sup": 1,
       "con": 0,
       "temporal": 0,
-      "tests": 0
+      "tests": 2
     },
     "reachable": true
-  },
-  "dilated_veins": {
-    "type_hint": "unknown",
-    "sources": [],
-    "usage": {
-      "req": 0,
-      "sup": 0,
-      "con": 0,
-      "temporal": 0,
-      "tests": 1
-    },
-    "reachable": false
   },
   "diplopia": {
     "type_hint": "sign",
@@ -2163,18 +2019,6 @@ var TOKEN_REGISTRY = {
     },
     "reachable": true
   },
-  "drusen": {
-    "type_hint": "unknown",
-    "sources": [],
-    "usage": {
-      "req": 0,
-      "sup": 0,
-      "con": 0,
-      "temporal": 0,
-      "tests": 1
-    },
-    "reachable": false
-  },
   "drusen_large_125_m": {
     "type_hint": "sign",
     "sources": [
@@ -2199,7 +2043,7 @@ var TOKEN_REGISTRY = {
       "sup": 0,
       "con": 0,
       "temporal": 0,
-      "tests": 0
+      "tests": 1
     },
     "reachable": true
   },
@@ -2292,18 +2136,6 @@ var TOKEN_REGISTRY = {
     },
     "reachable": true
   },
-  "endothelial_loss": {
-    "type_hint": "unknown",
-    "sources": [],
-    "usage": {
-      "req": 0,
-      "sup": 0,
-      "con": 0,
-      "temporal": 0,
-      "tests": 1
-    },
-    "reachable": false
-  },
   "entropion": {
     "type_hint": "sign",
     "sources": [
@@ -2352,7 +2184,7 @@ var TOKEN_REGISTRY = {
       "sup": 0,
       "con": 0,
       "temporal": 0,
-      "tests": 2
+      "tests": 3
     },
     "reachable": true
   },
@@ -2378,7 +2210,7 @@ var TOKEN_REGISTRY = {
       "sup": 0,
       "con": 0,
       "temporal": 0,
-      "tests": 0
+      "tests": 1
     },
     "reachable": true
   },
@@ -2502,18 +2334,6 @@ var TOKEN_REGISTRY = {
     "reachable": true
   },
   "exo_tropia": {
-    "type_hint": "unknown",
-    "sources": [],
-    "usage": {
-      "req": 0,
-      "sup": 0,
-      "con": 0,
-      "temporal": 0,
-      "tests": 1
-    },
-    "reachable": false
-  },
-  "exophthalmometry": {
     "type_hint": "unknown",
     "sources": [],
     "usage": {
@@ -2791,18 +2611,6 @@ var TOKEN_REGISTRY = {
     },
     "reachable": true
   },
-  "flat_pigmented_area": {
-    "type_hint": "unknown",
-    "sources": [],
-    "usage": {
-      "req": 0,
-      "sup": 0,
-      "con": 0,
-      "temporal": 0,
-      "tests": 1
-    },
-    "reachable": false
-  },
   "fleischer_ring": {
     "type_hint": "sign",
     "sources": [
@@ -2850,18 +2658,6 @@ var TOKEN_REGISTRY = {
     },
     "reachable": true
   },
-  "fluorescein_branching": {
-    "type_hint": "unknown",
-    "sources": [],
-    "usage": {
-      "req": 0,
-      "sup": 0,
-      "con": 0,
-      "temporal": 0,
-      "tests": 1
-    },
-    "reachable": false
-  },
   "fluorescein_multiple_spots": {
     "type_hint": "unknown",
     "sources": [],
@@ -2883,18 +2679,6 @@ var TOKEN_REGISTRY = {
       "con": 0,
       "temporal": 0,
       "tests": 2
-    },
-    "reachable": false
-  },
-  "fluorescein_ulcer": {
-    "type_hint": "unknown",
-    "sources": [],
-    "usage": {
-      "req": 0,
-      "sup": 0,
-      "con": 0,
-      "temporal": 0,
-      "tests": 1
     },
     "reachable": false
   },
@@ -2953,18 +2737,6 @@ var TOKEN_REGISTRY = {
       "tests": 0
     },
     "reachable": true
-  },
-  "foveal_defect": {
-    "type_hint": "unknown",
-    "sources": [],
-    "usage": {
-      "req": 0,
-      "sup": 0,
-      "con": 0,
-      "temporal": 0,
-      "tests": 1
-    },
-    "reachable": false
   },
   "foveal_reflex_absent": {
     "type_hint": "sign",
@@ -3095,30 +2867,6 @@ var TOKEN_REGISTRY = {
     "reachable": false
   },
   "gonioscopy_NVA": {
-    "type_hint": "unknown",
-    "sources": [],
-    "usage": {
-      "req": 0,
-      "sup": 0,
-      "con": 0,
-      "temporal": 0,
-      "tests": 1
-    },
-    "reachable": false
-  },
-  "gonioscopy_narrow": {
-    "type_hint": "unknown",
-    "sources": [],
-    "usage": {
-      "req": 0,
-      "sup": 0,
-      "con": 0,
-      "temporal": 0,
-      "tests": 1
-    },
-    "reachable": false
-  },
-  "gonioscopy_pigment": {
     "type_hint": "unknown",
     "sources": [],
     "usage": {
@@ -3469,21 +3217,9 @@ var TOKEN_REGISTRY = {
       "sup": 0,
       "con": 0,
       "temporal": 0,
-      "tests": 0
-    },
-    "reachable": true
-  },
-  "hyphema_possible": {
-    "type_hint": "unknown",
-    "sources": [],
-    "usage": {
-      "req": 0,
-      "sup": 0,
-      "con": 0,
-      "temporal": 0,
       "tests": 1
     },
-    "reachable": false
+    "reachable": true
   },
   "hyphema_visible": {
     "type_hint": "sign",
@@ -3509,33 +3245,9 @@ var TOKEN_REGISTRY = {
       "sup": 0,
       "con": 0,
       "temporal": 0,
-      "tests": 0
+      "tests": 2
     },
     "reachable": true
-  },
-  "hypopyon_level": {
-    "type_hint": "unknown",
-    "sources": [],
-    "usage": {
-      "req": 0,
-      "sup": 0,
-      "con": 0,
-      "temporal": 0,
-      "tests": 1
-    },
-    "reachable": false
-  },
-  "hypopyon_possible": {
-    "type_hint": "unknown",
-    "sources": [],
-    "usage": {
-      "req": 0,
-      "sup": 0,
-      "con": 0,
-      "temporal": 0,
-      "tests": 1
-    },
-    "reachable": false
   },
   "hypopyon_visible": {
     "type_hint": "sign",
@@ -3804,18 +3516,6 @@ var TOKEN_REGISTRY = {
       "tests": 0
     },
     "reachable": true
-  },
-  "iris_transillumination": {
-    "type_hint": "unknown",
-    "sources": [],
-    "usage": {
-      "req": 0,
-      "sup": 0,
-      "con": 0,
-      "temporal": 0,
-      "tests": 1
-    },
-    "reachable": false
   },
   "irma": {
     "type_hint": "sign",
@@ -4118,21 +3818,9 @@ var TOKEN_REGISTRY = {
       "sup": 0,
       "con": 0,
       "temporal": 0,
-      "tests": 0
-    },
-    "reachable": true
-  },
-  "lattice_pattern": {
-    "type_hint": "unknown",
-    "sources": [],
-    "usage": {
-      "req": 0,
-      "sup": 0,
-      "con": 0,
-      "temporal": 0,
       "tests": 1
     },
-    "reachable": false
+    "reachable": true
   },
   "lead_of_accommodation": {
     "type_hint": "unknown",
@@ -4356,7 +4044,7 @@ var TOKEN_REGISTRY = {
       "sup": 1,
       "con": 0,
       "temporal": 0,
-      "tests": 0
+      "tests": 1
     },
     "reachable": true
   },
@@ -4495,21 +4183,9 @@ var TOKEN_REGISTRY = {
       "sup": 0,
       "con": 0,
       "temporal": 0,
-      "tests": 0
-    },
-    "reachable": true
-  },
-  "macular_pucker": {
-    "type_hint": "unknown",
-    "sources": [],
-    "usage": {
-      "req": 0,
-      "sup": 0,
-      "con": 0,
-      "temporal": 0,
       "tests": 1
     },
-    "reachable": false
+    "reachable": true
   },
   "macular_screening_needed": {
     "type_hint": "risk_factor",
@@ -4676,18 +4352,6 @@ var TOKEN_REGISTRY = {
     },
     "reachable": true
   },
-  "microaneurysm": {
-    "type_hint": "unknown",
-    "sources": [],
-    "usage": {
-      "req": 0,
-      "sup": 0,
-      "con": 0,
-      "temporal": 0,
-      "tests": 1
-    },
-    "reachable": false
-  },
   "microaneurysms": {
     "type_hint": "sign",
     "sources": [
@@ -4698,7 +4362,7 @@ var TOKEN_REGISTRY = {
       "sup": 0,
       "con": 0,
       "temporal": 0,
-      "tests": 0
+      "tests": 1
     },
     "reachable": true
   },
@@ -4790,18 +4454,6 @@ var TOKEN_REGISTRY = {
     },
     "reachable": true
   },
-  "motility_defect": {
-    "type_hint": "unknown",
-    "sources": [],
-    "usage": {
-      "req": 0,
-      "sup": 0,
-      "con": 0,
-      "temporal": 0,
-      "tests": 1
-    },
-    "reachable": false
-  },
   "ms_history": {
     "type_hint": "derived_measurement_or_history",
     "sources": [
@@ -4840,7 +4492,7 @@ var TOKEN_REGISTRY = {
       "sup": 2,
       "con": 0,
       "temporal": 0,
-      "tests": 0
+      "tests": 1
     },
     "reachable": true
   },
@@ -4966,7 +4618,7 @@ var TOKEN_REGISTRY = {
       "sup": 1,
       "con": 7,
       "temporal": 0,
-      "tests": 0
+      "tests": 1
     },
     "reachable": true
   },
@@ -5190,18 +4842,6 @@ var TOKEN_REGISTRY = {
       "tests": 0
     },
     "reachable": true
-  },
-  "pachymetry_thin": {
-    "type_hint": "unknown",
-    "sources": [],
-    "usage": {
-      "req": 0,
-      "sup": 0,
-      "con": 0,
-      "temporal": 0,
-      "tests": 1
-    },
-    "reachable": false
   },
   "pain": {
     "type_hint": "derived_measurement_or_history",
@@ -5608,7 +5248,7 @@ var TOKEN_REGISTRY = {
       "sup": 0,
       "con": 2,
       "temporal": 0,
-      "tests": 0
+      "tests": 1
     },
     "reachable": true
   },
@@ -5778,7 +5418,7 @@ var TOKEN_REGISTRY = {
       "sup": 3,
       "con": 15,
       "temporal": 0,
-      "tests": 0
+      "tests": 1
     },
     "reachable": true
   },
@@ -5922,7 +5562,7 @@ var TOKEN_REGISTRY = {
       "sup": 0,
       "con": 0,
       "temporal": 0,
-      "tests": 0
+      "tests": 1
     },
     "reachable": true
   },
@@ -5936,21 +5576,9 @@ var TOKEN_REGISTRY = {
       "sup": 0,
       "con": 1,
       "temporal": 0,
-      "tests": 0
-    },
-    "reachable": true
-  },
-  "pxf_on_lens": {
-    "type_hint": "unknown",
-    "sources": [],
-    "usage": {
-      "req": 0,
-      "sup": 0,
-      "con": 0,
-      "temporal": 0,
       "tests": 1
     },
-    "reachable": false
+    "reachable": true
   },
   "quadrant_field_loss": {
     "type_hint": "symptom",
@@ -6300,7 +5928,7 @@ var TOKEN_REGISTRY = {
       "sup": 5,
       "con": 6,
       "temporal": 0,
-      "tests": 1
+      "tests": 2
     },
     "reachable": true
   },
@@ -6328,7 +5956,7 @@ var TOKEN_REGISTRY = {
       "sup": 0,
       "con": 0,
       "temporal": 0,
-      "tests": 0
+      "tests": 1
     },
     "reachable": true
   },
@@ -6400,18 +6028,6 @@ var TOKEN_REGISTRY = {
     },
     "reachable": false
   },
-  "retinal_wrinkling": {
-    "type_hint": "unknown",
-    "sources": [],
-    "usage": {
-      "req": 0,
-      "sup": 0,
-      "con": 0,
-      "temporal": 0,
-      "tests": 1
-    },
-    "reachable": false
-  },
   "retinoschisis": {
     "type_hint": "sign",
     "sources": [
@@ -6467,7 +6083,7 @@ var TOKEN_REGISTRY = {
       "sup": 0,
       "con": 0,
       "temporal": 0,
-      "tests": 0
+      "tests": 1
     },
     "reachable": true
   },
@@ -6922,7 +6538,7 @@ var TOKEN_REGISTRY = {
       "sup": 2,
       "con": 0,
       "temporal": 0,
-      "tests": 3
+      "tests": 4
     },
     "reachable": true
   },
@@ -7265,18 +6881,6 @@ var TOKEN_REGISTRY = {
     },
     "reachable": true
   },
-  "telangiectatic_vessels": {
-    "type_hint": "unknown",
-    "sources": [],
-    "usage": {
-      "req": 0,
-      "sup": 0,
-      "con": 0,
-      "temporal": 0,
-      "tests": 1
-    },
-    "reachable": false
-  },
   "temporal_field_loss": {
     "type_hint": "symptom",
     "sources": [
@@ -7330,7 +6934,7 @@ var TOKEN_REGISTRY = {
       "sup": 2,
       "con": 0,
       "temporal": 0,
-      "tests": 0
+      "tests": 1
     },
     "reachable": true
   },
@@ -7437,7 +7041,7 @@ var TOKEN_REGISTRY = {
       "sup": 1,
       "con": 0,
       "temporal": 0,
-      "tests": 0
+      "tests": 1
     },
     "reachable": true
   },
@@ -7515,18 +7119,6 @@ var TOKEN_REGISTRY = {
       "tests": 0
     },
     "reachable": true
-  },
-  "van_herick_narrow": {
-    "type_hint": "unknown",
-    "sources": [],
-    "usage": {
-      "req": 0,
-      "sup": 0,
-      "con": 0,
-      "temporal": 0,
-      "tests": 1
-    },
-    "reachable": false
   },
   "variable": {
     "type_hint": "unknown",
@@ -7722,18 +7314,6 @@ var TOKEN_REGISTRY = {
     },
     "reachable": true
   },
-  "vitreous_haze": {
-    "type_hint": "unknown",
-    "sources": [],
-    "usage": {
-      "req": 0,
-      "sup": 0,
-      "con": 0,
-      "temporal": 0,
-      "tests": 1
-    },
-    "reachable": false
-  },
   "vitreous_hemorrhage": {
     "type_hint": "sign",
     "sources": [
@@ -7758,21 +7338,9 @@ var TOKEN_REGISTRY = {
       "sup": 0,
       "con": 0,
       "temporal": 0,
-      "tests": 0
-    },
-    "reachable": true
-  },
-  "vitreous_separation": {
-    "type_hint": "unknown",
-    "sources": [],
-    "usage": {
-      "req": 0,
-      "sup": 0,
-      "con": 0,
-      "temporal": 0,
       "tests": 1
     },
-    "reachable": false
+    "reachable": true
   },
   "vogt_striae": {
     "type_hint": "sign",
@@ -7833,18 +7401,6 @@ var TOKEN_REGISTRY = {
       "tests": 0
     },
     "reachable": true
-  },
-  "weiss_ring": {
-    "type_hint": "unknown",
-    "sources": [],
-    "usage": {
-      "req": 0,
-      "sup": 0,
-      "con": 0,
-      "temporal": 0,
-      "tests": 1
-    },
-    "reachable": false
   },
   "white_cataract": {
     "type_hint": "sign",
@@ -7935,12 +7491,12 @@ var TOKEN_REGISTRY = {
 };
 
 var TOKEN_REGISTRY_STATS = {
-  "total": 566,
+  "total": 529,
   "reachable": 428,
   "unreachable_required": [],
   "unreachable_supportive": [
     "madarosis"
   ],
-  "test_label_only": 133,
-  "produced_never_consumed": 121
+  "test_label_only": 96,
+  "produced_never_consumed": 108
 };

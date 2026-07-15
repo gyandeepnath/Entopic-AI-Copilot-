@@ -9,7 +9,7 @@ var KB_ANTERIOR = [
   "name": "Anterior Uveitis (Acute)",
   "route": "anterior",
   "req": ["pain", "photophobia"],
-  "sup": ["redness", "ciliary_flush", "reduced_vision", "reduced_vision"],
+  "sup": ["redness", "ciliary_flush", "reduced_vision"],
   "con": ["itching_dominant", "purulent_discharge"],
   "temporal": ["acute"],
   "tests": ["cells_present", "flare_present", "keratic_precipitates"],
@@ -23,7 +23,7 @@ var KB_ANTERIOR = [
   "sup": ["recurrent_episode", "synechiae", "reduced_vision"],
   "con": [],
   "temporal": ["recurrent", "chronic"],
-  "tests": ["cells_present", "posterior_synechiae", "band_keratopathy"],
+  "tests": ["cells_present", "posterior_synechiae", "corneal_opacity_band"],
   "exclusions": []
 },
 
@@ -42,10 +42,10 @@ var KB_ANTERIOR = [
   "name": "Posterior Uveitis",
   "route": "retina",
   "req": ["blur"],
-  "sup": ["floaters", "reduced_vision", "reduced_vision"],
+  "sup": ["floaters", "reduced_vision"],
   "con": [],
   "temporal": ["variable"],
-  "tests": ["fundal_lesion", "vitreous_haze"],
+  "tests": ["fundal_lesion", "vitreous_opacity"],
   "exclusions": []
 },
 
@@ -65,10 +65,10 @@ var KB_ANTERIOR = [
   "name": "HLA-B27 Associated Uveitis",
   "route": "anterior",
   "req": ["pain", "photophobia"],
-  "sup": ["recurrent_episode", "recurrent_episode", "young_age", "autoimmune_history"],
+  "sup": ["recurrent_episode", "young_age", "autoimmune_history"],
   "con": [],
   "temporal": ["acute", "recurrent"],
-  "tests": ["cells_present", "fibrin", "hypopyon_possible"],
+  "tests": ["cells_present", "fibrin", "hypopyon"],
   "exclusions": []
 },
 
@@ -79,7 +79,7 @@ var KB_ANTERIOR = [
   "sup": ["photophobia", "reduced_corneal_sensation", "high_iop", "recurrent_episode"],
   "con": [],
   "temporal": ["recurrent"],
-  "tests": ["stellate_KPs", "iris_transillumination", "high_iop"],
+  "tests": ["stellate_KPs", "transillumination_defects", "high_iop"],
   "exclusions": []
 },
 
@@ -90,7 +90,7 @@ var KB_ANTERIOR = [
   "sup": ["trauma_history", "photophobia", "redness"],
   "con": [],
   "temporal": ["acute"],
-  "tests": ["cells_present", "hyphema_possible"],
+  "tests": ["cells_present", "hyphema"],
   "exclusions": []
 },
 
@@ -98,7 +98,7 @@ var KB_ANTERIOR = [
   "name": "Lens-induced Uveitis",
   "route": "anterior",
   "req": ["pain"],
-  "sup": ["gradual_blur", "reduced_vision", "reduced_vision"],
+  "sup": ["gradual_blur", "reduced_vision"],
   "con": [],
   "temporal": ["acute"],
   "tests": ["cells_present", "hypermature_lens", "high_iop"],
@@ -112,7 +112,7 @@ var KB_ANTERIOR = [
   "sup": ["pain_severe", "photophobia", "redness", "reduced_vision"],
   "con": [],
   "temporal": ["acute"],
-  "tests": ["hypopyon_level", "cells_present"],
+  "tests": ["hypopyon", "cells_present"],
   "urgent": true,
   "exclusions": []
 },
@@ -127,7 +127,7 @@ var KB_ANTERIOR = [
   "sup": ["post_surgery", "hypopyon_visible", "redness", "photophobia", "lid_swelling_diffuse", "vision_hazy"],
   "con": [],
   "temporal": ["acute"],
-  "tests": ["B_scan_ultrasound", "AC_cells_flare"],
+  "tests": ["B_scan_ultrasound", "cells_present"],
   "urgent": true,
   "exclusions": []
 },

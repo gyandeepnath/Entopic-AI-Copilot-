@@ -342,7 +342,7 @@ var KB_SURFACE = [
   "sup": ["proptosis", "restricted_motility", "fever", "redness", "reduced_vision", "diplopia", "tenderness", "recent_eye_trauma", "headache"],
   "con": ["itching_dominant", "gradual_onset"],
   "temporal": ["acute"],
-  "tests": ["CT_orbits_imaging", "RAPD_check"],
+  "tests": ["CT_orbits_imaging", "RAPD_positive"],
   "urgent": true,
   "exclusions": ["preseptal_cellulitis"]
 }

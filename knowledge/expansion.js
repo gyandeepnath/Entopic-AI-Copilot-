@@ -267,7 +267,7 @@ var KB_EXPANSION = [
   "req": ["floaters", "autoimmune_history"], "sup": ["reduced_vision", "vision_hazy", "reduced_contrast", "dark_spots", "photophobia", "young_age"],
   "con": ["purulent_discharge", "itching_dominant", "pain_severe"], "temporal": ["subacute"], "tests": [], "exclusions": [] },
 { "name": "Retinopathy of Prematurity (Cicatricial)", "domain": "Retina", "route": "retina",
-  "req": ["reduced_vision", "young_age"], "sup": ["myopia", "peripheral_field_loss", "risk_detachment", "risk_detachment", "family_history"],
+  "req": ["reduced_vision", "young_age"], "sup": ["myopia", "peripheral_field_loss", "risk_detachment", "family_history"],
   "con": ["older_age", "pain", "redness", "gradual_onset"], "temporal": ["chronic"], "tests": [], "exclusions": [] },
 { "name": "Choroidal Hemangioma", "domain": "Retina", "route": "retina",
   "req": ["distortion", "elevated_mass"], "sup": ["central_blur", "reduced_vision", "field_loss", "hyperopia"],

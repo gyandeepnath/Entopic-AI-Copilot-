@@ -29,7 +29,7 @@ var KB_GLAUCOMA = [
   "sup": ["high_iop", "narrow_angle", "hyperopia", "halos", "older_age", "family_history", "increased_cd", "field_defect", "intermittent_diplopia"],
   "con": ["pigment_dispersion", "myopia"],
   "temporal": ["chronic"],
-  "tests": ["gonioscopy_narrow", "high_iop", "van_herick_narrow"],
+  "tests": ["narrow_angle", "high_iop"],
   "exclusions": []
 },
 
@@ -52,7 +52,7 @@ var KB_GLAUCOMA = [
   "sup": ["nrr_thinning", "disc_hemorrhage", "normal_iop", "cd_asymmetry", "family_history", "older_age", "migraine_history", "peripheral_field_loss", "increased_cd"],
   "con": ["high_iop", "pain_acute", "redness"],
   "temporal": ["chronic", "progressive"],
-  "tests": ["visual_field_defect", "RNFL_thinning", "IOP_normal"],
+  "tests": ["visual_field_defect", "RNFL_thinning", "normal_iop"],
   "exclusions": []
 },
 
@@ -63,7 +63,7 @@ var KB_GLAUCOMA = [
   "sup": ["family_history", "thin_cornea", "increased_cd", "older_age", "cd_asymmetry", "diabetes_history"],
   "con": ["field_defect", "nrr_thinning", "disc_hemorrhage", "reduced_vision", "pain_severe"],
   "temporal": ["chronic"],
-  "tests": ["high_iop", "pachymetry_thin", "baseline_fields"],
+  "tests": ["high_iop", "thin_cornea", "baseline_fields"],
   "exclusions": []
 },
 
@@ -74,7 +74,7 @@ var KB_GLAUCOMA = [
   "sup": ["high_iop", "krukenberg_spindle", "myopia", "young_age", "increased_cd", "field_defect", "halos", "blur", "transillumination_defects"],
   "con": ["hyperopia", "older_age", "pxf_material"],
   "temporal": ["chronic"],
-  "tests": ["gonioscopy_pigment", "high_iop"],
+  "tests": ["pigment_dispersion", "high_iop"],
   "exclusions": []
 },
 
@@ -85,7 +85,7 @@ var KB_GLAUCOMA = [
   "sup": ["high_iop", "older_age", "reduced_vision", "increased_cd", "field_defect", "cd_asymmetry", "gradual_blur"],
   "con": ["young_age", "pigment_dispersion"],
   "temporal": ["chronic"],
-  "tests": ["high_iop", "pxf_on_lens"],
+  "tests": ["high_iop", "pxf_material"],
   "exclusions": []
 },
 

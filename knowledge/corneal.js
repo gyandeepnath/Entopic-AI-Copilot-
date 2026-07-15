@@ -30,7 +30,7 @@ var KB_CORNEAL = [
   "sup": ["photophobia", "redness", "reduced_vision", "contact_lens_use"],
   "con": ["itching_dominant", "gradual_onset"],
   "temporal": ["acute"],
-  "tests": ["corneal_infiltrate", "fluorescein_ulcer", "anterior_chamber_reaction"],
+  "tests": ["stromal_infiltrate", "epithelial_defect", "anterior_chamber_reaction"],
   "urgent": true,
   "exclusions": []
 },
@@ -42,7 +42,7 @@ var KB_CORNEAL = [
   "sup": ["photophobia", "watering", "recurrent_episode", "reduced_corneal_sensation"],
   "con": ["purulent_discharge", "itching_dominant"],
   "temporal": ["recurrent"],
-  "tests": ["dendritic_ulcer", "fluorescein_branching"],
+  "tests": ["dendritic_ulcer"],
   "exclusions": []
 },
 
@@ -109,7 +109,7 @@ var KB_CORNEAL = [
   "sup": ["glare", "halos", "older_age", "reduced_vision"],
   "con": ["pain_severe", "redness"],
   "temporal": ["progressive"],
-  "tests": ["guttata", "endothelial_loss"],
+  "tests": ["guttata"],
   "exclusions": []
 },
 

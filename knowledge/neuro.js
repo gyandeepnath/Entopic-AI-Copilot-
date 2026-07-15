@@ -20,7 +20,7 @@ var KB_NEURO = [
   "sup": ["pain_eye_movement", "color_vision_loss", "young_age", "reduced_contrast", "central_scotoma"],
   "con": ["pain_severe", "older_age"],
   "temporal": ["acute"],
-  "tests": ["RAPD", "color_vision_loss", "normal_or_swollen_disc"],
+  "tests": ["RAPD_positive", "color_vision_loss", "normal_or_swollen_disc"],
   "exclusions": []
 },
 
@@ -67,7 +67,7 @@ var KB_NEURO = [
   "sup": ["diplopia", "eye_down_out", "pupil_involvement", "headache"],
   "con": ["worse_evening"],
   "temporal": ["acute"],
-  "tests": ["motility_defect", "pupil_abnormal"],
+  "tests": ["restricted_motility", "pupil_abnormal"],
   "urgent": true,
   "exclusions": []
 },
@@ -79,7 +79,7 @@ var KB_NEURO = [
   "sup": ["limited_abduction", "worse_distance", "diplopia"],
   "con": ["vertical_diplopia"],
   "temporal": ["acute"],
-  "tests": ["abduction_defect"],
+  "tests": ["limited_abduction"],
   "exclusions": []
 },
 
@@ -168,7 +168,7 @@ var KB_NEURO = [
   "sup": ["thyroid_history", "lid_retraction", "diplopia", "restricted_motility", "vertical_diplopia", "grittiness", "dryness", "redness"],
   "con": ["sudden_vision_loss"],
   "temporal": ["chronic", "progressive"],
-  "tests": ["exophthalmometry", "thyroid_function_tests"],
+  "tests": ["proptosis", "thyroid_function_tests"],
   "urgent": false,
   "exclusions": []
 },

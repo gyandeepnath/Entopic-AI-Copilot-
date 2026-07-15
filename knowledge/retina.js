@@ -21,7 +21,7 @@ var KB_RETINA = [
   "sup": ["flashes", "sudden_onset", "age_related", "dark_spots"],
   "con": ["field_loss", "sudden_vision_loss", "reduced_vision"],
   "temporal": ["acute"],
-  "tests": ["vitreous_separation", "weiss_ring"],
+  "tests": ["pvd_weiss_ring"],
   "exclusions": []
 },
 
@@ -44,7 +44,7 @@ var KB_RETINA = [
   "sup": ["flashes", "floaters", "curtain_vision", "sudden_onset", "peripheral_field_loss", "reduced_vision"],
   "con": ["gradual_onset"],
   "temporal": ["acute"],
-  "tests": ["detached_retina"],
+  "tests": ["retinal_detachment_partial"],
   "urgent": true,
   "exclusions": []
 },
@@ -56,7 +56,7 @@ var KB_RETINA = [
   "sup": ["difficulty_reading", "older_age", "reduced_contrast", "night_blindness", "central_scotoma"],
   "con": ["sudden_vision_loss", "distortion", "young_age"],
   "temporal": ["chronic"],
-  "tests": ["drusen", "RPE_changes"],
+  "tests": ["drusen_medium_63_125_m", "rpe_changes"],
   "exclusions": []
 },
 
@@ -79,7 +79,7 @@ var KB_RETINA = [
   "sup": ["diabetes_history", "floaters", "distortion", "reduced_vision"],
   "con": [],
   "temporal": ["chronic"],
-  "tests": ["microaneurysm", "hemorrhages"],
+  "tests": ["microaneurysms", "hemorrhages"],
   "exclusions": []
 },
 
@@ -113,7 +113,7 @@ var KB_RETINA = [
   "sup": ["sudden_onset", "reduced_vision", "distortion", "older_age", "hypertension_history"],
   "con": ["pain"],
   "temporal": ["acute"],
-  "tests": ["dilated_veins", "hemorrhages"],
+  "tests": ["dilated_tortuous_veins", "hemorrhages"],
   "exclusions": []
 },
 
@@ -124,7 +124,7 @@ var KB_RETINA = [
   "sup": ["distortion", "central_scotoma", "micropsia", "older_age"],
   "con": ["sudden_vision_loss", "peripheral_field_loss"],
   "temporal": ["gradual"],
-  "tests": ["foveal_defect"],
+  "tests": ["macular_hole"],
   "exclusions": []
 },
 
@@ -135,7 +135,7 @@ var KB_RETINA = [
   "sup": ["blur", "reduced_vision", "micropsia", "central_blur"],
   "con": ["sudden_vision_loss"],
   "temporal": ["chronic"],
-  "tests": ["macular_pucker", "retinal_wrinkling"],
+  "tests": ["erm_macular_pucker"],
   "exclusions": []
 },
 
@@ -179,7 +179,7 @@ var KB_RETINA = [
   "sup": ["peripheral_field_loss", "tunnel_vision", "family_history", "reduced_contrast"],
   "con": ["sudden_onset", "central_scotoma"],
   "temporal": ["progressive"],
-  "tests": ["bone_spicules", "attenuated_vessels"],
+  "tests": ["bone_spicules", "arteriolar_narrowing"],
   "exclusions": []
 },
 
@@ -190,7 +190,7 @@ var KB_RETINA = [
   "sup": ["hypertension_history", "blur", "cotton_wool_spots", "distortion"],
   "con": [],
   "temporal": ["chronic"],
-  "tests": ["AV_nicking", "cotton_wool_spots"],
+  "tests": ["av_nicking", "cotton_wool_spots"],
   "exclusions": []
 },
 
@@ -212,7 +212,7 @@ var KB_RETINA = [
   "sup": ["risk_detachment", "myopia", "floaters"],
   "con": ["reduced_vision", "central_blur"],
   "temporal": ["chronic"],
-  "tests": ["lattice_pattern"],
+  "tests": ["lattice_degeneration"],
   "exclusions": []
 },
 
@@ -223,7 +223,7 @@ var KB_RETINA = [
   "sup": ["older_age"],
   "con": ["elevated_mass", "reduced_vision", "field_loss"],
   "temporal": ["stable"],
-  "tests": ["flat_pigmented_area"],
+  "tests": ["choroidal_nevus_flat"],
   "exclusions": []
 },
 
@@ -246,7 +246,7 @@ var KB_RETINA = [
   "sup": ["distortion", "gradual", "reduced_contrast", "central_scotoma"],
   "con": ["sudden_vision_loss"],
   "temporal": ["chronic"],
-  "tests": ["telangiectatic_vessels"],
+  "tests": ["dilated_tortuous_veins"],
   "exclusions": []
 },
 
