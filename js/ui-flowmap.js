@@ -15,7 +15,11 @@
 /* STATE                                                           */
 /* ═══════════════════════════════════════════════════════════════ */
 
-var FLOWMAP_VISIBLE = false;
+/* Visible by DEFAULT — the live reasoning map is core to Entopic's identity
+   (the "glass box"): the clinician should see the engine think, not have to
+   ask it to. It re-renders on every data entry (nav()/renderAdvisory), so it
+   tracks the exam in real time. Toggle only hides it for a wider notes view. */
+var FLOWMAP_VISIBLE = true;
 
 
 /* ═══════════════════════════════════════════════════════════════ */
@@ -58,10 +62,14 @@ function renderFlowMap() {
 
   var h = '<div style="margin-top:8px">';
 
-  /* Toggle button */
-  h += '<button class="btn btn-d" onclick="toggleFlowMap()" style="width:100%;font-size:.58rem;justify-content:center;margin-bottom:8px">' +
-    '◇ Hide Diagnostic Reasoning' +
-  '</button>';
+  /* Live header — makes the auto-looping nature explicit. */
+  h += '<div class="adv-sec" style="display:flex;align-items:center;gap:6px">' +
+    '<span style="width:7px;height:7px;border-radius:50%;background:#27ae60;display:inline-block;box-shadow:0 0 0 0 rgba(39,174,96,.5);animation:entopicPulse 1.6s infinite"></span>' +
+    'Diagnostic Engine · live' +
+    '<span style="flex:1"></span>' +
+    '<button onclick="toggleFlowMap()" style="background:none;border:none;color:var(--sv);font-size:.5rem;cursor:pointer;text-decoration:underline">hide</button>' +
+    '</div>' +
+    '<div style="font-size:.5rem;color:var(--sv);margin:-2px 0 6px">Re-evaluates every time you enter a finding — tokens → matches → differential → what to check next.</div>';
 
   /* Flow container */
   h += '<div style="border:1px solid var(--fg);border-radius:var(--rl);overflow:hidden;font-size:.58rem">';

@@ -625,6 +625,13 @@ input, select, textarea, button {
   50% { opacity: 0.7; }
 }
 
+/* live "engine is thinking" pulse on the diagnostic reasoning map header */
+@keyframes entopicPulse {
+  0%   { box-shadow: 0 0 0 0 rgba(39,174,96,.5); }
+  70%  { box-shadow: 0 0 0 5px rgba(39,174,96,0); }
+  100% { box-shadow: 0 0 0 0 rgba(39,174,96,0); }
+}
+
 
 /* ═══════════════════════════════════════════════════════════════ */
 /* ADVISORY PANEL                                                  */
