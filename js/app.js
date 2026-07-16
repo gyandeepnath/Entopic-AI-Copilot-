@@ -891,6 +891,19 @@ function esc(s) {
     });
   }
 
+  /* Keyboard step navigation — Alt+→ / Alt+← move between exam steps for a
+     faster, hands-on-keyboard workflow. Ignored while typing in a field. */
+  document.addEventListener("keydown", function (e) {
+    if (!e.altKey || (e.key !== "ArrowRight" && e.key !== "ArrowLeft")) return;
+    if (!document.getElementById("pgExam") || !document.getElementById("pgExam").classList.contains("active")) return;
+    if (typeof STEPS === "undefined" || !V) return;
+    var idx = -1;
+    for (var i = 0; i < STEPS.length; i++) if (STEPS[i].id === V.step) { idx = i; break; }
+    if (idx < 0) return;
+    var next = e.key === "ArrowRight" ? Math.min(idx + 1, STEPS.length - 1) : Math.max(idx - 1, 0);
+    if (next !== idx) { e.preventDefault(); nav(STEPS[next].id); }
+  });
+
   /* If no users exist, show setup form */
   var users = loadUsers();
   if (users.length === 0) {
