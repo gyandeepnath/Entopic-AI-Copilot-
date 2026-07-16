@@ -668,6 +668,70 @@ var KB_EXPANSION = [
   "con": ["pain_severe", "purulent_discharge", "reduced_vision"], "temporal": ["recurrent", "chronic"], "tests": [], "exclusions": [] },
 { "name": "Eyelid Capillary Hemangioma", "domain": "Surface & Lids", "route": "surface",
   "req": ["localized_lid_swelling", "young_age"], "sup": ["ptosis", "reduced_vision", "red_patch", "astigmatism"],
-  "con": ["older_age", "pain_severe", "purulent_discharge", "itching_dominant"], "temporal": ["chronic", "progressive"], "tests": [], "exclusions": [] }
+  "con": ["older_age", "pain_severe", "purulent_discharge", "itching_dominant"], "temporal": ["chronic", "progressive"], "tests": [], "exclusions": [] },
+
+/* ═══ BATCH 9 (2026-07-16) — continued expansion (17). Distinct required-token
+   pairs; real contradictors. Provisional / NEEDS_CLINICAL_REVIEW. ═══ */
+
+/* Medical / inflammatory retina */
+{ "name": "Multifocal Choroiditis & Panuveitis", "domain": "Retina", "route": "retina",
+  "req": ["floaters", "central_scotoma"], "sup": ["reduced_vision", "young_age", "myopia", "recurrent_episode", "vitreous_cells"],
+  "con": ["pain_severe", "redness", "older_age", "itching_dominant"], "temporal": ["recurrent", "chronic"], "tests": ["macular_screening_needed"], "exclusions": [] },
+{ "name": "Acute Zonal Occult Outer Retinopathy (AZOOR)", "domain": "Retina", "route": "retina",
+  "req": ["central_scotoma", "flashes"], "sup": ["reduced_vision", "young_age", "field_defect", "recent_viral_history"],
+  "con": ["pain", "redness", "older_age", "itching_dominant"], "temporal": ["acute", "subacute"], "tests": [], "exclusions": [] },
+{ "name": "Cancer-Associated Retinopathy (CAR)", "domain": "Retina", "route": "retina",
+  "req": ["night_blindness", "photophobia"], "sup": ["reduced_vision", "older_age", "central_scotoma", "field_loss", "flashes"],
+  "con": ["young_age", "pain", "redness", "itching_dominant"], "temporal": ["subacute", "progressive"], "tests": [], "exclusions": [] },
+{ "name": "Eales Disease", "domain": "Retina", "route": "retina",
+  "req": ["floaters", "vitreous_hemorrhage"], "sup": ["reduced_vision", "young_age", "retinal_ischemia", "nve_neovascularization_elsewhere", "sudden_floaters"],
+  "con": ["pain_severe", "redness", "older_age", "itching_dominant"], "temporal": ["recurrent", "progressive"], "tests": [], "exclusions": [] },
+{ "name": "Hypotony Maculopathy", "domain": "Retina", "route": "retina",
+  "req": ["distortion", "post_surgery"], "sup": ["reduced_vision", "central_blur", "choroidal_folds", "micropsia"],
+  "con": ["high_iop", "itching_dominant", "redness", "sudden_vision_loss"], "temporal": ["subacute", "chronic"], "tests": [], "exclusions": [] },
+
+/* Neuro-vascular / orbital */
+{ "name": "Susac Syndrome", "domain": "Neuro-Ophthalmic", "route": "neuro",
+  "req": ["field_loss", "headache"], "sup": ["reduced_vision", "young_age", "retinal_ischemia", "central_scotoma"],
+  "con": ["itching_dominant", "redness", "older_age", "purulent_discharge"], "temporal": ["subacute", "recurrent"], "tests": [], "exclusions": [] },
+{ "name": "Orbital Rhabdomyosarcoma", "domain": "Neuro-Ophthalmic", "route": "urgent",
+  "req": ["proptosis", "young_age"], "sup": ["reduced_vision", "restricted_motility", "ptosis", "red_patch", "diplopia"],
+  "con": ["older_age", "itching_dominant", "gradual_onset", "purulent_discharge"], "temporal": ["acute", "progressive"], "tests": ["restricted_motility"], "urgent": true, "exclusions": [] },
+{ "name": "Orbital Lymphoma", "domain": "Neuro-Ophthalmic", "route": "neuro",
+  "req": ["proptosis", "older_age"], "sup": ["reduced_vision", "restricted_motility", "ptosis", "diplopia", "localized_conjunctival_elevation"],
+  "con": ["young_age", "pain_severe", "sudden_onset", "purulent_discharge"], "temporal": ["chronic", "progressive"], "tests": ["restricted_motility"], "exclusions": [] },
+
+/* Glaucoma */
+{ "name": "Schwartz-Matsuo Syndrome", "domain": "Glaucoma", "route": "glaucoma",
+  "req": ["high_iop", "retinal_break"], "sup": ["reduced_vision", "floaters", "field_loss", "flashes"],
+  "con": ["normal_iop", "itching_dominant", "gradual_onset"], "temporal": ["subacute"], "tests": ["IOP_very_high"], "exclusions": [] },
+
+/* Cornea — degenerations */
+{ "name": "Gelatinous Drop-like Corneal Dystrophy", "domain": "Cornea", "route": "anterior",
+  "req": ["subepithelial_nodules", "family_history"], "sup": ["reduced_vision", "photophobia", "watering", "foreign_body_sensation", "young_age"],
+  "con": ["pain_severe", "purulent_discharge", "older_age"], "temporal": ["chronic", "progressive"], "tests": [], "exclusions": [] },
+{ "name": "Spheroidal Degeneration (Climatic Droplet Keratopathy)", "domain": "Cornea", "route": "anterior",
+  "req": ["corneal_opacity_peripheral", "older_age"], "sup": ["reduced_vision", "glare", "chronic_irritation", "foreign_body_sensation"],
+  "con": ["pain_severe", "redness", "young_age", "purulent_discharge"], "temporal": ["chronic"], "tests": [], "exclusions": [] },
+
+/* Ocular surface / adnexa */
+{ "name": "Stevens-Johnson Syndrome (Ocular)", "domain": "Surface & Lids", "route": "urgent",
+  "req": ["redness", "fever"], "sup": ["pain", "purulent_discharge", "reduced_vision", "foreign_body_sensation", "cracking_skin", "photophobia"],
+  "con": ["itching_dominant", "gradual_onset", "chronic_irritation"], "temporal": ["acute"], "tests": [], "urgent": true, "exclusions": [] },
+{ "name": "Trachoma", "domain": "Surface & Lids", "route": "surface",
+  "req": ["follicles", "trichiasis"], "sup": ["chronic_redness", "reduced_vision", "corneal_opacity", "entropion", "foreign_body_sensation"],
+  "con": ["sudden_onset", "itching_dominant", "purulent_discharge"], "temporal": ["chronic"], "tests": ["follicles"], "exclusions": [] },
+{ "name": "Ophthalmia Neonatorum", "domain": "Surface & Lids", "route": "surface",
+  "req": ["purulent_discharge", "young_age"], "sup": ["redness", "lid_swelling_diffuse", "chemosis", "watering"],
+  "con": ["itching_dominant", "older_age", "gradual_onset"], "temporal": ["acute"], "tests": [], "exclusions": [] },
+{ "name": "Conjunctival Lymphoma", "domain": "Surface & Lids", "route": "surface",
+  "req": ["localized_conjunctival_elevation", "chronic_redness"], "sup": ["older_age", "reduced_tearing", "foreign_body_sensation", "red_patch"],
+  "con": ["pain_severe", "purulent_discharge", "sudden_onset", "itching_dominant"], "temporal": ["chronic", "progressive"], "tests": [], "exclusions": [] },
+{ "name": "Conjunctival Pyogenic Granuloma", "domain": "Surface & Lids", "route": "surface",
+  "req": ["red_patch", "post_surgery"], "sup": ["localized_conjunctival_elevation", "watering", "foreign_body_sensation", "recent_eye_trauma"],
+  "con": ["itching_dominant", "gradual_onset", "reduced_vision"], "temporal": ["subacute"], "tests": [], "exclusions": [] },
+{ "name": "Dacryolithiasis", "domain": "Surface & Lids", "route": "surface",
+  "req": ["excess_tearing", "medial_canthus_swelling"], "sup": ["recurrent_episode", "foreign_body_sensation", "discharge", "chronic_irritation"],
+  "con": ["itching_dominant", "sudden_vision_loss", "purulent_discharge"], "temporal": ["recurrent", "chronic"], "tests": [], "exclusions": [] }
 
 ];

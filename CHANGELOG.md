@@ -6,6 +6,42 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-07-16 — Session 8: clickable-input integrity + linter guard + KB batch 9 + graded-severity engine refinement
+
+**Founder ask:** flag findings with no clickable input; cross-check that every
+clickable option feeds the engine live; keep expanding the KB and refining the
+engine.
+
+1. **Cross-checked every clickable → engine.** Audited all symptom chips and
+   slit-lamp/fundus findings against engine consumption and fixed **8 dead-end
+   clickables** that produced tokens no condition used: 2 chips
+   (`fb_sensation`→`foreign_body_sensation`; removed the redundant
+   `foreign_body_high_speed`) and 6 findings (IOL-in-bag/aphakia→`post_surgery`,
+   small drusen→`age_related`, pavingstone/white-without-pressure→
+   `peripheral_degeneration`, PPA alpha zone wired into POAG). Confirmed chip,
+   slit-lamp and fundus toggles all re-run the engine live. New guard test
+   (`kb-ui-reachability`) asserts every chip & finding emits a consumed token.
+2. **KB Editor linter — "no clickable input".** `kbBuildContext` now computes a
+   per-token `clickable` flag; the linter warns when an authored (incl. custom)
+   condition needs a required finding that can only be typed as free-text,
+   telling the founder to add a chip/finding. Info-level for sup/con.
+3. **KB batch 9 — 17 conditions (334 total):** multifocal choroiditis, AZOOR,
+   cancer-associated retinopathy, Eales, hypotony maculopathy, Susac, orbital
+   rhabdomyosarcoma/lymphoma, Schwartz-Matsuo, gelatinous drop-like &
+   spheroidal corneal degeneration, Stevens-Johnson (ocular), trachoma,
+   ophthalmia neonatorum, conjunctival lymphoma, pyogenic granuloma,
+   dacryolithiasis. Distinct required-token pairs; cross-conflict at baseline.
+4. **Engine refinement — severity grading now counts.** Wired previously-unused
+   graded tokens (`cells_2/3/4`, `flare_2/3/4`, `nuclear_sclerosis_grade_2/4`)
+   into the conditions where severity matters, so recording e.g. 3+ cells/flare
+   raises Anterior Uveitis confidence (76%→83%) and a 4+ reaction feeds
+   endophthalmitis/hypopyon uveitis. Unused precise-token count dropped further.
+
+**Verified** — 159/159 unit tests; click-audit clean; cross-conflict at
+baseline; e2e-audit + linter/attachment/past-visit/WNL e2e pass.
+
+---
+
 ## 2026-07-16 — Session 7: bug-fixes + WNL + file import + KB batch 8
 
 **Founder-reported problems, all addressed:**

@@ -17,7 +17,7 @@ var KB_LENS = [
   "name": "Nuclear Sclerotic Cataract",
   "route": "lens",
   "req": ["gradual_blur"],
-  "sup": ["glare", "reduced_contrast", "older_age", "ghosting", "halos", "difficulty_reading", "night_blindness", "reduced_vision", "distance_blur"],
+  "sup": ["glare", "reduced_contrast", "older_age", "ghosting", "halos", "difficulty_reading", "night_blindness", "reduced_vision", "distance_blur", "nuclear_sclerosis_grade_2", "nuclear_sclerosis_grade_4"],
   "con": ["sudden_onset", "sudden_vision_loss", "pain", "distortion", "field_loss", "flashes"],
   "temporal": ["progressive", "chronic"],
   "tests": ["nuclear_sclerosis_grade_3", "reduced_vision"],
