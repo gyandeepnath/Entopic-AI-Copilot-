@@ -233,16 +233,73 @@ function viewPastVisit(vid) {
     host.addEventListener("click", function (e) { if (e.target === host) host.style.display = "none"; });
     document.body.appendChild(host);
   }
-  var d = v.data || {};
-  var body = visitDigest(v, true);
-  /* a few more read-only details */
-  if (d.hxO && d.hxO.conditions) body += '<div style="font-size:.62rem;margin-top:4px"><b>Ocular hx:</b> ' + esc(d.hxO.conditions) + '</div>';
-  if (d.hxM && d.hxM.conditions) body += '<div style="font-size:.62rem"><b>Medical hx:</b> ' + esc(d.hxM.conditions) + '</div>';
-  if (d.plan && d.plan.followup) body += '<div style="font-size:.62rem"><b>Follow-up:</b> ' + esc(d.plan.followup) + '</div>';
-
-  host.innerHTML = '<div class="engine-map-box" style="max-width:640px">' +
-    '<div class="engine-map-head"><b>Past visit — read only</b><span style="flex:1"></span>' +
+  host.innerHTML = '<div class="engine-map-box" style="max-width:720px">' +
+    '<div class="engine-map-head"><b>Past visit — read only</b>' +
+    '<span style="font-size:.6rem;color:var(--sv);margin-left:8px">' + esc((v.date || "").slice(0, 10)) + ' · ' + (v.visit_type === "follow_up" ? "Follow-up" : "Initial") + '</span>' +
+    '<span style="flex:1"></span>' +
     '<button class="engine-map-x" onclick="document.getElementById(\'pastVisitOverlay\').style.display=\'none\'">✕</button></div>' +
-    '<div style="padding:16px;overflow:auto">' + body + '</div></div>';
+    '<div style="padding:16px;overflow:auto">' + fullVisitHTML(v) + '</div></div>';
   host.style.display = "flex";
+}
+
+/* Full read-only clinical summary of a visit — every recorded section. */
+function fullVisitHTML(v) {
+  var d = v.data || {};
+  var out = "";
+  function sec(title, inner) { if (inner) out += '<div style="margin-bottom:10px"><div style="font-size:.56rem;text-transform:uppercase;letter-spacing:.6px;color:var(--sv);border-bottom:1px solid var(--fg);margin-bottom:3px">' + title + '</div>' + inner + '</div>'; }
+  function row(label, val) { return val ? '<div style="font-size:.66rem"><b>' + esc(label) + ':</b> ' + esc(String(val)) + '</div>' : ''; }
+  function eyes(label, od, os) { return (od || os) ? '<div style="font-size:.66rem"><b>' + esc(label) + ':</b> OD ' + esc(od || "—") + ' · OS ' + esc(os || "—") + '</div>' : ''; }
+
+  /* Complaint */
+  var comp = row("Chief complaint", d.cc);
+  if (d.symptoms && d.symptoms.length) comp += '<div style="font-size:.62rem;color:var(--sl)">Symptoms: ' + esc(d.symptoms.join(", ").replace(/_/g, " ")) + '</div>';
+  if (d.temporal && (d.temporal.onset || d.temporal.duration || d.temporal.course)) comp += '<div style="font-size:.62rem;color:var(--sl)">Onset ' + esc(d.temporal.onset || "—") + ' · ' + esc(d.temporal.duration || "—") + ' · ' + esc(d.temporal.course || "—") + '</div>';
+  sec("Presenting complaint", comp);
+
+  /* History */
+  var hx = "";
+  if (d.hxO) hx += row("Ocular history", d.hxO.conditions) + row("Ocular surgery", d.hxO.surgeries) + row("CL wear", d.hxO.cl_type);
+  if (d.hxM) { hx += row("Medical history", d.hxM.conditions) + row("Medications", d.hxM.medications) + row("Allergies", d.hxM.allergies);
+    var flags = []; ["dm", "htn", "thyroid", "autoimmune", "asthma"].forEach(function (k) { if (d.hxM[k]) flags.push(k.toUpperCase()); });
+    if (flags.length) hx += row("Systemic flags", flags.join(", ")); }
+  if (d.hxF && d.hxF.details) hx += row("Family history", d.hxF.details);
+  sec("History", hx);
+
+  /* Vision & refraction */
+  var vis = "";
+  if (d.va) { vis += eyes("VA unaided", d.va.od_un, d.va.os_un) + eyes("VA aided", d.va.od_aid, d.va.os_aid) + eyes("Best VA", d.va.od_bva, d.va.os_bva) + eyes("Near", d.va.od_near, d.va.os_near); }
+  if (d.rx && (d.rx.od_sph || d.rx.os_sph)) {
+    vis += '<div style="font-size:.66rem"><b>Rx OD:</b> ' + esc(d.rx.od_sph || "") + ' / ' + esc(d.rx.od_cyl || "") + ' x ' + esc(d.rx.od_ax || "") + (d.rx.od_add ? ' add ' + esc(d.rx.od_add) : '') + '</div>';
+    vis += '<div style="font-size:.66rem"><b>Rx OS:</b> ' + esc(d.rx.os_sph || "") + ' / ' + esc(d.rx.os_cyl || "") + ' x ' + esc(d.rx.os_ax || "") + (d.rx.os_add ? ' add ' + esc(d.rx.os_add) : '') + '</div>';
+  }
+  sec("Vision & refraction", vis);
+
+  /* Anterior segment / IOP */
+  var ant = "";
+  if (d.iop && (d.iop.od || d.iop.os)) ant += eyes("IOP", d.iop.od, d.iop.os);
+  if (d.sl && d.sl.od) ant += row("Cornea", (d.sl.od.cornea || "") + " / " + (d.sl.os ? d.sl.os.cornea || "" : "")) + row("AC cells", (d.sl.od.cells || "0"));
+  if (d.sl && d.sl.findings && d.sl.findings.length) ant += '<div style="font-size:.62rem;color:var(--sl)">SL findings: ' + esc(d.sl.findings.join(", ")) + '</div>';
+  if (d.gon && (d.gon.od && d.gon.od.s)) ant += row("Gonioscopy OD", d.gon.od.s);
+  sec("Anterior segment & IOP", ant);
+
+  /* Posterior / neuro */
+  var post = "";
+  if (d.fun && d.fun.od && d.fun.od.cd_v) post += eyes("C/D ratio", d.fun.od.cd_v, d.fun.os ? d.fun.os.cd_v : "");
+  if (d.fun && d.fun.findings && d.fun.findings.length) post += '<div style="font-size:.62rem;color:var(--sl)">Fundus findings: ' + esc(d.fun.findings.join(", ")) + '</div>';
+  if (d.pupil && d.pupil.rapd && d.pupil.rapd !== "None") post += row("RAPD", d.pupil.rapd);
+  if (d.neuro && d.neuro.notes) post += row("Neuro", d.neuro.notes);
+  if (d.inv && (d.inv.oct_rnfl_od || d.inv.vf_md_od || d.inv.notes)) post += row("Investigations", (d.inv.notes || "") + (d.inv.oct_rnfl_od ? " RNFL OD " + d.inv.oct_rnfl_od : ""));
+  sec("Posterior segment & neuro", post);
+
+  /* Assessment & plan */
+  var asmt = "";
+  if (d.dxList && d.dxList.length) {
+    asmt += '<div style="font-size:.66rem;margin-bottom:2px"><b>Differential (recorded):</b></div>';
+    for (var i = 0; i < Math.min(d.dxList.length, 6); i++) asmt += '<div style="font-size:.62rem;color:var(--sl);padding-left:8px">' + (i + 1) + '. ' + esc(d.dxList[i].n) + ' — ' + Math.round((d.dxList[i].prob || 0) * 100) + '%' + (d.dxList[i].urgent ? ' ⚠' : '') + '</div>';
+  }
+  if (d.plan) asmt += row("Management", d.plan.mgmt) + row("Follow-up", d.plan.followup) + row("Referral", d.plan.ref_to ? d.plan.ref_to + (d.plan.ref_urgency ? " (" + d.plan.ref_urgency + ")" : "") : "") + row("Patient education", d.plan.education);
+  sec("Assessment & plan", asmt);
+
+  if (!out) out = '<div style="color:var(--sv);font-size:.66rem">No recorded details for this visit.</div>';
+  return out;
 }
