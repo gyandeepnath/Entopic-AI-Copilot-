@@ -211,7 +211,10 @@ function pgInv() {
     '<div class="fi full" style="margin-top:8px"><label>Investigation Notes</label>' +
       '<textarea oninput="V.inv.notes=this.value">' + esc(V.inv.notes) + '</textarea></div>' +
 
-    '<div class="btn-g">' +
+    '<div class="dv"><span>Attachments — scans, PDFs, images (OCT / VF / topography)</span></div>' +
+    (typeof attachBlock === "function" ? attachBlock("visit") : "") +
+
+    '<div class="btn-g" style="margin-top:12px">' +
       '<button class="btn btn-s" onclick="nav(\'neuro\')">← Back</button>' +
       '<button class="btn btn-p" onclick="goNext(\'investigations\',\'diagnosis\')">Diagnosis →</button>' +
     '</div>' +

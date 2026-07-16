@@ -140,6 +140,12 @@ function renderChart() {
     h += '</div>';
   }
 
+  /* — PATIENT DOCUMENTS (digitised prior reports, kept across visits) — */
+  h += '<div class="adv-sec" style="font-size:.7rem">Documents &amp; prior reports</div>';
+  h += '<div style="margin-bottom:16px">' +
+    (typeof attachBlock === "function" ? attachBlock("patient") : "") +
+    '</div>';
+
   /* — AUDIT / ACCESS LOG — */
   h += renderPatientAudit();
 
