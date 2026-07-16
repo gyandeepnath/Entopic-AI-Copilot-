@@ -576,6 +576,98 @@ var KB_EXPANSION = [
   "con": ["pain", "redness", "older_age", "night_blindness"], "temporal": ["chronic"], "tests": [], "exclusions": [] },
 { "name": "Achromatopsia", "domain": "Retina", "route": "retina",
   "req": ["color_vision_loss", "photophobia"], "sup": ["reduced_vision", "young_age", "nystagmus_other_eye", "glare", "family_history"],
-  "con": ["night_blindness", "pain", "redness", "older_age"], "temporal": ["chronic"], "tests": [], "exclusions": [] }
+  "con": ["night_blindness", "pain", "redness", "older_age"], "temporal": ["chronic"], "tests": [], "exclusions": [] },
+
+/* ═══ BATCH 8 (2026-07-16) — larger batch (24). Distinct required-token pairs
+   to avoid cross-firing; each carries real contradictors. Provisional /
+   NEEDS_CLINICAL_REVIEW. Cross-conflict audit re-checked after adding. ═══ */
+
+/* Cornea — dystrophies & degenerations */
+{ "name": "Corneal Hydrops (Acute)", "domain": "Cornea", "route": "anterior",
+  "req": ["corneal_edema", "irregular_astigmatism"], "sup": ["pain", "photophobia", "reduced_vision", "watering", "young_age"],
+  "con": ["itching_dominant", "gradual_onset", "older_age", "purulent_discharge"], "temporal": ["acute"], "tests": [], "exclusions": [] },
+{ "name": "Posterior Polymorphous Corneal Dystrophy", "domain": "Cornea", "route": "anterior",
+  "req": ["guttata", "family_history"], "sup": ["corneal_edema", "reduced_vision", "glare", "morning_blur"],
+  "con": ["pain_severe", "redness", "itching_dominant", "purulent_discharge"], "temporal": ["chronic", "progressive"], "tests": [], "exclusions": [] },
+{ "name": "Schnyder Corneal Dystrophy", "domain": "Cornea", "route": "anterior",
+  "req": ["corneal_opacity_central", "peripheral_corneal_ring_arcus"], "sup": ["reduced_vision", "family_history", "glare", "older_age"],
+  "con": ["pain_severe", "redness", "itching_dominant", "purulent_discharge"], "temporal": ["chronic"], "tests": [], "exclusions": [] },
+{ "name": "Meesmann Corneal Dystrophy", "domain": "Cornea", "route": "anterior",
+  "req": ["punctate_epithelial_lesions", "family_history"], "sup": ["foreign_body_sensation", "glare", "photophobia_mild", "recurrent_episode"],
+  "con": ["pain_severe", "purulent_discharge", "older_age", "reduced_vision"], "temporal": ["chronic", "recurrent"], "tests": ["punctate_staining"], "exclusions": [] },
+{ "name": "Macular Corneal Dystrophy", "domain": "Cornea", "route": "anterior",
+  "req": ["corneal_opacity", "family_history"], "sup": ["reduced_vision", "glare", "photophobia_mild", "young_age", "foreign_body_sensation"],
+  "con": ["pain_severe", "redness", "purulent_discharge", "older_age"], "temporal": ["chronic", "progressive"], "tests": [], "exclusions": [] },
+{ "name": "Congenital Hereditary Endothelial Dystrophy (CHED)", "domain": "Cornea", "route": "anterior",
+  "req": ["corneal_edema", "young_age"], "sup": ["reduced_vision", "family_history", "glare", "photophobia_mild"],
+  "con": ["pain_severe", "redness", "older_age", "purulent_discharge"], "temporal": ["chronic"], "tests": [], "exclusions": [] },
+{ "name": "Corneal Dellen", "domain": "Cornea", "route": "anterior",
+  "req": ["corneal_thinning", "foreign_body_sensation"], "sup": ["dryness", "reduced_tearing", "localized_conjunctival_elevation", "irritation"],
+  "con": ["pain_severe", "purulent_discharge", "sudden_vision_loss"], "temporal": ["subacute"], "tests": [], "exclusions": [] },
+
+/* Ocular surface */
+{ "name": "Xerophthalmia (Vitamin A Deficiency)", "domain": "Surface & Lids", "route": "surface",
+  "req": ["night_blindness", "dryness"], "sup": ["reduced_vision", "foreign_body_sensation", "chronic_irritation", "reduced_tearing"],
+  "con": ["pain_severe", "purulent_discharge", "sudden_onset", "itching_dominant"], "temporal": ["chronic", "progressive"], "tests": ["punctate_staining"], "exclusions": [] },
+{ "name": "Giant Fornix Syndrome", "domain": "Surface & Lids", "route": "surface",
+  "req": ["chronic_redness", "purulent_discharge"], "sup": ["older_age", "recurrent_episode", "foreign_body_sensation", "reduced_vision", "ptosis"],
+  "con": ["itching_dominant", "sudden_onset", "young_age"], "temporal": ["chronic", "recurrent"], "tests": [], "exclusions": [] },
+
+/* Uveitis */
+{ "name": "Juvenile Idiopathic Arthritis (JIA) Uveitis", "domain": "Anterior / Uveitis", "route": "anterior",
+  "req": ["young_age", "synechiae"], "sup": ["cells_present", "recurrent_episode", "corneal_opacity_band", "reduced_vision", "autoimmune_history"],
+  "con": ["pain_severe", "purulent_discharge", "redness", "older_age"], "temporal": ["chronic", "recurrent"], "tests": ["cells_present"], "exclusions": [] },
+{ "name": "Tubulointerstitial Nephritis & Uveitis (TINU)", "domain": "Anterior / Uveitis", "route": "anterior",
+  "req": ["cells_present", "autoimmune_history"], "sup": ["pain", "photophobia", "redness", "reduced_vision", "recurrent_episode", "young_age"],
+  "con": ["itching_dominant", "purulent_discharge", "gradual_onset"], "temporal": ["acute", "recurrent"], "tests": ["cells_present"], "exclusions": [] },
+{ "name": "Syphilitic Uveitis", "domain": "Anterior / Uveitis", "route": "anterior",
+  "req": ["cells_present", "floaters"], "sup": ["reduced_vision", "redness", "photophobia", "recurrent_episode", "vitreous_cells"],
+  "con": ["itching_dominant", "purulent_discharge", "gradual_onset"], "temporal": ["subacute", "recurrent"], "tests": ["cells_present"], "exclusions": [] },
+
+/* Neuro-ophthalmic */
+{ "name": "Diabetic Papillopathy", "domain": "Neuro-Ophthalmic", "route": "neuro",
+  "req": ["disc_edema", "diabetes_history"], "sup": ["blur", "reduced_vision", "young_age", "field_defect"],
+  "con": ["pain_severe", "itching_dominant", "redness", "sudden_vision_loss"], "temporal": ["subacute"], "tests": ["disc_edema"], "exclusions": [] },
+{ "name": "Foster Kennedy Syndrome", "domain": "Neuro-Ophthalmic", "route": "neuro",
+  "req": ["disc_edema", "pale_disc"], "sup": ["reduced_vision", "headache", "field_defect", "color_vision_loss"],
+  "con": ["pain_severe", "redness", "itching_dominant"], "temporal": ["chronic", "progressive"], "tests": ["pale_disc"], "exclusions": [] },
+{ "name": "Tilted Disc Syndrome", "domain": "Neuro-Ophthalmic", "route": "neuro",
+  "req": ["tilted_disc", "myopia"], "sup": ["reduced_vision", "field_defect", "astigmatism", "young_age"],
+  "con": ["pain", "redness", "older_age", "sudden_vision_loss"], "temporal": ["chronic"], "tests": [], "exclusions": [] },
+
+/* Vitreoretinal / choroidal */
+{ "name": "Terson Syndrome", "domain": "Retina", "route": "urgent",
+  "req": ["vitreous_hemorrhage", "headache"], "sup": ["sudden_vision_loss", "reduced_vision", "floaters", "dark_spots"],
+  "con": ["itching_dominant", "gradual_onset", "redness", "chronic_irritation"], "temporal": ["acute"], "tests": [], "urgent": true, "exclusions": [] },
+{ "name": "Serpiginous Choroiditis", "domain": "Retina", "route": "retina",
+  "req": ["central_scotoma", "peripapillary_atrophy_beta_zone"], "sup": ["reduced_vision", "recurrent_episode", "distortion", "central_blur"],
+  "con": ["pain", "redness", "young_age", "itching_dominant"], "temporal": ["recurrent", "chronic"], "tests": ["macular_screening_needed"], "exclusions": [] },
+{ "name": "Leber Congenital Amaurosis", "domain": "Retina", "route": "retina",
+  "req": ["nystagmus_other_eye", "night_blindness"], "sup": ["reduced_vision", "young_age", "family_history", "peripheral_field_loss"],
+  "con": ["older_age", "pain", "redness", "sudden_vision_loss"], "temporal": ["chronic"], "tests": [], "exclusions": [] },
+{ "name": "Uveal Effusion Syndrome", "domain": "Retina", "route": "retina",
+  "req": ["subretinal_fluid", "hyperopia"], "sup": ["reduced_vision", "field_loss", "choroidal_folds", "distortion"],
+  "con": ["pain", "redness", "myopia", "itching_dominant"], "temporal": ["chronic", "progressive"], "tests": ["macular_screening_needed"], "exclusions": [] },
+{ "name": "Choroidal Effusion (Post-operative)", "domain": "Retina", "route": "retina",
+  "req": ["choroidal_lesion_elevated", "post_surgery"], "sup": ["reduced_vision", "field_loss", "pain", "shadowing"],
+  "con": ["itching_dominant", "gradual_onset", "purulent_discharge"], "temporal": ["acute", "subacute"], "tests": [], "exclusions": [] },
+
+/* Glaucoma */
+{ "name": "Ghost Cell Glaucoma", "domain": "Glaucoma", "route": "glaucoma",
+  "req": ["high_iop", "vitreous_hemorrhage"], "sup": ["reduced_vision", "pain", "blur", "older_age", "halos"],
+  "con": ["itching_dominant", "gradual_onset", "normal_iop"], "temporal": ["subacute"], "tests": ["IOP_very_high"], "exclusions": [] },
+
+/* Lens */
+{ "name": "Microspherophakia", "domain": "Lens", "route": "lens",
+  "req": ["lens_displacement", "young_age"], "sup": ["myopia", "reduced_vision", "high_iop", "family_history", "glare"],
+  "con": ["older_age", "pain", "redness", "purulent_discharge"], "temporal": ["chronic"], "tests": [], "exclusions": [] },
+
+/* Lids */
+{ "name": "Blepharochalasis", "domain": "Surface & Lids", "route": "surface",
+  "req": ["lid_swelling_diffuse", "recurrent_episode"], "sup": ["young_age", "ptosis", "localized_swelling", "chronic_irritation"],
+  "con": ["pain_severe", "purulent_discharge", "reduced_vision"], "temporal": ["recurrent", "chronic"], "tests": [], "exclusions": [] },
+{ "name": "Eyelid Capillary Hemangioma", "domain": "Surface & Lids", "route": "surface",
+  "req": ["localized_lid_swelling", "young_age"], "sup": ["ptosis", "reduced_vision", "red_patch", "astigmatism"],
+  "con": ["older_age", "pain_severe", "purulent_discharge", "itching_dominant"], "temporal": ["chronic", "progressive"], "tests": [], "exclusions": [] }
 
 ];

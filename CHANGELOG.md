@@ -6,6 +6,44 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-07-16 — Session 7: bug-fixes + WNL + file import + KB batch 8
+
+**Founder-reported problems, all addressed:**
+
+1. **KB page froze with no escape** — `.modal-box` had no max-height/overflow, so
+   the 293-item list pushed Close off-screen. Bounded + scroll; reworked the KB
+   modal into a searchable list where each condition shows "enter: <required
+   findings>".
+2. **"Conditions provide no input"** — the registry's reachability counts
+   free-text producers, hiding that **5 conditions had no clickable path** to
+   their required findings and ~25 tokens were click-orphans. Added them as
+   searchable symptom chips / signs (new categories: Eye Movement & Neuro,
+   Cornea & Surface Signs, History & Triggers). **Now 0 conditions are
+   click-blocked**, enforced by a new guard test (kb-ui-reachability).
+3. **Past visit showed only the diagnosis** — now a full read-only summary
+   (complaint, history, VA/Rx, anterior seg + IOP + findings, posterior/neuro,
+   assessment + plan).
+4. **Hectic entry** — new header **"✓ Normal (WNL)"** button fills a section's
+   normal values, marks it done, and feeds the engine; normal IOP now derives
+   `normal_iop` and is wired as a soft contradictor to the IOP-elevated
+   glaucomas, so marking IOP normal visibly lowers glaucoma likelihood.
+5. **File import** — new js/ui-attach.js: attach PDFs/scans/images to
+   Investigations (visit) and to the Patient Chart as "Documents & prior
+   reports" (patient, across visits). Offline data-URL storage (~1.5 MB/file
+   cap), view/remove, audit-logged.
+6. **KB batch 8 — 24 conditions (317 total):** corneal dystrophies (PPCD,
+   Schnyder, Meesmann, Macular, CHED), corneal hydrops, dellen, xerophthalmia,
+   giant fornix, JIA/TINU/syphilitic uveitis, diabetic papillopathy, Foster
+   Kennedy, tilted disc, Terson, serpiginous choroiditis, Leber congenital
+   amaurosis, uveal/choroidal effusion, ghost-cell glaucoma, microspherophakia,
+   blepharochalasis, eyelid capillary hemangioma. Distinct required-token pairs;
+   cross-conflict audit held at baseline (one new benign dystrophy-mimic pair).
+
+**Verified** — 158/158 unit tests; e2e for KB modal, past-visit, WNL, file
+attachments, and the earlier flows all pass; cross-conflict at baseline.
+
+---
+
 ## 2026-07-16 — Session 6: node-graph clarity + click-to-field, patient chart + audit, panel tabs, KB batch 7
 
 **Founder requests, all delivered (presentation/data-layer only — no engine,
