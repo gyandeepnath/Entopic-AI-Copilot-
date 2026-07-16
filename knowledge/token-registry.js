@@ -184,9 +184,10 @@ var TOKEN_REGISTRY = {
     "reachable": true
   },
   "adduction_deficit": {
-    "type_hint": "lexical",
+    "type_hint": "symptom",
     "sources": [
-      "dictionary"
+      "dictionary",
+      "symptom_chip"
     ],
     "usage": {
       "req": 1,
@@ -475,9 +476,10 @@ var TOKEN_REGISTRY = {
     "reachable": true
   },
   "bilateral": {
-    "type_hint": "lexical",
+    "type_hint": "symptom",
     "sources": [
-      "dictionary"
+      "dictionary",
+      "symptom_chip"
     ],
     "usage": {
       "req": 0,
@@ -1712,9 +1714,10 @@ var TOKEN_REGISTRY = {
     "reachable": true
   },
   "difficulty_near": {
-    "type_hint": "lexical",
+    "type_hint": "symptom",
     "sources": [
-      "dictionary"
+      "dictionary",
+      "symptom_chip"
     ],
     "usage": {
       "req": 0,
@@ -2346,9 +2349,10 @@ var TOKEN_REGISTRY = {
     "reachable": false
   },
   "eye_down_out": {
-    "type_hint": "lexical",
+    "type_hint": "symptom",
     "sources": [
-      "dictionary"
+      "dictionary",
+      "symptom_chip"
     ],
     "usage": {
       "req": 0,
@@ -2983,9 +2987,10 @@ var TOKEN_REGISTRY = {
     "reachable": true
   },
   "head_tilt": {
-    "type_hint": "lexical",
+    "type_hint": "symptom",
     "sources": [
-      "dictionary"
+      "dictionary",
+      "symptom_chip"
     ],
     "usage": {
       "req": 2,
@@ -3108,9 +3113,10 @@ var TOKEN_REGISTRY = {
     "reachable": false
   },
   "history_trauma_or_infection": {
-    "type_hint": "lexical",
+    "type_hint": "symptom",
     "sources": [
-      "dictionary"
+      "dictionary",
+      "symptom_chip"
     ],
     "usage": {
       "req": 0,
@@ -4035,9 +4041,10 @@ var TOKEN_REGISTRY = {
     "reachable": true
   },
   "limited_abduction": {
-    "type_hint": "lexical",
+    "type_hint": "symptom",
     "sources": [
-      "dictionary"
+      "dictionary",
+      "symptom_chip"
     ],
     "usage": {
       "req": 1,
@@ -4216,8 +4223,10 @@ var TOKEN_REGISTRY = {
     "reachable": true
   },
   "madarosis": {
-    "type_hint": "unknown",
-    "sources": [],
+    "type_hint": "symptom",
+    "sources": [
+      "symptom_chip"
+    ],
     "usage": {
       "req": 0,
       "sup": 1,
@@ -4225,7 +4234,7 @@ var TOKEN_REGISTRY = {
       "temporal": 0,
       "tests": 0
     },
-    "reachable": false
+    "reachable": true
   },
   "madarosis_lash_loss": {
     "type_hint": "sign",
@@ -4748,9 +4757,10 @@ var TOKEN_REGISTRY = {
     "reachable": true
   },
   "nystagmus_other_eye": {
-    "type_hint": "lexical",
+    "type_hint": "symptom",
     "sources": [
-      "dictionary"
+      "dictionary",
+      "symptom_chip"
     ],
     "usage": {
       "req": 4,
@@ -5142,9 +5152,10 @@ var TOKEN_REGISTRY = {
     "reachable": true
   },
   "peripheral_infiltrate": {
-    "type_hint": "lexical",
+    "type_hint": "symptom",
     "sources": [
-      "dictionary"
+      "dictionary",
+      "symptom_chip"
     ],
     "usage": {
       "req": 3,
@@ -5379,9 +5390,10 @@ var TOKEN_REGISTRY = {
     "reachable": true
   },
   "progressive_blur": {
-    "type_hint": "lexical",
+    "type_hint": "symptom",
     "sources": [
-      "dictionary"
+      "dictionary",
+      "symptom_chip"
     ],
     "usage": {
       "req": 0,
@@ -5468,9 +5480,10 @@ var TOKEN_REGISTRY = {
     "reachable": true
   },
   "punctate_epithelial_lesions": {
-    "type_hint": "lexical",
+    "type_hint": "symptom",
     "sources": [
-      "dictionary"
+      "dictionary",
+      "symptom_chip"
     ],
     "usage": {
       "req": 1,
@@ -5523,9 +5536,10 @@ var TOKEN_REGISTRY = {
     "reachable": false
   },
   "pupil_involvement": {
-    "type_hint": "lexical",
+    "type_hint": "symptom",
     "sources": [
-      "dictionary"
+      "dictionary",
+      "symptom_chip"
     ],
     "usage": {
       "req": 0,
@@ -5651,9 +5665,10 @@ var TOKEN_REGISTRY = {
     "reachable": true
   },
   "reading_difficulty": {
-    "type_hint": "lexical",
+    "type_hint": "symptom",
     "sources": [
-      "dictionary"
+      "dictionary",
+      "symptom_chip"
     ],
     "usage": {
       "req": 0,
@@ -5679,9 +5694,10 @@ var TOKEN_REGISTRY = {
     "reachable": true
   },
   "recent_viral_history": {
-    "type_hint": "lexical",
+    "type_hint": "symptom",
     "sources": [
-      "dictionary"
+      "dictionary",
+      "symptom_chip"
     ],
     "usage": {
       "req": 1,
@@ -6488,7 +6504,8 @@ var TOKEN_REGISTRY = {
   "steroid_history": {
     "type_hint": "risk_factor",
     "sources": [
-      "medication"
+      "medication",
+      "symptom_chip"
     ],
     "usage": {
       "req": 2,
@@ -6500,9 +6517,10 @@ var TOKEN_REGISTRY = {
     "reachable": true
   },
   "stress_history": {
-    "type_hint": "lexical",
+    "type_hint": "symptom",
     "sources": [
-      "dictionary"
+      "dictionary",
+      "symptom_chip"
     ],
     "usage": {
       "req": 1,
@@ -6543,9 +6561,10 @@ var TOKEN_REGISTRY = {
     "reachable": true
   },
   "stromal_inflammation": {
-    "type_hint": "lexical",
+    "type_hint": "symptom",
     "sources": [
-      "dictionary"
+      "dictionary",
+      "symptom_chip"
     ],
     "usage": {
       "req": 1,
@@ -7492,11 +7511,9 @@ var TOKEN_REGISTRY = {
 
 var TOKEN_REGISTRY_STATS = {
   "total": 529,
-  "reachable": 428,
+  "reachable": 429,
   "unreachable_required": [],
-  "unreachable_supportive": [
-    "madarosis"
-  ],
+  "unreachable_supportive": [],
   "test_label_only": 96,
   "produced_never_consumed": 98
 };

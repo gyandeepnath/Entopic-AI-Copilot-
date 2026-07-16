@@ -412,7 +412,39 @@ var SYM_CATS = {
     unequal_vision:          "Vision different each eye",
     suppression:             "Ignoring one eye",
     vomiting:                "Nausea / vomiting",
-    visual_disturbance:      "General visual disturbance"
+    visual_disturbance:      "General visual disturbance",
+    bilateral:               "Both eyes affected",
+    reading_difficulty:      "Trouble reading / near tasks",
+    difficulty_near:         "Difficulty with near vision",
+    progressive_blur:        "Blur getting steadily worse"
+  },
+
+  /* ── 13. EYE MOVEMENT & NEURO (observations) ──
+     Enterable observations that several neuro/motility conditions require,
+     so those conditions can actually be surfaced from the exam. */
+  "Eye Movement & Neuro": {
+    nystagmus_other_eye:  "Nystagmus (eyes oscillating)",
+    head_tilt:            "Compensatory head tilt / turn",
+    eye_down_out:         "Eye rests down-and-out",
+    limited_abduction:    "Eye won't turn outward",
+    adduction_deficit:    "Eye won't turn inward",
+    pupil_involvement:    "Pupil involved (dilated/unreactive)"
+  },
+
+  /* ── 14. CORNEA & SURFACE SIGNS ── */
+  "Cornea & Surface Signs": {
+    peripheral_infiltrate:     "Peripheral corneal infiltrate",
+    stromal_inflammation:      "Corneal stromal inflammation",
+    punctate_epithelial_lesions: "Punctate epithelial lesions",
+    madarosis:                 "Lash loss (madarosis)"
+  },
+
+  /* ── 15. HISTORY & TRIGGERS ── */
+  "History & Triggers": {
+    recent_viral_history:     "Recent viral illness / cold",
+    steroid_history:          "Steroid use (drops / systemic)",
+    stress_history:           "Recent stress",
+    history_trauma_or_infection: "Past trauma or infection"
   }
 };
 
