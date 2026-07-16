@@ -21,13 +21,13 @@ function pgGon() {
 
     return '<div class="dv"><span>' + eye.toUpperCase() + '</span></div>' +
       '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px">' +
-        '<div class="fi"><label>Superior</label><select oninput="V.gon.' + eye + '.s=this.value">' + gradeOpts("s") + '</select></div>' +
-        '<div class="fi"><label>Nasal</label><select oninput="V.gon.' + eye + '.n=this.value">' + gradeOpts("n") + '</select></div>' +
-        '<div class="fi"><label>Inferior</label><select oninput="V.gon.' + eye + '.i=this.value">' + gradeOpts("i") + '</select></div>' +
-        '<div class="fi"><label>Temporal</label><select oninput="V.gon.' + eye + '.t=this.value">' + gradeOpts("t") + '</select></div>' +
+        '<div class="fi"><label>Superior</label><select oninput="V.gon.' + eye + '.s=this.value;runDiagnosticEngine();renderAdvisory()">' + gradeOpts("s") + '</select></div>' +
+        '<div class="fi"><label>Nasal</label><select oninput="V.gon.' + eye + '.n=this.value;runDiagnosticEngine();renderAdvisory()">' + gradeOpts("n") + '</select></div>' +
+        '<div class="fi"><label>Inferior</label><select oninput="V.gon.' + eye + '.i=this.value;runDiagnosticEngine();renderAdvisory()">' + gradeOpts("i") + '</select></div>' +
+        '<div class="fi"><label>Temporal</label><select oninput="V.gon.' + eye + '.t=this.value;runDiagnosticEngine();renderAdvisory()">' + gradeOpts("t") + '</select></div>' +
       '</div>' +
       '<div class="fg" style="margin-top:4px">' +
-        '<div class="fi"><label>Pigmentation</label><input value="' + esc(g.pig) + '" oninput="V.gon.' + eye + '.pig=this.value" placeholder="0-4"></div>' +
+        '<div class="fi"><label>Pigmentation</label><input value="' + esc(g.pig) + '" oninput="V.gon.' + eye + '.pig=this.value;runDiagnosticEngine();renderAdvisory()" placeholder="0-4"></div>' +
         '<div class="fi"><label>Notes</label><input value="' + esc(g.notes) + '" oninput="V.gon.' + eye + '.notes=this.value" placeholder="PAS, NVA..."></div>' +
       '</div>';
   }
@@ -67,13 +67,13 @@ function pgFun() {
         '<div class="fi"><label>Disc Margin</label>' +
           '<input value="' + esc(f.margin) + '" oninput="' + p + 'margin=this.value"></div>' +
         '<div class="fi"><label>Macula</label>' +
-          '<input value="' + esc(f.mac) + '" oninput="' + p + 'mac=this.value"></div>' +
+          '<input value="' + esc(f.mac) + '" oninput="' + p + 'mac=this.value;runDiagnosticEngine();renderAdvisory()"></div>' +
         '<div class="fi"><label>Vessels</label>' +
-          '<input value="' + esc(f.vessels) + '" oninput="' + p + 'vessels=this.value"></div>' +
+          '<input value="' + esc(f.vessels) + '" oninput="' + p + 'vessels=this.value;runDiagnosticEngine();renderAdvisory()"></div>' +
         '<div class="fi"><label>Periphery</label>' +
-          '<input value="' + esc(f.periph) + '" oninput="' + p + 'periph=this.value"></div>' +
+          '<input value="' + esc(f.periph) + '" oninput="' + p + 'periph=this.value;runDiagnosticEngine();renderAdvisory()"></div>' +
         '<div class="fi"><label>Vitreous</label>' +
-          '<input value="' + esc(f.vit) + '" oninput="' + p + 'vit=this.value"></div>' +
+          '<input value="' + esc(f.vit) + '" oninput="' + p + 'vit=this.value;runDiagnosticEngine();renderAdvisory()"></div>' +
         '<div class="fi full"><label>Notes</label>' +
           '<textarea oninput="' + p + 'notes=this.value">' + esc(f.notes) + '</textarea></div>' +
       '</div>';

@@ -69,6 +69,21 @@ function collectTokens() {
     }
   }
 
+  /* Helpers for structured slit-lamp fields. */
+  function slGrade(v) { /* "0", "0.5+", "1+" … "4+" → integer grade */
+    if (!v) return 0;
+    var m = String(v).match(/(\d+(?:\.\d+)?)/);
+    return m ? Math.round(parseFloat(m[1])) : 0;
+  }
+  function slNum(v) { var n = parseFloat(v); return (isNaN(n) || n <= 0) ? 999 : n; }
+  function slParseText(vals, map, add) {
+    for (var i = 0; i < vals.length; i++) {
+      var s = (vals[i] || "").toLowerCase();
+      if (!s || s === "clear" || s === "white and quiet" || s === "wnl" || s === "normal") continue;
+      for (var kw in map) if (s.indexOf(kw) >= 0) add(map[kw]);
+    }
+  }
+
 
   /* ── SOURCE 1: Selected symptoms (direct — these ARE tokens) ── */
   if (V.symptoms && V.symptoms.length > 0) {
@@ -224,14 +239,39 @@ function collectTokens() {
     if (vhOd <= 2 || vhOs <= 2) { addToken("narrow_angle"); addToken("shallow_ac"); }
   }
 
-  /* AC Cells */
+  /* ── SOURCE 9b: STRUCTURED SLIT-LAMP GRADES + FREE-TEXT SIGNS ──
+     The per-eye slit-lamp dropdowns and free-text fields are clickable but fed
+     the engine nothing (AC cells only emitted a pain/photophobia proxy). Now
+     each graded value and typed sign emits the matching finding token so
+     recording it drives the differential live. (TBUT/Schirmer/LOCS→gradual_blur
+     are handled in the measurement block below; here we add what was missing.) */
   if (V.sl) {
-    var cellsOd = V.sl.od.cells || "0";
-    var cellsOs = V.sl.os.cells || "0";
-    if (cellsOd !== "0" || cellsOs !== "0") {
-      addToken("pain");
-      addToken("photophobia");
-    }
+    /* AC cells (SUN 0 / 0.5+ / 1+ … 4+) → cells_present + severity grade */
+    var cellsN = Math.max(slGrade(V.sl.od.cells), slGrade(V.sl.os.cells));
+    if (cellsN > 0) { addToken("cells_present"); if (cellsN >= 2) addToken("cells_" + Math.min(cellsN, 4)); }
+    /* AC flare (SUN) → flare_present + grade */
+    var flareN = Math.max(slGrade(V.sl.od.flare), slGrade(V.sl.os.flare));
+    if (flareN > 0) { addToken("flare_present"); if (flareN >= 2) addToken("flare_" + Math.min(flareN, 4)); }
+    /* Lens LOCS graded tokens (nuclear grade / cortical / PSC opacities) */
+    var nsN = Math.max(parseInt(V.sl.od.ns) || 0, parseInt(V.sl.os.ns) || 0);
+    if (nsN >= 2) addToken("nuclear_sclerosis_grade_" + Math.min(nsN, 4));
+    if ((parseInt(V.sl.od.c) || 0) >= 2 || (parseInt(V.sl.os.c) || 0) >= 2) addToken("cortical_opacity");
+    if ((parseInt(V.sl.od.psc) || 0) >= 2 || (parseInt(V.sl.os.psc) || 0) >= 2) addToken("psc_opacity");
+    /* Free-text lids / conjunctiva / cornea → keyword-parsed sign tokens */
+    slParseText([V.sl.od.cornea, V.sl.os.cornea], {
+      edema: "corneal_edema", scar: "corneal_scar", opacit: "corneal_opacity",
+      infiltrat: "stromal_infiltrate", ulcer: "epithelial_defect", dendri: "dendritic_ulcer",
+      guttat: "guttata", neovasc: "corneal_neovascularization", thin: "corneal_thinning", pannus: "pannus"
+    }, addToken);
+    slParseText([V.sl.od.conj, V.sl.os.conj], {
+      inject: "redness", follicl: "follicles", papill: "papillae",
+      chemosis: "chemosis", pterygium: "pterygium", hemorrhage: "red_patch", discharge: "discharge"
+    }, addToken);
+    slParseText([V.sl.od.lids, V.sl.os.lids], {
+      blephar: "blepharitis_anterior", chalazion: "painless_lid_nodule", stye: "hordeolum_stye",
+      ptosis: "ptosis", entropion: "entropion", ectropion: "ectropion", crust: "lid_crusting",
+      mgd: "meibomian_dysfunction", swelling: "localized_lid_swelling"
+    }, addToken);
   }
 
   /* RAPD */
@@ -365,10 +405,54 @@ function collectTokens() {
     if (discOd.indexOf("edema") >= 0 || discOs.indexOf("edema") >= 0) addToken("disc_edema");
   }
 
-  /* Motility */
+  /* Fundus macula / vessels / periphery / vitreous free-text → sign tokens */
+  if (V.fun) {
+    slParseText([V.fun.od.mac, V.fun.os.mac], {
+      drusen: "drusen_medium_63_125_m", edema: "macular_edema_clinical", hole: "macular_hole",
+      cnv: "subretinal_hemorrhage_cnv", cherry: "cherry_red_spot", pucker: "erm_macular_pucker",
+      erm: "erm_macular_pucker", atrophy: "geographic_atrophy", star: "macular_star"
+    }, addToken);
+    slParseText([V.fun.od.vessels, V.fun.os.vessels], {
+      cotton: "cotton_wool_spots", exudate: "hard_exudates", microaneurysm: "microaneurysms",
+      hemorrhage: "dot_blot_hemorrhages", flame: "flame_hemorrhages", neovasc: "nve_neovascularization_elsewhere",
+      nick: "av_nicking", narrow: "arteriolar_narrowing", beading: "venous_beading",
+      occlus: "retinal_ischemia", tortuo: "dilated_tortuous_veins"
+    }, addToken);
+    slParseText([V.fun.od.periph, V.fun.os.periph], {
+      lattice: "lattice_degeneration", tear: "retinal_break", break: "retinal_break",
+      detach: "retinal_detachment_partial", hole: "retinal_break", schisis: "retinoschisis"
+    }, addToken);
+    slParseText([V.fun.od.vit, V.fun.os.vit], {
+      hemorrhage: "vitreous_hemorrhage", weiss: "pvd_weiss_ring", pvd: "pvd_weiss_ring",
+      cells: "vitreous_cells", tobacco: "shafer_sign_tobacco_dust", asteroid: "asteroid_hyalosis"
+    }, addToken);
+  }
+
+  /* Motility — restriction, gaze deficits, nystagmus */
   if (V.mot) {
-    if (V.mot.versions === "Limited") addToken("restricted_motility");
-    if (V.mot.ductions === "Limited") addToken("restricted_motility");
+    var motTxt = ((V.mot.notes || "") + " " + (V.mot.versions || "") + " " + (V.mot.ductions || "")).toLowerCase();
+    if (V.mot.versions && V.mot.versions !== "Full") addToken("restricted_motility");
+    if (V.mot.ductions && V.mot.ductions !== "Full") addToken("restricted_motility");
+    if (motTxt.indexOf("abduct") >= 0) addToken("limited_abduction");
+    if (motTxt.indexOf("adduct") >= 0) addToken("adduction_deficit");
+    if (V.mot.nystagmus && V.mot.nystagmus !== "None") addToken("nystagmus_other_eye");
+    if (motTxt.indexOf("down") >= 0 && motTxt.indexOf("out") >= 0) addToken("eye_down_out");
+  }
+
+  /* Gonioscopy — narrow/closed angle (Shaffer grade ≤1 / Slit / closed),
+     recession, pigment, neovascularization. */
+  if (V.gon) {
+    var gonVals = [V.gon.od.s, V.gon.od.n, V.gon.od.i, V.gon.od.t, V.gon.os.s, V.gon.os.n, V.gon.os.i, V.gon.os.t];
+    var gonTxt = gonVals.join(" ").toLowerCase();
+    var gonNarrow = false;
+    for (var gi = 0; gi < gonVals.length; gi++) {
+      var gv = String(gonVals[gi] || "").toLowerCase().trim();
+      if (gv === "0" || gv === "1" || gv === "slit" || gv.indexOf("closed") >= 0 || gv.indexOf("narrow") >= 0) gonNarrow = true;
+    }
+    if (gonNarrow) { addToken("narrow_angle"); addToken("angle_closure_risk"); }
+    if (gonTxt.indexOf("recess") >= 0) addToken("trauma_history");
+    if (/nva|neovasc|rubeosis/.test(gonTxt)) addToken("rubeosis_iridis");
+    if (/heavy|dense|3\+|4\+/.test(((V.gon.od.pig || "") + " " + (V.gon.os.pig || "")).toLowerCase())) addToken("pigment_dispersion");
   }
 
   /* Slit lamp specific fields */

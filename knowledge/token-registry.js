@@ -184,9 +184,10 @@ var TOKEN_REGISTRY = {
     "reachable": true
   },
   "adduction_deficit": {
-    "type_hint": "symptom",
+    "type_hint": "derived_measurement_or_history",
     "sources": [
       "dictionary",
+      "engine_derived",
       "symptom_chip"
     ],
     "usage": {
@@ -242,8 +243,9 @@ var TOKEN_REGISTRY = {
     "reachable": false
   },
   "angle_closure_risk": {
-    "type_hint": "risk_factor",
+    "type_hint": "derived_measurement_or_history",
     "sources": [
+      "engine_derived",
       "medication"
     ],
     "usage": {
@@ -761,8 +763,9 @@ var TOKEN_REGISTRY = {
     "reachable": true
   },
   "cells_present": {
-    "type_hint": "sign",
+    "type_hint": "derived_measurement_or_history",
     "sources": [
+      "engine_derived",
       "finding_map"
     ],
     "usage": {
@@ -1474,8 +1477,9 @@ var TOKEN_REGISTRY = {
     "reachable": true
   },
   "cortical_opacity": {
-    "type_hint": "sign",
+    "type_hint": "derived_measurement_or_history",
     "sources": [
+      "engine_derived",
       "finding_map"
     ],
     "usage": {
@@ -2350,9 +2354,10 @@ var TOKEN_REGISTRY = {
     "reachable": false
   },
   "eye_down_out": {
-    "type_hint": "symptom",
+    "type_hint": "derived_measurement_or_history",
     "sources": [
       "dictionary",
+      "engine_derived",
       "symptom_chip"
     ],
     "usage": {
@@ -2585,8 +2590,9 @@ var TOKEN_REGISTRY = {
     "reachable": true
   },
   "flare_present": {
-    "type_hint": "sign",
+    "type_hint": "derived_measurement_or_history",
     "sources": [
+      "engine_derived",
       "finding_map"
     ],
     "usage": {
@@ -4028,9 +4034,10 @@ var TOKEN_REGISTRY = {
     "reachable": true
   },
   "limited_abduction": {
-    "type_hint": "symptom",
+    "type_hint": "derived_measurement_or_history",
     "sources": [
       "dictionary",
+      "engine_derived",
       "symptom_chip"
     ],
     "usage": {
@@ -4744,9 +4751,10 @@ var TOKEN_REGISTRY = {
     "reachable": true
   },
   "nystagmus_other_eye": {
-    "type_hint": "symptom",
+    "type_hint": "derived_measurement_or_history",
     "sources": [
       "dictionary",
+      "engine_derived",
       "symptom_chip"
     ],
     "usage": {
@@ -4841,10 +4849,9 @@ var TOKEN_REGISTRY = {
     "reachable": true
   },
   "pain": {
-    "type_hint": "derived_measurement_or_history",
+    "type_hint": "sign",
     "sources": [
       "dictionary",
-      "engine_derived",
       "finding_map",
       "free_text",
       "symptom_chip"
@@ -5204,10 +5211,9 @@ var TOKEN_REGISTRY = {
     "reachable": false
   },
   "photophobia": {
-    "type_hint": "derived_measurement_or_history",
+    "type_hint": "sign",
     "sources": [
       "dictionary",
-      "engine_derived",
       "finding_map",
       "free_text",
       "symptom_chip"
@@ -5237,8 +5243,9 @@ var TOKEN_REGISTRY = {
     "reachable": true
   },
   "pigment_dispersion": {
-    "type_hint": "sign",
+    "type_hint": "derived_measurement_or_history",
     "sources": [
+      "engine_derived",
       "finding_map"
     ],
     "usage": {
@@ -5423,8 +5430,9 @@ var TOKEN_REGISTRY = {
     "reachable": true
   },
   "psc_opacity": {
-    "type_hint": "sign",
+    "type_hint": "derived_measurement_or_history",
     "sources": [
+      "engine_derived",
       "finding_map"
     ],
     "usage": {
@@ -6092,8 +6100,9 @@ var TOKEN_REGISTRY = {
     "reachable": true
   },
   "rubeosis_iridis": {
-    "type_hint": "sign",
+    "type_hint": "derived_measurement_or_history",
     "sources": [
+      "engine_derived",
       "finding_map"
     ],
     "usage": {

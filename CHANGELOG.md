@@ -6,6 +6,51 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-07-16 — Session 9: structured exam fields now drive the engine live
+
+**Founder ask:** "more than 50% of clickable options in the slit lamp and other
+pages don't even do anything on clicking, and no output is fed to the engine."
+
+**Root cause:** the engine only read the *chip-list* findings
+(`V.sl.findings`/`V.fun.findings` via `FINDING_TOKEN_MAP`). It never read the
+**structured per-eye fields** — the AC cells/flare dropdowns, the LOCS lens
+grades (NS/C/PSC), or the free-text cornea/conjunctiva/lids/macula/vessels/
+periphery/vitreous boxes, gonioscopy Shaffer grades, and motility notes. Those
+were fully clickable/typeable but emitted **nothing**, so recording them changed
+no differential.
+
+1. **Engine reads every structured field (SOURCE 9b + fundus/motility/gonio).**
+   Added `slGrade`/`slNum`/`slParseText` helpers and a keyword-map tokenizer so:
+   - **AC cells/flare dropdowns** → `cells_present`/`flare_present` **plus the
+     graded token** (`cells_2/3/4`, `flare_2/3/4`) that Session 8 wired into
+     uveitis/endophthalmitis severity.
+   - **LOCS grades** → `nuclear_sclerosis_grade_N` / `cortical_opacity` /
+     `psc_opacity` (only at grade ≥2, so a normal lens stays silent).
+   - **Free-text cornea/conj/lids/macula/vessels/periphery/vitreous** →
+     keyword-parsed into signs (`corneal_edema`, `follicles`,
+     `blepharitis_anterior`, `cotton_wool_spots`, `retinal_break`,
+     `vitreous_hemorrhage`, drusen, etc.).
+   - **Gonioscopy** Shaffer grade ≤1 → `narrow_angle`/`angle_closure_risk`;
+     recess/rubeosis/pigment parsed. **Motility** notes → `limited_abduction`,
+     `nystagmus_other_eye`, gaze deficits.
+2. **Every previously-inert handler now re-runs the engine.** Wired
+   `runDiagnosticEngine()`+`renderAdvisory()` into the slit-lamp
+   (lids/conj/cornea/flare/cells), fundus (macula/vessels/periphery/vitreous)
+   and gonioscopy/motility handlers so typing/selecting updates the live
+   differential immediately.
+3. **No false positives.** Normal values (`WNL`, `White and quiet`, `Clear`,
+   grade 0) emit no sign tokens — asserted by a new guard test.
+4. **New guard test** (`engine-structured-fields`, 6 cases) locks in that each
+   structured field emits its expected token and that a normal exam stays
+   silent. Token registry regenerated.
+
+**Verified** — 165/165 unit tests (159 + 6 new); end-to-end, structured cells
+3+/flare 2+ dropdowns alone now drive Anterior Uveitis (Acute) to 83%, LOCS
+grades drive cataract, fundus vessel text drives diabetic signs, gonio grade 1
+drives narrow-angle; cross-conflict at baseline.
+
+---
+
 ## 2026-07-16 — Session 8: clickable-input integrity + linter guard + KB batch 9 + graded-severity engine refinement
 
 **Founder ask:** flag findings with no clickable input; cross-check that every

@@ -572,9 +572,9 @@ function pgSL() {
 
     return '<div class="dv"><span>' + (eye === "od" ? "OD — Right Eye" : "OS — Left Eye") + '</span></div>' +
       '<div class="fg">' +
-        '<div class="fi"><label>Lids</label><input value="' + esc(s.lids) + '" oninput="' + p + 'lids=this.value"></div>' +
-        '<div class="fi"><label>Conjunctiva</label><input value="' + esc(s.conj) + '" oninput="' + p + 'conj=this.value"></div>' +
-        '<div class="fi"><label>Cornea</label><input value="' + esc(s.cornea) + '" oninput="' + p + 'cornea=this.value"></div>' +
+        '<div class="fi"><label>Lids</label><input value="' + esc(s.lids) + '" oninput="' + p + 'lids=this.value;runDiagnosticEngine();renderAdvisory()"></div>' +
+        '<div class="fi"><label>Conjunctiva</label><input value="' + esc(s.conj) + '" oninput="' + p + 'conj=this.value;runDiagnosticEngine();renderAdvisory()"></div>' +
+        '<div class="fi"><label>Cornea</label><input value="' + esc(s.cornea) + '" oninput="' + p + 'cornea=this.value;runDiagnosticEngine();renderAdvisory()"></div>' +
         '<div class="fi"><label>Van Herick</label>' +
           '<select oninput="' + p + 'vh=this.value;runDiagnosticEngine();renderAdvisory()">' +
             '<option value="">—</option>' +
@@ -594,7 +594,7 @@ function pgSL() {
             '<option' + (s.cells === "4+" ? " selected" : "") + '>4+</option>' +
           '</select></div>' +
         '<div class="fi"><label>AC Flare (SUN)</label>' +
-          '<select oninput="' + p + 'flare=this.value">' +
+          '<select oninput="' + p + 'flare=this.value;runDiagnosticEngine();renderAdvisory()">' +
             '<option>0</option>' +
             '<option' + (s.flare === "1+" ? " selected" : "") + '>1+</option>' +
             '<option' + (s.flare === "2+" ? " selected" : "") + '>2+</option>' +
@@ -606,7 +606,7 @@ function pgSL() {
             [0,1,2,3,4,5,6].map(function(n) { return '<option' + (parseInt(s.ns) === n ? " selected" : "") + '>' + n + '</option>'; }).join("") +
           '</select></div>' +
         '<div class="fi"><label>Lens C</label>' +
-          '<select oninput="' + p + 'c=this.value">' +
+          '<select oninput="' + p + 'c=this.value;runDiagnosticEngine();renderAdvisory()">' +
             [0,1,2,3,4,5].map(function(n) { return '<option' + (parseInt(s.c) === n ? " selected" : "") + '>' + n + '</option>'; }).join("") +
           '</select></div>' +
         '<div class="fi"><label>Lens PSC</label>' +
@@ -783,8 +783,8 @@ function pgMot() {
       '<div class="fi"><label>Hirschberg</label>' +
         '<input value="' + esc(V.mot.hirsch) + '" oninput="V.mot.hirsch=this.value" placeholder="Ortho / ET / XT"></div>' +
       '<div class="fi"><label>Nystagmus</label>' +
-        '<select oninput="V.mot.nystagmus=this.value"><option>None</option><option>Present — horizontal</option><option>Present — vertical</option><option>Present — rotary</option></select></div>' +
-      '<div class="fi full"><label>Notes</label><textarea oninput="V.mot.notes=this.value">' + esc(V.mot.notes) + '</textarea></div>' +
+        '<select oninput="V.mot.nystagmus=this.value;runDiagnosticEngine();renderAdvisory()"><option>None</option><option>Present — horizontal</option><option>Present — vertical</option><option>Present — rotary</option></select></div>' +
+      '<div class="fi full"><label>Notes</label><textarea oninput="V.mot.notes=this.value;runDiagnosticEngine();renderAdvisory()">' + esc(V.mot.notes) + '</textarea></div>' +
     '</div>' +
     '<div class="btn-g">' +
       '<button class="btn btn-s" onclick="nav(\'pupil\')">← Back</button>' +
