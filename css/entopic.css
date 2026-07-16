@@ -661,6 +661,27 @@ input, select, textarea, button {
   100% { box-shadow: 0 0 0 0 rgba(39,174,96,0); }
 }
 
+/* ── Engine "check next" hint banner on a step ── */
+.engine-hint-banner {
+  display: flex; align-items: flex-start; gap: 8px;
+  background: #eaf7ef; border: 1px solid #27ae60; border-left: 4px solid #27ae60;
+  border-radius: var(--r); padding: 8px 10px; margin-bottom: 12px;
+  font-size: .72rem; color: var(--ink, #1c1c1c);
+  transition: opacity .6s ease;
+}
+.engine-hint-banner.ehb-fade { opacity: 0; }
+.engine-hint-banner .ehb-icon { font-size: .9rem; line-height: 1.2; }
+.engine-hint-banner .ehb-body { flex: 1; }
+.engine-hint-banner .ehb-why { color: #1a7a43; }
+.engine-hint-banner .ehb-sub { font-size: .58rem; color: var(--sv, #777); }
+.engine-hint-banner .ehb-x {
+  background: none; border: none; cursor: pointer; color: var(--sv, #888);
+  font-size: .8rem; padding: 0 2px;
+}
+@media (prefers-color-scheme: dark) {
+  .engine-hint-banner { background: rgba(39,174,96,.14); color: #e6e6e6; }
+}
+
 /* ── Full-screen diagnostic node-graph overlay ── */
 .engine-map-overlay {
   display: none;

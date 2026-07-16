@@ -115,7 +115,7 @@ function renderInlineGraph() {
   var h = '<div style="border:1px solid var(--fg);border-radius:var(--rl);padding:8px;background:var(--bg2,transparent)">';
 
   /* — Tier 1: INPUTS — a compact chip cloud of the current tokens — */
-  h += '<div style="font-size:.46rem;text-transform:uppercase;letter-spacing:.6px;color:var(--sv);margin-bottom:3px">Inputs · ' + tokens.length + ' tokens</div>';
+  h += '<div style="font-size:.46rem;text-transform:uppercase;letter-spacing:.6px;color:var(--sv);margin-bottom:3px"><b style="color:var(--md)">① What you\'ve entered</b> · ' + tokens.length + ' findings</div>';
   h += '<div style="display:flex;flex-wrap:wrap;gap:2px;max-height:46px;overflow:hidden">';
   for (var i = 0; i < Math.min(tokens.length, 14); i++) {
     h += '<span style="padding:1px 5px;background:var(--fg);border-radius:2px;font-size:.5rem;color:var(--ink)">' + esc(tokens[i].replace(/_/g, " ")) + '</span>';
@@ -128,6 +128,7 @@ function renderInlineGraph() {
   /* — Tier 2: LEADING MATCH — the top candidate as a node with a confidence
        ring, plus up to two close rivals as smaller nodes — */
   var lead = dx[0];
+  h += '<div style="font-size:.46rem;text-transform:uppercase;letter-spacing:.6px;color:var(--sv);margin-bottom:3px"><b style="color:var(--md)">② Most likely</b> · by ranking, not a verdict</div>';
   h += '<div style="display:flex;align-items:center;gap:8px;padding:6px;border:1px solid ' + (lead.urgent ? 'var(--ur,#c0392b)' : 'var(--bk,#333)') + ';border-radius:var(--r);background:var(--card,transparent)">';
   h += confRing(lead.prob, lead.urgent);
   h += '<div style="flex:1;min-width:0">';
@@ -154,13 +155,16 @@ function renderInlineGraph() {
   var nt = (V.nextTests || []);
   if (nt.length) {
     h += connector;
-    h += '<div style="font-size:.46rem;text-transform:uppercase;letter-spacing:.6px;color:var(--sv);margin-bottom:3px">Check next → raises confidence</div>';
+    h += '<div style="font-size:.46rem;text-transform:uppercase;letter-spacing:.6px;color:var(--sv);margin-bottom:3px"><b style="color:var(--md)">③ Check next</b> · tap to record it</div>';
     for (var n = 0; n < Math.min(nt.length, 3); n++) {
       var t = nt[n];
-      h += '<div onclick="nav(\'' + t.target + '\')" style="cursor:pointer;display:flex;align-items:center;gap:5px;padding:3px 5px;border:1px dashed var(--ms);border-radius:var(--r);margin-bottom:3px">' +
+      var why = (t.confirms && t.confirms.length ? "supports " + t.confirms[0] : "") +
+                (t.excludes && t.excludes.length ? (t.confirms && t.confirms.length ? " · " : "") + "rules out " + t.excludes[0] : "");
+      h += '<div onclick="navToField(\'' + t.target + '\',' + esc(JSON.stringify(t.label)) + ',' + esc(JSON.stringify(why)) + ')" style="cursor:pointer;display:flex;align-items:center;gap:5px;padding:4px 6px;border:1px dashed var(--ms);border-radius:var(--r);margin-bottom:3px">' +
         '<span style="font-size:.6rem">🔬</span>' +
-        '<span style="flex:1;font-size:.54rem">' + esc(t.label) + '</span>' +
-        '<span style="font-size:.44rem;color:var(--sv);text-transform:uppercase">→ ' + esc(t.target.replace(/_/g, " ")) + '</span>' +
+        '<span style="flex:1"><span style="font-size:.56rem;font-weight:600">' + esc(t.label) + '</span>' +
+        (why ? '<br><span style="font-size:.46rem;color:var(--sv)">' + esc(why) + '</span>' : '') + '</span>' +
+        '<span style="font-size:.46rem;color:var(--md)">record →</span>' +
         '</div>';
     }
   } else {
@@ -214,6 +218,16 @@ function closeEngineMap() {
 }
 /* navigate from a node, closing the overlay first */
 function engineMapNav(step) { closeEngineMap(); if (typeof nav === "function") nav(step); }
+/* next-data node → close the map and jump to the exact entry field */
+var _engineMapNexts = [];
+function engineMapFieldIdx(i) {
+  var t = _engineMapNexts[i];
+  if (!t) return;
+  var why = (t.confirms && t.confirms.length ? "supports " + t.confirms[0] : "") +
+            (t.excludes && t.excludes.length ? (t.confirms && t.confirms.length ? " · " : "") + "rules out " + t.excludes[0] : "");
+  closeEngineMap();
+  if (typeof navToField === "function") navToField(t.target, t.label, why);
+}
 
 function renderEngineMapInner() {
   var h = '<div class="engine-map-box">';
@@ -266,16 +280,18 @@ function renderEngineMapSVG() {
 
   var edges = "", nodes = "";
 
-  /* token → condition edges (green supports / red contradicts) */
-  dx.forEach(function (d) {
-    var ev = d.evidence || {}, cy = condY[d.n];
+  /* token → condition edges (green supports / red contradicts).
+     The LEADING candidate's edges are bold + opaque; rivals' edges fade back,
+     so the eye follows the current best explanation instead of a hairball. */
+  dx.forEach(function (d, di) {
+    var ev = d.evidence || {}, cy = condY[d.n], lead = di === 0;
     (ev.matched || []).forEach(function (t) {
       if (tokY[t] === undefined) return;
-      edges += '<line x1="' + xTok + '" y1="' + tokY[t] + '" x2="' + (xCond - 34) + '" y2="' + cy + '" stroke="#27ae60" stroke-width="1" opacity="0.5"/>';
+      edges += '<line x1="' + xTok + '" y1="' + tokY[t] + '" x2="' + (xCond - 34) + '" y2="' + cy + '" stroke="#27ae60" stroke-width="' + (lead ? 1.8 : 1) + '" opacity="' + (lead ? 0.75 : 0.14) + '"/>';
     });
     (ev.contradicted || []).forEach(function (t) {
       if (tokY[t] === undefined) return;
-      edges += '<line x1="' + xTok + '" y1="' + tokY[t] + '" x2="' + (xCond - 34) + '" y2="' + cy + '" stroke="#c0392b" stroke-width="1.2" stroke-dasharray="3 2" opacity="0.6"/>';
+      edges += '<line x1="' + xTok + '" y1="' + tokY[t] + '" x2="' + (xCond - 34) + '" y2="' + cy + '" stroke="#c0392b" stroke-width="' + (lead ? 1.8 : 1) + '" stroke-dasharray="3 2" opacity="' + (lead ? 0.8 : 0.22) + '"/>';
     });
   });
   /* condition → next-data edges */
@@ -291,10 +307,13 @@ function renderEngineMapSVG() {
     nodes += '<circle cx="' + xTok + '" cy="' + y + '" r="3.5" fill="#7a7a7a"/>';
     nodes += '<text x="' + (xTok - 8) + '" y="' + (y + 3) + '" text-anchor="end" font-size="11" fill="var(--ink,#222)">' + esc(clip(t.replace(/_/g, " "), 22)) + '</text>';
   });
-  /* column header */
-  nodes += '<text x="' + xTok + '" y="20" text-anchor="end" font-size="11" font-weight="700" fill="#888">INPUTS</text>';
-  nodes += '<text x="' + xCond + '" y="20" text-anchor="middle" font-size="11" font-weight="700" fill="#888">CANDIDATES</text>';
-  nodes += '<text x="' + xNext + '" y="20" text-anchor="start" font-size="11" font-weight="700" fill="#888">CHECK NEXT</text>';
+  /* column headers with a plain-language sub-label */
+  nodes += '<text x="' + xTok + '" y="16" text-anchor="end" font-size="11" font-weight="700" fill="#888">① WHAT YOU ENTERED</text>';
+  nodes += '<text x="' + xTok + '" y="28" text-anchor="end" font-size="8.5" fill="#aaa">findings so far</text>';
+  nodes += '<text x="' + xCond + '" y="16" text-anchor="middle" font-size="11" font-weight="700" fill="#888">② POSSIBLE DIAGNOSES</text>';
+  nodes += '<text x="' + xCond + '" y="28" text-anchor="middle" font-size="8.5" fill="#aaa">bigger = more likely</text>';
+  nodes += '<text x="' + xNext + '" y="16" text-anchor="start" font-size="11" font-weight="700" fill="#888">③ CHECK NEXT</text>';
+  nodes += '<text x="' + xNext + '" y="28" text-anchor="start" font-size="8.5" fill="#aaa">tap to record →</text>';
 
   /* condition nodes */
   dx.forEach(function (d, i) {
@@ -306,10 +325,11 @@ function renderEngineMapSVG() {
     nodes += '<text x="' + xCond + '" y="' + (y + rr + 12) + '" text-anchor="middle" font-size="10.5" font-weight="' + (isLead ? 700 : 400) + '" fill="var(--ink,#222)">' + esc(clip(d.n, 30)) + (d.urgent ? ' ⚠' : '') + '</text>';
   });
 
-  /* next-data nodes (clickable) */
+  /* next-data nodes (clickable → jump to the exact entry field) */
+  _engineMapNexts = nexts;
   nexts.forEach(function (nt, i) {
     var y = ys(nexts.length, i);
-    nodes += '<g style="cursor:pointer" onclick="engineMapNav(\'' + nt.target + '\')">';
+    nodes += '<g style="cursor:pointer" onclick="engineMapFieldIdx(' + i + ')">';
     nodes += '<rect x="' + xNext + '" y="' + (y - 11) + '" width="' + (W - xNext - 12) + '" height="22" rx="5" fill="#f3f3f3" stroke="#ccc"/>';
     nodes += '<text x="' + (xNext + 8) + '" y="' + (y + 4) + '" font-size="11" fill="#222">🔬 ' + esc(clip(nt.label, 24)) + '</text>';
     nodes += '</g>';

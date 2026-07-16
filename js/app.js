@@ -564,6 +564,62 @@ function nav(stepId) {
   /* Scroll to top */
   var main = document.getElementById("mainEl");
   if (main) main.scrollTop = 0;
+
+  /* If we arrived here from an engine suggestion, guide the eye to the field. */
+  applyEngineHint();
+}
+
+/* ── Engine "check next" → jump to the exact entry field ──
+   The node-graph / advisory suggestions call this. It navigates to the step
+   and then (applyEngineHint, after render) drops a hint banner naming the exact
+   finding to record, expands the finding sections, and pre-searches it so the
+   clinician lands on the control, not just the page. */
+var PENDING_ENGINE_HINT = null;
+function navToField(step, label, why) {
+  PENDING_ENGINE_HINT = { step: step, label: label || "", why: why || "" };
+  nav(step);
+}
+
+function applyEngineHint() {
+  var hint = PENDING_ENGINE_HINT;
+  PENDING_ENGINE_HINT = null;
+  if (!hint || V.step !== hint.step) return;
+  var main = document.getElementById("mainEl");
+  if (!main) return;
+
+  /* Hint banner at the top of the step. */
+  var banner = document.createElement("div");
+  banner.className = "engine-hint-banner";
+  banner.innerHTML = '<span class="ehb-icon">🔬</span>' +
+    '<span class="ehb-body">Record <b>' + escH(hint.label) + '</b>' +
+    (hint.why ? ' <span class="ehb-why">— ' + escH(hint.why) + '</span>' : '') +
+    '<br><span class="ehb-sub">suggested by the diagnostic engine to sharpen the differential</span></span>' +
+    '<button class="ehb-x" onclick="this.parentNode.remove()" aria-label="dismiss">✕</button>';
+  main.insertBefore(banner, main.firstChild);
+  main.scrollTop = 0;
+
+  /* On findings pages, expand the sections + pre-search the finding so it shows. */
+  var prefix = hint.step === "slit_lamp" ? "slf_" : hint.step === "fundus" ? "fdf_" : null;
+  if (prefix && hint.label) {
+    var secs = document.querySelectorAll('[id^="' + prefix + '"]');
+    for (var i = 0; i < secs.length; i++) secs[i].classList.add("open");
+    var box = main.querySelector(".search-box");
+    if (box) {
+      var q = hint.label.split(/\s+/)[0]; /* first word matches best via indexOf */
+      box.value = q;
+      if (typeof filterFinds === "function") filterFinds(q, prefix);
+      /* keep the banner in view (scrollTop stays 0); the pre-filtered finding is
+         just below — the banner tells the clinician exactly what to tap. */
+    }
+  } else if (hint.step === "chief_complaint" && hint.label) {
+    var sbox = main.querySelector(".search-box");
+    if (sbox && typeof filterSymptoms === "function") {
+      var qq = hint.label.split(/\s+/)[0];
+      sbox.value = qq; filterSymptoms(qq);
+    }
+  }
+
+  setTimeout(function () { if (banner && banner.parentNode) banner.classList.add("ehb-fade"); }, 6000);
 }
 
 function goNext(currentStep, nextStep) {

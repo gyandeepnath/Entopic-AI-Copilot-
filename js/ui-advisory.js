@@ -155,10 +155,12 @@ function renderAdvisory() {
       h += '<div class="adv-sec">Narrow the Diagnosis <span style="color:var(--sv);font-weight:400">· check next</span></div>';
       for (var nt = 0; nt < V.nextTests.length; nt++) {
         var t = V.nextTests[nt];
-        h += '<div class="nudge" style="display:flex;flex-direction:column;align-items:stretch;gap:2px" onclick="nav(\'' + t.target + '\')">';
+        var ntWhy = (t.confirms && t.confirms.length ? "supports " + t.confirms[0] : "") +
+                    (t.excludes && t.excludes.length ? (t.confirms && t.confirms.length ? " · " : "") + "rules out " + t.excludes[0] : "");
+        h += '<div class="nudge" style="display:flex;flex-direction:column;align-items:stretch;gap:2px" onclick="navToField(\'' + t.target + '\',' + esc(JSON.stringify(t.label)) + ',' + esc(JSON.stringify(ntWhy)) + ')">';
         h += '<div style="display:flex;align-items:center;gap:6px">';
         h += '<span style="flex:1">🔬 ' + t.label + (t.isTest ? '' : '') + '</span>';
-        h += '<span style="font-size:.48rem;color:var(--sv);text-transform:uppercase">→ ' + t.target.replace(/_/g, " ") + '</span>';
+        h += '<span style="font-size:.48rem;color:var(--sv);text-transform:uppercase">record →</span>';
         h += '</div>';
         var impact = '';
         if (t.confirms && t.confirms.length) impact += '<span class="matched">supports ' + t.confirms[0] + (t.confirms.length > 1 ? ' +' + (t.confirms.length - 1) : '') + '</span>';
