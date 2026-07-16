@@ -661,6 +661,27 @@ input, select, textarea, button {
   100% { box-shadow: 0 0 0 0 rgba(39,174,96,0); }
 }
 
+/* ── Advisory tab bar (one focused view at a time) ── */
+.adv-tabs {
+  display: flex; gap: 4px; margin: 10px 0 8px;
+  border-bottom: 1px solid var(--fg, #e5e5e5);
+}
+.adv-tab {
+  flex: 1; background: none; border: none; cursor: pointer;
+  padding: 6px 4px; font-size: .58rem; font-weight: 600;
+  color: var(--sv, #888); border-bottom: 2px solid transparent;
+  display: inline-flex; align-items: center; justify-content: center; gap: 4px;
+}
+.adv-tab:hover { color: var(--ink, #333); }
+.adv-tab.active { color: var(--ink, #222); border-bottom-color: var(--bk, #333); }
+.adv-tab-n {
+  font-family: var(--mono); font-size: .5rem; font-weight: 700;
+  background: var(--fg, #eee); color: var(--sv, #777);
+  border-radius: 8px; padding: 0 5px;
+}
+.adv-tab.active .adv-tab-n { background: var(--bk, #333); color: var(--wh, #fff); }
+.adv-tabpane { min-height: 40px; }
+
 /* ── Engine "check next" hint banner on a step ── */
 .engine-hint-banner {
   display: flex; align-items: flex-start; gap: 8px;

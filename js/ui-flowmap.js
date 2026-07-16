@@ -703,9 +703,10 @@ renderAdvisory = function() {
     _originalRenderAdvisory();
   }
 
-  /* Append flow map */
+  /* Append the live reasoning map — only under the "Reasoning" tab, so the
+     panel shows one focused view at a time instead of everything at once. */
   var advEl = document.getElementById("advEl");
-  if (advEl) {
+  if (advEl && (typeof ADV_TAB === "undefined" || ADV_TAB === "map")) {
     advEl.innerHTML += renderFlowMap();
   }
 
