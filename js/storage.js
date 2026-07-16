@@ -109,6 +109,42 @@ function saveSettings(settings) {
   saveStore("settings", settings);
 }
 
+/* ═══════════════════════════════════════════════════════════════ */
+/* AUDIT LOG — append-only trail of who accessed/changed what       */
+/* Every record-touching action is logged with the acting user and  */
+/* a timestamp, so a completed chart shows a defensible access +     */
+/* change history. Stored locally (mirrored like other stores) and   */
+/* capped so localStorage stays bounded.                            */
+/* ═══════════════════════════════════════════════════════════════ */
+
+function loadAudit() { return loadStore("audit", []); }
+function saveAudit(entries) { saveStore("audit", entries); }
+
+/* Record one event. `ids` may override the current patient/visit context. */
+function logAudit(action, details, ids) {
+  ids = ids || {};
+  var user = (typeof CU !== "undefined" && CU) ? CU : null;
+  var entries = loadAudit();
+  entries.push({
+    ts: new Date().toISOString(),
+    user: user ? (user.username || "unknown") : "unknown",
+    user_name: user ? (user.name || "") : "",
+    action: action,
+    patient_id: ids.patient_id !== undefined ? ids.patient_id : (typeof CP !== "undefined" ? CP : null),
+    visit_id: ids.visit_id !== undefined ? ids.visit_id : (typeof CV !== "undefined" ? CV : null),
+    details: details || ""
+  });
+  /* keep only the most recent 2000 events */
+  if (entries.length > 2000) entries = entries.slice(entries.length - 2000);
+  saveAudit(entries);
+}
+
+function getPatientAudit(patientId) {
+  return loadAudit()
+    .filter(function (e) { return e.patient_id === patientId; })
+    .sort(function (a, b) { return (b.ts || "").localeCompare(a.ts || ""); });
+}
+
 
 /* ═══════════════════════════════════════════════════════════════ */
 /* VISIT OPERATIONS                                                */
@@ -222,6 +258,11 @@ function completeVisit() {
   }
   saveVisits(visits);
 
+  if (typeof logAudit === "function") {
+    var lead = (V.dxList && V.dxList.length) ? V.dxList[0].n : "no diagnosis";
+    logAudit("visit_completed", "Visit completed — leading impression: " + lead, { patient_id: CP, visit_id: CV });
+  }
+
   /* Build anonymized encounter if registry opt-in */
   var settings = loadSettings();
   if (settings.registry_optin) {
@@ -264,8 +305,10 @@ function exportAllData() {
     users: loadUsers(),
     patients: loadPatients(),
     visits: loadVisits(),
-    settings: loadSettings()
+    settings: loadSettings(),
+    audit: loadAudit()
   };
+  if (typeof logAudit === "function") logAudit("data_exported", "Exported all data (JSON backup)", { patient_id: null, visit_id: null });
 
   var blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
   var url = URL.createObjectURL(blob);

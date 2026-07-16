@@ -437,50 +437,40 @@ function newPatient() {
     patient_id: pid,
     data: V,
     status: "in_progress",
+    visit_type: "initial",
     date: new Date().toISOString(),
     updated: new Date().toISOString()
   });
   saveVisits(visits);
 
+  if (typeof logAudit === "function") {
+    logAudit("patient_created", "New patient registered", { patient_id: pid, visit_id: vid });
+    logAudit("visit_started", "Initial visit started", { patient_id: pid, visit_id: vid });
+  }
+
   openExam();
 }
 
+/* Opening a patient now lands on the CHART (prior visits summarised first),
+   not straight into a blank exam. The chart's buttons continue an in-progress
+   visit or start a follow-up (carrying history forward). See js/ui-chart.js. */
 function openPatient(pid) {
+  if (typeof openChart === "function") { openChart(pid); return; }
+  /* Fallback (chart module absent): original continue/create behaviour. */
   var patients = loadPatients();
   P = null;
-  for (var i = 0; i < patients.length; i++) {
-    if (patients[i].id === pid) {
-      P = patients[i];
-      break;
-    }
-  }
+  for (var i = 0; i < patients.length; i++) if (patients[i].id === pid) { P = patients[i]; break; }
   if (!P) return;
   CP = pid;
-
   var visits = loadVisits();
-  var pvisits = visits
-    .filter(function(v) { return v.patient_id === pid; })
-    .sort(function(a, b) { return (b.date || "").localeCompare(a.date || ""); });
-
-  var last = pvisits[0];
-
-  if (last && last.status === "in_progress") {
-    CV = last.id;
-    V = last.data || blankVisit();
-  } else {
-    CV = "v" + (Date.now() + 1).toString(36);
-    V = blankVisit();
-    visits.push({
-      id: CV,
-      patient_id: pid,
-      data: V,
-      status: "in_progress",
-      date: new Date().toISOString(),
-      updated: new Date().toISOString()
-    });
+  var last = visits.filter(function (v) { return v.patient_id === pid; })
+    .sort(function (a, b) { return (b.date || "").localeCompare(a.date || ""); })[0];
+  if (last && last.status === "in_progress") { CV = last.id; V = last.data || blankVisit(); }
+  else {
+    CV = "v" + (Date.now() + 1).toString(36); V = blankVisit();
+    visits.push({ id: CV, patient_id: pid, data: V, status: "in_progress", date: new Date().toISOString(), updated: new Date().toISOString() });
     saveVisits(visits);
   }
-
   openExam();
 }
 
