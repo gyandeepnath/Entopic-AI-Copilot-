@@ -65,6 +65,24 @@ test("every condition can be surfaced by CLICKING (no clickable req path = block
   assert.deepStrictEqual(blocked, [], "conditions with NO clickable path to any required finding:\n" + blocked.join("\n"));
 });
 
+test("no dead-end clickables — every chip & finding produces a token a condition uses", () => {
+  /* A clickable that produces no token any condition consumes does nothing when
+     tapped (the founder hit this). Assert every symptom chip and every
+     slit-lamp/fundus finding emits at least one CONSUMED token. */
+  const consumed = new Set();
+  for (const c of kb.KNOWLEDGE_ALL) ["req", "sup", "con", "temporal", "tests"].forEach((f) => (c[f] || []).forEach((t) => consumed.add(t)));
+
+  const deadChips = [];
+  for (const cat in dm.SYM) for (const tok in dm.SYM[cat]) if (!consumed.has(tok)) deadChips.push(tok);
+
+  const deadFindings = [];
+  const check = (o) => { for (const k in o) (o[k] || []).forEach((f) => { const ts = FTM[f] || []; if (!ts.length || ts.every((t) => !consumed.has(t))) deadFindings.push(f); }); };
+  check(dm.SL); check(dm.FUN);
+
+  assert.deepStrictEqual(deadChips, [], "symptom chips that feed the engine nothing:\n" + deadChips.join(", "));
+  assert.deepStrictEqual(deadFindings, [], "findings that feed the engine nothing:\n" + deadFindings.join("\n"));
+});
+
 test("clickable-token coverage of req tokens stays high", () => {
   const ui = clickableTokens();
   let total = 0, covered = 0;

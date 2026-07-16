@@ -15,7 +15,7 @@ var KB_GLAUCOMA = [
   "name": "Primary Open Angle Glaucoma (POAG)",
   "route": "glaucoma",
   "req": ["field_defect"],
-  "sup": ["high_iop", "increased_cd", "cd_asymmetry", "nrr_thinning", "disc_hemorrhage", "family_history", "older_age", "thin_cornea", "peripheral_field_loss", "diabetes_history"],
+  "sup": ["high_iop", "increased_cd", "cd_asymmetry", "nrr_thinning", "disc_hemorrhage", "family_history", "older_age", "thin_cornea", "peripheral_field_loss", "diabetes_history", "peripapillary_atrophy_alpha_zone", "peripapillary_atrophy_beta_zone"],
   "con": ["pain_acute", "shallow_ac", "redness", "sudden_vision_loss", "halos", "normal_iop"],
   "temporal": ["chronic", "progressive"],
   "tests": ["visual_field_defect", "RNFL_thinning", "optic_disc_change", "high_iop"],

@@ -304,7 +304,7 @@ var SYM_CATS = {
     deep_boring_pain:    "Deep, boring / aching pain",
     pain_worse_night:    "Pain worse at night / wakes from sleep",
     burning:             "Burning / stinging",
-    fb_sensation:        "Foreign body sensation",
+    foreign_body_sensation: "Foreign body sensation",
     grittiness:          "Gritty / sandy feeling",
     asthenopia:          "Eye strain / fatigue",
     eye_strain:          "Tired eyes",
@@ -322,8 +322,7 @@ var SYM_CATS = {
   "Trauma & Injury": {
     recent_eye_trauma:   "Recent blow / injury to the eye",
     chemical_splash:     "Chemical / liquid splashed into eye",
-    high_speed_particle: "Metal grinding / high-speed particle hit eye",
-    foreign_body_high_speed: "Something struck the eye at speed"
+    high_speed_particle: "Metal grinding / high-speed particle hit eye"
   },
 
   /* ── 7. EXTERNAL / SURFACE ── */

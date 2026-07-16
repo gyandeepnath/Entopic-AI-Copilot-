@@ -217,7 +217,8 @@ var TOKEN_REGISTRY = {
     "type_hint": "derived_measurement_or_history",
     "sources": [
       "dictionary",
-      "engine_derived"
+      "engine_derived",
+      "finding_map"
     ],
     "usage": {
       "req": 0,
@@ -2424,10 +2425,9 @@ var TOKEN_REGISTRY = {
     "reachable": true
   },
   "fb_sensation": {
-    "type_hint": "symptom",
+    "type_hint": "lexical",
     "sources": [
-      "dictionary",
-      "symptom_chip"
+      "dictionary"
     ],
     "usage": {
       "req": 0,
@@ -2712,26 +2712,13 @@ var TOKEN_REGISTRY = {
     },
     "reachable": false
   },
-  "foreign_body_high_speed": {
-    "type_hint": "symptom",
-    "sources": [
-      "symptom_chip"
-    ],
-    "usage": {
-      "req": 0,
-      "sup": 0,
-      "con": 0,
-      "temporal": 0,
-      "tests": 0
-    },
-    "reachable": true
-  },
   "foreign_body_sensation": {
     "type_hint": "sign",
     "sources": [
       "dictionary",
       "finding_map",
-      "free_text"
+      "free_text",
+      "symptom_chip"
     ],
     "usage": {
       "req": 6,
@@ -5071,7 +5058,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 0,
-      "sup": 0,
+      "sup": 1,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -5085,7 +5072,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 2,
-      "sup": 0,
+      "sup": 1,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -5321,7 +5308,8 @@ var TOKEN_REGISTRY = {
   "post_surgery": {
     "type_hint": "derived_measurement_or_history",
     "sources": [
-      "engine_derived"
+      "engine_derived",
+      "finding_map"
     ],
     "usage": {
       "req": 8,
@@ -7510,10 +7498,10 @@ var TOKEN_REGISTRY = {
 };
 
 var TOKEN_REGISTRY_STATS = {
-  "total": 529,
-  "reachable": 429,
+  "total": 528,
+  "reachable": 428,
   "unreachable_required": [],
   "unreachable_supportive": [],
   "test_label_only": 96,
-  "produced_never_consumed": 94
+  "produced_never_consumed": 92
 };
