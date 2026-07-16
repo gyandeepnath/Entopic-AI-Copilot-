@@ -1347,6 +1347,10 @@ input, select, textarea, button {
   padding: 24px;
   max-width: 440px;
   width: 90%;
+  /* Never let a tall modal (e.g. the full KB list) grow past the viewport and
+     bury its Close button off-screen — scroll inside instead. */
+  max-height: 88vh;
+  overflow-y: auto;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
 }
 

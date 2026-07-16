@@ -371,23 +371,57 @@ function showKBInfo() {
       '</div>';
   }
   if (typeof KNOWLEDGE_DOMAINS !== "undefined") {
+    /* search box + scrollable list (so the modal never outgrows the screen) */
+    h += '<input class="search-box" placeholder="Search conditions…" oninput="kbInfoFilter(this.value)" style="margin-bottom:8px">';
+    h += '<div id="kbInfoList" style="max-height:58vh;overflow-y:auto;padding-right:4px">';
     for (var domain in KNOWLEDGE_DOMAINS) {
       var conds = KNOWLEDGE_DOMAINS[domain];
-      h += '<div style="margin-bottom:8px">' +
-        '<div style="font-weight:600;font-size:.72rem;margin-bottom:2px">' + domain + ' (' + conds.length + ')</div>';
+      h += '<div class="kbinfo-domain" style="margin-bottom:8px">' +
+        '<div style="font-weight:600;font-size:.72rem;margin-bottom:2px">' + escH(domain) + ' (' + conds.length + ')</div>';
       for (var i = 0; i < conds.length; i++) {
-        h += '<div style="font-size:.62rem;color:var(--sl);padding-left:10px">' +
-          conds[i].name +
-          (conds[i].urgent ? ' <span style="color:var(--md);font-weight:600">URGENT</span>' : '') +
+        var c = conds[i];
+        /* human-readable "what to enter" = its required findings */
+        var needs = (c.req || []).map(kbPrettyToken).join(", ");
+        h += '<div class="kbinfo-row" data-name="' + escH((c.name || "").toLowerCase()) + '" style="font-size:.62rem;color:var(--sl);padding:2px 0 2px 10px">' +
+          '<b style="color:var(--ink,#222);font-weight:500">' + escH(c.name) + '</b>' +
+          (c.urgent ? ' <span style="color:var(--md);font-weight:600">URGENT</span>' : '') +
+          (c.review_status === "NEEDS_CLINICAL_REVIEW" ? ' <span style="color:var(--wa,#e67e22);font-size:.52rem">· provisional</span>' : '') +
+          (needs ? '<div style="color:var(--sv);font-size:.54rem">enter: ' + escH(needs) + '</div>' : '') +
           '</div>';
       }
       h += '</div>';
     }
+    h += '</div>';
   } else {
     h = '<div style="color:var(--sv)">Knowledge base not loaded.</div>';
   }
   document.getElementById("kbInfoContent").innerHTML = h;
   openModal("modalKBInfo");
+}
+
+/* Prettify a token into a clinician-readable finding name (prefers the
+   canonical finding label from the finding→token map). */
+function kbPrettyToken(t) {
+  if (typeof NEXT_TEST_LABELS !== "undefined" || typeof buildNextTestLabels === "function") {
+    var labels = (typeof buildNextTestLabels === "function") ? buildNextTestLabels() : NEXT_TEST_LABELS;
+    if (labels && labels[t]) return labels[t];
+  }
+  return String(t).replace(/_/g, " ");
+}
+
+/* Filter the KB info list as the owner types. */
+function kbInfoFilter(q) {
+  q = (q || "").toLowerCase();
+  var rows = document.querySelectorAll("#kbInfoList .kbinfo-row");
+  for (var i = 0; i < rows.length; i++) {
+    rows[i].style.display = rows[i].getAttribute("data-name").indexOf(q) >= 0 ? "" : "none";
+  }
+  /* hide empty domain groups */
+  var groups = document.querySelectorAll("#kbInfoList .kbinfo-domain");
+  for (var g = 0; g < groups.length; g++) {
+    var any = groups[g].querySelectorAll('.kbinfo-row:not([style*="display: none"])').length;
+    groups[g].style.display = any ? "" : "none";
+  }
 }
 
 function kbUiCheckUpdates() {
