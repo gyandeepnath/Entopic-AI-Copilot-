@@ -514,6 +514,7 @@ function openExam() {
   renderSidebar();
   renderMain();
   renderAdvisory();
+  updateWNLButton();
   startAutoSave();
 }
 
@@ -591,6 +592,48 @@ function nav(stepId) {
 
   /* If we arrived here from an engine suggestion, guide the eye to the field. */
   applyEngineHint();
+
+  /* Toggle the "✓ Normal" quick-fill button for this step. */
+  updateWNLButton();
+}
+
+/* ── "Mark this section Normal (WNL)" — one-click quick-fill ──
+   Fills the current exam step with normal values, marks it done, and re-runs
+   the engine so normal measurements become pertinent negatives (e.g. a normal
+   IOP derives `normal_iop`, which argues against glaucoma). Speeds routine
+   exams — the clinician only stops to type the ABNORMAL findings. */
+var WNL_TEMPLATES = {
+  va:        function () { V.va.od_un = V.va.od_un || "6/6"; V.va.os_un = V.va.os_un || "6/6"; },
+  iop:       function () { V.iop.od = V.iop.od || "15"; V.iop.os = V.iop.os || "15"; V.iop.method = V.iop.method || "GAT"; },
+  slit_lamp: function () {
+    ["od", "os"].forEach(function (e) { if (V.sl[e]) { V.sl[e].lids = "WNL"; V.sl[e].conj = "White and quiet"; V.sl[e].cornea = "Clear"; V.sl[e].cells = "0"; V.sl[e].flare = "0"; V.sl[e].iris = "Normal"; } });
+  },
+  pupil:     function () { V.pupil.rapd = "None"; V.pupil.notes = V.pupil.notes || "PERRL, no RAPD"; },
+  motility:  function () { V.mot.versions = "Full"; V.mot.ductions = "Full"; },
+  gonioscopy: function () { ["od", "os"].forEach(function (e) { if (V.gon[e]) V.gon[e].s = V.gon[e].s || "Open (Grade 4)"; }); },
+  fundus:    function () { ["od", "os"].forEach(function (e) { if (V.fun[e]) { V.fun[e].cd_v = V.fun[e].cd_v || "0.3"; } }); },
+  neuro:     function () { V.neuro.color_od = V.neuro.color_od || "Normal"; V.neuro.notes = V.neuro.notes || "Colour, fields, Amsler normal"; }
+};
+
+function stepHasWNL(step) { return !!WNL_TEMPLATES[step]; }
+
+/* Show the header "✓ Normal" button only on steps where WNL makes sense. */
+function updateWNLButton() {
+  var btn = document.getElementById("hdrWNL");
+  if (!btn) return;
+  btn.style.display = (V && stepHasWNL(V.step)) ? "" : "none";
+}
+
+function markStepWNL(step) {
+  step = step || V.step;
+  var tpl = WNL_TEMPLATES[step];
+  if (!tpl) return;
+  tpl();
+  markDone(step);
+  if (typeof runDiagnosticEngine === "function") runDiagnosticEngine();
+  renderSidebar();
+  renderMain();
+  renderAdvisory();
 }
 
 /* ── Engine "check next" → jump to the exact entry field ──

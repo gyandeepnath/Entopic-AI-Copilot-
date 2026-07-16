@@ -16,7 +16,7 @@ var KB_GLAUCOMA = [
   "route": "glaucoma",
   "req": ["field_defect"],
   "sup": ["high_iop", "increased_cd", "cd_asymmetry", "nrr_thinning", "disc_hemorrhage", "family_history", "older_age", "thin_cornea", "peripheral_field_loss", "diabetes_history"],
-  "con": ["pain_acute", "shallow_ac", "redness", "sudden_vision_loss", "halos"],
+  "con": ["pain_acute", "shallow_ac", "redness", "sudden_vision_loss", "halos", "normal_iop"],
   "temporal": ["chronic", "progressive"],
   "tests": ["visual_field_defect", "RNFL_thinning", "optic_disc_change", "high_iop"],
   "exclusions": ["acute_angle_closure"]
@@ -27,7 +27,7 @@ var KB_GLAUCOMA = [
   "route": "glaucoma",
   "req": ["shallow_ac"],
   "sup": ["high_iop", "narrow_angle", "hyperopia", "halos", "older_age", "family_history", "increased_cd", "field_defect", "intermittent_diplopia"],
-  "con": ["pigment_dispersion", "myopia"],
+  "con": ["pigment_dispersion", "myopia", "normal_iop"],
   "temporal": ["chronic"],
   "tests": ["narrow_angle", "high_iop"],
   "exclusions": []
@@ -38,7 +38,7 @@ var KB_GLAUCOMA = [
   "route": "urgent",
   "req": ["pain_severe"],
   "sup": ["halos", "redness", "vomiting", "reduced_vision", "photophobia", "headache", "narrow_angle", "hyperopia", "older_age", "corneal_edema"],
-  "con": ["itching_dominant", "purulent_discharge", "gradual_onset"],
+  "con": ["itching_dominant", "purulent_discharge", "gradual_onset", "normal_iop"],
   "temporal": ["acute"],
   "tests": ["IOP_very_high", "shallow_ac", "corneal_edema"],
   "urgent": true,
@@ -61,7 +61,7 @@ var KB_GLAUCOMA = [
   "route": "glaucoma",
   "req": ["high_iop"],
   "sup": ["family_history", "thin_cornea", "increased_cd", "older_age", "cd_asymmetry", "diabetes_history"],
-  "con": ["field_defect", "nrr_thinning", "disc_hemorrhage", "reduced_vision", "pain_severe"],
+  "con": ["field_defect", "nrr_thinning", "disc_hemorrhage", "reduced_vision", "pain_severe", "normal_iop"],
   "temporal": ["chronic"],
   "tests": ["high_iop", "thin_cornea", "baseline_fields"],
   "exclusions": []
@@ -72,7 +72,7 @@ var KB_GLAUCOMA = [
   "route": "glaucoma",
   "req": ["pigment_dispersion"],
   "sup": ["high_iop", "krukenberg_spindle", "myopia", "young_age", "increased_cd", "field_defect", "halos", "blur", "transillumination_defects"],
-  "con": ["hyperopia", "older_age", "pxf_material"],
+  "con": ["hyperopia", "older_age", "pxf_material", "normal_iop"],
   "temporal": ["chronic"],
   "tests": ["pigment_dispersion", "high_iop"],
   "exclusions": []
@@ -83,7 +83,7 @@ var KB_GLAUCOMA = [
   "route": "glaucoma",
   "req": ["pxf_material"],
   "sup": ["high_iop", "older_age", "reduced_vision", "increased_cd", "field_defect", "cd_asymmetry", "gradual_blur"],
-  "con": ["young_age", "pigment_dispersion"],
+  "con": ["young_age", "pigment_dispersion", "normal_iop"],
   "temporal": ["chronic"],
   "tests": ["high_iop", "pxf_material"],
   "exclusions": []

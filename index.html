@@ -145,6 +145,9 @@
     <span class="hdr-logo">Entopic</span>
     <span class="hdr-pat" id="hdrPat"></span>
     <span class="hdr-badge">Advisory Only</span>
+    <!-- One-click "this section is normal" quick-fill (shown only on exam
+         steps where WNL applies); feeds normal findings to the engine. -->
+    <button class="hdr-wnl" id="hdrWNL" onclick="markStepWNL()" style="display:none" title="Mark this section within normal limits">✓ Normal</button>
     <!-- Diagnostic engine — always reachable; on narrow screens it opens the
          advisory as a slide-over drawer, on wide screens it opens the full map -->
     <span class="hdr-engine" id="hdrEngine" onclick="toggleEngineView()" title="Diagnostic engine — live">

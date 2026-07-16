@@ -152,6 +152,20 @@ input, select, textarea, button {
   border-radius: 2px;
 }
 
+/* "Mark section Normal (WNL)" header button */
+.hdr-wnl {
+  background: none;
+  border: 1px solid var(--gr);
+  color: var(--wh);
+  font-size: .62rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 3px 9px;
+  border-radius: 12px;
+  transition: var(--tr);
+}
+.hdr-wnl:hover { background: var(--ok, #27ae60); border-color: var(--ok, #27ae60); }
+
 /* Diagnostic-engine header button (always visible) */
 .hdr-engine {
   display: inline-flex;

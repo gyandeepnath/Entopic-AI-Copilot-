@@ -4625,7 +4625,7 @@ var TOKEN_REGISTRY = {
     "usage": {
       "req": 0,
       "sup": 1,
-      "con": 8,
+      "con": 14,
       "temporal": 0,
       "tests": 1
     },
