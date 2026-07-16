@@ -6,6 +6,38 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-07-16 — Session 6: node-graph clarity + click-to-field, patient chart + audit, panel tabs, KB batch 7
+
+**Founder requests, all delivered (presentation/data-layer only — no engine,
+scoring, red-flag, or offline changes):**
+
+1. **Clearer node-graph + click-to-field.** The inline live loop now tells a
+   numbered story (① what you entered → ② most likely → ③ check next); the
+   full-screen map got plain-language column headers and now bolds the LEADING
+   candidate's evidence edges while rivals fade (no more hairball). A "check
+   next" suggestion navigates to the step AND drops a hint banner naming the
+   exact finding, expands the finding sections, and pre-searches it — you land
+   on the control, not just the page.
+2. **Patient chart + multi-visit follow-up + audit trail.** Opening a patient
+   now lands on a chart: previous visit summarised first, full visit timeline,
+   then continue/start-follow-up. A follow-up carries the patient's history
+   (ocular/medical/family/social) forward automatically. New append-only audit
+   log records who did what, when (created/opened/started/continued/viewed/
+   completed/exported), shown on the chart.
+3. **Advisory panel organised into tabs** — Alerts + Leading Impression always
+   visible; Differentials | Check next | Reasoning as focused tabs. Removes the
+   old everything-at-once stack and its duplication.
+4. **KB batch 7 — 11 conditions (293 total):** retinoblastoma (urgent), ocular
+   toxocariasis, acute retinal necrosis (urgent), CMV retinitis, primary
+   congenital glaucoma, Peters anomaly, aniridia, optic nerve hypoplasia,
+   chorioretinal coloboma, ocular albinism, achromatopsia — pediatric /
+   leukocoria / necrotizing-retina gaps. Cross-conflict audit held at baseline.
+
+**Verified** — 155/155 unit tests; multi-visit, click-to-field, tabs, widths,
+loop, audit, and review e2e all pass; cross-conflict audit unchanged.
+
+---
+
 ## 2026-07-15 — Session 5 (increment AD): live node-graph engine + always-reachable copilot
 
 **Founder report:** "I don't see the AI diagnostic engine on the right anymore

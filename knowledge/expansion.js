@@ -529,6 +529,53 @@ var KB_EXPANSION = [
   "con": ["pain_severe", "redness", "reduced_vision", "older_age"], "temporal": ["chronic"], "tests": ["restricted_motility"], "exclusions": [] },
 { "name": "Infantile (Congenital) Nystagmus", "domain": "Neuro-Ophthalmic", "route": "neuro",
   "req": ["nystagmus_other_eye", "young_age"], "sup": ["reduced_vision", "head_tilt", "oscillopsia", "family_history"],
-  "con": ["pain", "redness", "older_age", "sudden_vision_loss"], "temporal": ["chronic"], "tests": [], "exclusions": [] }
+  "con": ["pain", "redness", "older_age", "sudden_vision_loss"], "temporal": ["chronic"], "tests": [], "exclusions": [] },
+
+/* ═══ BATCH 7 (2026-07-16) — pediatric / leukocoria / necrotizing-retina and
+   congenital gaps. Specific required tokens + real contradictors. Provisional /
+   NEEDS_CLINICAL_REVIEW; the URGENT flags (retinoblastoma, ARN) especially. ═══ */
+
+/* Vision/life-threatening pediatric */
+{ "name": "Retinoblastoma", "domain": "Retina", "route": "urgent",
+  "req": ["leukocoria", "young_age"], "sup": ["reduced_vision", "eye_inward", "family_history", "red_patch"],
+  "con": ["older_age", "pain", "itching_dominant", "purulent_discharge"], "temporal": ["progressive"], "tests": ["macular_screening_needed"], "urgent": true, "exclusions": [] },
+{ "name": "Ocular Toxocariasis", "domain": "Anterior / Uveitis", "route": "retina",
+  "req": ["floaters", "young_age"], "sup": ["reduced_vision", "eye_inward", "vitreous_cells", "leukocoria"],
+  "con": ["older_age", "pain_severe", "purulent_discharge", "itching_dominant"], "temporal": ["subacute", "chronic"], "tests": ["vitreous_cells"], "exclusions": [] },
+
+/* Necrotizing retinitis (urgent, sight-threatening) */
+{ "name": "Acute Retinal Necrosis (ARN)", "domain": "Retina", "route": "urgent",
+  "req": ["pain", "floaters"], "sup": ["redness", "reduced_vision", "photophobia", "retinal_ischemia", "vitreous_cells", "field_loss"],
+  "con": ["itching_dominant", "gradual_onset", "purulent_discharge"], "temporal": ["acute"], "tests": ["vitreous_cells"], "urgent": true, "exclusions": [] },
+{ "name": "Cytomegalovirus (CMV) Retinitis", "domain": "Retina", "route": "retina",
+  "req": ["floaters", "field_loss"], "sup": ["reduced_vision", "retinal_ischemia", "dark_spots", "autoimmune_history"],
+  "con": ["pain_severe", "redness", "itching_dominant", "sudden_onset"], "temporal": ["subacute", "progressive"], "tests": [], "exclusions": [] },
+
+/* Congenital anterior segment / glaucoma */
+{ "name": "Primary Congenital Glaucoma", "domain": "Glaucoma", "route": "glaucoma",
+  "req": ["excess_tearing", "photophobia"], "sup": ["young_age", "corneal_edema", "high_iop", "spasm", "reduced_vision"],
+  "con": ["older_age", "itching_dominant", "purulent_discharge", "gradual_onset"], "temporal": ["chronic"], "tests": ["IOP_very_high"], "exclusions": [] },
+{ "name": "Peters Anomaly", "domain": "Cornea", "route": "anterior",
+  "req": ["corneal_opacity_central", "young_age"], "sup": ["reduced_vision", "leukocoria", "glare"],
+  "con": ["older_age", "pain_severe", "redness", "itching_dominant"], "temporal": ["chronic"], "tests": [], "exclusions": [] },
+{ "name": "Aniridia", "domain": "Anterior / Uveitis", "route": "anterior",
+  "req": ["photophobia", "transillumination_defects"], "sup": ["reduced_vision", "young_age", "glare", "nystagmus_other_eye", "family_history"],
+  "con": ["pain", "redness", "older_age", "purulent_discharge"], "temporal": ["chronic"], "tests": [], "exclusions": [] },
+
+/* Congenital optic nerve / retina */
+{ "name": "Optic Nerve Hypoplasia", "domain": "Neuro-Ophthalmic", "route": "neuro",
+  "req": ["reduced_vision", "nystagmus_other_eye"], "sup": ["young_age", "field_defect", "pale_disc", "family_history"],
+  "con": ["pain", "redness", "older_age", "sudden_vision_loss"], "temporal": ["chronic"], "tests": ["pale_disc"], "exclusions": [] },
+{ "name": "Chorioretinal Coloboma", "domain": "Retina", "route": "retina",
+  "req": ["field_defect", "young_age"], "sup": ["reduced_vision", "leukocoria", "family_history", "peripheral_field_loss"],
+  "con": ["pain", "redness", "older_age", "itching_dominant"], "temporal": ["chronic"], "tests": [], "exclusions": [] },
+
+/* Inherited cone / pigment */
+{ "name": "Ocular Albinism", "domain": "Retina", "route": "retina",
+  "req": ["nystagmus_other_eye", "glare"], "sup": ["photophobia", "reduced_vision", "young_age", "transillumination_defects", "family_history"],
+  "con": ["pain", "redness", "older_age", "night_blindness"], "temporal": ["chronic"], "tests": [], "exclusions": [] },
+{ "name": "Achromatopsia", "domain": "Retina", "route": "retina",
+  "req": ["color_vision_loss", "photophobia"], "sup": ["reduced_vision", "young_age", "nystagmus_other_eye", "glare", "family_history"],
+  "con": ["night_blindness", "pain", "redness", "older_age"], "temporal": ["chronic"], "tests": [], "exclusions": [] }
 
 ];
