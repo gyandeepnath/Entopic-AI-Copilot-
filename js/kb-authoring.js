@@ -180,13 +180,17 @@ function kbLintCondition(draft, ctx) {
         warn("unknown_req_token", "Required token \"" + t + "\" is not in the vocabulary yet — nothing produces it, so this condition can NEVER surface until you wire an input (a symptom, a finding, or a measurement) that emits it.", "req");
       } else if (ti.reachable === false) {
         warn("unreachable_req_token", "Required token \"" + t + "\" exists but nothing in the exam currently produces it — this condition can't fire until an input emits it.", "req");
+      } else if (ti.clickable === false) {
+        warn("no_clickable_input_req", "No clickable input exists for required finding \"" + t + "\" — the clinician can only enter it by typing free-text, so this condition is hard to surface at the chairside. Add a symptom chip or exam finding that emits it.", "req");
       }
     });
   }
-  /* unknown sup/con/temporal/test tokens are softer (they only tune score) */
+  /* unknown / no-clickable sup/con/temporal/test tokens are softer (they only tune score) */
   ["sup", "con", "temporal", "tests"].forEach(function (field) {
     c[field].forEach(function (t) {
       if (!tokenInfo[t]) info("new_token", "New " + field + " token \"" + t + "\" — fine, but it only does something once an input produces it.", field);
+      else if (tokenInfo[t].clickable === false && tokenInfo[t].reachable !== false && field !== "temporal")
+        info("no_clickable_input", "No clickable input for " + field + " finding \"" + t + "\" — it only fires from typed free-text. Consider adding a chip/finding so it can be recorded by clicking.", field);
     });
   });
 
@@ -244,15 +248,32 @@ function kbLintCondition(draft, ctx) {
   return { normalized: c, errors: errors, warnings: warnings, infos: infos, similar: similar, richness: richness };
 }
 
+/* Tokens a clinician can produce by CLICKING (symptom chips + slit-lamp/fundus
+   findings + temporal selectors + engine-derived measurements) — as opposed to
+   only via typed free-text. Used to warn when an authored condition needs a
+   finding that has no click-to-enter path. */
+function kbClickableTokens() {
+  var set = {};
+  if (typeof SYM_CATS !== "undefined") for (var cat in SYM_CATS) for (var tok in SYM_CATS[cat]) set[tok] = true;
+  function addFindings(o) { if (!o || typeof FINDING_TOKEN_MAP === "undefined") return; for (var k in o) (o[k] || []).forEach(function (f) { (FINDING_TOKEN_MAP[f] || []).forEach(function (t) { set[t] = true; }); }); }
+  if (typeof SL_FINDINGS !== "undefined") addFindings(SL_FINDINGS);
+  if (typeof FUN_FINDINGS !== "undefined") addFindings(FUN_FINDINGS);
+  ["sudden_onset", "gradual_onset", "acute", "subacute", "chronic", "progressive", "intermittent"].forEach(function (t) { set[t] = true; });
+  if (typeof TOKEN_REGISTRY !== "undefined") for (var rt in TOKEN_REGISTRY) { var s = TOKEN_REGISTRY[rt].sources || []; if (s.indexOf("engine_derived") >= 0) set[rt] = true; }
+  return set;
+}
+
 /* ── browser context builder: reads the loaded globals ── */
 function kbBuildContext(excludeName) {
   var conditions = (typeof KNOWLEDGE_ALL !== "undefined") ? KNOWLEDGE_ALL : [];
   var tokenInfo = {};
+  var clickable = kbClickableTokens();
   if (typeof TOKEN_REGISTRY !== "undefined") {
     for (var t in TOKEN_REGISTRY) {
       if (!TOKEN_REGISTRY.hasOwnProperty(t)) continue;
       tokenInfo[t] = {
         reachable: TOKEN_REGISTRY[t].reachable !== false,
+        clickable: clickable[t] === true,
         producers: TOKEN_REGISTRY[t].sources || [],
         usage: TOKEN_REGISTRY[t].usage || {}
       };
