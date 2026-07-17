@@ -1680,6 +1680,188 @@ var CONDITION_INFO = {
       "Surgical repair is effective when the droop is functionally or cosmetically significant."
     ],
     review: true
+  },
+
+  /* ═══ Surface & Lids — batch B, completes the domain (Session 10i) ═══ */
+
+  "Eyelid Basal Cell Carcinoma": {
+    summary: "The commonest eyelid malignancy, a slow-growing skin cancer that favours the lower lid and medial canthus. It typically appears as a pearly, rolled-edge nodule with fine surface vessels, often with central ulceration and loss of lashes.",
+    facts: [
+      "A pearly nodule with telangiectasia, ulceration or lash loss should be referred for biopsy — especially at the medial canthus, where spread is harder to manage.",
+      "It rarely metastasises but is locally destructive and can invade the orbit if neglected.",
+      "Sun exposure is the main risk factor; complete excision (often margin-controlled) is the goal."
+    ],
+    review: true
+  },
+
+  "Thermal Eyelid Burn": {
+    summary: "A burn of the eyelid and periocular skin from heat or flame. Severity ranges from superficial redness to full-thickness skin loss, and the main ocular danger is corneal exposure if the lids cannot close.",
+    facts: [
+      "The priority is protecting the cornea — assess lid closure and treat exposure aggressively with lubrication.",
+      "Full-thickness lid burns risk cicatricial retraction and lagophthalmos.",
+      "Always check the ocular surface for an associated corneal or conjunctival burn."
+    ],
+    review: true
+  },
+
+  "Ocular Rosacea": {
+    summary: "The ocular manifestation of rosacea, with meibomian gland dysfunction, lid-margin telangiectasia, recurrent chalazia and an unstable tear film. It causes chronic burning, grittiness and redness, and can cause peripheral corneal inflammation and scarring.",
+    facts: [
+      "Ocular symptoms can precede or outweigh the skin changes — ask about flushing and look at the cheeks/nose.",
+      "Lid-margin telangiectasia and recurrent styes/chalazia are characteristic.",
+      "Peripheral corneal involvement threatens vision, so it is more than a cosmetic problem."
+    ],
+    review: true
+  },
+
+  "Chlamydial (Adult Inclusion) Conjunctivitis": {
+    summary: "A chronic follicular conjunctivitis caused by genital serotypes of Chlamydia trachomatis, usually in sexually active young adults. It causes a persistent red eye with a stringy discharge, large follicles and a tender pre-auricular node, often unresponsive to standard drops.",
+    facts: [
+      "Think of it in a 'conjunctivitis' that drags on for weeks with prominent follicles.",
+      "It is a sexually transmitted infection — the patient (and partners) need systemic treatment and STI screening.",
+      "Concurrent genital infection is common even when asymptomatic."
+    ],
+    review: true
+  },
+
+  "Ocular Cicatricial Pemphigoid": {
+    summary: "An autoimmune, scarring (cicatrising) conjunctivitis — the ocular form of mucous membrane pemphigoid — causing progressive conjunctival shrinkage. It presents with chronic redness and irritation, then fornix shortening, symblepharon, trichiasis and, ultimately, a dry, keratinised, sight-threatening surface.",
+    facts: [
+      "Progressive fornix shortening and symblepharon signal a cicatrising process needing urgent systemic immunosuppression to halt it.",
+      "It can be triggered or worsened by topical medications, so review the drop history.",
+      "A systemic autoimmune disease — other mucous membranes may be involved, warranting multidisciplinary care."
+    ],
+    review: true
+  },
+
+  "Toxic Keratoconjunctivitis (Medicamentosa)": {
+    summary: "A chronic irritation of the ocular surface caused by the very drops (or their preservatives) used to treat it. It causes persistent redness, a follicular reaction, and inferior corneal/conjunctival staining that paradoxically worsens the longer treatment continues.",
+    facts: [
+      "Suspect it when a 'red eye' fails to improve or worsens despite escalating topical treatment.",
+      "Common culprits include aminoglycosides, antivirals, preserved glaucoma drops and chronic decongestant/anaesthetic misuse.",
+      "The treatment is to stop the offending agent and simplify to preservative-free lubrication."
+    ],
+    review: true
+  },
+
+  "Molluscum Contagiosum (Lid)": {
+    summary: "A viral (poxvirus) skin infection producing small, dome-shaped, umbilicated nodules on the eyelid margin. A lid-margin lesion can shed virus into the eye and cause a chronic follicular conjunctivitis and superficial keratitis.",
+    facts: [
+      "A chronic unilateral follicular conjunctivitis should prompt a careful search of the lid margin for the umbilicated nodule.",
+      "Removing or treating the lid lesion resolves the secondary conjunctivitis.",
+      "Numerous or widespread lesions raise the question of immunocompromise (e.g. HIV)."
+    ],
+    review: true
+  },
+
+  "Conjunctivochalasis": {
+    summary: "Loose, redundant folds of bulbar conjunctiva — usually along the lower lid margin — that interfere with the tear film and tear drainage. It causes variable irritation, foreign-body sensation and either watering or dryness that changes with gaze and blinking.",
+    facts: [
+      "A very common, under-recognised cause of irritation and epiphora in older patients.",
+      "The redundant fold can be seen draping over the lid margin and shifting with eye movement.",
+      "Managed conservatively first; persistent symptomatic cases can be treated surgically."
+    ],
+    review: true
+  },
+
+  "Xerophthalmia (Vitamin A Deficiency)": {
+    summary: "The spectrum of ocular disease from vitamin A deficiency, ranging from night blindness and conjunctival dryness with Bitot's spots to sight-destroying corneal melting (keratomalacia). It is a leading cause of preventable childhood blindness worldwide.",
+    facts: [
+      "Night blindness is the earliest symptom; keratomalacia is a blinding emergency needing urgent vitamin A.",
+      "Bitot's spots (foamy conjunctival patches) are a classic sign of deficiency.",
+      "A nutritional/systemic disease — treatment is vitamin A replacement and addressing the underlying cause (malnutrition, malabsorption)."
+    ],
+    review: true
+  },
+
+  "Giant Fornix Syndrome": {
+    summary: "A cause of chronic, relapsing purulent conjunctivitis in elderly patients with a deep (capacious) superior fornix that harbours a coagulated protein/biofilm reservoir. It presents as a recurrent copious mucopurulent discharge that keeps returning after standard treatment.",
+    facts: [
+      "Suspect it in an older patient with a recurrent, treatment-resistant purulent conjunctivitis.",
+      "A deep upper fornix (often with enophthalmos/levator dehiscence) hides the reservoir — evert and sweep the fornix.",
+      "Clearing the reservoir, not just antibiotics, is what breaks the relapsing cycle."
+    ],
+    review: true
+  },
+
+  "Blepharochalasis": {
+    summary: "A rare condition of recurrent, painless episodes of upper-eyelid swelling that, over time, leave the lid skin thin, lax, wrinkled and sometimes discoloured. It usually begins in adolescence or young adulthood, unlike age-related lid laxity.",
+    facts: [
+      "The history of recurrent self-limiting lid swelling in a young person distinguishes it from involutional dermatochalasis.",
+      "Repeated episodes can stretch the levator and cause ptosis and lacrimal-gland prolapse.",
+      "Surgery is best deferred until the episodes have quietened."
+    ],
+    review: true
+  },
+
+  "Eyelid Capillary Hemangioma": {
+    summary: "The commonest orbital/periocular tumour of infancy — an infantile haemangioma — appearing in the first weeks as a red, raised ('strawberry') lid lesion that grows then slowly involutes over years. Its importance is the visual risk during the growth phase.",
+    facts: [
+      "A rapidly growing periocular haemangioma can cause amblyopia by inducing astigmatism, ptosis or occluding the pupil — refract and monitor closely.",
+      "Deeper lesions may look bluish rather than red.",
+      "Many involute spontaneously, but vision-threatening lesions are treated (e.g. with beta-blockers) during infancy."
+    ],
+    review: true
+  },
+
+  "Stevens-Johnson Syndrome (Ocular)": {
+    summary: "The ocular involvement of Stevens-Johnson syndrome / toxic epidermal necrolysis — a severe, usually drug-induced mucocutaneous reaction. Acutely it causes a severe bilateral conjunctivitis with membranes and epithelial loss; late sequelae are cicatrisation, dry eye, trichiasis and corneal scarring.",
+    facts: [
+      "A systemic emergency — the acute ocular surface must be managed aggressively (and often with amniotic membrane) to limit blinding scarring.",
+      "Usually triggered by a drug — identifying and stopping it is critical.",
+      "Long-term follow-up is needed because cicatricial complications can progress for years."
+    ],
+    review: true
+  },
+
+  "Trachoma": {
+    summary: "A chronic keratoconjunctivitis caused by ocular serotypes of Chlamydia trachomatis, spread in conditions of poverty and poor sanitation. Repeated infection scars the upper tarsal conjunctiva, turning the lashes inward (trichiasis) so they abrade the cornea and eventually blind.",
+    facts: [
+      "The world's leading infectious cause of blindness — a public-health as much as an individual diagnosis.",
+      "Active disease shows follicles/inflammation of the upper tarsus; chronic disease shows scarring, entropion and trichiasis.",
+      "Managed on the WHO 'SAFE' strategy (Surgery, Antibiotics, Facial cleanliness, Environmental improvement)."
+    ],
+    review: true
+  },
+
+  "Ophthalmia Neonatorum": {
+    summary: "Conjunctivitis in the first month of life, acquired around birth. The cause and timing matter enormously: gonococcal infection is hyperacute and sight-threatening, chlamydial is subacute, and chemical/other causes are milder.",
+    facts: [
+      "A hyperacute, profusely purulent neonatal conjunctivitis is gonococcal until proven otherwise — a corneal-perforation emergency needing urgent systemic treatment.",
+      "Chlamydial disease appears a little later and needs systemic (not just topical) therapy, plus maternal treatment.",
+      "Timing of onset and discharge character guide the likely organism while cultures are awaited."
+    ],
+    review: true
+  },
+
+  "Conjunctival Lymphoma": {
+    summary: "A lymphoid malignancy of the conjunctiva, usually a low-grade B-cell (MALT) lymphoma in older adults, appearing as a slowly growing, painless, salmon-pink patch in the fornix or bulbar conjunctiva. It is often surprisingly asymptomatic.",
+    facts: [
+      "A diffuse, mobile 'salmon-pink' conjunctival lesion should be biopsied.",
+      "May be localised or a sign of systemic lymphoma, so systemic staging is required.",
+      "Usually indolent and treatment-responsive, but needs oncological/haematological assessment."
+    ],
+    review: true
+  },
+
+  "Conjunctival Pyogenic Granuloma": {
+    summary: "A benign, rapidly growing, fleshy red vascular nodule (a lobular capillary haemangioma) that arises on the conjunctiva in response to inflammation or injury — classically after a chalazion, surgery or trauma. It bleeds easily and can cause irritation.",
+    facts: [
+      "A history of a recent chalazion, operation or injury at the site is the usual clue.",
+      "Despite the alarming name it is neither infective (pyogenic) nor a true granuloma.",
+      "Often settles with topical steroids; a persistent lesion can be excised."
+    ],
+    review: true
+  },
+
+  "Dacryolithiasis": {
+    summary: "The formation of a stone (dacryolith) within the lacrimal drainage system, usually the lacrimal sac. It causes intermittent watering and episodes of painful sac swelling that can come and go as the stone shifts, sometimes precipitating acute dacryocystitis.",
+    facts: [
+      "Suspect it in intermittent epiphora with recurrent, self-resolving sac swelling.",
+      "A stone can act as a ball-valve, giving a distended but non-infected sac between episodes.",
+      "Definitive treatment usually involves surgical drainage (dacryocystorhinostomy) to remove the stone and relieve obstruction."
+    ],
+    review: true
   }
 
 };

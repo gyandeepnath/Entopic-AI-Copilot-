@@ -6,6 +6,36 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-07-17 — Session 10i: Surface & Lids COMPLETE — expansion fully coded + summarised
+
+Finished the last domain. All 31 Surface & Lids expansion conditions done on both
+fronts (batches A+B) — the oculoplastic/lacrimal set (floppy eyelid, blepharospasm,
+canaliculitis, ptosis, blepharochalasis, punctal stenosis, congenital NLDO,
+dacryoadenitis, dacryolithiasis), the ocular-surface/adnexal tumours (sebaceous &
+basal cell carcinoma, conjunctival melanoma, OSSN, conjunctival nevus/lymphoma/
+pyogenic granuloma, capillary haemangioma), the cicatrising/inflammatory group
+(ocular cicatricial pemphigoid, Stevens-Johnson, trachoma, ocular rosacea,
+medicamentosa), and the conjunctivitides (chlamydial, ophthalmia neonatorum,
+giant papillary, ligneous, giant fornix, molluscum, conjunctivochalasis,
+xerophthalmia).
+
+### 🏁 Milestone: the whole expansion is now coded and summarised
+- **ICD-10: 334/334 conditions coded (0 missing)** — the 197 provisional expansion
+  conditions all now carry a code validated real + HIPAA-billable against ICD-10-CM
+  2026 via the ICD-10 tool, defaulting to the unspecified-eye leaf, every one
+  NEEDS_CLINICAL_REVIEW with caution notes where the mapping is a judgment call.
+  Nothing fabricated.
+- **Richer About summaries: 181** (up from 31) — every expansion condition across
+  Retina, Cornea, Neuro-Ophthalmic and Surface & Lids now has a hand-written
+  qualitative summary (no invented figures), review-flagged, in addition to the
+  engine-derived profile that already covered all 334.
+
+176/176 tests pass; app boots clean; red-flag alerts intact. Remaining follow-up:
+founder verification of the provisional codes/summaries, and (optional) tightening
+lid-carcinoma codes to exact eyelid+laterality per patient.
+
+---
+
 ## 2026-07-17 — Session 10h: Neuro-Ophthalmic domain COMPLETE — ICD + richer About
 
 All 33 Neuro-Ophthalmic expansion conditions done on both fronts (batches A+B+C).

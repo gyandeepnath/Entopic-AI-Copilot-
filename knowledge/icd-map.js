@@ -726,6 +726,44 @@ var ICD_MAP = {
   "Dacryoadenitis":
     { icd10: "H04.009", label: "Unspecified dacryoadenitis, unspecified lacrimal gland", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "set acute (H04.01-) vs chronic (H04.02-) and laterality", verified: "2026-07-17 ICD-10-CM 2026" },
   "Involutional Ptosis":
-    { icd10: "H02.409", label: "Unspecified ptosis of unspecified eyelid", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "aponeurotic/involutional; set laterality (H02.40x); exclude neurogenic/myogenic causes", verified: "2026-07-17 ICD-10-CM 2026" }
+    { icd10: "H02.409", label: "Unspecified ptosis of unspecified eyelid", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "aponeurotic/involutional; set laterality (H02.40x); exclude neurogenic/myogenic causes", verified: "2026-07-17 ICD-10-CM 2026" },
+
+  /* ─ Surface & Lids (batch B — completes the domain & the expansion set) ─ */
+  "Eyelid Basal Cell Carcinoma":
+    { icd10: "C44.1191", label: "Basal cell carcinoma of skin of eyelid, including canthus", laterality: "SET per patient", status: "NEEDS_CLINICAL_REVIEW", caution: "commonest lid malignancy (esp. lower lid/medial canthus) — URGENT referral; the C44.119x codes are eyelid+side specific, SET the correct one (shown value is a placeholder)", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Thermal Eyelid Burn":
+    { icd10: "T26.00XA", label: "Burn of unspecified eyelid and periocular area, initial encounter", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "7th char A = initial; set laterality; assess cornea for exposure; chemical corrosion is T26.5-/T26.6-", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Ocular Rosacea":
+    { icd10: "L71.8", label: "Other rosacea", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "code the ocular manifestation (blepharitis/MGD, keratitis) alongside", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Chlamydial (Adult Inclusion) Conjunctivitis":
+    { icd10: "A74.0", label: "Chlamydial conjunctivitis", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "consider concurrent genital chlamydial infection and partner/STI management", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Ocular Cicatricial Pemphigoid":
+    { icd10: "L12.1", label: "Cicatricial pemphigoid", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "mucous membrane pemphigoid with progressive conjunctival cicatrisation/symblepharon; systemic immunosuppression", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Toxic Keratoconjunctivitis (Medicamentosa)":
+    { icd10: "H16.299", label: "Other keratoconjunctivitis, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "toxic/medicamentosa — code the offending drug/preservative (T-code); stop the culprit", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Molluscum Contagiosum (Lid)":
+    { icd10: "B08.1", label: "Molluscum contagiosum", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "lid-margin lesions cause a secondary follicular conjunctivitis; extensive disease suggests immunocompromise", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Conjunctivochalasis":
+    { icd10: "H11.829", label: "Conjunctivochalasis, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Xerophthalmia (Vitamin A Deficiency)":
+    { icd10: "E50.7", label: "Other ocular manifestations of vitamin A deficiency", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "nutritional emergency (esp. children) — night blindness/Bitot spots/keratomalacia; specific stages are E50.0-E50.6", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Giant Fornix Syndrome":
+    { icd10: "H10.89", label: "Other conjunctivitis", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "chronic relapsing purulent conjunctivitis from a protein/biofilm reservoir in a deep superior fornix (elderly)", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Blepharochalasis":
+    { icd10: "H02.30", label: "Blepharochalasis, unspecified eye, unspecified eyelid", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "recurrent painless lid oedema leaving lax, thinned skin (young patients); distinct from age-related dermatochalasis", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Eyelid Capillary Hemangioma":
+    { icd10: "D18.01", label: "Hemangioma of skin and subcutaneous tissue", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "infantile periocular hemangioma; monitor for amblyopia from ptosis/astigmatism/occlusion", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Stevens-Johnson Syndrome (Ocular)":
+    { icd10: "L51.1", label: "Stevens-Johnson syndrome", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "systemic emergency (usually drug-induced); acute ocular surface involvement is sight-threatening; late cicatricial sequelae coded separately", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Trachoma":
+    { icd10: "A71.1", label: "Active stage of trachoma", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "leading infectious cause of blindness worldwide; scarring sequelae (entropion/trichiasis) fall under later A71.- stages", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Ophthalmia Neonatorum":
+    { icd10: "P39.1", label: "Neonatal conjunctivitis and dacryocystitis", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "identify the pathogen — gonococcal (A54.31) is a sight-threatening emergency; chlamydial is A74.0", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Conjunctival Lymphoma":
+    { icd10: "C69.00", label: "Malignant neoplasm of unspecified conjunctiva", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "conjunctival (often MALT) lymphoma — salmon-pink patch; also code the lymphoma subtype (C82-C88) and stage systemically", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Conjunctival Pyogenic Granuloma":
+    { icd10: "H11.89", label: "Other specified disorders of conjunctiva", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "lobular capillary haemangioma; typically follows a chalazion, surgery or trauma", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Dacryolithiasis":
+    { icd10: "H04.519", label: "Dacryolith of unspecified lacrimal passage", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "lacrimal stone; causes intermittent epiphora and can precipitate acute dacryocystitis", verified: "2026-07-17 ICD-10-CM 2026" }
 
 };
