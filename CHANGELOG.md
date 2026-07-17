@@ -6,6 +6,26 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-07-17 — Session 10b: reference-library / living-research plan (explore only)
+
+**Founder ask:** "Explore a plan of adding UI/UX optimised for acting like a
+reference textbook, regularly updating research and studies, articles etc."
+
+Wrote **`docs/REFERENCE_LIBRARY_PLAN.md`** — a proposal (nothing built). Core
+idea: separate **curation** (central, periodic, source-linked, founder-reviewed)
+from **use** (offline, in-app), so "living research" never becomes a runtime
+network/PII dependency. The Session-10 ⓘ toggle is the UI shell it fills. Every
+reference item must carry a real citation (PMID+DOI / named guideline); any LLM
+use is *extractive summary of a fetched source*, labelled + provisional; content
+is display-only and never re-enters scoring. Phased so Phases 1–2 (real cited
+packs + offline viewer) cost **nothing new**; automated refresh (Phase 3) and
+on-demand lookup (Phase 4) are founder-gated spend. Verified the research tooling
+returns real citable material (PubMed). **Four decisions escalated to the founder**
+(spend appetite, which guideline bodies to trust, scope/depth, whether to include
+an online lookup). Awaiting his call before any build.
+
+---
+
 ## 2026-07-17 — Session 10: "About this condition" reference toggle
 
 **Founder ask:** "final suggestion diagnosis have a toggle button to provide a
