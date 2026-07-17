@@ -6,7 +6,7 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
-## 2026-07-17 — Session 10e: Retina batch A — ICD codes + richer About (plan B)
+## 2026-07-17 — Session 10e: Retina batches A+B — ICD codes + richer About (plan B)
 
 Working domain-by-domain (founder chose plan B): each body-area gets both its
 verified ICD-10 codes AND richer hand-written About summaries before moving on.
@@ -19,7 +19,15 @@ Degenerative Retinoschisis, Ocular Ischemic Syndrome, Commotio Retinae):
   tool; unspecified-eye default; NEEDS_CLINICAL_REVIEW + caution notes.
 - Richer qualitative About summaries added to CONDITION_INFO (review:true).
 
-Running totals: ICD 60/197 coded; authored About 44 (was 31). 176/176 tests pass.
+**Retina batch B — 13 more** (Vitreomacular Traction, Solar Retinopathy,
+Hemiretinal Vein Occlusion, Retinal Vasculitis, cicatricial ROP, Choroidal
+Hemangioma, Gyrate Atrophy, Birdshot, Choroidal Rupture, Ocular Siderosis,
+Malignant Hypertensive Retinopathy, Purtscher, Optic Pit Maculopathy) — same
+treatment (validated ICD + richer About). Verified catches during lookup:
+H44.319 is *chalcosis* (copper) not siderosis → used H44.329 (siderosis); H30.149
+is APMPPE not birdshot → birdshot uses the posterior-inflammation bucket.
+
+Running totals: **ICD 73/197 coded; authored About 57** (was 31). 176/176 tests pass.
 
 
 ---

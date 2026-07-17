@@ -470,6 +470,138 @@ var CONDITION_INFO = {
       "The retinal whitening is not a true haemorrhage and usually resolves over days to weeks."
     ],
     review: true
+  },
+
+  /* ═══ Retina — batch B (Session 10e) ═══ */
+
+  "Vitreomacular Traction": {
+    summary: "Persistent adhesion of the vitreous to the macula that exerts tractional pull on the fovea, distorting its architecture. It causes central distortion, blurred or reduced vision and sometimes micropsia.",
+    facts: [
+      "OCT is the key test — it shows the attached, tenting vitreous and any resulting foveal distortion or cyst.",
+      "Some cases release spontaneously; others progress to macular hole or persistent oedema.",
+      "Distinguished from an epiretinal membrane, though the two can coexist."
+    ],
+    review: true
+  },
+
+  "Solar (Photic) Retinopathy": {
+    summary: "Photochemical injury to the foveal photoreceptors from staring at the sun (e.g. an eclipse) or other intense light. It causes a small central scotoma, blurred vision or distortion, usually in both eyes, hours after exposure.",
+    facts: [
+      "History of sun-gazing or intense light exposure is the diagnostic clue.",
+      "OCT may show a focal outer-retinal/foveal defect.",
+      "Vision often partially recovers, but a small central deficit can persist."
+    ],
+    review: true
+  },
+
+  "Hemiretinal Vein Occlusion": {
+    summary: "Occlusion of a vein draining one half (superior or inferior) of the retina, intermediate between a branch and a central vein occlusion. It causes painless loss of the corresponding half-field with haemorrhages confined to that hemiretina.",
+    facts: [
+      "Assess for systemic vascular risk factors as with other vein occlusions.",
+      "Macular oedema is the main driver of central vision loss.",
+      "Watch for later neovascular complications if the occlusion is ischaemic."
+    ],
+    review: true
+  },
+
+  "Retinal Vasculitis": {
+    summary: "Inflammation of the retinal vessels — arteriolar, venular (periphlebitis) or both — with sheathing, leakage and sometimes occlusion. It may cause floaters, blurred vision or field loss, and can be isolated or part of systemic/infective disease.",
+    facts: [
+      "Warrants a work-up for systemic inflammatory and infective causes.",
+      "Fluorescein angiography demonstrates the leakage/occlusion and its extent.",
+      "Ischaemia can drive neovascularisation and vitreous haemorrhage."
+    ],
+    review: true
+  },
+
+  "Retinopathy of Prematurity (Cicatricial)": {
+    summary: "The late, scarring phase of retinopathy of prematurity, where abnormal vascular proliferation has regressed leaving fibrous traction, dragging of the macula/disc, and in severe cases tractional retinal detachment. It affects children born prematurely.",
+    facts: [
+      "A consequence of prior active ROP — birth history (prematurity, low birth weight, oxygen) is central.",
+      "Traction can drag the macula and distort vision or cause strabismus/amblyopia.",
+      "Lifelong retinal-detachment risk warrants ongoing surveillance."
+    ],
+    review: true
+  },
+
+  "Choroidal Hemangioma": {
+    summary: "A benign vascular tumour of the choroid. The circumscribed form is a solitary orange-red mound that can leak and cause overlying serous fluid and blurred/distorted vision; the diffuse form is associated with Sturge-Weber syndrome.",
+    facts: [
+      "Vision loss comes from secondary serous subretinal fluid at the macula, not the mass itself.",
+      "Imaging (ultrasound, OCT, angiography) helps distinguish it from a choroidal melanoma.",
+      "Diffuse ('tomato-ketchup' fundus) hemangioma should prompt evaluation for Sturge-Weber."
+    ],
+    review: true
+  },
+
+  "Gyrate Atrophy": {
+    summary: "A rare inherited metabolic retinal-choroidal degeneration caused by a deficiency of the enzyme ornithine aminotransferase, with high blood ornithine. It causes progressive night blindness and constricting peripheral field from characteristic scalloped areas of chorioretinal atrophy.",
+    facts: [
+      "Associated with elevated plasma ornithine — a biochemical clue.",
+      "Sharply demarcated, coalescing patches of chorioretinal atrophy are typical.",
+      "Dietary arginine restriction is used in management — a metabolic condition, so systemic input matters."
+    ],
+    review: true
+  },
+
+  "Birdshot Chorioretinopathy": {
+    summary: "A chronic bilateral posterior uveitis with scattered cream-coloured 'birdshot' choroidal lesions radiating from the disc. It causes floaters, nyctalopia, and difficulty with contrast and colour, often out of proportion to a relatively preserved Snellen acuity.",
+    facts: [
+      "Strongly associated with HLA-A29 — a useful supportive test.",
+      "Vision and field loss can be significant despite good central acuity; monitoring includes fields and ERG.",
+      "A chronic condition needing long-term immunomodulatory control."
+    ],
+    review: true
+  },
+
+  "Choroidal Rupture": {
+    summary: "A break in the choroid, Bruch's membrane and RPE after blunt ocular trauma, classically a crescent-shaped streak concentric to the disc. Vision depends on whether the rupture or its haemorrhage involves the fovea.",
+    facts: [
+      "Follows blunt trauma — assess the whole eye for associated injury.",
+      "Late choroidal neovascularisation at the rupture site can threaten vision months to years later.",
+      "A sub-macular rupture or haemorrhage carries a guarded visual prognosis."
+    ],
+    review: true
+  },
+
+  "Ocular Siderosis (Retained IOFB)": {
+    summary: "Progressive iron toxicity to ocular tissues from a retained iron-containing intraocular foreign body. It develops insidiously with iris heterochromia, pupil changes, cataract, and pigmentary retinopathy causing night blindness and field loss.",
+    facts: [
+      "Always suspect a retained foreign body after a high-velocity injury (hammering metal on metal).",
+      "The electroretinogram characteristically declines over time and helps monitor toxicity.",
+      "Early foreign-body removal can prevent or limit the retinopathy."
+    ],
+    review: true
+  },
+
+  "Malignant Hypertensive Retinopathy": {
+    summary: "The severe end of hypertensive retinopathy from acutely and markedly raised blood pressure, with flame haemorrhages, cotton-wool spots, macular exudate (a 'macular star') and optic-disc swelling. It signals a hypertensive emergency.",
+    facts: [
+      "Disc swelling with severe hypertension is a medical emergency needing urgent blood-pressure management.",
+      "The ocular findings reflect systemic end-organ damage — coordinate with medical care.",
+      "Vision can recover as blood pressure is controlled, though some deficit may remain."
+    ],
+    review: true
+  },
+
+  "Purtscher Retinopathy": {
+    summary: "A rare occlusive microvasculopathy causing sudden vision loss after severe trauma (classically chest compression), or in Purtscher-like form with pancreatitis, childbirth or renal failure. The fundus shows cotton-wool spots and polygonal retinal whitening (Purtscher flecken) around the disc.",
+    facts: [
+      "Look for the precipitating systemic event — trauma, pancreatitis, embolic states.",
+      "Often bilateral; vision loss can be marked.",
+      "Largely a supportive-care diagnosis; recovery is variable."
+    ],
+    review: true
+  },
+
+  "Optic Pit Maculopathy": {
+    summary: "A congenital excavation (pit) of the optic disc that can allow fluid to track under the macula, producing a serous maculopathy with central blur and distortion — typically in a young adult with no other cause.",
+    facts: [
+      "The disc pit itself is congenital and often asymptomatic until maculopathy develops.",
+      "OCT shows the schisis-like and subretinal fluid tracking from the pit.",
+      "Vision declines when the macula detaches; the fluid source is the pit, not a retinal break."
+    ],
+    review: true
   }
 
 };

@@ -468,6 +468,34 @@ var ICD_MAP = {
   "Ocular Ischemic Syndrome":
     { icd10: "H35.82", label: "Retinal ischemia", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "code the carotid occlusive disease (I65.2-) alongside", verified: "2026-07-17 ICD-10-CM 2026" },
   "Commotio Retinae":
-    { icd10: "H35.81", label: "Retinal edema", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "traumatic (Berlin) edema; code the ocular trauma (S05.-) alongside", verified: "2026-07-17 ICD-10-CM 2026" }
+    { icd10: "H35.81", label: "Retinal edema", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "traumatic (Berlin) edema; code the ocular trauma (S05.-) alongside", verified: "2026-07-17 ICD-10-CM 2026" },
+
+  /* ─ Retina (batch B) ─ */
+  "Vitreomacular Traction":
+    { icd10: "H43.89", label: "Other disorders of vitreous body", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "no distinct VMT code; vitreous-disorder bucket", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Solar (Photic) Retinopathy":
+    { icd10: "H35.89", label: "Other specified retinal disorders", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "photic/solar maculopathy; no distinct code", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Hemiretinal Vein Occlusion":
+    { icd10: "H34.8390", label: "Tributary (branch) retinal vein occlusion, unspecified eye, with macular edema", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "hemi-RVO coded under branch RVO; without-macular-edema variant is H34.8391-type", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Retinal Vasculitis":
+    { icd10: "H35.069", label: "Retinal vasculitis, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Retinopathy of Prematurity (Cicatricial)":
+    { icd10: "H35.179", label: "Retrolental fibroplasia, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "cicatricial ROP (retrolental fibroplasia); active-stage ROP is H35.10-H35.16", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Choroidal Hemangioma":
+    { icd10: "D31.30", label: "Benign neoplasm of unspecified choroid", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "circumscribed vs diffuse (Sturge-Weber) not distinguished in code", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Gyrate Atrophy":
+    { icd10: "H31.23", label: "Gyrate atrophy, choroid", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Birdshot Chorioretinopathy":
+    { icd10: "H30.899", label: "Other chorioretinal inflammations, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "no birdshot-specific code; posterior chorioretinal inflammation bucket", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Choroidal Rupture":
+    { icd10: "H31.309", label: "Unspecified choroidal hemorrhage, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "traumatic choroidal rupture; code the ocular trauma (S05.-) alongside", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Ocular Siderosis (Retained IOFB)":
+    { icd10: "H44.329", label: "Siderosis of eye, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "iron IOFB; code the retained intraocular foreign body alongside", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Malignant Hypertensive Retinopathy":
+    { icd10: "H35.039", label: "Hypertensive retinopathy, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "code the systemic hypertension (I10-I16) alongside; 'malignant' is a severity descriptor", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Purtscher Retinopathy":
+    { icd10: "H35.89", label: "Other specified retinal disorders", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "Purtscher/Purtscher-like; no distinct code; code the precipitant (trauma/pancreatitis)", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Optic Pit Maculopathy":
+    { icd10: "Q14.2", label: "Congenital malformation of optic disc", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "the pit is congenital (Q14.2); the serous maculopathy component is coded separately (H35.-)", verified: "2026-07-17 ICD-10-CM 2026" }
 
 };
