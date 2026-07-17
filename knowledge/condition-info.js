@@ -3514,6 +3514,108 @@ var CONDITION_INFO = {
       "Often multiple or bilateral, which helps distinguish it from a primary choroidal melanoma."
     ],
     review: true
+  },
+
+  /* ═══ Lens — common conditions batch (Session 10l) ═══ */
+
+  "Mature Cataract": {
+    summary: "An age-related cataract that has progressed to complete opacification, so the lens is uniformly white and the fundus view is lost. Vision is reduced to counting fingers or hand movements, and the red reflex is absent.",
+    facts: [
+      "A dense white lens with no view of the retina — B-scan ultrasound is used to check the posterior segment before surgery.",
+      "The mainstay is cataract surgery; a very mature lens is technically more challenging.",
+      "Left too long, it can progress to hypermature/Morgagnian change with lens-induced glaucoma."
+    ],
+    review: true
+  },
+
+  "Hypermature (Morgagnian) Cataract": {
+    summary: "An over-ripe cataract in which the cortex has liquefied, sometimes letting the dense nucleus sink within the capsular bag (Morgagnian cataract). It represents long-neglected lens opacity and risks leaking lens protein.",
+    facts: [
+      "Leaked lens protein can clog the drainage angle and cause phacolytic glaucoma — a painful pressure spike.",
+      "The sunken brown nucleus in a bag of milky cortex is the classic Morgagnian appearance.",
+      "Surgery is indicated but more complex owing to the weakened capsule and dense nucleus."
+    ],
+    review: true
+  },
+
+  "Intumescent Cataract": {
+    summary: "A cataract in which the lens has taken up water and swollen, becoming intumescent. The enlarged lens pushes the iris forward and shallows the anterior chamber, creating a risk of acute angle closure.",
+    facts: [
+      "The swollen lens can precipitate phacomorphic angle closure — a painful, high-pressure emergency.",
+      "The anterior chamber is shallower than expected for the eye — compare with the fellow eye.",
+      "Definitive treatment is removing the lens; the pressure is controlled first if the angle has closed."
+    ],
+    review: true
+  },
+
+  "Anterior Subcapsular Cataract": {
+    summary: "An opacity just beneath the front lens capsule, often from anterior-segment inflammation, trauma or fibrous metaplasia of lens epithelium. It causes glare and blur, with a plaque-like opacity in the pupillary axis.",
+    facts: [
+      "Often secondary — look for a cause such as prior uveitis, trauma or atopic disease.",
+      "Being axial, it affects vision and glare relatively early.",
+      "Distinguished from the commoner posterior subcapsular cataract by its anterior location."
+    ],
+    review: true
+  },
+
+  "Pseudoexfoliation (Lens Deposition)": {
+    summary: "Deposition of a greyish-white fibrillar (pseudoexfoliation) material on the anterior lens capsule and pupil margin, part of a systemic condition. It is important less for the lens itself than for the raised glaucoma risk and the weak zonules that complicate cataract surgery.",
+    facts: [
+      "A classic target/bull's-eye pattern of flaky material on the lens capsule (best seen dilated) is diagnostic.",
+      "Signals higher risks of glaucoma and of zonular weakness (lens dislocation) at surgery — plan accordingly.",
+      "Frequently asymmetric; associated with systemic vascular conditions."
+    ],
+    review: true
+  },
+
+  "Anterior Lenticonus": {
+    summary: "A congenital cone-shaped bulging of the anterior lens surface, giving progressive irregular (often lenticular myopic) astigmatism and blur. It produces a characteristic central 'oil-droplet' reflex on retroillumination.",
+    facts: [
+      "Bilateral anterior lenticonus is a hallmark of Alport syndrome — check for renal disease and hearing loss.",
+      "Refraction is unstable and spectacles correct it poorly as the cone progresses.",
+      "Lens surgery is the definitive treatment when vision is significantly affected."
+    ],
+    review: true
+  },
+
+  "Christmas-Tree Cataract": {
+    summary: "A cataract with striking polychromatic, needle-like crystalline deposits that glitter red, green and gold in the lens ('Christmas-tree' appearance). It is often mild but can accompany systemic disease.",
+    facts: [
+      "The iridescent crystals are visually striking on slit-lamp examination.",
+      "Associated with myotonic dystrophy and with ageing — consider the systemic context.",
+      "Often coexists with other lens opacities; managed as for other visually significant cataract."
+    ],
+    review: true
+  },
+
+  "Diabetic Snowflake Cataract": {
+    summary: "A true diabetic cataract — bilateral, rapidly progressing grey-white 'snowflake' cortical opacities in a young person with poorly controlled (often type 1) diabetes. It differs from the commoner acceleration of ordinary age-related cataract in diabetics.",
+    facts: [
+      "Rapid, bilateral cortical snowflake opacities in a young diabetic are characteristic.",
+      "Reflects significant hyperglycaemia — glycaemic control is central.",
+      "Can progress quickly, sometimes to a mature cataract over weeks to months."
+    ],
+    review: true
+  },
+
+  "IOL Dislocation": {
+    summary: "Displacement of an implanted intraocular lens out of its intended position, from zonular/capsular weakness or trauma, which may occur soon after surgery or years later. It causes blurred or double vision, glare, and the lens edge or an empty pupil may be visible.",
+    facts: [
+      "Late spontaneous dislocation is commoner in eyes with pseudoexfoliation or prior vitreoretinal surgery.",
+      "A fully dislocated lens into the vitreous needs surgical retrieval/repositioning.",
+      "Symptoms range from a shift in refraction to marked blur depending on the degree of displacement."
+    ],
+    review: true
+  },
+
+  "Aphakia": {
+    summary: "The absence of the crystalline lens, almost always after cataract surgery without a lens implant (or after lens removal/dislocation). Without the lens the eye is very long-sighted and cannot accommodate, needing a strong correction.",
+    facts: [
+      "Requires a high plus correction — aphakic spectacles, a contact lens, or a secondary intraocular lens.",
+      "Aphakic eyes carry increased long-term risks of glaucoma and retinal detachment (especially in children).",
+      "Congenital aphakia is rare; the vast majority is surgical."
+    ],
+    review: true
   }
 
 };

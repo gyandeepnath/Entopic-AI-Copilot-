@@ -6,6 +6,22 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-07-17 — Session 10l: common-conditions drive — Lens batch (+10)
+
+Founder asked for ~20 common, regularly-seen conditions per area. Starting with
+the thinnest area, **Lens (13 → 23)**. Added 5 new clickable lens findings
+(Hypermature/Morgagnian, anterior subcapsular opacity, lenticonus, Christmas-tree,
+snowflake) → new tokens, then 10 common conditions on distinct anchors: **Mature,
+Hypermature/Morgagnian, Intumescent, Anterior Subcapsular, Pseudoexfoliation
+(lens), Anterior Lenticonus, Christmas-Tree, Diabetic Snowflake cataracts, IOL
+Dislocation, Aphakia** — each with reachable inputs, a validated ICD-10 code and a
+hand-written note. KB now **354 conditions**, all coded + noted (0 missing).
+178/178 tests pass; cross-conflict at baseline. Other areas to follow, batch by
+batch, toward the +20-per-area goal (richer areas can take 20+; a few thin areas
+like Lens/Refractive have fewer than 20 genuinely-common additions).
+
+---
+
 ## 2026-07-17 — Session 10k(2): KB expansion batch 11 + new tokens (intraocular tumours)
 
 Expanded on all three fronts the founder asked for — **conditions, About notes,

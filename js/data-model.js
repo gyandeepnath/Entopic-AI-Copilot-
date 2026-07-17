@@ -570,7 +570,12 @@ var SL_FINDINGS = {
     "PCO",
     "Aphakia",
     "White cataract",
-    "Leukocoria (white pupillary reflex)"
+    "Leukocoria (white pupillary reflex)",
+    "Hypermature / Morgagnian cataract",
+    "Anterior subcapsular opacity",
+    "Lenticonus (conical lens)",
+    "Christmas-tree (polychromatic) opacity",
+    "Snowflake cataract"
   ],
 
   "Tear Film": [

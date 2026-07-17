@@ -788,6 +788,28 @@ var ICD_MAP = {
   "Optic Disc Coloboma":
     { icd10: "Q14.2", label: "Congenital malformation of optic disc", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "congenital disc coloboma; may be part of CHARGE or other syndromes", verified: "2026-07-17 ICD-10-CM 2026" },
   "Choroidal Metastasis":
-    { icd10: "C79.89", label: "Secondary malignant neoplasm of other specified sites", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "choroidal metastasis; code the primary tumour (commonly breast/lung) as well", verified: "2026-07-17 ICD-10-CM 2026" }
+    { icd10: "C79.89", label: "Secondary malignant neoplasm of other specified sites", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "choroidal metastasis; code the primary tumour (commonly breast/lung) as well", verified: "2026-07-17 ICD-10-CM 2026" },
+
+  /* ─ Batch 12 (common Lens conditions) ─ */
+  "Mature Cataract":
+    { icd10: "H25.9", label: "Unspecified age-related cataract", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "mature (fully opaque) age-related lens; specify morphology/eye where possible", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Hypermature (Morgagnian) Cataract":
+    { icd10: "H25.89", label: "Other age-related cataract", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "hypermature/Morgagnian (liquefied cortex); risk of phacolytic glaucoma", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Intumescent Cataract":
+    { icd10: "H26.9", label: "Unspecified cataract", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "swollen (intumescent) lens shallowing the AC; risk of phacomorphic angle closure", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Anterior Subcapsular Cataract":
+    { icd10: "H25.039", label: "Anterior subcapsular polar age-related cataract, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Pseudoexfoliation (Lens Deposition)":
+    { icd10: "H26.8", label: "Other specified cataract", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "pseudoexfoliation material on lens/capsule; if glaucoma present code H40.14-; weak zonules raise surgical risk", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Anterior Lenticonus":
+    { icd10: "Q12.8", label: "Other congenital lens malformations", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "anterior lenticonus; classic Alport syndrome association", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Christmas-Tree Cataract":
+    { icd10: "H26.8", label: "Other specified cataract", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "polychromatic (Christmas-tree) crystalline deposits; can accompany myotonic dystrophy", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Diabetic Snowflake Cataract":
+    { icd10: "E11.36", label: "Type 2 diabetes mellitus with diabetic cataract", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "true diabetic (snowflake) cataract of the young; assumes type 2 (DM1 is E10.36)", verified: "2026-07-17 ICD-10-CM 2026" },
+  "IOL Dislocation":
+    { icd10: "T85.22XA", label: "Displacement of intraocular lens, initial encounter", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "7th char A = initial; dislocated/subluxed IOL after cataract surgery", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Aphakia":
+    { icd10: "H27.00", label: "Aphakia, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "absence of the lens (surgical or, rarely, congenital); set laterality", verified: "2026-07-17 ICD-10-CM 2026" }
 
 };

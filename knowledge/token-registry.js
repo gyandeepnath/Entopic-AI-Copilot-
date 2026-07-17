@@ -296,6 +296,20 @@ var TOKEN_REGISTRY = {
     },
     "reachable": false
   },
+  "anterior_subcapsular_opacity": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 1,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 1
+    },
+    "reachable": true
+  },
   "anterior_synechiae": {
     "type_hint": "sign",
     "sources": [
@@ -316,11 +330,11 @@ var TOKEN_REGISTRY = {
       "finding_map"
     ],
     "usage": {
-      "req": 0,
+      "req": 1,
       "sup": 0,
       "con": 0,
       "temporal": 0,
-      "tests": 0
+      "tests": 1
     },
     "reachable": true
   },
@@ -944,7 +958,7 @@ var TOKEN_REGISTRY = {
       "req": 0,
       "sup": 0,
       "con": 0,
-      "temporal": 170,
+      "temporal": 174,
       "tests": 0
     },
     "reachable": true
@@ -1695,7 +1709,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 3,
-      "sup": 10,
+      "sup": 11,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -1971,7 +1985,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 2,
-      "sup": 4,
+      "sup": 6,
       "con": 2,
       "temporal": 0,
       "tests": 0
@@ -2435,7 +2449,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 11,
-      "sup": 32,
+      "sup": 33,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -2526,7 +2540,7 @@ var TOKEN_REGISTRY = {
     "usage": {
       "req": 3,
       "sup": 18,
-      "con": 33,
+      "con": 34,
       "temporal": 0,
       "tests": 0
     },
@@ -2643,7 +2657,7 @@ var TOKEN_REGISTRY = {
     "usage": {
       "req": 3,
       "sup": 5,
-      "con": 9,
+      "con": 16,
       "temporal": 0,
       "tests": 0
     },
@@ -2839,7 +2853,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 0,
-      "sup": 13,
+      "sup": 14,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -2872,7 +2886,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 4,
-      "sup": 30,
+      "sup": 34,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -2925,7 +2939,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 4,
-      "sup": 19,
+      "sup": 27,
       "con": 6,
       "temporal": 0,
       "tests": 0
@@ -2986,7 +3000,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 0,
-      "sup": 22,
+      "sup": 23,
       "con": 1,
       "temporal": 0,
       "tests": 0
@@ -3494,11 +3508,11 @@ var TOKEN_REGISTRY = {
       "finding_map"
     ],
     "usage": {
-      "req": 0,
+      "req": 1,
       "sup": 0,
       "con": 0,
       "temporal": 0,
-      "tests": 1
+      "tests": 2
     },
     "reachable": true
   },
@@ -3580,7 +3594,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 5,
-      "sup": 5,
+      "sup": 6,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -3642,7 +3656,7 @@ var TOKEN_REGISTRY = {
     "usage": {
       "req": 5,
       "sup": 0,
-      "con": 152,
+      "con": 161,
       "temporal": 0,
       "tests": 0
     },
@@ -3901,6 +3915,20 @@ var TOKEN_REGISTRY = {
     },
     "reachable": false
   },
+  "lenticonus": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 1,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 1
+    },
+    "reachable": true
+  },
   "leukocoria": {
     "type_hint": "sign",
     "sources": [
@@ -3909,7 +3937,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 3,
-      "sup": 3,
+      "sup": 4,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -4467,6 +4495,20 @@ var TOKEN_REGISTRY = {
     },
     "reachable": true
   },
+  "morgagnian_cataract": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 1,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 1
+    },
+    "reachable": true
+  },
   "morning_blur": {
     "type_hint": "sign",
     "sources": [
@@ -4552,7 +4594,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 3,
-      "sup": 1,
+      "sup": 2,
       "con": 1,
       "temporal": 0,
       "tests": 1
@@ -4816,8 +4858,8 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 8,
-      "sup": 55,
-      "con": 57,
+      "sup": 60,
+      "con": 58,
       "temporal": 0,
       "tests": 0
     },
@@ -4901,7 +4943,7 @@ var TOKEN_REGISTRY = {
     "usage": {
       "req": 10,
       "sup": 35,
-      "con": 74,
+      "con": 83,
       "temporal": 0,
       "tests": 0
     },
@@ -5340,6 +5382,20 @@ var TOKEN_REGISTRY = {
     },
     "reachable": false
   },
+  "polychromatic_cataract": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 1,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 1
+    },
+    "reachable": true
+  },
   "post_cataract_surgery_blur": {
     "type_hint": "sign",
     "sources": [
@@ -5362,7 +5418,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 10,
-      "sup": 4,
+      "sup": 6,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -5421,7 +5477,7 @@ var TOKEN_REGISTRY = {
       "req": 0,
       "sup": 0,
       "con": 0,
-      "temporal": 74,
+      "temporal": 78,
       "tests": 0
     },
     "reachable": true
@@ -5598,7 +5654,7 @@ var TOKEN_REGISTRY = {
     "usage": {
       "req": 3,
       "sup": 1,
-      "con": 90,
+      "con": 91,
       "temporal": 0,
       "tests": 0
     },
@@ -5624,11 +5680,11 @@ var TOKEN_REGISTRY = {
       "finding_map"
     ],
     "usage": {
-      "req": 1,
+      "req": 2,
       "sup": 0,
       "con": 1,
       "temporal": 0,
-      "tests": 1
+      "tests": 2
     },
     "reachable": true
   },
@@ -5680,7 +5736,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 0,
-      "sup": 2,
+      "sup": 4,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -5803,7 +5859,7 @@ var TOKEN_REGISTRY = {
     "usage": {
       "req": 4,
       "sup": 82,
-      "con": 128,
+      "con": 138,
       "temporal": 0,
       "tests": 0
     },
@@ -5938,7 +5994,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 11,
-      "sup": 176,
+      "sup": 185,
       "con": 83,
       "temporal": 0,
       "tests": 1
@@ -6377,7 +6433,7 @@ var TOKEN_REGISTRY = {
       "finding_map"
     ],
     "usage": {
-      "req": 1,
+      "req": 2,
       "sup": 1,
       "con": 1,
       "temporal": 0,
@@ -6499,6 +6555,20 @@ var TOKEN_REGISTRY = {
       "tests": 1
     },
     "reachable": false
+  },
+  "snowflake_cataract": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 1,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 1
+    },
+    "reachable": true
   },
   "spasm": {
     "type_hint": "symptom",
@@ -6662,7 +6732,7 @@ var TOKEN_REGISTRY = {
       "req": 0,
       "sup": 0,
       "con": 0,
-      "temporal": 40,
+      "temporal": 42,
       "tests": 0
     },
     "reachable": true
@@ -6763,7 +6833,7 @@ var TOKEN_REGISTRY = {
     "usage": {
       "req": 1,
       "sup": 17,
-      "con": 28,
+      "con": 29,
       "temporal": 0,
       "tests": 0
     },
@@ -6779,7 +6849,7 @@ var TOKEN_REGISTRY = {
     "usage": {
       "req": 3,
       "sup": 1,
-      "con": 66,
+      "con": 73,
       "temporal": 0,
       "tests": 0
     },
@@ -7199,7 +7269,7 @@ var TOKEN_REGISTRY = {
       "req": 0,
       "sup": 0,
       "con": 0,
-      "temporal": 7,
+      "temporal": 9,
       "tests": 0
     },
     "reachable": false
@@ -7480,11 +7550,11 @@ var TOKEN_REGISTRY = {
       "finding_map"
     ],
     "usage": {
-      "req": 1,
-      "sup": 0,
+      "req": 3,
+      "sup": 1,
       "con": 0,
       "temporal": 0,
-      "tests": 1
+      "tests": 3
     },
     "reachable": true
   },
@@ -7541,7 +7611,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 23,
-      "sup": 62,
+      "sup": 63,
       "con": 20,
       "temporal": 0,
       "tests": 0
@@ -7563,10 +7633,10 @@ var TOKEN_REGISTRY = {
 };
 
 var TOKEN_REGISTRY_STATS = {
-  "total": 532,
-  "reachable": 432,
+  "total": 537,
+  "reachable": 437,
   "unreachable_required": [],
   "unreachable_supportive": [],
   "test_label_only": 96,
-  "produced_never_consumed": 83
+  "produced_never_consumed": 82
 };
