@@ -953,6 +953,80 @@ input, select, textarea, button {
   font-style: italic;
 }
 
+.dx-info-derived {
+  margin-top: 6px;
+  padding-top: 5px;
+  border-top: 1px dashed var(--ms);
+  font-size: .52rem;
+  line-height: 1.4;
+  color: var(--sv);
+  font-style: italic;
+}
+
+/* "In this patient" — engine evidence tied to the reference card */
+.dxip {
+  margin-top: 7px;
+  padding-top: 6px;
+  border-top: 1px solid var(--fg);
+}
+
+.dxip-h {
+  font-size: .52rem;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--sl);
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.dxip-prob {
+  color: var(--sv);
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.dxip-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 3px;
+  margin-bottom: 3px;
+}
+
+.dxip-lbl {
+  font-size: .5rem;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+  margin-right: 3px;
+  min-width: 62px;
+}
+
+.dxip-lbl.matched { color: var(--sl); }
+.dxip-lbl.missing { color: var(--md); }
+.dxip-lbl.contra  { color: var(--as); }
+
+.dxip-chip {
+  display: inline-block;
+  font-size: .52rem;
+  padding: 1px 5px;
+  border-radius: 8px;
+  border: 1px solid var(--fg);
+  line-height: 1.5;
+}
+
+.dxip-chip.matched { background: var(--sn); color: var(--ink); border-color: var(--ms); }
+.dxip-chip.missing { background: transparent; color: var(--md); border-style: dashed; }
+.dxip-chip.contra  { background: transparent; color: var(--as); text-decoration: line-through; }
+
+.dxip-foot {
+  margin-top: 4px;
+  font-size: .48rem;
+  line-height: 1.35;
+  color: var(--sv);
+  font-style: italic;
+}
+
 /* Alert boxes */
 .alert-box {
   padding: 6px 8px;

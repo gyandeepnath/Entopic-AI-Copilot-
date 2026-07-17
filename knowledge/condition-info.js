@@ -348,7 +348,87 @@ function getConditionInfo(name) {
   return Object.prototype.hasOwnProperty.call(CONDITION_INFO, name) ? CONDITION_INFO[name] : null;
 }
 
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* DERIVED PROFILE — content for the ~90% of conditions that have    */
+/* no hand-authored summary yet.                                     */
+/*                                                                  */
+/* This is NOT fabricated: it is a faithful, plain-language          */
+/* restatement of the condition's OWN definition already in the      */
+/* knowledge base — its domain, ICD code, and the required /         */
+/* supportive / contradicting findings the deterministic engine      */
+/* already scores on. Because it is generated from the same          */
+/* structured fields the engine reads, it is inherently consistent   */
+/* with the engine (that is the "connect the info to the engine"     */
+/* link at the definition level; the live per-patient link is added  */
+/* by the advisory panel from the engine's evidence trail).          */
+/*                                                                  */
+/* It never invents statistics, thresholds, doses, or citations —    */
+/* it only rephrases tokens. `prettify` maps a token to a readable   */
+/* label (kbPrettyToken at runtime); falls back to de-underscoring.  */
+/* Returns { summary, facts[], derived:true, icdStatus }.            */
+/* ═══════════════════════════════════════════════════════════════ */
+function buildConditionProfile(cond, prettify) {
+  if (!cond) return null;
+  var pretty = (typeof prettify === "function") ? prettify : function (t) { return String(t).replace(/_/g, " "); };
+  function list(arr, cap) {
+    if (!arr || !arr.length) return "";
+    var out = [];
+    for (var i = 0; i < arr.length && i < (cap || 6); i++) out.push(pretty(arr[i]));
+    if (arr.length > (cap || 6)) out.push("…");
+    return out.join(", ");
+  }
+
+  var domain = cond._domain || cond.route || "";
+  /* Vowel-aware article for the word that actually follows it. */
+  var firstWord = cond.urgent ? "urgent" : (domain || "condition");
+  var article = /^[aeiou]/i.test(firstWord) ? "an" : "a";
+  var summary = cond.name + " is " + article + " " +
+    (cond.urgent ? "urgent " : "") +
+    (domain ? (domain + "-related ") : "") +
+    "condition in Entopic's knowledge base." +
+    (cond.urgent ? " It carries an urgent flag — treat suspected cases as time-critical." : "");
+
+  var facts = [];
+  var reqs = list(cond.req, 6);
+  if (reqs) facts.push("Recognised when present: " + reqs + ".");
+  var sups = list(cond.sup, 6);
+  if (sups) facts.push("Findings that support it: " + sups + ".");
+  var cons = list(cond.con, 6);
+  if (cons) facts.push("Findings that argue against it: " + cons + ".");
+  var tests = list(cond.tests, 4);
+  if (tests) facts.push("Helpful to confirm: " + tests + ".");
+  if (cond.icd) {
+    facts.push("ICD-10: " + cond.icd + (cond.icd_label ? " — " + cond.icd_label : "") + ".");
+  }
+
+  return {
+    summary: summary,
+    facts: facts,
+    derived: true,
+    icdStatus: cond.icd_status || ""
+  };
+}
+
+/* Resolve the best available content for a condition: hand-authored rich entry
+   if one exists, otherwise a derived profile built from the KB definition.
+   `findCond` and `prettify` are injected so this stays dependency-free (the
+   browser passes findCondition + kbPrettyToken; tests pass their own).        */
+function resolveConditionInfo(name, findCond, prettify) {
+  var rich = getConditionInfo(name);
+  if (rich) return { kind: "authored", summary: rich.summary, facts: rich.facts || [], review: !!rich.review };
+  var cond = (typeof findCond === "function") ? findCond(name) : null;
+  var prof = buildConditionProfile(cond, prettify);
+  if (prof) return { kind: "derived", summary: prof.summary, facts: prof.facts, icdStatus: prof.icdStatus };
+  return null;
+}
+
 /* Node/UMD export for tooling & tests (browser ignores this). */
 if (typeof module !== "undefined" && module.exports) {
-  module.exports = { CONDITION_INFO: CONDITION_INFO, getConditionInfo: getConditionInfo };
+  module.exports = {
+    CONDITION_INFO: CONDITION_INFO,
+    getConditionInfo: getConditionInfo,
+    buildConditionProfile: buildConditionProfile,
+    resolveConditionInfo: resolveConditionInfo
+  };
 }

@@ -6,6 +6,41 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-07-17 — Session 10c: full "About" coverage + engine-connected info
+
+**Founder ask:** "the About toggle needs fulfillment — more than 50% of the
+conditions have no information. Also, try connecting that information to the
+engine."
+
+1. **100% coverage without fabrication (derived profiles).** Hand-writing prose
+   for 300+ conditions would be slow and fabrication-prone. Instead the toggle
+   now falls back to a **profile derived from each condition's OWN definition**
+   already in the KB — its domain, ICD-10 code/label, and the required /
+   supportive / contradicting findings the deterministic engine scores on,
+   prettified into plain phrases. This is a faithful restatement of existing
+   data, not invented content, so **every one of the 334 conditions now shows
+   real information**. The 31 curated conditions still show their richer written
+   summary; the rest show the derived profile, labelled *"auto-generated from
+   this condition's definition"* (and flagging when the ICD code itself is
+   pending review). New helpers: `buildConditionProfile`, `resolveConditionInfo`.
+2. **Connected to the engine — "In this patient".** Each About card now appends a
+   live block built from the engine's own evidence trail for that differential:
+   which of the condition's findings are **observed** (matched), which are
+   **missing** (would support), which **argue against** it — plus the current
+   probability. So the reference card explains the engine's ranking for the
+   actual exam in front of the clinician. **Guardrail preserved:** this is
+   engine→display only; reference prose still never feeds scoring, and diagnosis
+   stays deterministic. Because the derived profile is generated from the very
+   tokens the engine reads, the definition-level content and the engine can never
+   drift apart.
+3. **Tests (condition-info now 9 cases):** assert every KB condition resolves to
+   non-empty content, that the curated set stays "authored" and the rest are
+   "derived", that a derived profile faithfully surfaces the condition's own
+   required token, and that no quantitative figure is fabricated in either path.
+   175/175 tests pass; app boots clean; red-flag alerts intact.
+
+---
+
 ## 2026-07-17 — Session 10b: reference-library / living-research plan (explore only)
 
 **Founder ask:** "Explore a plan of adding UI/UX optimised for acting like a

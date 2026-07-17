@@ -60,7 +60,7 @@ function renderAdvisory() {
   h += '</div>';
   if (leadConf) h += '<div style="font-size:.5rem;color:var(--sv)">' + leadConf + ' confidence · most likely by ranking</div>';
   h += '<div style="font-size:.5rem;color:var(--sv);font-style:italic">Advisory only — clinical correlation required. Not a definitive diagnosis.</div>';
-  h += dxInfoToggle(lead.n, "lead");
+  h += dxInfoToggle(lead.n, "lead", lead);
   h += '</div>';
 
   /* ═══ TAB BAR — show ONE focused view at a time (less overwhelming) ═══ */
@@ -109,7 +109,7 @@ function renderAdvisory() {
           (ev.matched.length > 4 ? '<span class="matched"> +' + (ev.matched.length - 4) + '</span>' : '') +
           (ev.missing && ev.missing.length > 0 ? ' · <span class="missing">need: ' + ev.missing.slice(0, 3).join(", ") + '</span>' : '') + '</div>';
       }
-      h += dxInfoToggle(d.n, "d" + di);
+      h += dxInfoToggle(d.n, "d" + di, d);
       h += '</div>';
     }
     if (V.dxList.length > maxToShow) {
@@ -189,14 +189,19 @@ function toggleDxInfo(rowId) {
   renderAdvisory();
 }
 
-function dxInfoToggle(name, rowId) {
+function dxInfoToggle(name, rowId, dx) {
   var open = !!DX_INFO_OPEN[rowId];
-  var info = (typeof getConditionInfo === "function") ? getConditionInfo(name) : null;
   var h = '<div class="dx-info-wrap">';
   h += '<button class="dx-info-btn' + (open ? ' open' : '') + '" onclick="event.stopPropagation();toggleDxInfo(\'' + rowId + '\')" ' +
     'aria-expanded="' + (open ? 'true' : 'false') + '">' +
     '<span class="dx-info-i">ⓘ</span> About this condition <span class="dx-info-caret">' + (open ? '▾' : '▸') + '</span></button>';
   if (open) {
+    /* Best available content: hand-authored rich summary, else a profile derived
+       from the KB definition (so every condition has real, non-fabricated text). */
+    var findFn = (typeof findCondition === "function") ? findCondition : null;
+    var prettyFn = (typeof kbPrettyToken === "function") ? kbPrettyToken : null;
+    var info = (typeof resolveConditionInfo === "function") ? resolveConditionInfo(name, findFn, prettyFn) : null;
+
     h += '<div class="dx-info-body">';
     if (info) {
       h += '<div class="dx-info-summary">' + escH(info.summary) + '</div>';
@@ -205,16 +210,52 @@ function dxInfoToggle(name, rowId) {
         for (var i = 0; i < info.facts.length; i++) h += '<li>' + escH(info.facts[i]) + '</li>';
         h += '</ul>';
       }
-      if (info.review) {
+      /* Provenance line — verified prose vs. auto-derived from the definition. */
+      if (info.kind === "authored" && info.review) {
         h += '<div class="dx-info-review">⚠ Provisional reference summary — pending clinician verification. ' +
           'Not a source of clinical thresholds, doses, or statistics.</div>';
+      } else if (info.kind === "derived") {
+        h += '<div class="dx-info-derived">Auto-generated from this condition\'s definition in the knowledge base' +
+          (info.icdStatus === "NEEDS_CLINICAL_REVIEW" ? ' · ICD code pending clinical review' : '') +
+          '. A fuller written summary can be added in the KB editor.</div>';
       }
     } else {
-      h += '<div class="dx-info-none">No clinician-verified summary for this condition yet. ' +
-        'You can add one in the Knowledge Base editor.</div>';
+      h += '<div class="dx-info-none">No information available for this condition.</div>';
     }
+
+    /* ── ENGINE-CONNECTED: how THIS patient's findings map onto the condition ──
+       Uses the live evidence the engine already computed for this differential.
+       Display-only — the reference text never feeds scoring; this is the engine
+       explaining itself, tying the reference card to the actual exam. */
+    h += dxInfoInPatient(dx);
+
     h += '</div>';
   }
+  h += '</div>';
+  return h;
+}
+
+/* The "In this patient" block — engine evidence for one differential. */
+function dxInfoInPatient(dx) {
+  if (!dx || !dx.evidence) return '';
+  var ev = dx.evidence;
+  var pretty = (typeof kbPrettyToken === "function") ? kbPrettyToken : function (t) { return String(t).replace(/_/g, " "); };
+  function chips(arr, cls, cap) {
+    var out = '';
+    for (var i = 0; i < arr.length && i < (cap || 6); i++) out += '<span class="dxip-chip ' + cls + '">' + escH(pretty(arr[i])) + '</span>';
+    if (arr.length > (cap || 6)) out += '<span class="dxip-chip ' + cls + '">+' + (arr.length - (cap || 6)) + '</span>';
+    return out;
+  }
+  var matched = ev.matched || [], missing = ev.missing || [], contra = ev.contradicted || [];
+  if (!matched.length && !missing.length && !contra.length) return '';
+
+  var h = '<div class="dxip">';
+  h += '<div class="dxip-h">In this patient' +
+    (typeof dx.prob === "number" ? ' <span class="dxip-prob">' + (dx.prob * 100).toFixed(0) + '% now</span>' : '') + '</div>';
+  if (matched.length) h += '<div class="dxip-row"><span class="dxip-lbl matched">observed</span>' + chips(matched, "matched") + '</div>';
+  if (missing.length) h += '<div class="dxip-row"><span class="dxip-lbl missing">would support</span>' + chips(missing, "missing") + '</div>';
+  if (contra.length) h += '<div class="dxip-row"><span class="dxip-lbl contra">argues against</span>' + chips(contra, "contra") + '</div>';
+  h += '<div class="dxip-foot">These are the engine\'s matched / missing / contradicting findings for the current exam — advisory only.</div>';
   h += '</div>';
   return h;
 }
