@@ -324,6 +324,122 @@ var ICD_MAP = {
   "Posterior Capsular Opacification (PCO)":
     { icd10: "H26.499", label: "Other secondary cataract, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "after-cataract / secondary cataract bucket", verified: "2026-07-04 ICD-10-CM 2026" },
   "Lens Subluxation / Dislocation":
-    { icd10: "H27.10", label: "Unspecified dislocation of lens", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", verified: "2026-07-04 ICD-10-CM 2026" }
+    { icd10: "H27.10", label: "Unspecified dislocation of lens", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", verified: "2026-07-04 ICD-10-CM 2026" },
+
+
+  /* ═══════════════════════════════════════════════════════════════ */
+  /* EXPANSION CODING 2026-07-17 (founder-requested — fill the 197     */
+  /* provisional expansion conditions that shipped without a code).    */
+  /* Every icd10 below was validated real + HIPAA-billable against     */
+  /* ICD-10-CM 2026 via the ICD-10 tool before entry; defaults use the */
+  /* unspecified-eye / unspecified-stage leaf. NEEDS_CLINICAL_REVIEW   */
+  /* on all — a valid code is not proof it is the RIGHT code for the   */
+  /* entity; the founder confirms the mapping. Done in domain batches. */
+  /* ═══════════════════════════════════════════════════════════════ */
+
+  /* ─ Refractive ─ */
+  "Anisometropic Refractive Error":
+    { icd10: "H52.31", label: "Anisometropia", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Pseudomyopia (Accommodative Spasm)":
+    { icd10: "H52.539", label: "Spasm of accommodation, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Post-Refractive-Surgery Ectasia":
+    { icd10: "H18.719", label: "Corneal ectasia, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "post-surgical ectasia coded under corneal ectasia; no procedure-specific code", verified: "2026-07-17 ICD-10-CM 2026" },
+
+  /* ─ Lens ─ */
+  "Anterior Polar Cataract":
+    { icd10: "Q12.0", label: "Congenital cataract", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "anterior polar is classically congenital; if age-related use H25.03-", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Posterior Polar Cataract":
+    { icd10: "H26.8", label: "Other specified cataract", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "no distinct posterior-polar code; if congenital use Q12.0", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Phacomorphic Angle Closure":
+    { icd10: "H40.50X0", label: "Glaucoma secondary to other eye disorders, unspecified eye, stage unspecified", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "lens-mechanism (intumescent lens); no distinct phacomorphic code", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Ectopia Lentis (Marfan)":
+    { icd10: "Q12.1", label: "Congenital displaced lens", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "code the Marfan syndrome (Q87.40-) alongside per coding rules", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Microspherophakia":
+    { icd10: "Q12.8", label: "Other congenital lens malformations", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", verified: "2026-07-17 ICD-10-CM 2026" },
+
+  /* ─ Binocular Vision ─ */
+  "Basic Exotropia":
+    { icd10: "H50.10", label: "Unspecified exotropia", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "unspecified exotropia bucket; intermittent/constant subtypes differ (H50.11-/H50.12-)", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Consecutive Exotropia":
+    { icd10: "H50.10", label: "Unspecified exotropia", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "no distinct consecutive-XT code; unspecified exotropia bucket", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Sensory Strabismus":
+    { icd10: "H50.9", label: "Unspecified strabismus", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "sensory strabismus has no distinct code; refine by deviation direction", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Decompensated Phoria":
+    { icd10: "H50.50", label: "Unspecified heterophoria", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Vertical Heterophoria":
+    { icd10: "H50.53", label: "Vertical heterophoria", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Amblyopia (Refractive)":
+    { icd10: "H53.029", label: "Refractive amblyopia, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Accommodative Esotropia":
+    { icd10: "H50.43", label: "Accommodative component in esotropia", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Convergence Paralysis":
+    { icd10: "H51.8", label: "Other specified disorders of binocular movement", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "convergence paralysis has no distinct code; convergence insufficiency is H51.11", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Duane Retraction Syndrome":
+    { icd10: "H50.811", label: "Duane's syndrome, right eye", laterality: "right (default)", status: "NEEDS_CLINICAL_REVIEW", caution: "no unspecified-eye code; set laterality per patient (H50.812 left)", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Brown Syndrome":
+    { icd10: "H50.611", label: "Brown's sheath syndrome, right eye", laterality: "right (default)", status: "NEEDS_CLINICAL_REVIEW", caution: "no unspecified-eye code; set laterality per patient (H50.612 left)", verified: "2026-07-17 ICD-10-CM 2026" },
+
+  /* ─ Glaucoma (secondary/mechanism codes; ICD-10 lacks distinct codes for
+       most named secondary glaucomas → the H40.x0X0 secondary buckets) ─ */
+  "Steroid-Induced Glaucoma":
+    { icd10: "H40.60X0", label: "Glaucoma secondary to drugs, unspecified eye, stage unspecified", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "add the causative-drug T-code per coding rules", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Angle Recession Glaucoma":
+    { icd10: "H40.30X0", label: "Glaucoma secondary to eye trauma, unspecified eye, stage unspecified", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "add the prior-trauma code per coding rules", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Juvenile Open Angle Glaucoma":
+    { icd10: "H40.89", label: "Other specified glaucoma", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "no distinct juvenile-OAG code; some code as POAG (H40.11-)", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Neovascular Glaucoma (Diabetic)":
+    { icd10: "H40.50X0", label: "Glaucoma secondary to other eye disorders, unspecified eye, stage unspecified", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "code the diabetic retinopathy etiology (E1x.39-) alongside", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Aphakic Glaucoma":
+    { icd10: "H40.50X0", label: "Glaucoma secondary to other eye disorders, unspecified eye, stage unspecified", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "aphakia-related secondary glaucoma; code aphakia (H27.0-) alongside", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Uveitis-Glaucoma-Hyphema (UGH) Syndrome":
+    { icd10: "H40.50X0", label: "Glaucoma secondary to other eye disorders, unspecified eye, stage unspecified", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "IOL-related; no distinct UGH code", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Posner-Schlossman Syndrome (Glaucomatocyclitic Crisis)":
+    { icd10: "H40.40X0", label: "Glaucoma secondary to eye inflammation, unspecified eye, stage unspecified", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "no distinct Posner-Schlossman code; inflammatory secondary glaucoma", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Iridocorneal Endothelial (ICE) Syndrome":
+    { icd10: "H40.50X0", label: "Glaucoma secondary to other eye disorders, unspecified eye, stage unspecified", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "ICE spectrum; corneal/iris component coded separately (H18.-/H21.-)", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Malignant Glaucoma (Aqueous Misdirection)":
+    { icd10: "H40.839", label: "Aqueous misdirection, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Phacolytic Glaucoma":
+    { icd10: "H40.50X0", label: "Glaucoma secondary to other eye disorders, unspecified eye, stage unspecified", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "lens-protein mechanism; code the hypermature cataract alongside", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Plateau Iris Syndrome":
+    { icd10: "H40.89", label: "Other specified glaucoma", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "plateau-iris angle-closure configuration; no distinct code", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Primary Congenital Glaucoma":
+    { icd10: "Q15.0", label: "Congenital glaucoma", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Ghost Cell Glaucoma":
+    { icd10: "H40.50X0", label: "Glaucoma secondary to other eye disorders, unspecified eye, stage unspecified", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "degenerated-RBC mechanism after vitreous hemorrhage; no distinct code", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Schwartz-Matsuo Syndrome":
+    { icd10: "H40.50X0", label: "Glaucoma secondary to other eye disorders, unspecified eye, stage unspecified", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "rhegmatogenous-RD-associated raised IOP; code the detachment alongside", verified: "2026-07-17 ICD-10-CM 2026" },
+
+  /* ─ Anterior / Uveitis ─ */
+  "Fuchs Heterochromic Uveitis":
+    { icd10: "H20.819", label: "Fuchs' heterochromic cyclitis, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Sarcoid Uveitis":
+    { icd10: "D86.83", label: "Sarcoid iridocyclitis", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "code the underlying sarcoidosis (D86.-) as principal per coding rules", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Toxoplasma Retinochoroiditis":
+    { icd10: "B58.01", label: "Toxoplasma chorioretinitis", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Sympathetic Ophthalmia":
+    { icd10: "H44.139", label: "Sympathetic uveitis, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Pars Planitis":
+    { icd10: "H30.899", label: "Other chorioretinal inflammations, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "intermediate uveitis / pars planitis; posterior-cyclitis family is H30.2-", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Posterior Scleritis":
+    { icd10: "H15.039", label: "Posterior scleritis, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Traumatic Hyphema":
+    { icd10: "H21.00", label: "Hyphema, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "code the causative trauma (S05.-) alongside", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Toxic Anterior Segment Syndrome":
+    { icd10: "H21.89", label: "Other specified disorders of iris and ciliary body", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "TASS has no distinct code; post-procedural sterile inflammation", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Vogt-Koyanagi-Harada Disease":
+    { icd10: "H30.899", label: "Other chorioretinal inflammations, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "VKH has no distinct code; panuveitis with systemic features", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Behcet Disease (Ocular)":
+    { icd10: "M35.2", label: "Behcet's disease", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "systemic code; add the ocular manifestation (H20.-/H30.-) per coding rules", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Ocular Toxocariasis":
+    { icd10: "B83.0", label: "Visceral larva migrans", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "ocular larva migrans; add chorioretinitis (H30.-) as needed", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Aniridia":
+    { icd10: "Q13.1", label: "Absence of iris", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Juvenile Idiopathic Arthritis (JIA) Uveitis":
+    { icd10: "H20.9", label: "Unspecified iridocyclitis", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "code the JIA (M08.-) alongside; typically chronic anterior uveitis (H20.1-)", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Tubulointerstitial Nephritis & Uveitis (TINU)":
+    { icd10: "H20.9", label: "Unspecified iridocyclitis", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "code the tubulointerstitial nephritis (N10-N12) alongside", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Syphilitic Uveitis":
+    { icd10: "A51.43", label: "Secondary syphilitic oculopathy", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "stage-dependent; late syphilitic oculopathy is A52.71", verified: "2026-07-17 ICD-10-CM 2026" }
 
 };
