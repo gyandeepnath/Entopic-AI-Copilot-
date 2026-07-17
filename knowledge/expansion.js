@@ -732,6 +732,23 @@ var KB_EXPANSION = [
   "con": ["itching_dominant", "gradual_onset", "reduced_vision"], "temporal": ["subacute"], "tests": [], "exclusions": [] },
 { "name": "Dacryolithiasis", "domain": "Surface & Lids", "route": "surface",
   "req": ["excess_tearing", "medial_canthus_swelling"], "sup": ["recurrent_episode", "foreign_body_sensation", "discharge", "chronic_irritation"],
-  "con": ["itching_dominant", "sudden_vision_loss", "purulent_discharge"], "temporal": ["recurrent", "chronic"], "tests": [], "exclusions": [] }
+  "con": ["itching_dominant", "sudden_vision_loss", "purulent_discharge"], "temporal": ["recurrent", "chronic"], "tests": [], "exclusions": [] },
+
+/* ═══ Batch 10 (2026-07-17) — posterior-segment tumours & vasculitis ═══ */
+{ "name": "Choroidal Osteoma", "domain": "Retina", "route": "retina",
+  "req": ["choroidal_lesion_elevated", "distortion"], "sup": ["gradual_blur", "central_scotoma", "reduced_vision", "young_age", "choroidal_folds"],
+  "con": ["pain", "redness", "itching_dominant", "flashes", "sudden_vision_loss"], "temporal": ["chronic", "progressive"], "tests": ["choroidal_lesion_elevated"], "exclusions": [] },
+{ "name": "Sclerochoroidal Calcification", "domain": "Retina", "route": "retina",
+  "req": ["choroidal_lesion_elevated", "older_age"], "sup": ["reduced_vision", "gradual_blur", "field_loss", "choroidal_folds"],
+  "con": ["pain", "redness", "itching_dominant", "sudden_vision_loss", "distortion"], "temporal": ["chronic"], "tests": ["choroidal_lesion_elevated"], "exclusions": [] },
+{ "name": "Retinal Cavernous Hemangioma", "domain": "Retina", "route": "retina",
+  "req": ["sectoral_hemorrhage", "floaters"], "sup": ["reduced_vision", "vitreous_hemorrhage", "young_age", "field_loss"],
+  "con": ["pain", "redness", "itching_dominant", "gradual_blur", "photophobia"], "temporal": ["chronic"], "tests": [], "exclusions": [] },
+{ "name": "Frosted Branch Angiitis", "domain": "Retina", "route": "retina",
+  "req": ["vitreous_cells", "reduced_vision"], "sup": ["floaters", "flame_hemorrhages", "sectoral_hemorrhage", "field_loss"],
+  "con": ["itching_dominant", "gradual_onset", "older_age", "gradual_blur"], "temporal": ["acute", "subacute"], "tests": [], "exclusions": [] },
+{ "name": "Bietti Crystalline Dystrophy", "domain": "Retina", "route": "retina",
+  "req": ["night_blindness", "central_scotoma"], "sup": ["glare", "reduced_vision", "field_loss", "gradual_blur"],
+  "con": ["pain", "redness", "sudden_vision_loss", "distortion", "itching_dominant"], "temporal": ["chronic", "progressive"], "tests": [], "exclusions": [] }
 
 ];

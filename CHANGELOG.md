@@ -6,6 +6,23 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-07-17 — Session 10k: KB expansion batch 10 (posterior-segment tumours & vasculitis)
+
+Continued the knowledge base, following the full authoring standard (engine
+inputs + ICD + hand-written note, all in lock-step). Added 5 new conditions:
+**Choroidal Osteoma, Sclerochoroidal Calcification, Retinal Cavernous Hemangioma,
+Frosted Branch Angiitis, Bietti Crystalline Dystrophy** — each anchored on
+distinct, reachable exam tokens so it surfaces on its own evidence without
+cross-conflict.
+
+Each shipped complete: reachable req tokens + rule-out power (kb-expansion +
+cross-conflict gates green), a validated real+billable ICD-10 code, and a
+hand-written qualitative note (review-flagged). KB now **339 conditions**, all
+coded and all with authored notes (0 missing). 178/178 tests pass; boots clean;
+cross-conflict at baseline.
+
+---
+
 ## 2026-07-17 — Session 10j: EVERY condition now has a hand-written note (334/334)
 
 **Founder ask:** "each and every condition must have that [note/paragraph] and

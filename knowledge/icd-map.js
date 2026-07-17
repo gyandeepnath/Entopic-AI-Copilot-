@@ -764,6 +764,18 @@ var ICD_MAP = {
   "Conjunctival Pyogenic Granuloma":
     { icd10: "H11.89", label: "Other specified disorders of conjunctiva", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "lobular capillary haemangioma; typically follows a chalazion, surgery or trauma", verified: "2026-07-17 ICD-10-CM 2026" },
   "Dacryolithiasis":
-    { icd10: "H04.519", label: "Dacryolith of unspecified lacrimal passage", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "lacrimal stone; causes intermittent epiphora and can precipitate acute dacryocystitis", verified: "2026-07-17 ICD-10-CM 2026" }
+    { icd10: "H04.519", label: "Dacryolith of unspecified lacrimal passage", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "lacrimal stone; causes intermittent epiphora and can precipitate acute dacryocystitis", verified: "2026-07-17 ICD-10-CM 2026" },
+
+  /* ─ Batch 10 (posterior-segment tumours & vasculitis) ─ */
+  "Choroidal Osteoma":
+    { icd10: "D31.30", label: "Benign neoplasm of unspecified choroid", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "ossifying benign choroidal tumour; no osteoma-specific code", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Sclerochoroidal Calcification":
+    { icd10: "H31.8", label: "Other specified disorders of choroid", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "benign calcium deposits; exclude metabolic (calcium/phosphate) causes", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Retinal Cavernous Hemangioma":
+    { icd10: "D31.20", label: "Benign neoplasm of unspecified retina", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "benign vascular hamartoma; may be part of a neuro-oculo-cutaneous syndrome", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Frosted Branch Angiitis":
+    { icd10: "H35.069", label: "Retinal vasculitis, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "fulminant retinal vasculitis; often viral/immune-mediated — code the cause where known", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Bietti Crystalline Dystrophy":
+    { icd10: "H35.50", label: "Unspecified hereditary retinal dystrophy", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "crystalline retinopathy; no Bietti-specific code", verified: "2026-07-17 ICD-10-CM 2026" }
 
 };

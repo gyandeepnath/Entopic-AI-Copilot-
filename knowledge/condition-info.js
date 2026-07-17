@@ -3410,6 +3410,58 @@ var CONDITION_INFO = {
       "Needs urgent intravenous antibiotics and combined ophthalmology/ENT care."
     ],
     review: true
+  },
+
+  /* ═══ Batch 10 — new conditions (Session 10k) ═══ */
+
+  "Choroidal Osteoma": {
+    summary: "A rare benign tumour of mature bone within the choroid, typically near the optic disc or macula in young women. It is often asymptomatic but causes gradual blurring, distortion or a scotoma if it involves the macula or is complicated by fluid or choroidal neovascularisation.",
+    facts: [
+      "A yellow-white, well-defined juxtapapillary/macular lesion; ultrasound shows a highly reflective calcified plaque with shadowing.",
+      "Vision is threatened mainly by overlying fluid, atrophy or secondary CNV rather than the mass itself.",
+      "Usually unilateral and slowly growing; distinguished from amelanotic melanoma and other choroidal lesions by imaging."
+    ],
+    review: true
+  },
+
+  "Sclerochoroidal Calcification": {
+    summary: "Benign deposits of calcium at the level of the sclera/choroid, usually an incidental finding in older adults, appearing as yellow-white sub-retinal placoid lesions in the mid-periphery. Vision is typically unaffected.",
+    facts: [
+      "Often bilateral and asymptomatic, found on routine examination or imaging.",
+      "Most cases are idiopathic, but consider a metabolic cause (abnormal calcium/phosphate, e.g. Bartter/Gitelman) especially when extensive.",
+      "Imaging (ultrasound/OCT) helps distinguish it from a choroidal tumour or metastasis."
+    ],
+    review: true
+  },
+
+  "Retinal Cavernous Hemangioma": {
+    summary: "A benign vascular hamartoma of the retina — a cluster of thin-walled, grape-like ('cluster of grapes') aneurysmal saccules, often with a plasma-red cell interface. It is usually asymptomatic but can cause floaters or vision loss from vitreous haemorrhage.",
+    facts: [
+      "The 'cluster of grapes' appearance with fluorescein plasma-erythrocyte layering is characteristic.",
+      "Usually sporadic and unilateral, but can be part of a neuro-oculo-cutaneous syndrome — consider skin/CNS lesions.",
+      "Generally stable; intervention is reserved for recurrent haemorrhage."
+    ],
+    review: true
+  },
+
+  "Frosted Branch Angiitis": {
+    summary: "A dramatic, usually bilateral retinal vasculitis in which the vessels are sheathed by thick white perivascular exudate resembling frost on branches. It causes sudden floaters and vision loss, often after a viral illness or as part of a systemic/infective process.",
+    facts: [
+      "The striking, widespread white vascular sheathing is the hallmark; it can be primary (often young, post-viral) or secondary.",
+      "Work up for infective and inflammatory causes (including CMV in the immunocompromised) before/alongside immunosuppression.",
+      "Often responds well to treatment of the cause plus steroids, with good visual recovery in the primary form."
+    ],
+    review: true
+  },
+
+  "Bietti Crystalline Dystrophy": {
+    summary: "A rare inherited retinal dystrophy in which glistening yellow-white crystals deposit in the retina (and sometimes cornea), with progressive chorioretinal atrophy. It causes night blindness, reduced central vision and constricting fields, usually starting in early adulthood.",
+    facts: [
+      "Tiny sparkling retinal crystals with progressive RPE/choroidal atrophy are characteristic.",
+      "Autosomal recessive (CYP4V2) — a lipid-metabolism defect; relevant for family counselling.",
+      "The ERG declines over time; distinguished from other crystalline retinopathies (drug-induced, oxalosis) by the pattern and genetics."
+    ],
+    review: true
   }
 
 };
