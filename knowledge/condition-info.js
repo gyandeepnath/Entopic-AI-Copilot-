@@ -1344,6 +1344,138 @@ var CONDITION_INFO = {
       "Patients often bump into things on the affected side; formal fields confirm and map it."
     ],
     review: true
+  },
+
+  /* ═══ Neuro-Ophthalmic — batch B (Session 10h) ═══ */
+
+  "Orbital Blowout Fracture": {
+    summary: "A fracture of the thin orbital floor (or medial wall) from blunt trauma, which can trap the inferior rectus and orbital tissue. It causes vertical double vision, restricted upgaze, cheek numbness (infraorbital) and later enophthalmos.",
+    facts: [
+      "Vertical diplopia with limited upgaze after a blunt injury suggests muscle entrapment.",
+      "In children a 'trapdoor' fracture with entrapment can look deceptively normal but is a surgical urgency (with a marked oculo-cardiac reflex).",
+      "Always examine the whole eye for associated globe injury and infraorbital numbness."
+    ],
+    review: true
+  },
+
+  "Traumatic Optic Neuropathy": {
+    summary: "Damage to the optic nerve from head or orbital trauma, typically indirect force transmitted to the canalicular nerve. It causes sudden vision loss with a relative afferent pupillary defect, often with an initially normal-looking disc.",
+    facts: [
+      "A relative afferent pupillary defect after trauma is the crucial sign — the disc may look normal at first.",
+      "Vision loss may be immediate or progressive; imaging assesses the canal and excludes a compressive haematoma.",
+      "Occurs in the context of significant trauma, so manage the whole injured patient."
+    ],
+    review: true
+  },
+
+  "Traumatic Mydriasis": {
+    summary: "A dilated, poorly reactive pupil after blunt ocular trauma from tearing of the iris sphincter. It causes glare and difficulty focusing, and the pupil may be irregular with visible sphincter tears.",
+    facts: [
+      "A history of blunt trauma and an irregular pupil margin distinguish it from a neurological cause.",
+      "Often accompanies other blunt-injury findings (hyphema, angle recession, commotio) — examine thoroughly.",
+      "The dilation may be permanent if the sphincter is significantly torn."
+    ],
+    review: true
+  },
+
+  "Giant Cell Arteritis (Occult / Systemic)": {
+    summary: "Giant cell arteritis presenting with systemic features (headache, jaw claudication, scalp tenderness, polymyalgia, weight loss, fever) with or without overt visual loss. Even without current visual symptoms, the eye is at imminent risk.",
+    facts: [
+      "A medical emergency in the over-50s — raised ESR/CRP and typical symptoms justify starting steroids immediately.",
+      "Vision can be lost suddenly and irreversibly, and the fellow eye follows quickly if untreated.",
+      "Temporal-artery biopsy confirms but must not delay treatment."
+    ],
+    review: true
+  },
+
+  "Acquired Pendular Nystagmus": {
+    summary: "A nystagmus with smooth, to-and-fro (pendular) oscillations of roughly equal speed in each direction, acquired later in life. It causes troublesome oscillopsia and blurred vision and usually reflects brainstem/cerebellar or demyelinating disease.",
+    facts: [
+      "Acquired (as opposed to congenital) pendular nystagmus warrants neuroimaging for a central cause.",
+      "Commonly associated with demyelination and with the syndrome of oculopalatal tremor.",
+      "Oscillopsia is the dominant, disabling symptom."
+    ],
+    review: true
+  },
+
+  "Spasmus Nutans": {
+    summary: "A benign triad of infancy — fine, rapid, often asymmetric nystagmus, head nodding and a head turn/tilt — that typically appears in the first year and resolves in early childhood. It is usually harmless but can be mimicked by serious pathology.",
+    facts: [
+      "A monocular or very asymmetric infantile nystagmus must be imaged to exclude a chiasmal/optic-pathway glioma.",
+      "The characteristic head nodding and turn accompany the nystagmus.",
+      "Genuine spasmus nutans is self-limiting, resolving over months to a few years."
+    ],
+    review: true
+  },
+
+  "Superior Oblique Myokymia": {
+    summary: "A benign disorder in which spontaneous, brief bursts of contraction of the superior oblique muscle cause monocular, torsional/vertical micro-oscillations. Patients describe intermittent shimmering, tremulous vision or transient double vision in one eye.",
+    facts: [
+      "The oscillopsia is monocular and torsional — a distinctive symptom.",
+      "Episodes are brief and intermittent; the eye looks normal between them.",
+      "Usually benign, though a subset are attributed to neurovascular contact of the fourth nerve."
+    ],
+    review: true
+  },
+
+  "Carotid-Cavernous Fistula": {
+    summary: "An abnormal communication between the carotid arterial system and the cavernous sinus, raising venous pressure in the orbit. It causes a red eye with dilated, tortuous 'corkscrew' episcleral vessels, proptosis, a bruit, raised intraocular pressure and sometimes diplopia.",
+    facts: [
+      "Dilated corkscrew conjunctival/episcleral vessels with raised IOP and proptosis are the classic triad — think of it in an unexplained chronic red eye.",
+      "High-flow (direct) fistulae often follow trauma; low-flow (dural) ones arise spontaneously in older patients.",
+      "Vision can be threatened by raised pressure or venous congestion, so it needs neuro-vascular assessment."
+    ],
+    review: true
+  },
+
+  "Neuroretinitis": {
+    summary: "Inflammation involving the optic disc and the peripapillary retina, producing disc swelling with a fan/star of hard exudate at the macula. It causes subacute painless central vision loss, often after a viral illness or an animal (cat) contact.",
+    facts: [
+      "The macular star may appear a week or two after the disc swelling — timing matters for recognition.",
+      "Cat-scratch disease (Bartonella) is a classic cause worth asking about.",
+      "Usually has a good visual prognosis and, unlike typical optic neuritis, is not itself a strong MS marker."
+    ],
+    review: true
+  },
+
+  "Papillophlebitis": {
+    summary: "A benign optic-disc vasculitis of young, otherwise healthy adults — essentially a mild, non-ischaemic central retinal venous congestion. It causes mild blur or an enlarged blind spot with disc swelling and dilated veins, and usually resolves with good vision.",
+    facts: [
+      "A diagnosis of exclusion in a young patient — distinguish it from a true ischaemic vein occlusion and from papilloedema.",
+      "Generally has a good prognosis with spontaneous recovery.",
+      "Assess for the (uncommon) associated systemic hypercoagulable or inflammatory conditions."
+    ],
+    review: true
+  },
+
+  "Tolosa-Hunt Syndrome": {
+    summary: "A granulomatous inflammation of the cavernous sinus/superior orbital fissure causing painful ophthalmoplegia — a severe peri-orbital ache with palsies of the nerves running through the sinus (III, IV, VI and V1). It is a diagnosis of exclusion that responds to steroids.",
+    facts: [
+      "Painful ophthalmoplegia warrants imaging to exclude a compressive, vascular or neoplastic cause first.",
+      "A dramatic response to corticosteroids supports the diagnosis.",
+      "It can recur and may involve either side over time."
+    ],
+    review: true
+  },
+
+  "Cavernous Sinus Thrombosis": {
+    summary: "Thrombosis of the cavernous sinus, most often from spreading facial or paranasal-sinus infection. It causes a rapidly progressive painful red eye with proptosis, chemosis, ophthalmoplegia and reduced vision, often with fever and systemic upset.",
+    facts: [
+      "A life-threatening emergency — urgent imaging, systemic antibiotics/anticoagulation and admission are required.",
+      "Signs can become bilateral as thrombus spreads across the sinus — a key warning feature.",
+      "Look for the source (a facial 'danger triangle' infection, sinusitis, dental focus)."
+    ],
+    review: true
+  },
+
+  "Infantile (Congenital) Nystagmus": {
+    summary: "A nystagmus that appears in the first months of life, typically horizontal, conjugate and worsening with fixation but damping at a 'null' point and on convergence. Oscillopsia is usually absent, and there may be an associated head turn.",
+    facts: [
+      "A null zone (a gaze position where the nystagmus quietens) often drives a compensatory head posture.",
+      "May be idiopathic or a sign of an underlying sensory visual deficit (e.g. albinism, retinal dystrophy) — examine for one.",
+      "Unlike acquired nystagmus, oscillopsia is characteristically absent."
+    ],
+    review: true
   }
 
 };

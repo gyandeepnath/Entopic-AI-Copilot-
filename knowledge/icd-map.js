@@ -654,6 +654,34 @@ var ICD_MAP = {
   "Convergence-Retraction Nystagmus (Dorsal Midbrain)":
     { icd10: "H55.09", label: "Other forms of nystagmus", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "dorsal midbrain (Parinaud) syndrome; image the midbrain/pineal region", verified: "2026-07-17 ICD-10-CM 2026" },
   "Hemianopic Field Loss (Occipital Stroke)":
-    { icd10: "H53.469", label: "Homonymous bilateral field defects, unspecified side", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "code the underlying occipital stroke (I63.-) as principal", verified: "2026-07-17 ICD-10-CM 2026" }
+    { icd10: "H53.469", label: "Homonymous bilateral field defects, unspecified side", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "code the underlying occipital stroke (I63.-) as principal", verified: "2026-07-17 ICD-10-CM 2026" },
+
+  /* ─ Neuro-Ophthalmic (batch B) ─ */
+  "Orbital Blowout Fracture":
+    { icd10: "S02.30XA", label: "Fracture of orbital floor, unspecified side, initial encounter", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "7th char A = initial; set laterality; assess for muscle entrapment / diplopia / enophthalmos", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Traumatic Optic Neuropathy":
+    { icd10: "S04.019A", label: "Injury of optic nerve, unspecified eye, initial encounter", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "7th char A = initial; set laterality; an RAPD after head/orbital trauma is the key sign", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Traumatic Mydriasis":
+    { icd10: "H57.04", label: "Mydriasis", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "traumatic iris sphincter tear; also code the ocular injury (S05.-)", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Giant Cell Arteritis (Occult / Systemic)":
+    { icd10: "M31.6", label: "Other giant cell arteritis", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "occult/systemic GCA (may threaten the eye without prior visual symptoms); PMR variant is M31.5", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Acquired Pendular Nystagmus":
+    { icd10: "H55.09", label: "Other forms of nystagmus", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "acquired pendular nystagmus; often demyelinating/brainstem — image and look for oscillopsia", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Spasmus Nutans":
+    { icd10: "H55.09", label: "Other forms of nystagmus", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "spasmus nutans triad (nystagmus, head nodding, torticollis); exclude chiasmal/optic glioma with imaging", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Superior Oblique Myokymia":
+    { icd10: "H55.89", label: "Other irregular eye movements", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "superior oblique myokymia; monocular torsional oscillopsia", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Carotid-Cavernous Fistula":
+    { icd10: "I77.0", label: "Arteriovenous fistula, acquired", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "CCF; code the ocular manifestations (raised IOP, dilated episcleral veins, proptosis); direct vs dural", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Neuroretinitis":
+    { icd10: "H46.9", label: "Unspecified optic neuritis", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "neuroretinitis (disc swelling + macular star); often infectious (e.g. Bartonella cat-scratch)", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Papillophlebitis":
+    { icd10: "H47.099", label: "Other disorders of optic nerve, not elsewhere classified, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "papillophlebitis / optic-disc vasculitis in the young (incipient non-ischaemic CRVO variant)", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Tolosa-Hunt Syndrome":
+    { icd10: "H05.119", label: "Granuloma of unspecified orbit", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "Tolosa-Hunt: granulomatous cavernous-sinus / superior-orbital-fissure inflammation; no distinct code", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Cavernous Sinus Thrombosis":
+    { icd10: "G08", label: "Intracranial and intraspinal phlebitis and thrombophlebitis", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "life-threatening; septic (often sinus/facial infection) vs aseptic — code the source", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Infantile (Congenital) Nystagmus":
+    { icd10: "H55.01", label: "Congenital nystagmus", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", verified: "2026-07-17 ICD-10-CM 2026" }
 
 };

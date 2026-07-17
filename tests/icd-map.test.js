@@ -43,12 +43,20 @@ const isExpansion = (c) => EXPANSION_NAMES.has(c.name);
    3-char billable (none in our map today, so require the dot form). */
 const ICD_RE = /^[A-TV-Z][0-9][0-9A-Z](\.[0-9A-Z]{1,4})?$/;
 
+/* The handful of 3-character codes in the map that ARE valid billable leaves
+   with no further subdivision (verified via the ICD-10 tool at authoring time).
+   These legitimately have no dot, so they are exempt from the dot heuristic. */
+const BILLABLE_3CHAR = new Set(["G08"]);
+
 test("every ICD entry is well-formed and looks billable (not a bare header)", () => {
   const bad = [];
   for (const [name, e] of Object.entries(ICD_MAP)) {
     if (!ICD_RE.test(e.icd10)) bad.push(`${name}: malformed "${e.icd10}"`);
-    /* our defaults are all sub-category leaves → must contain a dot */
-    if (e.icd10.indexOf(".") === -1) bad.push(`${name}: "${e.icd10}" is a category header, not billable`);
+    /* defaults are sub-category leaves (contain a dot); the only dotless codes
+       allowed are the verified 3-char billable leaves above. */
+    if (e.icd10.indexOf(".") === -1 && !BILLABLE_3CHAR.has(e.icd10)) {
+      bad.push(`${name}: "${e.icd10}" is a category header, not billable`);
+    }
   }
   assert.deepStrictEqual(bad, []);
 });
