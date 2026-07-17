@@ -81,12 +81,28 @@ test("EVERY KB condition resolves to non-empty content (authored or derived)", (
   assert.deepStrictEqual(empty, [], "conditions with no resolvable content: " + empty.slice(0, 10).join(", "));
 });
 
-test("resolveConditionInfo is authored for the curated set, derived otherwise", () => {
+test("EVERY KB condition has a hand-authored note (none left on the derived fallback)", () => {
+  /* Founder requirement: every single condition must have its own written
+     paragraph — none left out. This locks that in: a newly added condition must
+     ship with a CONDITION_INFO entry (the derived profile is only a safety net). */
+  const missing = KB.filter((c) => !CONDITION_INFO[c.name]).map((c) => c.name);
+  assert.strictEqual(missing.length, 0, "conditions still missing a hand-authored note (" + missing.length + "): " + missing.slice(0, 15).join(", "));
+});
+
+test("resolveConditionInfo returns authored content for known conditions", () => {
   const authored = resolveConditionInfo("Anterior Uveitis (Acute)", findCond, prettify);
   assert.strictEqual(authored.kind, "authored");
-  const derived = KB.find((c) => !CONDITION_INFO[c.name]);
-  const d = resolveConditionInfo(derived.name, findCond, prettify);
-  assert.strictEqual(d.kind, "derived", derived.name + " should be derived");
+});
+
+test("derived fallback still works for a future condition without a written note", () => {
+  /* Every current KB condition is now hand-authored, but the derived-profile
+     fallback must keep working so a NEWLY added condition (before someone writes
+     its note) still shows real, non-fabricated content built from its tokens. */
+  const synthetic = { name: "Synthetic Test Condition", _domain: "Retina", route: "retina", req: ["gradual_blur"], sup: ["glare"], con: ["pain"], tests: [], icd: "" };
+  const findSynthetic = (n) => (n === synthetic.name ? synthetic : findCond(n));
+  const d = resolveConditionInfo(synthetic.name, findSynthetic, prettify);
+  assert.strictEqual(d.kind, "derived", "an unauthored condition falls back to a derived profile");
+  assert.ok(d.summary.indexOf("Synthetic Test Condition is") === 0);
   assert.ok(d.facts.length >= 1, "derived profile has facts");
 });
 

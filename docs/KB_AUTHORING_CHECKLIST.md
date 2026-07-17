@@ -35,18 +35,17 @@ this doc is the human-readable contract, and the tests are the teeth.
 
 ## 2. "About" content (so the clinician gets a reference)
 
-- [ ] **Every condition resolves to About content — automatically.** If you don't
-      hand-write a summary, the toggle derives one from the condition's own
-      `req`/`sup`/`con`/ICD (see `knowledge/condition-info.js` →
-      `buildConditionProfile`). So "About" is never blank. *Enforced:*
-      `condition-info` ("EVERY KB condition resolves to non-empty content") and
-      `kb-expansion` ("every expansion condition ships About content tied to its
-      engine inputs").
-- [ ] **Hand-author a richer `CONDITION_INFO` entry for common / high-impact
-      conditions** (the bread-and-butter a clinician meets often). Keep it
-      **qualitative** — *no* invented statistics, thresholds, doses, ICD codes, or
-      citations — and set `review: true` until the founder verifies it.
-      *Enforced:* `condition-info` (shape, provisional flag, no-figures guard).
+- [ ] **Hand-author a `CONDITION_INFO` note for EVERY new condition — none left
+      out** (founder requirement). Write a short qualitative paragraph + a few key
+      facts. Keep it **qualitative** — *no* invented statistics, thresholds, doses,
+      ICD codes, or citations — and set `review: true` until the founder verifies
+      it. *Enforced:* `condition-info` ("EVERY KB condition has a hand-authored
+      note (none left on the derived fallback)").
+- [ ] **The derived profile is only a safety net.** If a note is somehow missing,
+      the toggle still shows a profile auto-derived from the condition's own
+      `req`/`sup`/`con`/ICD (`knowledge/condition-info.js` →
+      `buildConditionProfile`), so "About" is never blank — but every shipped
+      condition must carry a real hand-written note per the rule above.
 - [ ] **About stays tied to the engine.** Because the derived profile is built
       from the same tokens the engine scores on, and the advisory panel's "In this
       patient" block is built from the engine's live evidence trail, the reference

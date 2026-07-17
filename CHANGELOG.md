@@ -6,6 +6,35 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-07-17 — Session 10j: EVERY condition now has a hand-written note (334/334)
+
+**Founder ask:** "each and every condition must have that [note/paragraph] and
+feed to the engine — no condition should be left out."
+
+Wrote hand-authored `CONDITION_INFO` notes for the remaining 153 conditions that
+had only the auto-derived profile — across Lens, Refractive, Glaucoma, Retina,
+Neuro-Ophthalmic, Anterior/Uveitis, Binocular Vision, Cornea and Surface & Lids.
+
+### 🏁 Milestone: 100% authored coverage
+- **All 334 conditions now carry a hand-written qualitative note** (summary + key
+  facts), up from 31 at the start of this arc. No invented statistics, doses or
+  citations; every one `review: true` pending founder verification.
+- **How it feeds the engine (guardrail intact):** each note is surfaced by the
+  engine's advisory panel via the "About this condition" toggle, which also
+  appends the live **"In this patient"** block (the engine's own matched / missing
+  / contradicting evidence for the current exam). The connection is
+  engine→display only — reference prose still never feeds scoring, so diagnosis
+  stays deterministic and inspectable.
+- **Locked in:** new test `condition-info` → "EVERY KB condition has a
+  hand-authored note (none left on the derived fallback)" fails the build if any
+  future condition ships without one. The derived profile remains only as a
+  safety net (still unit-tested via a synthetic condition). `KB_AUTHORING_CHECKLIST`
+  updated to require a hand-written note for every new condition.
+
+178/178 tests pass; app boots clean (334 notes loaded); red-flag alerts intact.
+
+---
+
 ## 2026-07-17 — Session 10i: Surface & Lids COMPLETE — expansion fully coded + summarised
 
 Finished the last domain. All 31 Surface & Lids expansion conditions done on both

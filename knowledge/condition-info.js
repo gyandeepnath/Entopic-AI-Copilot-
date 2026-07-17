@@ -3208,6 +3208,208 @@ var CONDITION_INFO = {
       "Address the cause (e.g. the palsy or the proptosis) as well as protecting the surface."
     ],
     review: true
+  },
+
+  /* ═══ Surface & Lids (curated) — Session 10j (completes all 334) ═══ */
+
+  "Blepharitis - Posterior (MGD)": {
+    summary: "Chronic inflammation of the posterior lid margin from meibomian gland dysfunction, where the oil glands become blocked and their secretions thick and turbid. It destabilises the tear film, causing burning, grittiness, fluctuating vision and recurrent styes/chalazia.",
+    facts: [
+      "Look for capped, plugged gland orifices and thickened, toothpaste-like expressed secretions.",
+      "The leading cause of evaporative dry eye; strongly linked to rosacea.",
+      "A control-not-cure condition managed with warm compresses, lid hygiene and gland expression."
+    ],
+    review: true
+  },
+
+  "Demodex Blepharitis": {
+    summary: "Lid-margin inflammation associated with Demodex mites living in the lash follicles and glands. It causes itching (especially in the morning), irritation and lash problems, with characteristic cylindrical dandruff (collarettes) cuffing the lash bases.",
+    facts: [
+      "Cylindrical collarettes at the lash roots are the hallmark sign.",
+      "Itching is often prominent; the mites are commoner with age.",
+      "Tea-tree-oil-based lid treatments target the mites; standard lid hygiene alone is often insufficient."
+    ],
+    review: true
+  },
+
+  "Vernal Keratoconjunctivitis": {
+    summary: "A severe, chronic, seasonally recurrent allergic eye disease of children and young people (often boys in warm climates). It causes intense itching, photophobia, ropey discharge and thick upper-tarsal 'cobblestone' papillae, and can threaten the cornea with shield ulcers.",
+    facts: [
+      "More severe than ordinary allergic conjunctivitis — corneal involvement (shield ulcer) is sight-threatening.",
+      "Giant cobblestone papillae on the upper tarsus and/or limbal Horner-Trantas dots are characteristic.",
+      "Often outgrown after puberty, but active disease needs proper anti-inflammatory control."
+    ],
+    review: true
+  },
+
+  "Atopic Keratoconjunctivitis": {
+    summary: "A chronic, bilateral allergic surface disease in adults with atopic dermatitis, involving the lids, conjunctiva and cornea. It causes persistent itching, burning, redness and a thickened, scarring conjunctiva, and carries risks of keratoconus, cataract and surface failure.",
+    facts: [
+      "Occurs on a background of atopic dermatitis, often with eczematous, thickened lids.",
+      "Unlike the seasonal vernal form, it is perennial and persists into adulthood.",
+      "Chronic disease can cause conjunctival scarring, corneal vascularisation and secondary infection."
+    ],
+    review: true
+  },
+
+  "Pinguecula": {
+    summary: "A common, benign yellowish-white deposit of degenerated tissue on the bulbar conjunctiva, usually nasally, related to sun, wind and dust exposure. It is typically asymptomatic but can become inflamed (pingueculitis) and irritated.",
+    facts: [
+      "It sits on the conjunctiva and does not cross onto the cornea — distinguishing it from a pterygium.",
+      "Usually needs only reassurance and lubrication; UV protection slows progression.",
+      "When inflamed it can be red and gritty, settling with lubricants or a short anti-inflammatory course."
+    ],
+    review: true
+  },
+
+  "Conjunctival Cyst": {
+    summary: "A thin-walled, fluid-filled cyst of the conjunctiva, either developmental or arising after inflammation or surgery. It appears as a clear, dome-shaped swelling that may cause a foreign-body sensation or a cosmetic concern.",
+    facts: [
+      "A translucent, fluid-filled bleb that transilluminates is typical and benign.",
+      "Many are asymptomatic and simply monitored.",
+      "Symptomatic or enlarging cysts can be drained or excised."
+    ],
+    review: true
+  },
+
+  "Contact Lens Intolerance": {
+    summary: "A progressive inability to wear contact lenses comfortably, from a combination of dryness, hypoxia, deposits, allergy or an ill-fitting lens. It causes end-of-day discomfort, redness, blurring and a shortening tolerable wearing time.",
+    facts: [
+      "Usually multifactorial — assess the tear film, lens fit, material, hygiene and any giant papillary reaction.",
+      "Rule out infective or inflammatory keratitis in any painful red eye before attributing symptoms to intolerance.",
+      "Often improved by changing lens type/material, wear schedule and managing dry eye."
+    ],
+    review: true
+  },
+
+  "Angular Blepharitis": {
+    summary: "Inflammation concentrated at the outer (and sometimes inner) corners of the eyelids, often from Moraxella or staphylococcal infection. It causes red, macerated, cracked skin at the lid angles with irritation and sometimes an associated conjunctivitis.",
+    facts: [
+      "The localisation to the lid angles (canthi) is the distinguishing feature.",
+      "Moraxella is a classic cause of the macerated angular appearance.",
+      "Responds to targeted antibiotic treatment plus lid hygiene."
+    ],
+    review: true
+  },
+
+  "Preseptal Cellulitis": {
+    summary: "Infection of the eyelid and periocular soft tissue anterior to the orbital septum, causing a red, swollen, tender lid — but with normal eye movements, normal vision and no proptosis. Distinguishing it from orbital cellulitis is the critical task.",
+    facts: [
+      "Normal eye movements, vision and pupil, without proptosis, point to preseptal (not orbital) disease.",
+      "Any restriction of eye movement, proptosis, or reduced/altered vision means orbital cellulitis — an emergency.",
+      "Often follows local skin breaks, styes or sinus/upper-respiratory infection."
+    ],
+    review: true
+  },
+
+  "Dacryocystitis": {
+    summary: "Infection of the lacrimal sac, usually behind a blocked nasolacrimal duct, presenting as a painful, red, tender swelling just below the inner canthus with watering and discharge. Pressure over the sac may express pus from the punctum.",
+    facts: [
+      "The tender swelling is below the medial canthal tendon — a swelling above it suggests something else.",
+      "Acute cases need antibiotics; recurrent disease usually needs surgery (dacryocystorhinostomy) to bypass the blockage.",
+      "In neonates it can be serious and needs urgent attention."
+    ],
+    review: true
+  },
+
+  "Epiphora (Lacrimal Obstruction)": {
+    summary: "Watering of the eye due to impaired tear drainage anywhere along the lacrimal pathway (punctum, canaliculus, sac or nasolacrimal duct). It causes a constantly wet eye with tears spilling onto the cheek and secondary skin irritation.",
+    facts: [
+      "Distinguish a drainage problem (true overflow) from reflex watering driven by a dry, irritated surface.",
+      "Syringing and probing localise the level of obstruction.",
+      "Treatment depends on the site — from punctal procedures to dacryocystorhinostomy for duct obstruction."
+    ],
+    review: true
+  },
+
+  "Conjunctival Foreign Body": {
+    summary: "A foreign particle lodged on the conjunctiva, commonly under the upper lid, causing a sharp foreign-body sensation, watering and redness that worsen with blinking. Sub-tarsal foreign bodies can leave vertical corneal scratch marks.",
+    facts: [
+      "Always evert the upper lid — sub-tarsal foreign bodies are easily missed and cause linear corneal abrasions.",
+      "Consider a high-velocity mechanism and the possibility of penetration/intraocular foreign body.",
+      "Removal usually gives immediate relief; check the cornea afterwards."
+    ],
+    review: true
+  },
+
+  "Exposure Keratopathy (Surface Related)": {
+    summary: "Drying and breakdown of the corneal surface because the lids cannot adequately cover and lubricate it (from lagophthalmos, proptosis, ectropion or poor blink). It causes irritation, redness and inferior corneal staining, progressing to ulceration if unchecked.",
+    facts: [
+      "The damage is typically in the lower exposed zone — assess lid closure and Bell's phenomenon.",
+      "Intensive lubrication and mechanical protection (taping, moisture chambers) prevent progression.",
+      "Correcting the underlying lid/orbit problem is the definitive step."
+    ],
+    review: true
+  },
+
+  "Lagophthalmos": {
+    summary: "Incomplete eyelid closure, so the eye cannot fully shut — from facial-nerve palsy, lid scarring/retraction, proptosis or during sleep (nocturnal). The exposed cornea dries, causing irritation and risking exposure keratopathy and ulceration.",
+    facts: [
+      "Assess the size of the closure gap and whether Bell's phenomenon protects the cornea.",
+      "Nocturnal lagophthalmos is an under-recognised cause of morning irritation.",
+      "Protect the surface (lubricants, taping) while addressing the underlying cause."
+    ],
+    review: true
+  },
+
+  "Madarosis": {
+    summary: "Loss of eyelashes (and sometimes eyebrow hair), which is a sign rather than a diagnosis. Causes range from chronic blepharitis and trauma/rubbing to lid tumours, systemic disease and dermatological conditions.",
+    facts: [
+      "Localised lash loss over a lid lesion should raise concern about a lid malignancy (e.g. sebaceous carcinoma).",
+      "Diffuse loss may reflect chronic blepharitis or systemic/dermatological disease.",
+      "The pattern and associated findings guide the search for a cause."
+    ],
+    review: true
+  },
+
+  "Trichiasis": {
+    summary: "Misdirected eyelashes that turn back and rub against the ocular surface, while the lid itself is in a normal position (unlike entropion). It causes a chronic foreign-body sensation, watering, redness and, if persistent, corneal abrasion and scarring.",
+    facts: [
+      "The lid margin is correctly positioned but individual lashes point inward — distinguishing it from entropion.",
+      "Common after chronic lid inflammation and scarring (including trachoma).",
+      "Managed by epilation, or more durably by electrolysis/cryotherapy for recurrent lashes."
+    ],
+    review: true
+  },
+
+  "Entropion": {
+    summary: "Inward turning of the eyelid margin so the lashes and lid skin rub against the eye. Usually age-related (involutional) in the lower lid, or cicatricial from conjunctival scarring, it causes irritation, watering, redness and risk of corneal damage.",
+    facts: [
+      "The whole lid margin is rotated inward (unlike trichiasis, where only lashes are misdirected).",
+      "Involutional entropion may evert temporarily but recurs; cicatricial entropion reflects underlying scarring disease.",
+      "Taping gives temporary relief; surgery provides a lasting correction."
+    ],
+    review: true
+  },
+
+  "Ectropion": {
+    summary: "Outward turning (sagging away) of the eyelid margin, usually the lower lid, so it no longer sits against the eye. Commonly age-related, or from facial-nerve palsy or skin scarring, it causes watering, exposure of the conjunctiva, irritation and a chronically sore, red eye.",
+    facts: [
+      "The everted lid disrupts tear drainage (causing watering) and exposes the surface (causing keratopathy).",
+      "Look for the cause — involutional laxity, a facial-nerve palsy, or cicatricial skin shortening.",
+      "Lubrication protects the eye; surgery corrects the lid position."
+    ],
+    review: true
+  },
+
+  "Conjunctival Hyperemia (Non-specific)": {
+    summary: "Redness of the conjunctiva from dilated surface vessels — a common, non-specific sign shared by countless conditions from mild irritation and dry eye to serious intraocular disease. Its importance lies in the accompanying features that reveal the cause.",
+    facts: [
+      "Redness alone is non-specific — the pattern, discharge, pain, vision and pupil determine the significance.",
+      "A ciliary flush (redness concentrated around the cornea) suggests more serious intraocular disease.",
+      "Reduced vision, significant pain, or a fixed/abnormal pupil are red flags needing prompt assessment."
+    ],
+    review: true
+  },
+
+  "Orbital Cellulitis": {
+    summary: "Infection of the soft tissues behind the orbital septum, usually spreading from the ethmoid sinuses. It presents with a red, swollen, painful eye plus the danger signs of proptosis, painful and restricted eye movements, and reduced or altered vision.",
+    facts: [
+      "A sight- and life-threatening emergency — proptosis, restricted painful movements, or reduced vision distinguish it from preseptal cellulitis and mandate urgent admission and imaging.",
+      "Complications include abscess formation, optic-nerve compromise and intracranial spread (cavernous sinus thrombosis).",
+      "Needs urgent intravenous antibiotics and combined ophthalmology/ENT care."
+    ],
+    review: true
   }
 
 };
