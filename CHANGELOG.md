@@ -6,6 +6,24 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-07-17 — Session 10e: Retina batch A — ICD codes + richer About (plan B)
+
+Working domain-by-domain (founder chose plan B): each body-area gets both its
+verified ICD-10 codes AND richer hand-written About summaries before moving on.
+
+**Retina batch A — 13 conditions** (Diabetic Macular Edema, Proliferative
+Diabetic Retinopathy, Retinal Artery Macroaneurysm, Valsalva Retinopathy, chronic
+CSCR, Myopic Macular Degeneration, Stargardt, Best, Cone Dystrophy, Choroideremia,
+Degenerative Retinoschisis, Ocular Ischemic Syndrome, Commotio Retinae):
+- ICD-10 codes added to ICD_MAP — all validated real + billable via the ICD-10
+  tool; unspecified-eye default; NEEDS_CLINICAL_REVIEW + caution notes.
+- Richer qualitative About summaries added to CONDITION_INFO (review:true).
+
+Running totals: ICD 60/197 coded; authored About 44 (was 31). 176/176 tests pass.
+
+
+---
+
 ## 2026-07-17 — Session 10d: KB-expansion standard — About + engine inputs required
 
 **Founder ask:** "why only 31/334 have About content, what about the rest? And

@@ -440,6 +440,34 @@ var ICD_MAP = {
   "Tubulointerstitial Nephritis & Uveitis (TINU)":
     { icd10: "H20.9", label: "Unspecified iridocyclitis", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "code the tubulointerstitial nephritis (N10-N12) alongside", verified: "2026-07-17 ICD-10-CM 2026" },
   "Syphilitic Uveitis":
-    { icd10: "A51.43", label: "Secondary syphilitic oculopathy", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "stage-dependent; late syphilitic oculopathy is A52.71", verified: "2026-07-17 ICD-10-CM 2026" }
+    { icd10: "A51.43", label: "Secondary syphilitic oculopathy", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "stage-dependent; late syphilitic oculopathy is A52.71", verified: "2026-07-17 ICD-10-CM 2026" },
+
+  /* ─ Retina (batch A) ─ */
+  "Diabetic Macular Edema":
+    { icd10: "E11.311", label: "Type 2 diabetes mellitus with unspecified diabetic retinopathy with macular edema", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "assumes type 2; DM1 is E10.311; specify retinopathy severity per patient", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Proliferative Diabetic Retinopathy":
+    { icd10: "E11.3599", label: "Type 2 diabetes with proliferative diabetic retinopathy without macular edema, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "assumes type 2 without ME; with-ME variant is E11.351-; DM1 is E10.35-", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Retinal Artery Macroaneurysm":
+    { icd10: "H35.09", label: "Other intraretinal microvascular abnormalities", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "no distinct macroaneurysm code; retinal vascular changes bucket", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Valsalva Retinopathy":
+    { icd10: "H35.60", label: "Retinal hemorrhage, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "pre-/sub-hyaloid hemorrhage; retinal hemorrhage bucket", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Central Serous Chorioretinopathy (Chronic)":
+    { icd10: "H35.719", label: "Central serous chorioretinopathy, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Myopic Macular Degeneration":
+    { icd10: "H44.2A9", label: "Degenerative myopia with choroidal neovascularization, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "CNV variant shown; other myopic-maculopathy variants are H44.2B/2C/2D/2E", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Stargardt Disease":
+    { icd10: "H35.53", label: "Other dystrophies primarily involving the sensory retina", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "hereditary macular dystrophy bucket; no Stargardt-specific code", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Best Vitelliform Dystrophy":
+    { icd10: "H35.53", label: "Other dystrophies primarily involving the sensory retina", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "hereditary macular dystrophy bucket; no Best-specific code", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Cone Dystrophy":
+    { icd10: "H35.53", label: "Other dystrophies primarily involving the sensory retina", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "hereditary retinal dystrophy bucket; no cone-dystrophy-specific code", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Choroideremia":
+    { icd10: "H31.21", label: "Choroideremia", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Degenerative Retinoschisis":
+    { icd10: "H33.109", label: "Unspecified retinoschisis, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "retinoschisis bucket; senile/degenerative not separately coded", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Ocular Ischemic Syndrome":
+    { icd10: "H35.82", label: "Retinal ischemia", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "code the carotid occlusive disease (I65.2-) alongside", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Commotio Retinae":
+    { icd10: "H35.81", label: "Retinal edema", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "traumatic (Berlin) edema; code the ocular trauma (S05.-) alongside", verified: "2026-07-17 ICD-10-CM 2026" }
 
 };

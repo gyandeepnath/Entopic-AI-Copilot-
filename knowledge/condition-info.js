@@ -338,6 +338,138 @@ var CONDITION_INFO = {
       "Often recurrent but not sight-threatening."
     ],
     review: true
+  },
+
+  /* ═══ Retina — batch A (Session 10e) ═══ */
+
+  "Diabetic Macular Edema": {
+    summary: "Fluid accumulation and thickening at the macula from leaky retinal capillaries in diabetes. It is the commonest cause of vision loss in diabetic eye disease and can occur at any stage of retinopathy, causing gradual central blur or distortion.",
+    facts: [
+      "Systemic glycaemic and blood-pressure control underpin long-term risk.",
+      "OCT is central to detecting and monitoring the fluid.",
+      "Can be present with only mild background retinopathy — screening matters even when the fundus looks quiet."
+    ],
+    review: true
+  },
+
+  "Proliferative Diabetic Retinopathy": {
+    summary: "Advanced diabetic eye disease in which retinal ischaemia drives new, fragile vessels on the disc or retina. These can bleed into the vitreous or contract to cause tractional detachment — the sight-threatening end of the spectrum.",
+    facts: [
+      "New vessels, vitreous haemorrhage or tractional detachment mark high-risk disease needing prompt referral.",
+      "Often asymptomatic until a bleed or detachment occurs.",
+      "Neovascularisation can also involve the iris/angle and lead to neovascular glaucoma."
+    ],
+    review: true
+  },
+
+  "Retinal Artery Macroaneurysm": {
+    summary: "A focal, balloon-like dilation of a retinal arteriole, usually in older hypertensive patients. It may be silent, or cause sudden vision loss if it leaks or bleeds at the macula (which can bleed at multiple retinal levels).",
+    facts: [
+      "Strongly associated with systemic hypertension.",
+      "Many are self-limiting once the aneurysm involutes.",
+      "Macular haemorrhage or exudate is what threatens central vision."
+    ],
+    review: true
+  },
+
+  "Valsalva Retinopathy": {
+    summary: "A pre-retinal (sub-hyaloid or sub-ILM) haemorrhage caused by a sudden rise in intrathoracic/intra-abdominal pressure — coughing, straining, lifting — that ruptures superficial retinal capillaries. It typically causes an abrupt central or paracentral blur or a floater.",
+    facts: [
+      "Classically a well-demarcated dome of blood at the macula in an otherwise healthy eye.",
+      "Usually clears spontaneously over weeks to months with good prognosis.",
+      "Ask about a recent Valsalva-type event."
+    ],
+    review: true
+  },
+
+  "Central Serous Chorioretinopathy (Chronic)": {
+    summary: "Persistent or recurrent serous detachment of the neurosensory retina at the macula from leakage at the retinal pigment epithelium. The chronic form causes lasting central blur, micropsia, and reduced contrast, often in middle-aged patients.",
+    facts: [
+      "Associated with corticosteroid exposure and a 'type A' stress pattern — ask about steroids in any form.",
+      "Chronic disease can leave RPE atrophy and lasting visual deficit, unlike the usually self-limiting acute form.",
+      "OCT shows the subretinal fluid; imaging identifies the leak."
+    ],
+    review: true
+  },
+
+  "Myopic Macular Degeneration": {
+    summary: "Degenerative changes at the macula in high (pathological) myopia, from progressive stretching of a long eye — lacquer cracks, chorioretinal atrophy, and the risk of myopic choroidal neovascularisation. It causes gradual central blur, and sudden distortion if CNV develops.",
+    facts: [
+      "New distortion or a sudden central change suggests myopic CNV and needs prompt referral.",
+      "Occurs in highly myopic eyes and can affect relatively young patients.",
+      "Also predisposes to macular hole, retinal detachment, and glaucoma."
+    ],
+    review: true
+  },
+
+  "Stargardt Disease": {
+    summary: "The commonest inherited macular dystrophy, usually presenting in childhood or young adulthood with progressive central vision loss and difficulty reading. The fundus may show yellow flecks and a macula that looks less affected than the vision suggests.",
+    facts: [
+      "Colour vision and central acuity decline while peripheral vision is typically preserved.",
+      "Vision loss can precede obvious fundus changes early on.",
+      "A hereditary condition — family history and genetic counselling are relevant."
+    ],
+    review: true
+  },
+
+  "Best Vitelliform Dystrophy": {
+    summary: "An inherited macular dystrophy in which a round, egg-yolk-like (vitelliform) lesion sits at the fovea, later breaking up and potentially reducing central vision. It often has surprisingly good acuity in the early ('previtelliform'/vitelliform) stages.",
+    facts: [
+      "Autosomal dominant with variable expression; both eyes are usually involved.",
+      "Vision may stay good for years, then decline as the lesion degenerates or CNV develops.",
+      "The electro-oculogram is characteristically abnormal even when the fundus looks near-normal."
+    ],
+    review: true
+  },
+
+  "Cone Dystrophy": {
+    summary: "An inherited degeneration predominantly of the cone photoreceptors, causing reduced central acuity, marked light sensitivity (photophobia/day blindness) and colour-vision loss, usually with a relatively preserved peripheral field.",
+    facts: [
+      "Photophobia and colour-vision disturbance are prominent, unlike rod-predominant dystrophies.",
+      "May be stationary or progressive; some progress to cone-rod dystrophy.",
+      "A bull's-eye maculopathy is a classic (but non-specific) sign."
+    ],
+    review: true
+  },
+
+  "Choroideremia": {
+    summary: "An X-linked degeneration of the choroid, retinal pigment epithelium and photoreceptors, affecting males and causing childhood night blindness followed by progressive peripheral field loss and, later, central vision decline.",
+    facts: [
+      "Night blindness is typically the earliest symptom.",
+      "The fundus shows progressive scalloped choroidal/RPE atrophy exposing the underlying sclera.",
+      "Carrier females may show patchy pigmentary changes but are usually asymptomatic."
+    ],
+    review: true
+  },
+
+  "Degenerative Retinoschisis": {
+    summary: "An age-related splitting of the peripheral retina into layers, usually inferotemporal and often bilateral. It is typically asymptomatic and found incidentally, producing a smooth, dome-shaped elevation that does not move like a detachment.",
+    facts: [
+      "Usually benign and non-progressive — distinguished from retinal detachment, which it can mimic.",
+      "An absolute field defect corresponds to the schisis, unlike the relative defect of early detachment.",
+      "Occasionally complicated by outer-layer breaks and a secondary detachment."
+    ],
+    review: true
+  },
+
+  "Ocular Ischemic Syndrome": {
+    summary: "Chronic ocular hypoperfusion from severe carotid occlusive disease, causing dull ocular or peri-ocular ache and gradual or episodic vision loss. Signs include mid-peripheral retinal haemorrhages, dilated (but not tortuous) veins, and sometimes neovascularisation.",
+    facts: [
+      "A marker of significant carotid disease — carries systemic stroke/cardiac risk and warrants vascular work-up.",
+      "Can be mistaken for a vein occlusion, but the haemorrhages are typically mid-peripheral and the veins dilated without marked tortuosity.",
+      "Neovascular glaucoma is a feared complication."
+    ],
+    review: true
+  },
+
+  "Commotio Retinae": {
+    summary: "Transient retinal opacification (whitening) after blunt ocular trauma, from disruption of the photoreceptor outer segments — 'Berlin's oedema' when it involves the macula. Vision may be reduced acutely and often recovers as the whitening fades.",
+    facts: [
+      "Follows blunt trauma — always look for coexisting injury (hyphema, angle recession, retinal breaks, globe rupture).",
+      "Macular involvement carries a more guarded visual prognosis than peripheral commotio.",
+      "The retinal whitening is not a true haemorrhage and usually resolves over days to weeks."
+    ],
+    review: true
   }
 
 };
