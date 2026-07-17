@@ -998,6 +998,138 @@ var CONDITION_INFO = {
       "Management is complex and may require limbal stem-cell grafting — specialist referral is appropriate."
     ],
     review: true
+  },
+
+  /* ═══ Cornea — batch B (Session 10g) ═══ */
+
+  "Chemical Eye Burn": {
+    summary: "Ocular-surface injury from a chemical splash. Alkalis penetrate deeply and are the most dangerous; acids tend to be more superficial. Severity ranges from mild epithelial loss to limbal ischaemia and corneal opacification.",
+    facts: [
+      "A true emergency — copious immediate irrigation until the pH normalises takes priority over everything else, including detailed history.",
+      "Limbal (perilimbal) blanching signals ischaemia and a worse prognosis.",
+      "Alkali burns are typically worse than acid because they keep penetrating."
+    ],
+    review: true
+  },
+
+  "Open Globe Injury": {
+    summary: "A full-thickness wound of the eye wall (cornea and/or sclera) from penetrating or blunt trauma. It presents with reduced vision, a peaked or irregular pupil, a shallow chamber, or extruded intraocular contents.",
+    facts: [
+      "A surgical emergency — shield the eye (do not pad or press), give nothing by mouth, and refer urgently.",
+      "Avoid any pressure on the globe and defer tonometry and manipulation.",
+      "Always consider a retained intraocular foreign body and update tetanus cover."
+    ],
+    review: true
+  },
+
+  "Intraocular Foreign Body": {
+    summary: "A foreign body that has penetrated into the eye, most often a high-velocity metal fragment. It may cause surprisingly little pain, so a high index of suspicion after hammering or grinding is essential.",
+    facts: [
+      "A penetrating-injury emergency — imaging (CT; avoid MRI if metallic) localises the fragment.",
+      "Retained iron or copper causes long-term toxicity (siderosis/chalcosis) if not removed.",
+      "Entry wounds can be tiny and self-sealing, so the history drives the suspicion."
+    ],
+    review: true
+  },
+
+  "Corneal Laceration": {
+    summary: "A cut in the cornea, which may be partial-thickness (the globe stays sealed) or full-thickness (an open globe). It causes pain, watering and reduced vision, sometimes with a distorted pupil or shallow chamber if full-thickness.",
+    facts: [
+      "Assess whether the globe is open — a positive Seidel test (aqueous leak) means an open globe and surgical emergency.",
+      "Shield rather than pad, and avoid pressure, until an open globe is excluded.",
+      "Look for an associated foreign body and check tetanus status."
+    ],
+    review: true
+  },
+
+  "Mooren Ulcer": {
+    summary: "A painful, idiopathic, progressive peripheral ulcerative keratitis that spreads circumferentially and centrally with an overhanging leading edge. It is a diagnosis of exclusion once systemic and infective causes are ruled out.",
+    facts: [
+      "Severe pain and relentless peripheral thinning are characteristic; it can perforate.",
+      "By definition there is no associated systemic disease — that must be excluded first.",
+      "Often needs aggressive immunosuppression; a sight-threatening condition."
+    ],
+    review: true
+  },
+
+  "Peripheral Ulcerative Keratitis": {
+    summary: "Inflammatory thinning and ulceration of the peripheral cornea, frequently a marker of systemic autoimmune disease (e.g. rheumatoid arthritis, granulomatosis with polyangiitis). It causes a painful red eye with a crescentic peripheral infiltrate and thinning.",
+    facts: [
+      "Often the eye's warning of active, potentially life-threatening systemic vasculitis — prompt systemic work-up matters.",
+      "The thinned cornea can perforate, so it is sight-threatening.",
+      "Management usually requires systemic immunosuppression alongside ocular care."
+    ],
+    review: true
+  },
+
+  "Vernal Shield Ulcer": {
+    summary: "A sterile, sharply defined epithelial ulcer of the upper cornea that complicates vernal keratoconjunctivitis, caused by inflammatory mediators and mechanical trauma from giant tarsal papillae. It causes pain, photophobia and blurred vision in a young atopic patient.",
+    facts: [
+      "Occurs on a background of severe vernal keratoconjunctivitis with giant upper-tarsal papillae.",
+      "The ulcer is sterile — but secondary infection must be excluded.",
+      "A plaque of deposited mucus/fibrin can delay healing and may need removal."
+    ],
+    review: true
+  },
+
+  "Contact Lens Acute Red Eye (CLARE)": {
+    summary: "An acute, sterile inflammatory reaction to contact-lens wear (often overnight wear), producing a sudden painful red eye with peripheral corneal infiltrates but an intact epithelium. It typically settles quickly once lenses are stopped.",
+    facts: [
+      "A diagnosis of exclusion — microbial keratitis must be ruled out before assuming it is sterile.",
+      "Classically wakes the patient with a unilateral red, watering eye after sleeping in lenses.",
+      "Infiltrates are usually peripheral with no overlying epithelial defect."
+    ],
+    review: true
+  },
+
+  "Corneal Graft Rejection": {
+    summary: "An immune attack on a corneal transplant, presenting with the warning symptoms of redness, photophobia, reduced vision and discomfort in a previously clear graft. Signs include an endothelial rejection line, keratic precipitates and graft oedema.",
+    facts: [
+      "A graft emergency — prompt intensive steroid treatment can reverse rejection if caught early.",
+      "Educate transplant patients on the 'RSVP' warning symptoms (Redness, Sensitivity, Vision, Pain) to present early.",
+      "Untreated rejection can progress to irreversible graft failure."
+    ],
+    review: true
+  },
+
+  "Corneal Dermoid": {
+    summary: "A congenital choristoma — normal tissue (skin, hair, fat) in an abnormal location — usually straddling the inferotemporal limbus. It appears as a rounded, sometimes hair-bearing white lesion and can induce astigmatism and amblyopia in childhood.",
+    facts: [
+      "Often part of the Goldenhar (oculo-auriculo-vertebral) spectrum — check for ear/facial anomalies.",
+      "Induced astigmatism can cause amblyopia, so refraction and amblyopia management matter.",
+      "Excision is considered for visual or cosmetic reasons, weighing the depth of the lesion."
+    ],
+    review: true
+  },
+
+  "Descemetocele": {
+    summary: "A herniation of Descemet's membrane through a severely thinned or melting cornea, meaning perforation is imminent. It appears as a clear, blister-like protrusion at the base of a deep ulcer or thinned area.",
+    facts: [
+      "An emergency — the eye is one small step from perforating.",
+      "Avoid any pressure on the globe and refer urgently for protective/surgical measures.",
+      "Signals severe underlying corneal disease (infection, melt, exposure) that also needs treating."
+    ],
+    review: true
+  },
+
+  "Peters Anomaly": {
+    summary: "A congenital anterior-segment dysgenesis with a central corneal opacity (leukoma) and a defect in the posterior cornea, sometimes with iris or lens adhesions. It presents at birth with a white central cornea and can be associated with glaucoma.",
+    facts: [
+      "A cause of congenital corneal opacity/leukocoria — needs prompt paediatric ophthalmology assessment.",
+      "Frequently associated with glaucoma, which must be sought and managed.",
+      "May be unilateral or bilateral and can be part of a systemic (Peters-plus) syndrome."
+    ],
+    review: true
+  },
+
+  "Corneal Hydrops (Acute)": {
+    summary: "A sudden break in Descemet's membrane, usually in advanced keratoconus or another ectasia, allowing aqueous to flood the stroma and cause abrupt corneal oedema. It presents with sudden pain, marked blur and a white, swollen cornea.",
+    facts: [
+      "Typically occurs in known keratoconus/ectasia, sometimes after vigorous eye rubbing.",
+      "Most cases resolve over weeks to months as the break heals, often leaving some scarring.",
+      "Distinguished from infection by the abrupt onset of diffuse oedema without an infiltrate."
+    ],
+    review: true
   }
 
 };

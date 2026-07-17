@@ -580,6 +580,34 @@ var ICD_MAP = {
   "Iron Line (Corneal)":
     { icd10: "H18.069", label: "Stromal corneal pigmentations, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "corneal iron line (Hudson-Stahli/Fleischer); pigmentation/deposit family, layer not captured in code", verified: "2026-07-17 ICD-10-CM 2026" },
   "Limbal Stem Cell Deficiency":
-    { icd10: "H18.899", label: "Other specified disorders of cornea, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "LSCD; no distinct code; code the cause (chemical burn, aniridia, CL) alongside", verified: "2026-07-17 ICD-10-CM 2026" }
+    { icd10: "H18.899", label: "Other specified disorders of cornea, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "LSCD; no distinct code; code the cause (chemical burn, aniridia, CL) alongside", verified: "2026-07-17 ICD-10-CM 2026" },
+
+  /* ─ Cornea (batch B) ─ */
+  "Chemical Eye Burn":
+    { icd10: "T26.60XA", label: "Corrosion of cornea and conjunctival sac, unspecified eye, initial encounter", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "emergency; 7th char A = initial; alkali vs acid and severity/agent (X-code) coded separately; burn (thermal) is T26.1-", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Open Globe Injury":
+    { icd10: "S05.60XA", label: "Penetrating wound without foreign body of unspecified eyeball, initial encounter", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "surgical emergency; 7th char A = initial; set laterality; with-foreign-body is S05.5-", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Intraocular Foreign Body":
+    { icd10: "S05.50XA", label: "Penetrating wound with foreign body of unspecified eyeball, initial encounter", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "surgical emergency; 7th char A = initial; also code the retained-foreign-body (Z18.-) at follow-up", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Corneal Laceration":
+    { icd10: "S05.30XA", label: "Ocular laceration without prolapse or loss of intraocular tissue, unspecified eye, initial encounter", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "7th char A = initial; with-prolapse is S05.2-; a full-thickness laceration is an open globe", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Mooren Ulcer":
+    { icd10: "H16.059", label: "Mooren's corneal ulcer, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "painful idiopathic peripheral ulcerative keratitis; sight-threatening", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Peripheral Ulcerative Keratitis":
+    { icd10: "H16.049", label: "Marginal corneal ulcer, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "PUK; code the systemic association (RA, GPA, etc.) alongside; can perforate", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Vernal Shield Ulcer":
+    { icd10: "H16.8", label: "Other keratitis", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "sterile shield ulcer complicating vernal keratoconjunctivitis (H10.44)", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Contact Lens Acute Red Eye (CLARE)":
+    { icd10: "H16.8", label: "Other keratitis", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "contact-lens acute red eye — sterile inflammatory reaction; exclude microbial keratitis first", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Corneal Graft Rejection":
+    { icd10: "T86.8409", label: "Corneal transplant rejection, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "graft emergency; set laterality; transplant FAILURE is T86.841-", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Corneal Dermoid":
+    { icd10: "Q13.4", label: "Other congenital corneal malformations", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "limbal dermoid (choristoma); may be part of Goldenhar spectrum", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Descemetocele":
+    { icd10: "H18.739", label: "Descemetocele, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "impending perforation — emergency", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Peters Anomaly":
+    { icd10: "Q13.4", label: "Other congenital corneal malformations", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "Peters anomaly; congenital anterior-segment dysgenesis with central corneal opacity", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Corneal Hydrops (Acute)":
+    { icd10: "H18.629", label: "Keratoconus, unstable, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "acute hydrops usually complicates keratoconus/ectasia (Descemet break with stromal oedema)", verified: "2026-07-17 ICD-10-CM 2026" }
 
 };
