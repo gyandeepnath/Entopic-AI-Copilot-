@@ -2784,6 +2784,208 @@ var CONDITION_INFO = {
       "A public-health diagnosis — partner notification and screening for co-infection (including HIV) apply."
     ],
     review: true
+  },
+
+  /* ═══ Binocular Vision (Session 10j) ═══ */
+
+  "Convergence Insufficiency": {
+    summary: "A common binocular-vision disorder in which the eyes struggle to turn inward and stay converged for near work, giving a receded near point of convergence. It causes eye strain, headaches, blurred or double vision and words 'swimming' during sustained reading.",
+    facts: [
+      "A receded near point of convergence and reduced near positive fusional vergence are the key signs.",
+      "Symptoms are near-work related and ease with rest or closing one eye.",
+      "Responds well to convergence (orthoptic) exercises."
+    ],
+    review: true
+  },
+
+  "Convergence Excess": {
+    summary: "A binocular disorder where the eyes over-converge for near, giving a larger inward deviation at near than distance. It causes near eye strain, headaches and intermittent blur or diplopia during close work.",
+    facts: [
+      "A near esodeviation greater than at distance, often with a high accommodative-convergence relationship, is characteristic.",
+      "Reading (plus) additions and vergence therapy are typical management.",
+      "Check the refraction — uncorrected hyperopia can drive it."
+    ],
+    review: true
+  },
+
+  "Divergence Insufficiency": {
+    summary: "A disorder in which the eyes cannot diverge adequately for distance, giving an esodeviation (and horizontal double vision) that is worse at distance than near. In older adults a similar picture ('sagging eye syndrome') can arise from age-related orbital changes.",
+    facts: [
+      "Distance horizontal diplopia with a comitant esodeviation worse at distance is the pattern.",
+      "A new distance esotropia in an adult should prompt exclusion of a sixth-nerve palsy or neurological cause.",
+      "Prism correction often relieves the diplopia."
+    ],
+    review: true
+  },
+
+  "Divergence Excess": {
+    summary: "An intermittent outward deviation (exotropia) that is larger at distance than near, often noticed as one eye drifting out when tired, unwell or in bright light (with reflex squinting/eye-closure). It is a form of intermittent exotropia.",
+    facts: [
+      "A distance exodeviation greater than at near, intermittent and worse with fatigue/bright light, is typical.",
+      "Control tends to worsen over time in some patients, which guides the timing of any surgery.",
+      "Bright-light squinting of one eye is a classic parental observation."
+    ],
+    review: true
+  },
+
+  "Accommodative Insufficiency": {
+    summary: "A reduced ability to focus for near that is out of keeping with the patient's age (i.e. not simple presbyopia). It causes near blur, eye strain and headache with sustained close work, and difficulty sustaining clear focus.",
+    facts: [
+      "Reduced amplitude of accommodation for the patient's age is the defining finding.",
+      "Can be idiopathic or secondary to illness, medications or fatigue — review the context.",
+      "Managed with near (plus) correction and accommodative exercises."
+    ],
+    review: true
+  },
+
+  "Accommodative Excess": {
+    summary: "Over-activity or spasm of the focusing system, causing variable and often intermittent distance blur, near eye strain and headaches, typically in patients doing intense near work. It can shade into pseudomyopia.",
+    facts: [
+      "A cycloplegic refraction unmasks the true refractive error and confirms the excess focusing.",
+      "Associated with prolonged, stressful near work.",
+      "Managed by addressing near-work habits, correcting any genuine error and relaxing accommodation."
+    ],
+    review: true
+  },
+
+  "Accommodative Infacility": {
+    summary: "Difficulty changing focus quickly and accurately between distance and near, even when the amplitude of accommodation is adequate. It causes transient blur when shifting gaze (e.g. from board to book), eye strain and reading fatigue.",
+    facts: [
+      "Slow, sluggish results on accommodative-facility (flipper) testing are the key sign.",
+      "Symptoms centre on the transition between distances rather than sustained focus alone.",
+      "Improves with accommodative-facility (flipper) training."
+    ],
+    review: true
+  },
+
+  "Fusional Vergence Dysfunction": {
+    summary: "Reduced ability to use fusional (vergence) reserves to keep the eyes aligned, despite normal alignment and focusing amplitudes. It causes non-specific asthenopia — eye strain, headaches and intermittent blur/diplopia — with reading and close work.",
+    facts: [
+      "Reduced fusional vergence ranges with otherwise normal alignment and accommodation are characteristic.",
+      "A diagnosis reached after excluding a specific vergence or accommodative disorder.",
+      "Vergence (orthoptic) training is the mainstay."
+    ],
+    review: true
+  },
+
+  "Intermittent Exotropia": {
+    summary: "The commonest childhood exotropia, in which one eye drifts outward intermittently — typically when tired, unwell, daydreaming or in bright light — while alignment is maintained the rest of the time. Children often close one eye in bright sunlight.",
+    facts: [
+      "The deviation's frequency and control (how easily fusion is regained) guide management more than its size.",
+      "Bright-light monocular eye-closure is a classic sign.",
+      "Deteriorating control or a manifest constant deviation may prompt surgery."
+    ],
+    review: true
+  },
+
+  "Esotropia": {
+    summary: "A manifest inward turning of an eye (a convergent squint). It has many forms — infantile, accommodative, and those secondary to nerve palsy or poor vision — and in children risks amblyopia and loss of binocular vision if not treated.",
+    facts: [
+      "In a child, correct any hyperopia, treat amblyopia and then consider surgery for residual deviation.",
+      "A new esotropia with diplopia in an adult needs a cause sought (e.g. sixth-nerve palsy).",
+      "The age of onset and the near-distance pattern point to the type."
+    ],
+    review: true
+  },
+
+  "Basic Exotropia": {
+    summary: "An exotropia (outward eye turn) that is roughly equal at distance and near, as opposed to the divergence-excess or convergence-insufficiency patterns. It may be intermittent or constant and causes cosmetic deviation and, if constant from childhood, loss of binocular vision.",
+    facts: [
+      "By definition the distance and near deviations are similar in size.",
+      "Assess control and stereopsis; intermittent cases can be stable for years.",
+      "Surgery is considered for poor control, a large angle or cosmetic/functional concern."
+    ],
+    review: true
+  },
+
+  "Sensory Strabismus": {
+    summary: "An eye deviation that develops because poor vision in one eye (from cataract, corneal scar, retinal or optic-nerve disease, or dense amblyopia) removes the drive to keep it aligned. Younger children tend to turn in, older children and adults to turn out.",
+    facts: [
+      "The squint is a consequence of the poor vision — find and, if possible, treat the underlying sensory cause.",
+      "In a child, sensory strabismus should prompt a careful search for a serious cause (including retinoblastoma).",
+      "Realigning surgery can be done for the deviation once the cause is addressed."
+    ],
+    review: true
+  },
+
+  "Decompensated Phoria": {
+    summary: "A latent eye misalignment (heterophoria) that the fusional system can usually control but which 'breaks down' under fatigue, illness or stress, becoming intermittently manifest. It causes intermittent double vision, eye strain and headaches.",
+    facts: [
+      "Symptoms fluctuate with tiredness and workload — a clue to a decompensating phoria rather than a fixed tropia.",
+      "A previously comfortable phoria may decompensate after illness, a change in glasses or with age.",
+      "Prisms, vergence exercises or refractive adjustment can restore comfortable control."
+    ],
+    review: true
+  },
+
+  "Amblyopia (Refractive)": {
+    summary: "Reduced vision in an eye that developed while the visual system was maturing, because a significant or unequal refractive error left its retinal image chronically blurred. The eye is structurally normal, and the deficit is potentially reversible if treated early enough.",
+    facts: [
+      "Correct the refractive error first; then treat with patching or atropine penalisation of the better eye.",
+      "Earlier treatment gives better results, though improvement is possible into later childhood.",
+      "Anisometropic amblyopia can be subtle because the eyes look straight — screening catches it."
+    ],
+    review: true
+  },
+
+  "Consecutive Exotropia": {
+    summary: "An outward eye turn that develops after a previous inward turn (esotropia) — either spontaneously over time or, more often, following strabismus surgery for esotropia. It causes an exodeviation with variable binocular function.",
+    facts: [
+      "The history of prior esotropia or its surgery defines it.",
+      "Management weighs the deviation size, binocular potential and any amblyopia.",
+      "Can appear years after the original esotropia was treated."
+    ],
+    review: true
+  },
+
+  "Accommodative Esotropia": {
+    summary: "A convergent squint driven by the extra convergence that accompanies focusing effort in an uncorrected hyperopic (long-sighted) child. It typically appears in the toddler/pre-school years and can be fully or partly corrected simply by prescribing glasses.",
+    facts: [
+      "A full cycloplegic refraction and glasses are the first and often definitive treatment.",
+      "A high near deviation relative to distance suggests a high accommodative-convergence component (may need bifocals).",
+      "Treat any amblyopia; residual non-accommodative deviation may need surgery."
+    ],
+    review: true
+  },
+
+  "Convergence Paralysis": {
+    summary: "A distinct inability to converge the eyes despite normal individual eye movements and adduction, from a lesion affecting the midbrain convergence centre. It causes double vision and blur specifically for near tasks, with normal distance alignment.",
+    facts: [
+      "Preserved adduction on other testing but absent convergence points to a central (dorsal midbrain) lesion.",
+      "Warrants neuroimaging, as it can reflect midbrain pathology.",
+      "Distinguished from the far commoner (benign) convergence insufficiency by the complete, central nature of the failure."
+    ],
+    review: true
+  },
+
+  "Vertical Heterophoria": {
+    summary: "A latent vertical misalignment of the eyes, controlled most of the time by fusion but capable of causing symptoms when it decompensates. It gives vertical eye strain, headaches, intermittent vertical diplopia and sometimes a subtle head tilt.",
+    facts: [
+      "Even a small vertical phoria can be disproportionately symptomatic.",
+      "A decompensating or new vertical deviation should prompt exclusion of a fourth-nerve palsy or skew.",
+      "Small vertical prisms in the glasses often relieve symptoms."
+    ],
+    review: true
+  },
+
+  "Duane Retraction Syndrome": {
+    summary: "A congenital eye-movement disorder from abnormal innervation of the lateral rectus, causing limited abduction and/or adduction with retraction of the globe and narrowing of the lid fissure on attempted adduction. It is usually unilateral and often causes a compensatory head turn.",
+    facts: [
+      "Globe retraction and palpebral-fissure narrowing on adduction are the giveaway signs.",
+      "Present from birth (a miswiring, not a nerve palsy) and often associated with a face turn to maintain single vision.",
+      "Surgery is reserved for a significant head turn, misalignment in primary gaze or marked up/down-shoots."
+    ],
+    review: true
+  },
+
+  "Brown Syndrome": {
+    summary: "A restriction of the superior oblique tendon/trochlea complex that prevents the eye from elevating in adduction (looking up and in). It may be congenital or acquired (e.g. from inflammation or trauma) and causes a downshoot in adduction and sometimes vertical diplopia.",
+    facts: [
+      "Limited elevation in adduction with a positive forced-duction test distinguishes it from an inferior-oblique palsy.",
+      "Acquired cases can be inflammatory (and may fluctuate or resolve) — ask about associated arthritis/trauma.",
+      "Surgery is considered for a manifest deviation in primary gaze or an anomalous head posture."
+    ],
+    review: true
   }
 
 };
