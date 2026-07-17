@@ -6,6 +6,34 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-07-17 — Session 10d: KB-expansion standard — About + engine inputs required
+
+**Founder ask:** "why only 31/334 have About content, what about the rest? And
+make upcoming KB expansions include the About content along with engine inputs."
+
+**Clarification of state:** all **334** conditions already have About content — 31
+hand-authored rich summaries + **303 auto-derived** from each condition's own
+definition; **zero are blank**. The "31" are simply the ones with the richer
+written prose. (Also surfaced a real backlog: **197 conditions still lack an
+ICD-10 code** — to be filled with *verified* codes over time, never fabricated.)
+
+**Standard, now enforced:**
+1. **`docs/KB_AUTHORING_CHECKLIST.md`** — the definition-of-done for every new
+   condition: it must ship **engine inputs** (reachable `req` token, rule-out
+   power, surfaces on its own evidence, no cross-conflict, review-flagged, ICD
+   when verifiable) **and** **About content** (auto-derived from those same
+   tokens, or a hand-authored entry for common conditions).
+2. **New `kb-expansion` gate test** — "every expansion condition ships About
+   content tied to its engine inputs": each new condition must resolve to About
+   content, and a derived profile must surface the condition's own required
+   token — proving the About text is generated from the engine inputs, keeping
+   the two in lock-step as the KB grows.
+3. **`ARCHITECTURE.md`** now points at the checklist from the KB section.
+
+176/176 tests pass.
+
+---
+
 ## 2026-07-17 — Session 10c: full "About" coverage + engine-connected info
 
 **Founder ask:** "the About toggle needs fulfillment — more than 50% of the

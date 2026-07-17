@@ -18,6 +18,7 @@ const path = require("node:path");
 const A = require("../js/kb-authoring");
 const { loadKnowledgeBase } = require("../tools/lib/load-kb");
 const { createEngine } = require("../tools/lib/load-engine");
+const { resolveConditionInfo } = require("../knowledge/condition-info.js");
 
 const kb = loadKnowledgeBase();
 const ALL = kb.KNOWLEDGE_ALL;
@@ -111,6 +112,35 @@ test("every expansion condition carries a RUNTIME review flag (founder review qu
     if (isExpansion(c) && c.review_status !== "NEEDS_CLINICAL_REVIEW") unflagged.push(c.name);
   }
   assert.deepStrictEqual(unflagged, [], "expansion conditions missing runtime review flag:\n" + unflagged.join("\n"));
+});
+
+test("every expansion condition ships 'About' content tied to its engine inputs", () => {
+  /* Founder standard: a new condition must arrive with BOTH engine inputs (the
+     req/sup/con tokens, enforced above) AND user-facing 'About' content. The two
+     are linked by construction — a condition with no hand-authored summary still
+     gets a profile DERIVED from its own req/sup/con tokens — so this test proves
+     every expansion entry has About content and that the content reflects the
+     engine inputs (its required tokens appear in the profile). Keeps About + the
+     engine in lock-step as the KB grows. */
+  const byName = {};
+  for (const c of ALL) byName[c.name] = c;
+  const findCond = (n) => byName[n] || null;
+  const prettify = (t) => String(t).replace(/_/g, " ");
+
+  const noAbout = [], disconnected = [];
+  for (const c of expansionList) {
+    const info = resolveConditionInfo(c.name, findCond, prettify);
+    if (!info || !info.summary || info.summary.length < 15) { noAbout.push(c.name); continue; }
+    if (info.kind === "derived") {
+      /* the derived profile must surface at least one of the engine's own req
+         tokens — i.e. the About text is generated from the engine inputs. */
+      const blob = [info.summary].concat(info.facts || []).join(" ").toLowerCase();
+      const reqShown = (c.req || []).some((t) => blob.includes(prettify(t)));
+      if ((c.req || []).length && !reqShown) disconnected.push(c.name);
+    }
+  }
+  assert.deepStrictEqual(noAbout, [], "expansion conditions with no About content:\n" + noAbout.join("\n"));
+  assert.deepStrictEqual(disconnected, [], "About content not tied to engine inputs:\n" + disconnected.join("\n"));
 });
 
 test("red-flag alerts still fire after the expansion", () => {

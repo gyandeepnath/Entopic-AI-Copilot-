@@ -105,6 +105,16 @@ A thin CRUD layer over `localStorage`, namespaced with the `entopic_` prefix, st
 
 The KB is split across **9 domain files** plus three infrastructure files, assembled at load time by `loader.js`.
 
+> **Adding conditions?** Follow `docs/KB_AUTHORING_CHECKLIST.md` — the
+> definition-of-done for every new condition. In short: it must arrive with its
+> **engine inputs** (reachable `req` token, rule-out power, surfaces on its own
+> evidence, no cross-conflict, review-flagged) **and** its **"About" content**
+> (auto-derived from those same tokens by `knowledge/condition-info.js`, or a
+> richer hand-authored `CONDITION_INFO` entry for common conditions). The two are
+> generated from the same tokens so they stay in lock-step; the `kb-expansion`
+> test gate enforces both. Reference prose is display-only and never feeds
+> scoring.
+
 ### 5.1 The shape of a condition
 
 Every condition is a plain object. Example (POAG, from `glaucoma.js`):
