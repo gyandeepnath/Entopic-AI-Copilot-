@@ -1130,6 +1130,88 @@ var CONDITION_INFO = {
       "Distinguished from infection by the abrupt onset of diffuse oedema without an infiltrate."
     ],
     review: true
+  },
+
+  /* ═══ Cornea — batch C, completes the domain (Session 10g) ═══ */
+
+  "Posterior Polymorphous Corneal Dystrophy": {
+    summary: "An inherited dystrophy of the corneal endothelium and Descemet's membrane, with vesicular, band or geographic lesions. It is often asymptomatic and found incidentally, but can occasionally cause corneal oedema or be associated with glaucoma.",
+    facts: [
+      "Usually bilateral and frequently symptomless — many cases never need treatment.",
+      "Can be associated with iridocorneal adhesions and raised intraocular pressure — check for glaucoma.",
+      "Distinguished from other endothelial dystrophies by its characteristic vesicular/band appearance."
+    ],
+    review: true
+  },
+
+  "Schnyder Corneal Dystrophy": {
+    summary: "A rare inherited stromal dystrophy with abnormal deposition of cholesterol and lipids in the cornea, producing central crystalline haze, a dense arcus and stromal clouding. It causes glare and slowly progressive blur.",
+    facts: [
+      "Associated with systemic dyslipidaemia — a lipid profile and cardiovascular-risk review are worthwhile.",
+      "Only about half of cases show the obvious corneal crystals; a dense arcus at a young age is a clue.",
+      "Glare and reduced contrast often trouble the patient more than Snellen acuity."
+    ],
+    review: true
+  },
+
+  "Meesmann Corneal Dystrophy": {
+    summary: "An inherited epithelial dystrophy presenting in early childhood with myriad tiny clear intraepithelial cysts. It is often mild, causing intermittent irritation, mild glare and occasional recurrent erosions.",
+    facts: [
+      "Bilateral and lifelong, but frequently only mildly symptomatic.",
+      "The countless small epithelial microcysts are best seen in retroillumination.",
+      "Vision is usually well preserved; management is largely of surface symptoms."
+    ],
+    review: true
+  },
+
+  "Macular Corneal Dystrophy": {
+    summary: "The rarest but most severe of the classic stromal dystrophies, with cloudy grey-white deposits and diffuse haze extending between them right to the periphery. It causes progressive vision loss, often significant by early adulthood.",
+    facts: [
+      "Unlike granular/lattice dystrophy, the stroma between deposits is also cloudy — and the opacity reaches the periphery.",
+      "Autosomal recessive and associated with abnormal keratan sulphate metabolism.",
+      "Frequently progresses to needing corneal transplantation."
+    ],
+    review: true
+  },
+
+  "Congenital Hereditary Endothelial Dystrophy (CHED)": {
+    summary: "An inherited failure of the corneal endothelium present from birth, causing a diffusely cloudy, oedematous cornea in both eyes. It presents in infancy with bilateral corneal haze and, depending on severity, reduced vision and nystagmus.",
+    facts: [
+      "A cause of bilateral congenital corneal opacity — needs paediatric ophthalmology assessment.",
+      "The cornea can be markedly thickened and hazy without the pain of childhood glaucoma (which must be excluded).",
+      "Severe cases may require corneal transplantation to allow visual development."
+    ],
+    review: true
+  },
+
+  "Corneal Dellen": {
+    summary: "A shallow, saucer-like area of corneal thinning caused by localised drying next to an adjacent surface elevation (such as a swollen conjunctiva, filtering bleb or limbal mass) that disrupts the tear film. It causes mild irritation and stains faintly.",
+    facts: [
+      "A secondary, mechanical problem — find and address the adjacent elevation that is drying the cornea.",
+      "The stroma is thinned but the epithelium is usually intact; it is not an infection.",
+      "Rehydration and lubrication typically resolve it quickly once the cause is managed."
+    ],
+    review: true
+  },
+
+  "Gelatinous Drop-like Corneal Dystrophy": {
+    summary: "A rare inherited dystrophy with subepithelial amyloid deposits that form mulberry-like gelatinous nodules on the cornea. It causes progressive photophobia, watering, foreign-body sensation and declining vision from a young age.",
+    facts: [
+      "Autosomal recessive and commoner in some East-Asian populations.",
+      "The amyloid deposits recur readily, including on the surface of a corneal graft.",
+      "Prominent surface symptoms (photophobia, watering) reflect the raised, irregular deposits."
+    ],
+    review: true
+  },
+
+  "Spheroidal Degeneration (Climatic Droplet Keratopathy)": {
+    summary: "An age- and exposure-related degeneration in which golden-yellow spherules accumulate in the superficial peripheral cornea (and conjunctiva), linked to chronic ultraviolet and environmental exposure. It is often asymptomatic but can reduce vision if it reaches the visual axis.",
+    facts: [
+      "Associated with outdoor life and cumulative UV/wind/dust exposure — hence 'climatic droplet keratopathy'.",
+      "Usually bilateral, starting peripherally in the interpalpebral zone.",
+      "Only reduces vision when the deposits encroach centrally; UV protection is sensible advice."
+    ],
+    review: true
   }
 
 };

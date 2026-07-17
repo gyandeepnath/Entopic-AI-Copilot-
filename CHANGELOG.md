@@ -6,6 +6,24 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-07-17 — Session 10g: Cornea domain COMPLETE — ICD + richer About (plan B)
+
+All 34 Cornea expansion conditions done on both fronts (batches A+B+C). Includes
+the infective keratitides (Acanthamoeba, fungal, filamentary), the corneal
+dystrophies (map-dot-fingerprint, lattice, granular, macular, Meesmann, PPMD,
+Schnyder, CHED, gelatinous drop-like), degenerations (Terrien, spheroidal,
+dellen, iron line, vortex), the ocular-trauma/emergency set (chemical burn, open
+globe, IOFB, corneal laceration, descemetocele, graft rejection, acute hydrops),
+and the peripheral ulcerative group (Mooren, PUK, vernal shield ulcer). Every
+ICD-10 code validated real + billable (trauma codes flagged for 7th-char/
+laterality); every About summary qualitative + review-flagged.
+
+Running totals: **ICD 133/197 coded; authored About 117** (was 31). Cornea &
+Retina: 0 uncoded. 176/176 tests pass. Remaining: Neuro-Ophthalmic (33),
+Surface & Lids (31).
+
+---
+
 ## 2026-07-17 — Session 10f: Retina domain COMPLETE — ICD + richer About (plan B)
 
 Finished all 52 Retina expansion conditions on both fronts (batches C+D added 26:

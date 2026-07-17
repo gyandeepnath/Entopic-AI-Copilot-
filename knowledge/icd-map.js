@@ -608,6 +608,24 @@ var ICD_MAP = {
   "Peters Anomaly":
     { icd10: "Q13.4", label: "Other congenital corneal malformations", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "Peters anomaly; congenital anterior-segment dysgenesis with central corneal opacity", verified: "2026-07-17 ICD-10-CM 2026" },
   "Corneal Hydrops (Acute)":
-    { icd10: "H18.629", label: "Keratoconus, unstable, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "acute hydrops usually complicates keratoconus/ectasia (Descemet break with stromal oedema)", verified: "2026-07-17 ICD-10-CM 2026" }
+    { icd10: "H18.629", label: "Keratoconus, unstable, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "acute hydrops usually complicates keratoconus/ectasia (Descemet break with stromal oedema)", verified: "2026-07-17 ICD-10-CM 2026" },
+
+  /* ─ Cornea (batch C — completes the domain) ─ */
+  "Posterior Polymorphous Corneal Dystrophy":
+    { icd10: "H18.519", label: "Endothelial corneal dystrophy, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "PPMD (endothelial dystrophy family); shares the code with Fuchs", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Schnyder Corneal Dystrophy":
+    { icd10: "H18.599", label: "Other hereditary corneal dystrophies, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "Schnyder crystalline dystrophy; check lipid profile", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Meesmann Corneal Dystrophy":
+    { icd10: "H18.529", label: "Epithelial (juvenile) corneal dystrophy, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Macular Corneal Dystrophy":
+    { icd10: "H18.559", label: "Macular corneal dystrophy, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Congenital Hereditary Endothelial Dystrophy (CHED)":
+    { icd10: "H18.519", label: "Endothelial corneal dystrophy, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "CHED (congenital endothelial dystrophy); endothelial-dystrophy family", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Corneal Dellen":
+    { icd10: "H18.49", label: "Other corneal degeneration", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "focal thinning from adjacent surface elevation/drying; degeneration bucket", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Gelatinous Drop-like Corneal Dystrophy":
+    { icd10: "H18.599", label: "Other hereditary corneal dystrophies, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "amyloid subepithelial deposits; hereditary-dystrophy bucket", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Spheroidal Degeneration (Climatic Droplet Keratopathy)":
+    { icd10: "H18.49", label: "Other corneal degeneration", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "climatic droplet/Labrador keratopathy; other-corneal-degeneration bucket", verified: "2026-07-17 ICD-10-CM 2026" }
 
 };
