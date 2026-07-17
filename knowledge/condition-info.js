@@ -1862,6 +1862,382 @@ var CONDITION_INFO = {
       "Definitive treatment usually involves surgical drainage (dacryocystorhinostomy) to remove the stone and relieve obstruction."
     ],
     review: true
+  },
+
+  /* ═══ Lens (Session 10j — completing all conditions) ═══ */
+
+  "Traumatic Cataract": {
+    summary: "Lens opacity following blunt or penetrating ocular trauma, sometimes appearing immediately and sometimes months to years later. It can take a classic rosette (flower-shaped) form and may be accompanied by lens subluxation or capsule rupture.",
+    facts: [
+      "Always assess the whole eye — associated angle recession, retinal damage and raised pressure are common.",
+      "A ruptured capsule can cause rapid lens swelling and lens-induced inflammation or glaucoma.",
+      "Timing of surgery depends on the cataract, capsule integrity and coexisting injuries."
+    ],
+    review: true
+  },
+
+  "Congenital Cataract": {
+    summary: "A lens opacity present at or shortly after birth, which may be unilateral or bilateral. Because it can prevent normal visual development, it is a leading treatable cause of childhood blindness and demands prompt recognition.",
+    facts: [
+      "Leukocoria or an absent red reflex in an infant needs urgent referral — retinoblastoma must also be excluded.",
+      "Visually significant cataract needs early surgery to prevent deprivation amblyopia.",
+      "Bilateral cases warrant a work-up for metabolic, infective (TORCH) and genetic causes."
+    ],
+    review: true
+  },
+
+  "Drug-induced Cataract (Steroid)": {
+    summary: "A posterior subcapsular cataract caused by corticosteroid exposure — topical, inhaled, or systemic. It sits in the visual axis, so it disproportionately affects near vision and vision in bright light, and can develop relatively quickly.",
+    facts: [
+      "Ask specifically about steroids in every form, including inhalers and skin creams.",
+      "The posterior subcapsular location explains near-vision and glare complaints out of proportion to distance acuity.",
+      "Risk relates to dose and duration; the cataract does not reverse when the steroid stops."
+    ],
+    review: true
+  },
+
+  "Posterior Capsular Opacification (PCO)": {
+    summary: "Clouding of the lens capsule left in place after cataract surgery, from residual lens cells proliferating across it. It causes a gradual return of glare and blur months to years after a successful operation — the commonest late 'complication' of cataract surgery.",
+    facts: [
+      "A patient whose vision was good after cataract surgery and has slowly deteriorated again is the classic story.",
+      "Treated quickly and painlessly with a YAG laser capsulotomy.",
+      "It is not a 'cataract coming back' — worth reassuring patients about."
+    ],
+    review: true
+  },
+
+  "Lens Subluxation / Dislocation": {
+    summary: "Partial (subluxation) or complete (dislocation) displacement of the lens from its normal position, due to weak or broken zonules from trauma or a systemic connective-tissue disorder. It causes fluctuating vision, marked astigmatism, monocular double vision and sometimes a trembling iris (iridodonesis).",
+    facts: [
+      "Can precipitate acute glaucoma if the lens blocks the pupil or falls forward — potentially an emergency.",
+      "Non-traumatic (especially superotemporal) subluxation should prompt a search for Marfan, homocystinuria or Weill-Marchesani syndrome.",
+      "The edge of the displaced lens may be visible across the pupil."
+    ],
+    review: true
+  },
+
+  "Anterior Polar Cataract": {
+    summary: "A small, usually congenital opacity at the front centre of the lens, often bilateral and visually insignificant. It is commonly an incidental finding that remains stable through life.",
+    facts: [
+      "Usually stationary and rarely affects vision, so it is often just monitored.",
+      "In children even a small central opacity can occasionally cause amblyopia — check the refraction and vision.",
+      "Can be associated with other developmental lens/anterior-segment changes."
+    ],
+    review: true
+  },
+
+  "Phacomorphic Angle Closure": {
+    summary: "Acute angle closure caused by an intumescent (swollen) cataractous lens pushing the iris forward and blocking the drainage angle. It presents like acute angle-closure glaucoma — a painful red eye, haloes, blurred vision and a very high pressure — usually in an eye with an advanced cataract.",
+    facts: [
+      "A sight-threatening emergency — lower the pressure urgently, then definitive treatment is cataract removal.",
+      "Suspect it when acute angle closure occurs in an eye with a large, mature lens.",
+      "The mechanism is the swollen lens, so removing it addresses the cause."
+    ],
+    review: true
+  },
+
+  "Ectopia Lentis (Marfan)": {
+    summary: "Displacement of the lens due to congenitally weak zonules, classically superotemporal in Marfan syndrome. It causes reduced and fluctuating vision, high astigmatism and monocular diplopia, often in a tall young patient with other Marfan features.",
+    facts: [
+      "Superotemporal lens displacement is characteristic of Marfan (inferonasal suggests homocystinuria).",
+      "A systemic diagnosis with major implications — Marfan carries aortic-root risk needing cardiology.",
+      "Refraction through the phakic or aphakic portion, and specialist lens surgery, are management options."
+    ],
+    review: true
+  },
+
+  "Posterior Polar Cataract": {
+    summary: "A well-demarcated opacity at the back centre of the lens, often congenital and sometimes with a fragile or absent posterior capsule. Its central position affects vision more than its size suggests, and it carries a higher surgical risk of capsule rupture.",
+    facts: [
+      "Positioned in the visual axis, so it causes glare and blur relatively early.",
+      "The posterior capsule is often weak or dehiscent — a key surgical caution.",
+      "Frequently bilateral and may be inherited."
+    ],
+    review: true
+  },
+
+  "Microspherophakia": {
+    summary: "A congenitally small, spherical lens with a steeper curvature, causing high (lenticular) myopia. The abnormal shape and lax zonules predispose to lens dislocation and to pupillary-block angle closure.",
+    facts: [
+      "Suspect it with unexplained high myopia and a visibly small, round lens with a wide zonular gap.",
+      "Associated with Weill-Marchesani syndrome (and sometimes other systemic conditions).",
+      "Pupillary-block glaucoma is a risk, and miotics can paradoxically worsen it."
+    ],
+    review: true
+  },
+
+  /* ═══ Refractive (Session 10j) ═══ */
+
+  "Myopia": {
+    summary: "Short-sightedness — the eye is too long (or too powerful) for its focal length, so distant objects focus in front of the retina and look blurred while near vision is clear. It usually begins in childhood/adolescence and can progress.",
+    facts: [
+      "Corrected with concave (minus) lenses, contact lenses or refractive surgery.",
+      "High myopia carries increased lifetime risk of retinal detachment, myopic maculopathy and glaucoma — worth a dilated check.",
+      "Childhood progression can sometimes be slowed with specific optical/pharmacological strategies."
+    ],
+    review: true
+  },
+
+  "Hyperopia": {
+    summary: "Long-sightedness — the eye is too short (or too weak), so light focuses behind the retina. Younger patients can compensate by accommodating, but this causes eye strain and, with age, increasing blur for near and then distance.",
+    facts: [
+      "Corrected with convex (plus) lenses; symptoms often emerge as accommodation weakens with age.",
+      "Uncorrected hyperopia in children can drive accommodative esotropia and amblyopia.",
+      "Short, hyperopic eyes are anatomically predisposed to angle-closure glaucoma."
+    ],
+    review: true
+  },
+
+  "Astigmatism": {
+    summary: "A refractive error in which the eye's optics are not perfectly spherical (usually the cornea), so light focuses at two different points and images are blurred or distorted at all distances. It commonly coexists with myopia or hyperopia.",
+    facts: [
+      "Corrected with cylindrical (toric) lenses aligned to the astigmatic axis.",
+      "A sudden increase or irregular astigmatism should prompt assessment for keratoconus or other corneal disease.",
+      "Regular astigmatism is optical; irregular astigmatism (from corneal disease/scarring) needs different management."
+    ],
+    review: true
+  },
+
+  "Presbyopia": {
+    summary: "The age-related loss of the lens's ability to change shape and focus for near, becoming noticeable in the mid-forties. It causes gradually worsening difficulty with reading and close work, relieved by holding things further away or by reading correction.",
+    facts: [
+      "A universal, normal ageing change — not a disease.",
+      "Managed with reading glasses, bifocals/varifocals, multifocal contact lenses or lens-based surgery.",
+      "Its onset can unmask previously latent hyperopia."
+    ],
+    review: true
+  },
+
+  "Anisometropia": {
+    summary: "A significant difference in refractive error between the two eyes. It can cause difficulty fusing the two images (from unequal image size), eye strain, and — importantly in children — amblyopia in the more blurred eye.",
+    facts: [
+      "In children it is a leading cause of amblyopia and must be corrected early.",
+      "Large differences can cause troublesome image-size disparity (aniseikonia) with spectacles; contact lenses often help.",
+      "Detected on a routine refraction comparing the two eyes."
+    ],
+    review: true
+  },
+
+  "Anisometropic Refractive Error": {
+    summary: "A meaningful mismatch in the spectacle prescription between the eyes, producing unequal focus and often unequal image size. Symptoms include asthenopia, difficulty with binocular vision, and — in the young — amblyopia risk.",
+    facts: [
+      "Correct early in childhood to protect binocular development and prevent amblyopia.",
+      "Contact lenses reduce the image-size disparity that spectacles can create.",
+      "Adults may tolerate a partial correction better than a full one initially."
+    ],
+    review: true
+  },
+
+  "Pseudomyopia (Accommodative Spasm)": {
+    summary: "A functional, reversible over-activity of accommodation that mimics myopia, causing intermittent distance blur, eye strain and headaches — often in young people doing prolonged near work. The 'myopia' fluctuates and relaxes with cycloplegia.",
+    facts: [
+      "A cycloplegic refraction reveals the true (usually much smaller) refractive error — the key diagnostic step.",
+      "Associated with intense sustained near work and sometimes stress.",
+      "Management addresses near-work habits and any genuine underlying error, not a full minus correction."
+    ],
+    review: true
+  },
+
+  "Post-Refractive-Surgery Ectasia": {
+    summary: "Progressive corneal thinning and steepening (like keratoconus) that develops after laser refractive surgery, usually LASIK, from a biomechanically weakened cornea. It causes increasing, unstable myopic astigmatism and blur months to years after surgery.",
+    facts: [
+      "Suspect it with worsening, irregular astigmatism and topographic steepening after previous refractive surgery.",
+      "Risk factors include thin residual stromal beds and unrecognised pre-operative forme-fruste keratoconus.",
+      "Corneal cross-linking can stabilise it; specialist contact lenses restore vision."
+    ],
+    review: true
+  },
+
+  /* ═══ Glaucoma (Session 10j) ═══ */
+
+  "Normal Tension Glaucoma (NTG)": {
+    summary: "Glaucomatous optic-nerve damage and field loss occurring despite intraocular pressures that stay within the statistically 'normal' range. It is painless and progressive, and highlights that glaucoma is an optic neuropathy, not simply a pressure disease.",
+    facts: [
+      "Diagnosis rests on characteristic disc and field changes with pressures never measured as high — a diurnal pressure curve helps.",
+      "Disc haemorrhages and vascular risk factors (low blood pressure, migraine, sleep apnoea) are relevant.",
+      "Lowering pressure still slows progression, even from a 'normal' baseline."
+    ],
+    review: true
+  },
+
+  "Glaucoma Suspect / Ocular Hypertension": {
+    summary: "A person with a risk factor for glaucoma — raised intraocular pressure, a suspicious optic disc, or a borderline field — but without definite glaucomatous damage yet. The task is to weigh risk and monitor rather than over-treat.",
+    facts: [
+      "Not everyone with raised pressure develops glaucoma; central corneal thickness affects both risk and pressure readings.",
+      "Baseline disc imaging and fields allow progression to be detected over time.",
+      "Treatment is offered based on overall risk, not the pressure number alone."
+    ],
+    review: true
+  },
+
+  "Pigmentary Glaucoma": {
+    summary: "A secondary open-angle glaucoma in which pigment shed from the back of the iris clogs the drainage meshwork, raising pressure. It typically affects young myopic men and can cause pressure spikes after exercise or pupil dilation.",
+    facts: [
+      "Look for the triad: a mid-peripheral iris transillumination pattern, pigment on the corneal endothelium (Krukenberg spindle) and a heavily pigmented angle.",
+      "Exercise or dilation can release a shower of pigment and spike the pressure.",
+      "Pigment dispersion may lessen with age as the process 'burns out'."
+    ],
+    review: true
+  },
+
+  "Pseudoexfoliation Glaucoma": {
+    summary: "A secondary open-angle glaucoma caused by a systemic fibrillar material that deposits on the lens, pupil margin and drainage angle, obstructing outflow. It tends to affect older patients, is often asymmetric, and can run higher and more resistant pressures than primary open-angle glaucoma.",
+    facts: [
+      "Look for greyish-white flakes on the anterior lens capsule (classically a target pattern) and at the pupil margin.",
+      "Associated with weak zonules — a warning of higher cataract-surgery risk (lens dislocation).",
+      "A systemic condition also linked to cardiovascular and other associations."
+    ],
+    review: true
+  },
+
+  "Neovascular Glaucoma": {
+    summary: "An aggressive secondary glaucoma in which new vessels grow on the iris and drainage angle (in response to retinal ischaemia), scarring the angle shut. It presents with a painful red eye, very high pressure and reduced vision, usually after a vein occlusion, diabetic retinopathy or ocular ischaemia.",
+    facts: [
+      "A sight-threatening emergency — find and treat the underlying retinal ischaemia (laser/anti-VEGF) as well as the pressure.",
+      "New vessels on the iris (rubeosis) are the warning sign before the angle closes.",
+      "Often difficult to control and can lead to a blind, painful eye if neglected."
+    ],
+    review: true
+  },
+
+  "Steroid-Induced Glaucoma": {
+    summary: "A rise in intraocular pressure caused by corticosteroid exposure (topical, periocular, inhaled or systemic) reducing outflow, in susceptible 'steroid responders'. It is usually open-angle and painless, so it can silently damage the nerve if pressure is not checked.",
+    facts: [
+      "Anyone on ocular or systemic steroids should have their pressure monitored.",
+      "Often reverses when the steroid is stopped, but chronic exposure can cause permanent damage.",
+      "Ask about all steroid routes, including skin creams and inhalers."
+    ],
+    review: true
+  },
+
+  "Angle Recession Glaucoma": {
+    summary: "A late secondary open-angle glaucoma developing after blunt ocular trauma tore the ciliary body, leaving a recessed angle and damaged outflow. It can appear years after the injury, is often unilateral, and is easily missed unless the trauma history is sought.",
+    facts: [
+      "Gonioscopy shows a widened, torn ciliary-body band — the footprint of old trauma.",
+      "The glaucoma can present many years after the original injury.",
+      "A unilateral glaucoma should always prompt a question about past eye trauma."
+    ],
+    review: true
+  },
+
+  "Juvenile Open Angle Glaucoma": {
+    summary: "An early-onset primary open-angle glaucoma presenting in older children and young adults, with an open angle but often high pressures and rapid nerve damage. It is frequently inherited and can be aggressive.",
+    facts: [
+      "Consider it in a young person with unexplained high pressure or a suspicious disc; family history is common.",
+      "Pressures can be very high and the course more aggressive than adult-onset disease.",
+      "Often needs surgical rather than purely medical management."
+    ],
+    review: true
+  },
+
+  "Neovascular Glaucoma (Diabetic)": {
+    summary: "Neovascular glaucoma driven specifically by the retinal ischaemia of advanced (proliferative) diabetic retinopathy. Iris and angle new vessels raise the pressure, giving a painful eye with rubeosis in a diabetic patient.",
+    facts: [
+      "Signals severe posterior-segment ischaemia — treat the retina (panretinal laser / anti-VEGF) as well as the pressure.",
+      "Rubeosis iridis is the early warning; the angle closes as the vessels fibrose.",
+      "Prevention through good diabetic retinopathy control is far better than treating established disease."
+    ],
+    review: true
+  },
+
+  "Aphakic Glaucoma": {
+    summary: "A secondary glaucoma occurring in an eye that has had the lens removed (often after childhood cataract surgery), through several mechanisms including angle changes and inflammation. It can appear years later, so aphakic eyes need lifelong pressure surveillance.",
+    facts: [
+      "Common after congenital-cataract surgery — these children need long-term monitoring.",
+      "Onset can be delayed by years, so vigilance must be sustained.",
+      "Mechanisms vary, which affects the choice of treatment."
+    ],
+    review: true
+  },
+
+  "Uveitis-Glaucoma-Hyphema (UGH) Syndrome": {
+    summary: "A syndrome caused by an intraocular lens implant chafing adjacent tissue, producing recurrent uveitis, raised pressure and bleeding (hyphema/microhyphema). It presents with intermittent blurring, redness and pressure spikes after cataract surgery.",
+    facts: [
+      "Suspect it with recurrent post-cataract-surgery inflammation, pressure spikes and transient blood in the eye.",
+      "The mechanism is mechanical lens-implant chafe — imaging of the lens position helps.",
+      "Definitive treatment may require repositioning or exchanging the implant."
+    ],
+    review: true
+  },
+
+  "Posner-Schlossman Syndrome (Glaucomatocyclitic Crisis)": {
+    summary: "Recurrent attacks of markedly raised intraocular pressure with mild anterior-chamber inflammation, typically unilateral in young to middle-aged adults. Attacks cause haloes and mild discomfort with a very high pressure but surprisingly few inflammatory signs.",
+    facts: [
+      "The striking mismatch — very high pressure with only mild inflammation — is characteristic.",
+      "Attacks are self-limiting but recurrent, and repeated episodes can cause glaucomatous damage over time.",
+      "An association with cytomegalovirus has been described in some cases."
+    ],
+    review: true
+  },
+
+  "Iridocorneal Endothelial (ICE) Syndrome": {
+    summary: "A spectrum of disorders in which abnormal corneal endothelial cells proliferate across the angle and iris, causing angle closure, iris distortion (corectopia, holes) and corneal oedema. It is usually unilateral in middle-aged women.",
+    facts: [
+      "The combination of secondary angle-closure glaucoma with a distorted, holed iris and corneal oedema is characteristic.",
+      "The abnormal 'ICE' membrane contracts, dragging the iris and closing the angle.",
+      "Both the glaucoma and the corneal decompensation may need treatment."
+    ],
+    review: true
+  },
+
+  "Malignant Glaucoma (Aqueous Misdirection)": {
+    summary: "A rare, dangerous form of angle closure in which aqueous is misdirected posteriorly into/behind the vitreous, pushing the lens-iris diaphragm forward and shallowing the whole anterior chamber despite a patent iridotomy. It often follows intraocular surgery.",
+    facts: [
+      "A uniformly shallow anterior chamber with high pressure after surgery, despite a patent iridotomy, is the clue.",
+      "Standard angle-closure treatments (and miotics) can paradoxically worsen it — management differs.",
+      "A sight-threatening emergency needing specialist care."
+    ],
+    review: true
+  },
+
+  "Phacolytic Glaucoma": {
+    summary: "An acute secondary glaucoma in which leaked protein from a hypermature (advanced) cataract clogs the drainage meshwork. It presents with a sudden painful red eye, very high pressure and a dense white cataract, usually in an eye with long-neglected vision loss.",
+    facts: [
+      "Suspect it with acute high pressure in an eye that already had a mature, vision-obscuring cataract.",
+      "Definitive treatment is removing the offending lens once the pressure is controlled.",
+      "The anterior chamber may show floating white (lens-protein) material."
+    ],
+    review: true
+  },
+
+  "Plateau Iris Syndrome": {
+    summary: "An angle-closure mechanism in which the peripheral iris is held forward by an anteriorly positioned ciliary body, so the angle can close despite a patent iridotomy and a reasonably deep central chamber. It causes angle closure, often in younger patients than typical primary angle closure.",
+    facts: [
+      "Angle closure that persists after a patent laser iridotomy points to a plateau-iris configuration.",
+      "The central chamber can look relatively deep while the peripheral angle is dangerously narrow.",
+      "Often managed with laser iridoplasty rather than iridotomy alone."
+    ],
+    review: true
+  },
+
+  "Primary Congenital Glaucoma": {
+    summary: "Glaucoma present from birth or early infancy due to abnormal development of the drainage angle. It classically presents with the triad of watering, light sensitivity and blepharospasm, plus an enlarging, hazy cornea (buphthalmos) as the soft infant eye stretches.",
+    facts: [
+      "Tearing, photophobia and an enlarging cloudy cornea in an infant is a red flag needing urgent specialist care.",
+      "The infant eye enlarges under pressure (buphthalmos), unlike the adult eye.",
+      "Primarily a surgical disease — early treatment is essential to save vision."
+    ],
+    review: true
+  },
+
+  "Ghost Cell Glaucoma": {
+    summary: "A secondary open-angle glaucoma in which degenerated ('ghost') red blood cells from an old vitreous haemorrhage pass forward and obstruct the drainage meshwork. It causes raised pressure weeks after a vitreous bleed, often with khaki-coloured cells visible in the anterior chamber.",
+    facts: [
+      "Occurs a few weeks after a vitreous haemorrhage, as rigid ghost cells reach the angle.",
+      "Tan/khaki cells in the anterior chamber (and layered in the angle) are characteristic.",
+      "Usually settles as the cells clear, but the pressure may need controlling meanwhile."
+    ],
+    review: true
+  },
+
+  "Schwartz-Matsuo Syndrome": {
+    summary: "A rare secondary open-angle glaucoma associated with a chronic rhegmatogenous retinal detachment, in which photoreceptor outer segments pass forward and block the drainage meshwork. It causes raised pressure with mild anterior-chamber cells in an eye with a detachment.",
+    facts: [
+      "Raised pressure with a chronic retinal detachment and mild anterior-chamber activity is the clue.",
+      "Repairing the retinal detachment typically resolves the glaucoma.",
+      "The 'cells' are shed photoreceptor material, not true inflammation."
+    ],
+    review: true
   }
 
 };
