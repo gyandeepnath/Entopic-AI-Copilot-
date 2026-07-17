@@ -626,6 +626,34 @@ var ICD_MAP = {
   "Gelatinous Drop-like Corneal Dystrophy":
     { icd10: "H18.599", label: "Other hereditary corneal dystrophies, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "amyloid subepithelial deposits; hereditary-dystrophy bucket", verified: "2026-07-17 ICD-10-CM 2026" },
   "Spheroidal Degeneration (Climatic Droplet Keratopathy)":
-    { icd10: "H18.49", label: "Other corneal degeneration", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "climatic droplet/Labrador keratopathy; other-corneal-degeneration bucket", verified: "2026-07-17 ICD-10-CM 2026" }
+    { icd10: "H18.49", label: "Other corneal degeneration", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "climatic droplet/Labrador keratopathy; other-corneal-degeneration bucket", verified: "2026-07-17 ICD-10-CM 2026" },
+
+  /* ─ Neuro-Ophthalmic (batch A) ─ */
+  "Giant Cell Arteritis (Arteritic AION)":
+    { icd10: "M31.6", label: "Other giant cell arteritis", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "sight/life-threatening; code the arteritic ischemic optic neuropathy (H47.01-) alongside; start steroids before biopsy", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Idiopathic Intracranial Hypertension":
+    { icd10: "G93.2", label: "Benign intracranial hypertension", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "papilloedema threatens vision; code the papilloedema (H47.1-) if documented", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Pituitary Adenoma (Chiasmal Compression)":
+    { icd10: "D35.2", label: "Benign neoplasm of pituitary gland", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "code the chiasmal field defect (H47.-) / bitemporal hemianopia as documented", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Ocular Myasthenia Gravis":
+    { icd10: "G70.00", label: "Myasthenia gravis without (acute) exacerbation", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "ocular MG (ptosis/diplopia); with-exacerbation is G70.01", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Nutritional / Toxic Optic Neuropathy":
+    { icd10: "H47.099", label: "Other disorders of optic nerve, not elsewhere classified, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "identify and code the toxin/nutritional deficiency (e.g. B12, alcohol/tobacco, drugs)", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Leber Hereditary Optic Neuropathy":
+    { icd10: "H47.22", label: "Hereditary optic atrophy", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "LHON; mitochondrial inheritance — relevant for family counselling", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Idiopathic Orbital Inflammation (Pseudotumor)":
+    { icd10: "H05.119", label: "Granuloma of unspecified orbit", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "orbital pseudotumor / idiopathic orbital inflammation; exclude specific causes", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Adie Tonic Pupil":
+    { icd10: "H57.059", label: "Tonic pupil, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Downbeat Nystagmus":
+    { icd10: "H55.09", label: "Other forms of nystagmus", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "downbeat nystagmus; suggests cranio-cervical junction pathology — image accordingly", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Skew Deviation":
+    { icd10: "H51.8", label: "Other specified disorders of binocular movement", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "vertical misalignment localising to brainstem/cerebellum; part of the ocular tilt reaction", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Chronic Progressive External Ophthalmoplegia":
+    { icd10: "H49.40", label: "Progressive external ophthalmoplegia, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "CPEO; mitochondrial — consider Kearns-Sayre (retinopathy, cardiac block)", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Convergence-Retraction Nystagmus (Dorsal Midbrain)":
+    { icd10: "H55.09", label: "Other forms of nystagmus", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "dorsal midbrain (Parinaud) syndrome; image the midbrain/pineal region", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Hemianopic Field Loss (Occipital Stroke)":
+    { icd10: "H53.469", label: "Homonymous bilateral field defects, unspecified side", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "code the underlying occipital stroke (I63.-) as principal", verified: "2026-07-17 ICD-10-CM 2026" }
 
 };

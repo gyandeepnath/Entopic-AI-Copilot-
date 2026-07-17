@@ -1212,6 +1212,138 @@ var CONDITION_INFO = {
       "Only reduces vision when the deposits encroach centrally; UV protection is sensible advice."
     ],
     review: true
+  },
+
+  /* ═══ Neuro-Ophthalmic — batch A (Session 10h) ═══ */
+
+  "Giant Cell Arteritis (Arteritic AION)": {
+    summary: "Ischaemic damage to the optic nerve head from inflammation of the posterior ciliary arteries in giant cell (temporal) arteritis. It causes sudden, often severe, painless vision loss in an older patient, frequently with headache, scalp tenderness, jaw claudication and malaise.",
+    facts: [
+      "A sight- and life-threatening emergency — start high-dose corticosteroids immediately on suspicion, before temporal-artery biopsy.",
+      "The fellow eye is at high risk within days if untreated.",
+      "Inflammatory markers (ESR/CRP) are usually markedly raised and support urgent treatment."
+    ],
+    review: true
+  },
+
+  "Idiopathic Intracranial Hypertension": {
+    summary: "Raised intracranial pressure without a mass or hydrocephalus, typically in young overweight women. It causes headache, transient visual obscurations, pulsatile tinnitus and bilateral disc swelling (papilloedema), with the threat of permanent field loss.",
+    facts: [
+      "Papilloedema with progressive field loss is the sight-threatening element — fields must be monitored.",
+      "A diagnosis of exclusion — neuroimaging (with venography) and a lumbar puncture with high opening pressure are needed to rule out other causes.",
+      "Weight loss and pressure-lowering treatment protect vision; a rapidly worsening field is an emergency."
+    ],
+    review: true
+  },
+
+  "Pituitary Adenoma (Chiasmal Compression)": {
+    summary: "A benign pituitary tumour that, as it grows upward, compresses the optic chiasm and produces a classically bitemporal (peripheral) field defect. Central acuity is often preserved until late, so the field loss can be insidious.",
+    facts: [
+      "A bitemporal hemianopia respecting the vertical midline points to the chiasm — image the pituitary.",
+      "May present with endocrine features (or apoplexy — a sudden, painful, sight-threatening event).",
+      "Field loss often recovers after decompression, especially if treated early."
+    ],
+    review: true
+  },
+
+  "Ocular Myasthenia Gravis": {
+    summary: "An autoimmune disorder of the neuromuscular junction, presenting in the eye with variable, fatigable ptosis and diplopia that worsen through the day and with sustained effort. Pupils are spared.",
+    facts: [
+      "Fatigability and diurnal variation are the hallmarks — symptoms worsen with use and improve with rest.",
+      "Pupil involvement argues against myasthenia and points elsewhere.",
+      "Can generalise to bulbar/respiratory muscles, so a positive diagnosis warrants neurology involvement."
+    ],
+    review: true
+  },
+
+  "Nutritional / Toxic Optic Neuropathy": {
+    summary: "Bilateral, symmetric optic-nerve dysfunction from a nutritional deficiency (e.g. B12/folate) or a toxin (e.g. tobacco-alcohol, methanol, certain drugs). It causes gradual, painless, symmetric central vision loss with reduced colour vision and central/caecocentral scotomas.",
+    facts: [
+      "Symmetry and central colour-vision loss distinguish it from most compressive/inflammatory causes.",
+      "Identifying and removing the toxin or replacing the deficiency can halt or reverse it — history is everything.",
+      "Methanol poisoning is an emergency and a very different, acute picture."
+    ],
+    review: true
+  },
+
+  "Leber Hereditary Optic Neuropathy": {
+    summary: "A mitochondrially-inherited optic neuropathy, typically in young men, causing subacute, painless, sequential loss of central vision in both eyes over weeks to months. The disc may look hyperaemic with peripapillary telangiectasia acutely, then pale.",
+    facts: [
+      "Maternal (mitochondrial) inheritance — family history on the mother's side is a key clue.",
+      "The second eye is usually affected within weeks to months of the first.",
+      "Genetic confirmation matters for counselling and emerging therapies."
+    ],
+    review: true
+  },
+
+  "Idiopathic Orbital Inflammation (Pseudotumor)": {
+    summary: "A non-infective, non-neoplastic inflammatory process of the orbit that presents acutely with painful proptosis, lid swelling, redness and restricted, painful eye movements. It is a diagnosis of exclusion.",
+    facts: [
+      "Painful ophthalmoplegia with proptosis warrants urgent imaging and exclusion of infection and tumour.",
+      "Often responds dramatically to corticosteroids, which supports the diagnosis.",
+      "Can involve specific structures (myositis, dacryoadenitis) or the orbital apex, where vision is threatened."
+    ],
+    review: true
+  },
+
+  "Adie Tonic Pupil": {
+    summary: "A benign disorder of the parasympathetic supply to the iris, giving a dilated pupil that reacts poorly to light but slowly (tonically) to near, with sector palsy and light-near dissociation. It is often noticed as anisocoria or difficulty focusing.",
+    facts: [
+      "Light-near dissociation with slow, tonic near response is characteristic.",
+      "The pupil is hypersensitive to dilute pilocarpine, which constricts it — a useful confirmatory test.",
+      "Usually benign; combined with absent deep-tendon reflexes it is called Holmes-Adie syndrome."
+    ],
+    review: true
+  },
+
+  "Downbeat Nystagmus": {
+    summary: "A form of nystagmus with the fast phase beating downward, present in primary gaze and often worse on lateral and down gaze. It causes oscillopsia and blurred vision and usually localises to the cranio-cervical junction or cerebellum.",
+    facts: [
+      "Its presence points to structural pathology at the cranio-cervical junction (e.g. Chiari) or the cerebellum — image accordingly.",
+      "Can also be caused by drugs (e.g. lithium, anticonvulsants) and some metabolic states.",
+      "Oscillopsia (the world appearing to move) is often the main complaint."
+    ],
+    review: true
+  },
+
+  "Skew Deviation": {
+    summary: "A vertical misalignment of the eyes from disturbed prenuclear (otolithic) input, typically due to a brainstem or cerebellar lesion. It causes vertical double vision and is part of the ocular tilt reaction (head tilt, eye torsion, skew).",
+    facts: [
+      "A vertical strabismus that does not fit a single cranial-nerve palsy should raise suspicion of a central cause.",
+      "Often accompanies other posterior-fossa signs — image the brainstem/cerebellum.",
+      "Distinguishing it from a fourth-nerve palsy can be subtle (upright-supine testing helps)."
+    ],
+    review: true
+  },
+
+  "Chronic Progressive External Ophthalmoplegia": {
+    summary: "A mitochondrial disorder causing slowly progressive, symmetric limitation of eye movements with bilateral ptosis. Because it progresses symmetrically and slowly, patients often have little diplopia despite marked restriction.",
+    facts: [
+      "Symmetric, slowly progressive ophthalmoplegia with ptosis and little diplopia is characteristic.",
+      "Part of a mitochondrial spectrum — consider Kearns-Sayre syndrome (retinopathy, cardiac conduction block) and screen the heart.",
+      "Ptosis surgery is undertaken cautiously given reduced eye movement and Bell's phenomenon."
+    ],
+    review: true
+  },
+
+  "Convergence-Retraction Nystagmus (Dorsal Midbrain)": {
+    summary: "A disorder of the dorsal midbrain (Parinaud syndrome) in which attempted upgaze triggers co-contraction of the extraocular muscles, producing convergence and globe-retraction movements, along with upgaze palsy and light-near dissociation.",
+    facts: [
+      "Localises to the dorsal midbrain — image the midbrain and pineal region (e.g. tumour, hydrocephalus).",
+      "Best elicited with an upward-moving optokinetic target.",
+      "Accompanied by the other Parinaud features: upgaze palsy, lid retraction and light-near dissociation."
+    ],
+    review: true
+  },
+
+  "Hemianopic Field Loss (Occipital Stroke)": {
+    summary: "Loss of the same half of the visual field in both eyes (homonymous hemianopia) from damage to the retrochiasmal pathway, most often an occipital-lobe stroke. Central acuity is preserved, and macular sparing may occur.",
+    facts: [
+      "A congruous homonymous hemianopia respecting the vertical midline localises behind the chiasm.",
+      "An isolated hemianopia from an occipital stroke can occur with otherwise normal examination — treat as an acute stroke.",
+      "Patients often bump into things on the affected side; formal fields confirm and map it."
+    ],
+    review: true
   }
 
 };
