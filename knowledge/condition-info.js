@@ -1548,6 +1548,138 @@ var CONDITION_INFO = {
       "Generally responds well to treatment, but requires oncological assessment."
     ],
     review: true
+  },
+
+  /* ═══ Surface & Lids — batch A (Session 10i) ═══ */
+
+  "Floppy Eyelid Syndrome": {
+    summary: "A condition in which the upper eyelids are unusually lax and rubbery, everting easily during sleep so the tarsal conjunctiva rubs on the pillow. It causes chronic irritation, redness, mucous discharge and a papillary conjunctivitis, typically worse on waking and often worse in one eye (the sleeping side).",
+    facts: [
+      "Strongly associated with obstructive sleep apnoea and obesity — screening for OSA is important and may be the main health gain.",
+      "The upper lid everts with minimal upward traction — a simple bedside sign.",
+      "Symptoms are often worst in the morning and on the side the patient sleeps on."
+    ],
+    review: true
+  },
+
+  "Blepharospasm": {
+    summary: "An involuntary, bilateral, forceful closure of the eyelids from sustained contraction of the orbicularis muscle — a focal dystonia. It causes increasing, involuntary blinking and lid closure that can become functionally blinding, often aggravated by light and stress.",
+    facts: [
+      "Bilateral and involuntary — distinguish it from hemifacial spasm (unilateral) and from reflex blinking due to ocular surface disease.",
+      "Rule out an ocular-surface trigger (dry eye, blepharitis) that can drive or worsen it.",
+      "Botulinum toxin injections are the mainstay of symptomatic control."
+    ],
+    review: true
+  },
+
+  "Canaliculitis": {
+    summary: "Infection of the lacrimal canaliculus, classically by Actinomyces, causing a red, tender, 'pouting' punctum with a chronically watering, discharging eye. Concretions (sulphur granules) are often expressible from the canaliculus.",
+    facts: [
+      "A pouting punctum with expressible concretions is characteristic and often missed as chronic conjunctivitis.",
+      "Curettage/removal of the concretions is usually needed for cure, not antibiotics alone.",
+      "Suspect it in unilateral chronic watering with recurrent discharge."
+    ],
+    review: true
+  },
+
+  "Sebaceous Gland Carcinoma": {
+    summary: "An aggressive malignancy of the meibomian or other sebaceous glands of the eyelid, notorious for masquerading as a recurrent chalazion or a chronic unilateral blepharitis. It can present as a firm lid nodule or diffuse lid thickening with lash loss.",
+    facts: [
+      "A 'recurrent chalazion' or unilateral chronic blepharitis that does not settle must be biopsied — this cancer is frequently diagnosed late.",
+      "It can spread within the epithelium (pagetoid spread), so mapping biopsies may be needed.",
+      "Requires urgent oculoplastic/oncology referral; it can metastasise."
+    ],
+    review: true
+  },
+
+  "Conjunctival Melanoma": {
+    summary: "A malignant melanocytic tumour of the conjunctiva, usually appearing as a raised, variably pigmented, vascularised lesion in an adult. It may arise from primary acquired melanosis, from a pre-existing nevus, or de novo.",
+    facts: [
+      "A new, growing or vascularised pigmented conjunctival lesion warrants urgent referral and biopsy.",
+      "Primary acquired melanosis with atypia is a key precursor — document and monitor pigmented lesions.",
+      "Has metastatic potential (regional nodes, distant), so it needs oncological staging."
+    ],
+    review: true
+  },
+
+  "Ocular Surface Squamous Neoplasia": {
+    summary: "A spectrum of squamous epithelial dysplasia of the conjunctiva/cornea, from intraepithelial neoplasia to invasive squamous cell carcinoma. It typically appears as a fleshy, gelatinous or leukoplakic vascularised lesion near the limbus in older, sun-exposed or immunosuppressed patients.",
+    facts: [
+      "A persistent, vascularised limbal lesion should be referred for assessment and biopsy.",
+      "Associated with UV exposure, HPV, and immunosuppression (including HIV) — consider the context.",
+      "Ranges from surface intraepithelial disease to invasive carcinoma; early treatment is usually curative."
+    ],
+    review: true
+  },
+
+  "Conjunctival Nevus": {
+    summary: "A common benign melanocytic lesion of the conjunctiva, usually a well-defined, slightly raised pigmented spot with characteristic clear cysts, present from childhood or adolescence. It is typically stable but can occasionally change.",
+    facts: [
+      "Intralesional clear cysts are a reassuring benign feature.",
+      "Document size and photograph it — significant growth or new vascularity warrants review for malignant change.",
+      "Pigmentation can fluctuate (e.g. at puberty) without meaning malignancy."
+    ],
+    review: true
+  },
+
+  "Giant Papillary Conjunctivitis": {
+    summary: "A chronic immune/mechanical inflammation of the upper tarsal conjunctiva producing large (giant) papillae, most often from contact-lens wear, an ocular prosthesis or an exposed suture. It causes itching, mucous discharge, lens intolerance and blurred vision.",
+    facts: [
+      "Almost always has a mechanical trigger — find and remove or modify it (lens, prosthesis, suture).",
+      "Evert the upper lid to see the giant papillae.",
+      "Improving lens hygiene/material and reducing wear time are central to management."
+    ],
+    review: true
+  },
+
+  "Ligneous Conjunctivitis": {
+    summary: "A rare chronic conjunctivitis in which firm, woody ('ligneous') fibrin-rich pseudomembranes form on the tarsal conjunctiva, usually in children. It causes a chronically red, discharging eye with characteristic hard, whitish-yellow membranes that recur after removal.",
+    facts: [
+      "Associated with systemic (type 1) plasminogen deficiency — it can affect other mucous membranes too.",
+      "The membranes recur readily after excision, which is characteristic.",
+      "A rare condition best managed with specialist input, sometimes including plasminogen replacement."
+    ],
+    review: true
+  },
+
+  "Punctal Stenosis": {
+    summary: "Narrowing or closure of the lacrimal punctum, obstructing tear drainage at its entry point. It causes a chronically watering eye (epiphora), often with secondary skin irritation, in an otherwise comfortable eye.",
+    facts: [
+      "A common, easily overlooked cause of a watering eye — inspect the punctum directly.",
+      "Causes include chronic blepharitis, prior infection, drugs and age-related change.",
+      "Often treatable with simple punctal dilation or a minor procedure."
+    ],
+    review: true
+  },
+
+  "Nasolacrimal Duct Obstruction (Congenital)": {
+    summary: "A blocked nasolacrimal duct present from birth, usually from a persistent membrane at its lower end, causing a watering, sticky eye in an infant from the early weeks of life. The eye itself is white and comfortable.",
+    facts: [
+      "The great majority resolve spontaneously in the first year — reassurance and lacrimal-sac massage are first-line.",
+      "A white eye with watering/discharge distinguishes it from conjunctivitis and (importantly) from infantile glaucoma.",
+      "Persistent cases beyond about a year may need probing."
+    ],
+    review: true
+  },
+
+  "Dacryoadenitis": {
+    summary: "Inflammation of the lacrimal gland, presenting with pain, swelling and redness over the outer third of the upper lid, giving a characteristic S-shaped lid margin. It may be infective (acute) or part of a systemic inflammatory/infiltrative process (chronic).",
+    facts: [
+      "The tender swelling is in the outer upper lid, producing an S-shaped ptosis.",
+      "Acute cases are often infective; chronic bilateral gland enlargement suggests systemic disease (e.g. sarcoid, IgG4, Sjögren, lymphoma).",
+      "Imaging and work-up are guided by whether it is acute-infective or chronic-infiltrative."
+    ],
+    review: true
+  },
+
+  "Involutional Ptosis": {
+    summary: "The commonest form of acquired drooping upper eyelid, from age-related stretching or dehiscence of the levator aponeurosis. It causes a gradually lowering lid with a high or absent lid crease and preserved levator function, sometimes obscuring the upper field.",
+    facts: [
+      "A high skin crease with good levator function points to an aponeurotic (involutional) mechanism.",
+      "Exclude neurogenic (third-nerve, Horner) and myogenic (myasthenia) causes before attributing it to age.",
+      "Surgical repair is effective when the droop is functionally or cosmetically significant."
+    ],
+    review: true
   }
 
 };

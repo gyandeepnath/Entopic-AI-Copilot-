@@ -698,6 +698,34 @@ var ICD_MAP = {
   "Orbital Rhabdomyosarcoma":
     { icd10: "C69.60", label: "Malignant neoplasm of unspecified orbit", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "commonest primary orbital malignancy of childhood; life-threatening — urgent; set laterality", verified: "2026-07-17 ICD-10-CM 2026" },
   "Orbital Lymphoma":
-    { icd10: "C69.60", label: "Malignant neoplasm of unspecified orbit", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "orbital/adnexal lymphoma; also code the lymphoma subtype (C82-C88; commonly MALT)", verified: "2026-07-17 ICD-10-CM 2026" }
+    { icd10: "C69.60", label: "Malignant neoplasm of unspecified orbit", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "orbital/adnexal lymphoma; also code the lymphoma subtype (C82-C88; commonly MALT)", verified: "2026-07-17 ICD-10-CM 2026" },
+
+  /* ─ Surface & Lids (batch A) ─ */
+  "Floppy Eyelid Syndrome":
+    { icd10: "H02.89", label: "Other specified disorders of eyelid", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "FES; no distinct code; strong association with obstructive sleep apnoea — screen for it", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Blepharospasm":
+    { icd10: "G24.5", label: "Blepharospasm", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Canaliculitis":
+    { icd10: "H04.339", label: "Acute lacrimal canaliculitis of unspecified lacrimal passage", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "often Actinomyces with concretions; set laterality", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Sebaceous Gland Carcinoma":
+    { icd10: "C44.1391", label: "Sebaceous cell carcinoma of skin of eyelid, including canthus", laterality: "SET per patient", status: "NEEDS_CLINICAL_REVIEW", caution: "aggressive lid malignancy that masquerades as chalazion/blepharitis — URGENT; the C44.139x codes are eyelid+side specific, SET the correct one (shown value is a placeholder)", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Conjunctival Melanoma":
+    { icd10: "C69.00", label: "Malignant neoplasm of unspecified conjunctiva", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "URGENT; set laterality (C69.01/02); arises from PAM/nevus or de novo", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Ocular Surface Squamous Neoplasia":
+    { icd10: "C69.00", label: "Malignant neoplasm of unspecified conjunctiva", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "OSSN spectrum (conjunctival/corneal intraepithelial neoplasia to invasive SCC); in-situ disease may be coded D09.2-", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Conjunctival Nevus":
+    { icd10: "D31.00", label: "Benign neoplasm of unspecified conjunctiva", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "document to monitor for growth/change (melanoma risk)", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Giant Papillary Conjunctivitis":
+    { icd10: "H10.419", label: "Chronic giant papillary conjunctivitis, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "usually contact-lens/prosthesis/suture-associated", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Ligneous Conjunctivitis":
+    { icd10: "H10.519", label: "Ligneous conjunctivitis, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "associated with plasminogen deficiency", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Punctal Stenosis":
+    { icd10: "H04.569", label: "Stenosis of unspecified lacrimal punctum", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Nasolacrimal Duct Obstruction (Congenital)":
+    { icd10: "Q10.5", label: "Congenital stenosis and stricture of lacrimal duct", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "congenital NLDO; most resolve in the first year", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Dacryoadenitis":
+    { icd10: "H04.009", label: "Unspecified dacryoadenitis, unspecified lacrimal gland", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "set acute (H04.01-) vs chronic (H04.02-) and laterality", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Involutional Ptosis":
+    { icd10: "H02.409", label: "Unspecified ptosis of unspecified eyelid", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "aponeurotic/involutional; set laterality (H02.40x); exclude neurogenic/myogenic causes", verified: "2026-07-17 ICD-10-CM 2026" }
 
 };
