@@ -2986,6 +2986,228 @@ var CONDITION_INFO = {
       "Surgery is considered for a manifest deviation in primary gaze or an anomalous head posture."
     ],
     review: true
+  },
+
+  /* ═══ Cornea (curated) — Session 10j ═══ */
+
+  "Herpes Simplex Keratitis": {
+    summary: "Corneal infection by herpes simplex virus, the epithelial form causing a branching (dendritic) ulcer with a painful, red, watering eye and reduced corneal sensation. Recurrent stromal disease can cause scarring and vision loss.",
+    facts: [
+      "The dendritic ulcer with terminal end-bulbs, staining with fluorescein, is characteristic.",
+      "Reduced corneal sensation is a useful clue; the disease is typically unilateral and recurrent.",
+      "Avoid unsupervised topical steroids in active epithelial disease — they can worsen it; antivirals are the mainstay."
+    ],
+    review: true
+  },
+
+  "Herpes Zoster Ophthalmicus (Corneal)": {
+    summary: "Reactivation of varicella-zoster in the ophthalmic division of the trigeminal nerve, causing a painful vesicular forehead/eyelid rash and a range of corneal problems (pseudodendrites, stromal keratitis, neurotrophic disease). Nose-tip involvement (Hutchinson's sign) predicts eye involvement.",
+    facts: [
+      "A dermatomal rash respecting the midline with Hutchinson's sign flags likely ocular involvement.",
+      "Prompt systemic antiviral treatment reduces ocular complications.",
+      "Late neurotrophic keratitis and post-herpetic neuralgia can follow and need ongoing care."
+    ],
+    review: true
+  },
+
+  "Corneal Ulcer": {
+    summary: "A defect of the corneal epithelium with underlying stromal inflammation/infiltrate, usually infective. It causes a painful red eye, photophobia, watering and reduced vision, with a visible white corneal opacity that stains with fluorescein.",
+    facts: [
+      "A central or enlarging ulcer with an infiltrate — especially in a contact-lens wearer — is sight-threatening and needs urgent assessment and scraping.",
+      "Identify risk factors (lens wear, trauma, surface disease) that point to the likely organism.",
+      "A hypopyon indicates significant intraocular reaction to the infection."
+    ],
+    review: true
+  },
+
+  "Corneal Edema": {
+    summary: "Swelling of the cornea from excess fluid, usually because the endothelial pump is failing or overwhelmed (dystrophy, surgery, high pressure, inflammation). It causes blurred vision, haloes and, when severe, painful epithelial blistering.",
+    facts: [
+      "Morning blur that clears through the day suggests endothelial (e.g. Fuchs) dysfunction.",
+      "Find the cause — endothelial disease, a pressure spike, or intraocular inflammation/surgery.",
+      "Persistent decompensation may ultimately need endothelial transplantation."
+    ],
+    review: true
+  },
+
+  "Recurrent Corneal Erosion": {
+    summary: "Repeated breakdown of the corneal epithelium where it is poorly anchored, often after a prior sharp abrasion or on a background of epithelial basement membrane dystrophy. It causes sudden sharp pain, watering and photophobia, classically on waking or opening the eyes.",
+    facts: [
+      "Sharp pain on waking, recurring at the site of an old scratch, is the classic history.",
+      "Look for map-dot-fingerprint dystrophy in both eyes as a predisposing factor.",
+      "Lubrication (especially night-time ointment) is first-line; refractory cases have procedural options."
+    ],
+    review: true
+  },
+
+  "Fuchs Endothelial Dystrophy": {
+    summary: "An inherited, progressive loss of corneal endothelial cells with guttata (excrescences on Descemet's membrane), leading to corneal oedema as the pump fails. It causes gradual blurring and glare, characteristically worse in the morning and improving through the day.",
+    facts: [
+      "Morning blur that improves with the day, plus guttata on examination, is characteristic.",
+      "Cataract surgery can tip a borderline cornea into decompensation — a key pre-operative consideration.",
+      "Advanced disease is treated with endothelial keratoplasty."
+    ],
+    review: true
+  },
+
+  "Contact Lens Related Keratitis": {
+    summary: "Corneal inflammation or infection associated with contact-lens wear, ranging from sterile peripheral infiltrates to sight-threatening microbial keratitis. It causes a painful red eye with discharge and reduced vision, often after overnight wear or poor hygiene.",
+    facts: [
+      "Any painful red eye in a lens wearer must have microbial keratitis excluded before assuming a sterile cause.",
+      "Central location, an epithelial defect over the infiltrate, and significant pain are high-risk features.",
+      "Stop lens wear and refer urgently if infection is suspected."
+    ],
+    review: true
+  },
+
+  "Band Keratopathy": {
+    summary: "A band of calcium deposition across the exposed (interpalpebral) cornea, typically from chronic ocular inflammation, chronic surface disease or high blood calcium. It causes a horizontal, whitish, often stippled band that can reduce vision and cause irritation.",
+    facts: [
+      "A band across the cornea in the lid-fissure zone, often with clear 'holes', is characteristic.",
+      "Look for a cause — chronic uveitis (including JIA), long-standing eye disease, or systemic hypercalcaemia.",
+      "Symptomatic cases can be treated with EDTA chelation of the calcium."
+    ],
+    review: true
+  },
+
+  "Arcus Senilis": {
+    summary: "A greyish-white ring of lipid deposition in the peripheral cornea, separated from the limbus by a clear zone. It is an extremely common, benign ageing change that does not affect vision.",
+    facts: [
+      "In older patients it is a normal finding needing no treatment.",
+      "Arcus in someone under about 40 (arcus juvenilis) may warrant a lipid/cardiovascular assessment.",
+      "It is peripheral and does not encroach on the visual axis."
+    ],
+    review: true
+  },
+
+  "Corneal Scar": {
+    summary: "Permanent corneal opacity from previous injury, infection or inflammation. Its visual effect depends on density and location — a scar over the visual axis causes blur, glare and sometimes irregular astigmatism, while a peripheral scar may be visually silent.",
+    facts: [
+      "Note the location relative to the visual axis and any induced irregular astigmatism.",
+      "The history often reveals the cause (old ulcer, trauma, herpetic disease).",
+      "Visually significant central scars may be treated with a rigid contact lens or corneal surgery."
+    ],
+    review: true
+  },
+
+  "Marginal Keratitis": {
+    summary: "A hypersensitivity reaction to staphylococcal antigens (usually on a background of blepharitis), producing peripheral corneal infiltrates separated from the limbus by a clear zone. It causes irritation, redness and mild photophobia.",
+    facts: [
+      "Sterile peripheral infiltrates with a clear zone to the limbus, on a background of lid disease, are characteristic.",
+      "It is immune-mediated, not infective — but a true infective ulcer must be excluded.",
+      "Treating the underlying blepharitis reduces recurrences."
+    ],
+    review: true
+  },
+
+  "Phlyctenular Keratoconjunctivitis": {
+    summary: "A nodular hypersensitivity reaction of the conjunctiva/cornea (a phlyctenule) to microbial antigens — classically staphylococcal or, historically, tuberculous. It causes a localised raised nodule with intense surrounding redness, tearing and photophobia, often in children/young adults.",
+    facts: [
+      "A small nodule at or near the limbus with a leash of vessels is characteristic.",
+      "Associated with blepharitis; where relevant, consider tuberculosis exposure.",
+      "Corneal involvement can scar and reduce vision, so it is more than a cosmetic nuisance."
+    ],
+    review: true
+  },
+
+  "Interstitial Keratitis": {
+    summary: "Inflammation and vascularisation of the corneal stroma with an intact epithelium and endothelium, usually an immune response to an infection (classically congenital syphilis, also herpes, tuberculosis and others). Active disease causes pain, photophobia and blurred vision; healed disease leaves 'ghost vessels' and scarring.",
+    facts: [
+      "Deep stromal vascularisation with a quiet surface suggests interstitial keratitis — hunt for the underlying infection.",
+      "Old, non-perfused 'ghost vessels' indicate previous (often congenital syphilitic) disease.",
+      "Treatment targets the cause plus inflammation control."
+    ],
+    review: true
+  },
+
+  "Neurotrophic Keratitis": {
+    summary: "Corneal breakdown due to impaired corneal sensation (from herpetic disease, diabetes, trigeminal damage or surgery), which removes the protective reflexes that keep the surface healthy. It causes a persistent epithelial defect and stromal thinning — often with surprisingly little pain given the severity.",
+    facts: [
+      "A non-healing epithelial defect with reduced corneal sensation and little pain is the hallmark.",
+      "It can progress silently to melting and perforation, so it needs proactive surface protection.",
+      "Management focuses on protecting and healing the surface (lubrication, protective measures, specialist therapies)."
+    ],
+    review: true
+  },
+
+  "Bullous Keratopathy": {
+    summary: "Chronic corneal oedema with painful epithelial blisters (bullae) that rupture, from end-stage endothelial failure — commonly after complicated cataract surgery (pseudophakic/aphakic) or advanced Fuchs dystrophy. It causes blurred vision and recurrent, sharp surface pain.",
+    facts: [
+      "Recurrent surface pain from ruptured bullae, on a background of endothelial failure, is characteristic.",
+      "Definitive treatment is endothelial (or full-thickness) corneal transplantation.",
+      "Bandage lenses and lubrication help symptoms while awaiting or if unsuitable for surgery."
+    ],
+    review: true
+  },
+
+  "Corneal Neovascularization": {
+    summary: "Ingrowth of new blood vessels into the normally avascular cornea in response to chronic hypoxia (e.g. contact-lens overwear), inflammation or surface disease. It threatens corneal clarity and, importantly, the success of any future corneal graft.",
+    facts: [
+      "Find and treat the driver — lens overwear, chronic inflammation or limbal stem-cell failure.",
+      "Deep or lipid-laden vascularisation can permanently reduce clarity.",
+      "Vascularised corneas are at higher risk of graft rejection, which affects surgical planning."
+    ],
+    review: true
+  },
+
+  "Pellucid Marginal Degeneration": {
+    summary: "A peripheral corneal thinning disorder (a cousin of keratoconus) in which the inferior cornea thins in a band, with the cornea protruding above the thinnest point. It causes progressive, high against-the-rule irregular astigmatism and blur that glasses correct poorly.",
+    facts: [
+      "A classic 'crab-claw' or 'kissing doves' topography pattern is characteristic.",
+      "Distinguished from keratoconus by the inferior band of thinning below the point of maximal protrusion.",
+      "Managed with specialist contact lenses; surgery is more challenging than for central ectasia."
+    ],
+    review: true
+  },
+
+  "Keratoglobus": {
+    summary: "A rare, usually bilateral disorder in which the whole cornea is thinned and globularly protruding from limbus to limbus. It causes high myopia and irregular astigmatism, and the diffusely thin cornea is very vulnerable to rupture from minor trauma.",
+    facts: [
+      "Generalised (not focal) corneal thinning distinguishes it from keratoconus and pellucid degeneration.",
+      "The globally thin cornea is at high risk of perforation — eye protection is important.",
+      "Can be congenital or associated with connective-tissue disorders."
+    ],
+    review: true
+  },
+
+  "Salzmann Nodular Degeneration": {
+    summary: "A slowly progressive degeneration in which bluish-white or greyish nodules of fibrous tissue form on the superficial cornea, often on a background of chronic surface disease. It causes irritation, foreign-body sensation, glare and blur if the nodules approach the axis.",
+    facts: [
+      "Raised superficial nodules, often peripheral or mid-peripheral, on a chronically irritated eye are characteristic.",
+      "Associated with long-standing ocular-surface disease (dry eye, blepharitis, prior keratitis).",
+      "Superficial keratectomy can remove visually or symptomatically significant nodules."
+    ],
+    review: true
+  },
+
+  "Thygeson Superficial Punctate Keratitis": {
+    summary: "A chronic, bilateral condition of recurrent tiny raised epithelial lesions on an otherwise white, quiet eye. It causes intermittent foreign-body sensation, watering, photophobia and mild blur, with characteristically long remissions and relapses over years.",
+    facts: [
+      "A white eye with scattered coarse punctate epithelial lesions and out-of-proportion symptoms is typical.",
+      "Notable for its chronic relapsing-remitting course, often over many years.",
+      "Responds to lubrication and, in flares, gentle anti-inflammatory measures; the prognosis for vision is good."
+    ],
+    review: true
+  },
+
+  "Superficial Punctate Keratitis": {
+    summary: "A non-specific pattern of tiny epithelial defects staining with fluorescein — a sign shared by many surface disorders (dry eye, blepharitis, exposure, toxicity, UV/contact-lens injury). It causes grittiness, mild photophobia and fluctuating vision.",
+    facts: [
+      "A finding rather than a diagnosis — the distribution of the staining hints at the cause (e.g. inferior in blepharitis, interpalpebral in dry eye, superior in SLK).",
+      "Treatment is directed at the underlying surface problem.",
+      "Usually reversible once the cause is addressed."
+    ],
+    review: true
+  },
+
+  "Exposure Keratitis": {
+    summary: "Corneal surface damage from inadequate lid closure or blinking, so part of the cornea dries out. It arises from facial-nerve palsy, proptosis, ectropion, reduced consciousness or nocturnal lagophthalmos, and causes irritation, redness and, if severe, ulceration.",
+    facts: [
+      "The damage is typically in the lower third (the exposed zone) — check lid closure and Bell's phenomenon.",
+      "Aggressive lubrication and mechanical protection prevent progression to ulceration and scarring.",
+      "Address the cause (e.g. the palsy or the proptosis) as well as protecting the surface."
+    ],
+    review: true
   }
 
 };
