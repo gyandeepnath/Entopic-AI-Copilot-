@@ -682,6 +682,22 @@ var ICD_MAP = {
   "Cavernous Sinus Thrombosis":
     { icd10: "G08", label: "Intracranial and intraspinal phlebitis and thrombophlebitis", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "life-threatening; septic (often sinus/facial infection) vs aseptic — code the source", verified: "2026-07-17 ICD-10-CM 2026" },
   "Infantile (Congenital) Nystagmus":
-    { icd10: "H55.01", label: "Congenital nystagmus", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", verified: "2026-07-17 ICD-10-CM 2026" }
+    { icd10: "H55.01", label: "Congenital nystagmus", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", verified: "2026-07-17 ICD-10-CM 2026" },
+
+  /* ─ Neuro-Ophthalmic (batch C — completes the domain) ─ */
+  "Optic Nerve Hypoplasia":
+    { icd10: "H47.039", label: "Optic nerve hypoplasia, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "consider septo-optic dysplasia / midline CNS and endocrine associations", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Diabetic Papillopathy":
+    { icd10: "H47.099", label: "Other disorders of optic nerve, not elsewhere classified, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "diabetic papillopathy; code the diabetes (E1x.39-) alongside; a diagnosis of exclusion vs AION", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Foster Kennedy Syndrome":
+    { icd10: "H47.099", label: "Other disorders of optic nerve, not elsewhere classified, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "optic atrophy one eye + papilloedema fellow eye from a frontal mass — code the causative tumour", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Tilted Disc Syndrome":
+    { icd10: "Q14.2", label: "Congenital malformation of optic disc", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "tilted-disc congenital anomaly; can cause a non-neurological field defect", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Susac Syndrome":
+    { icd10: "H35.069", label: "Retinal vasculitis, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "Susac triad (branch retinal artery occlusions + sensorineural hearing loss + encephalopathy); no distinct code", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Orbital Rhabdomyosarcoma":
+    { icd10: "C69.60", label: "Malignant neoplasm of unspecified orbit", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "commonest primary orbital malignancy of childhood; life-threatening — urgent; set laterality", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Orbital Lymphoma":
+    { icd10: "C69.60", label: "Malignant neoplasm of unspecified orbit", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "orbital/adnexal lymphoma; also code the lymphoma subtype (C82-C88; commonly MALT)", verified: "2026-07-17 ICD-10-CM 2026" }
 
 };

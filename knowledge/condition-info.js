@@ -1476,6 +1476,78 @@ var CONDITION_INFO = {
       "Unlike acquired nystagmus, oscillopsia is characteristically absent."
     ],
     review: true
+  },
+
+  /* ═══ Neuro-Ophthalmic — batch C, completes the domain (Session 10h) ═══ */
+
+  "Optic Nerve Hypoplasia": {
+    summary: "A congenital underdevelopment of the optic nerve with a small, pale disc surrounded by a 'double-ring' sign. Vision ranges from near-normal to severe, and there may be nystagmus and field defects, often present from birth.",
+    facts: [
+      "Look for the small disc with a double-ring sign and reduced vision/nystagmus in a child.",
+      "Can be part of septo-optic dysplasia — screen for midline brain malformations and pituitary/endocrine dysfunction.",
+      "Vision is stable (non-progressive); amblyopia therapy helps unilateral cases."
+    ],
+    review: true
+  },
+
+  "Diabetic Papillopathy": {
+    summary: "A usually benign disc swelling in diabetic patients, thought to be a mild microvascular optic-nerve disturbance. It causes little or mild vision loss with disc oedema, and typically resolves spontaneously over months.",
+    facts: [
+      "A diagnosis of exclusion — it must be distinguished from ischaemic optic neuropathy and from papilloedema.",
+      "Can be unilateral or bilateral and often has surprisingly preserved vision for the degree of swelling.",
+      "Occurs across both type 1 and type 2 diabetes; optimising glycaemic control is sensible."
+    ],
+    review: true
+  },
+
+  "Foster Kennedy Syndrome": {
+    summary: "The combination of optic atrophy in one eye (from direct compression) and papilloedema in the other (from raised intracranial pressure), classically caused by a frontal-lobe or olfactory-groove mass. There may be anosmia and personality change.",
+    facts: [
+      "Asymmetric disc appearances — pale on one side, swollen on the other — should prompt urgent neuroimaging.",
+      "The classic cause is a frontal/olfactory-groove tumour; a 'pseudo-Foster-Kennedy' from sequential ischaemic optic neuropathy is commoner.",
+      "Associated anosmia is a useful localising clue."
+    ],
+    review: true
+  },
+
+  "Tilted Disc Syndrome": {
+    summary: "A congenital anomaly in which the optic disc is obliquely inserted, giving a tilted appearance with an inferonasal crescent and situs inversus of the vessels. It can produce a superotemporal field defect and myopic astigmatism that mimic neurological disease.",
+    facts: [
+      "Its field defect (often superotemporal) does not respect the vertical midline the way a true chiasmal defect does — a key distinction.",
+      "Usually an incidental, non-progressive finding needing reassurance rather than treatment.",
+      "Associated with myopic astigmatism and, occasionally, secondary maculopathy."
+    ],
+    review: true
+  },
+
+  "Susac Syndrome": {
+    summary: "A rare autoimmune microangiopathy affecting the retina, inner ear and brain, giving the triad of branch retinal artery occlusions, sensorineural hearing loss and encephalopathy. Ocular presentation is with painless field defects or blurred vision from the arterial occlusions.",
+    facts: [
+      "Suspect it when branch retinal artery occlusions occur with hearing loss and/or neurological/cognitive symptoms.",
+      "Characteristic arterial-wall hyperfluorescence (away from occlusion sites) supports the diagnosis on angiography.",
+      "A multidisciplinary (neurology, ENT) condition requiring immunosuppression."
+    ],
+    review: true
+  },
+
+  "Orbital Rhabdomyosarcoma": {
+    summary: "The commonest primary orbital malignancy of childhood, arising from primitive mesenchyme. It presents with rapidly progressive, painless proptosis and globe displacement in a young child, sometimes with lid swelling.",
+    facts: [
+      "Rapidly progressive proptosis in a child is a red flag demanding urgent imaging and biopsy — this is a life-threatening cancer.",
+      "Early diagnosis and treatment markedly improve survival.",
+      "Managed by a specialist paediatric oncology and orbital team."
+    ],
+    review: true
+  },
+
+  "Orbital Lymphoma": {
+    summary: "A lymphoid malignancy of the orbit/ocular adnexa, usually a low-grade B-cell (often MALT) lymphoma in older adults. It presents with a slowly progressive, painless mass, proptosis, or a characteristic salmon-pink conjunctival patch.",
+    facts: [
+      "A painless, slowly enlarging orbital mass or salmon-pink conjunctival lesion in an older patient should prompt biopsy.",
+      "Ranges from indolent local disease to a manifestation of systemic lymphoma — staging is needed.",
+      "Generally responds well to treatment, but requires oncological assessment."
+    ],
+    review: true
   }
 
 };

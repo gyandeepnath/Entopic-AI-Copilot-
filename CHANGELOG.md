@@ -6,6 +6,25 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-07-17 — Session 10h: Neuro-Ophthalmic domain COMPLETE — ICD + richer About
+
+All 33 Neuro-Ophthalmic expansion conditions done on both fronts (batches A+B+C).
+Covers the optic neuropathies (arteritic/occult GCA, nutritional-toxic, LHON,
+traumatic, diabetic papillopathy, Foster-Kennedy), the nystagmus set (downbeat,
+pendular, spasmus nutans, convergence-retraction, congenital), the orbital/
+compressive emergencies (pseudotumor, blowout fracture, carotid-cavernous fistula,
+cavernous sinus thrombosis, orbital rhabdomyosarcoma/lymphoma, pituitary/chiasmal
+compression), pupil/motility disorders (Adie, traumatic mydriasis, skew, CPEO,
+ocular MG, superior oblique myokymia), IIH, neuroretinitis, papillophlebitis,
+Tolosa-Hunt, Susac, tilted/hypoplastic disc, and occipital hemianopia. Every code
+validated; every summary qualitative + review-flagged. Also allowlisted the one
+verified dotless 3-char billable code (G08) in the icd-map test.
+
+Running totals: **ICD 166/197 coded; authored About 150** (was 31). Retina,
+Cornea & Neuro: 0 uncoded. 176/176 tests pass. **Only Surface & Lids (31) left.**
+
+---
+
 ## 2026-07-17 — Session 10g: Cornea domain COMPLETE — ICD + richer About (plan B)
 
 All 34 Cornea expansion conditions done on both fronts (batches A+B+C). Includes
