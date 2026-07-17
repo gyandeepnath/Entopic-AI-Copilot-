@@ -776,6 +776,18 @@ var ICD_MAP = {
   "Frosted Branch Angiitis":
     { icd10: "H35.069", label: "Retinal vasculitis, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "fulminant retinal vasculitis; often viral/immune-mediated — code the cause where known", verified: "2026-07-17 ICD-10-CM 2026" },
   "Bietti Crystalline Dystrophy":
-    { icd10: "H35.50", label: "Unspecified hereditary retinal dystrophy", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "crystalline retinopathy; no Bietti-specific code", verified: "2026-07-17 ICD-10-CM 2026" }
+    { icd10: "H35.50", label: "Unspecified hereditary retinal dystrophy", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "crystalline retinopathy; no Bietti-specific code", verified: "2026-07-17 ICD-10-CM 2026" },
+
+  /* ─ Batch 11 (intraocular tumours & disc anomalies) ─ */
+  "Iris Melanoma":
+    { icd10: "C69.40", label: "Malignant neoplasm of unspecified ciliary body", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "iris/ciliary-body melanoma; set laterality; urgent ocular-oncology referral", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Optic Disc Melanocytoma":
+    { icd10: "D31.90", label: "Benign neoplasm of unspecified part of unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "benign melanocytic tumour of the disc; no specific code — monitor for rare malignant transformation", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Retinal Astrocytic Hamartoma":
+    { icd10: "D31.20", label: "Benign neoplasm of unspecified retina", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "consider tuberous sclerosis / neurofibromatosis association", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Optic Disc Coloboma":
+    { icd10: "Q14.2", label: "Congenital malformation of optic disc", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "congenital disc coloboma; may be part of CHARGE or other syndromes", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Choroidal Metastasis":
+    { icd10: "C79.89", label: "Secondary malignant neoplasm of other specified sites", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "choroidal metastasis; code the primary tumour (commonly breast/lung) as well", verified: "2026-07-17 ICD-10-CM 2026" }
 
 };

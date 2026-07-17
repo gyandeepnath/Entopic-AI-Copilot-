@@ -6,6 +6,27 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-07-17 — Session 10k(2): KB expansion batch 11 + new tokens (intraocular tumours)
+
+Expanded on all three fronts the founder asked for — **conditions, About notes,
+and tokens**. Added **4 new clickable exam findings** (each wired end-to-end:
+finding → token → condition, surfacing from a single click):
+- "Iris mass / pigmented lesion" → `iris_mass_lesion`
+- "Disc melanocytoma (dark lesion)" → `dark_disc_lesion`
+- "Disc coloboma / excavation" → `disc_coloboma`
+- "Astrocytic hamartoma (mulberry)" → `retinal_astrocytic_lesion`
+
+And **5 new conditions** on those tokens: **Iris Melanoma, Optic Disc
+Melanocytoma, Retinal Astrocytic Hamartoma, Optic Disc Coloboma, Choroidal
+Metastasis** — each complete with reachable engine inputs, a validated ICD-10
+code, and a hand-written note. Token registry regenerated; the new findings
+appear in the slit-lamp/fundus finding lists so a clinician can click them.
+
+KB now **344 conditions**, all ICD-coded and all with authored notes (0 missing).
+178/178 tests pass; boots clean; cross-conflict at baseline.
+
+---
+
 ## 2026-07-17 — Session 10k: KB expansion batch 10 (posterior-segment tumours & vasculitis)
 
 Continued the knowledge base, following the full authoring standard (engine

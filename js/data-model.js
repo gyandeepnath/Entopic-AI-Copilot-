@@ -550,7 +550,8 @@ var SL_FINDINGS = {
     "Heterochromia",
     "Koeppe nodules",
     "Busacca nodules",
-    "Iris atrophy"
+    "Iris atrophy",
+    "Iris mass / pigmented lesion"
   ],
 
   "Lens": [
@@ -608,7 +609,9 @@ var FUN_FINDINGS = {
     "Peripapillary atrophy — alpha zone",
     "Peripapillary atrophy — beta zone",
     "Optic pit",
-    "Tilted disc"
+    "Tilted disc",
+    "Disc melanocytoma (dark lesion)",
+    "Disc coloboma / excavation"
   ],
 
   "Macula": [
@@ -654,7 +657,8 @@ var FUN_FINDINGS = {
     "Retinal detachment — total",
     "Retinoschisis",
     "Pavingstone degeneration",
-    "White without pressure"
+    "White without pressure",
+    "Astrocytic hamartoma (mulberry)"
   ],
 
   "Vitreous": [

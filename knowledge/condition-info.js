@@ -3462,6 +3462,58 @@ var CONDITION_INFO = {
       "The ERG declines over time; distinguished from other crystalline retinopathies (drug-induced, oxalosis) by the pattern and genetics."
     ],
     review: true
+  },
+
+  /* ═══ Batch 11 — new conditions (Session 10k) ═══ */
+
+  "Iris Melanoma": {
+    summary: "A malignant melanocytic tumour of the iris (or ciliary body), usually appearing as an enlarging, variably pigmented, vascularised iris nodule that may distort the pupil or seed pigment into the angle. It is the least aggressive of the uveal melanomas but still carries metastatic risk.",
+    facts: [
+      "A growing, thick or vascularised pigmented iris lesion — especially with pupil distortion, raised pressure or angle seeding — warrants urgent ocular-oncology referral.",
+      "Documented growth is the key feature distinguishing it from a stable iris nevus.",
+      "Lower metastatic risk than posterior uveal melanoma, but it still needs oncological surveillance."
+    ],
+    review: true
+  },
+
+  "Optic Disc Melanocytoma": {
+    summary: "A benign, densely pigmented (dark brown-black) melanocytic tumour of the optic nerve head, usually an incidental finding. Most cause no symptoms, though a minority produce a mild afferent defect, an enlarged blind spot or subtle field loss.",
+    facts: [
+      "A jet-black disc lesion that is stable over time is characteristic and benign.",
+      "Rare malignant transformation means new growth or significant vision change should be re-evaluated — so document and monitor.",
+      "Distinguished from a melanoma by its very dark colour, disc location and stability."
+    ],
+    review: true
+  },
+
+  "Retinal Astrocytic Hamartoma": {
+    summary: "A benign glial tumour of the retina, appearing as a whitish, sometimes calcified 'mulberry' lesion, often near the disc. It is usually asymptomatic but is an important clue to systemic disease.",
+    facts: [
+      "Strongly associated with tuberous sclerosis (and, less so, neurofibromatosis) — its discovery should prompt a systemic evaluation.",
+      "The calcified mulberry appearance is characteristic; multiple/bilateral lesions increase the syndromic suspicion.",
+      "Usually stable and rarely threatens vision, so most are simply monitored."
+    ],
+    review: true
+  },
+
+  "Optic Disc Coloboma": {
+    summary: "A congenital defect of the optic disc from incomplete closure of the embryonic fissure, giving an excavated, enlarged disc. It causes a variable, often superior, field defect and reduced vision, and can be complicated by serous macular detachment.",
+    facts: [
+      "An enlarged, excavated disc with a corresponding field defect in a young patient suggests a congenital coloboma rather than glaucoma.",
+      "Often part of a wider coloboma spectrum (iris, retina, choroid) and can be syndromic (e.g. CHARGE).",
+      "Carries a lifelong risk of serous macular detachment, which can reduce central vision."
+    ],
+    review: true
+  },
+
+  "Choroidal Metastasis": {
+    summary: "A secondary (metastatic) tumour deposit in the choroid — the commonest intraocular malignancy overall — usually a creamy-yellow placoid lesion with overlying serous fluid. It causes blurred vision, distortion or a field defect, sometimes as the presenting sign of a systemic cancer.",
+    facts: [
+      "A creamy choroidal lesion with subretinal fluid, especially in someone with a cancer history (commonly breast or lung), should raise strong suspicion.",
+      "Can be the first sign of an occult primary — it warrants systemic work-up and oncology referral.",
+      "Often multiple or bilateral, which helps distinguish it from a primary choroidal melanoma."
+    ],
+    review: true
   }
 
 };

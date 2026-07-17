@@ -803,7 +803,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 11,
-      "sup": 21,
+      "sup": 24,
       "con": 3,
       "temporal": 0,
       "tests": 0
@@ -898,11 +898,11 @@ var TOKEN_REGISTRY = {
       "finding_map"
     ],
     "usage": {
-      "req": 3,
+      "req": 4,
       "sup": 0,
       "con": 0,
       "temporal": 0,
-      "tests": 2
+      "tests": 3
     },
     "reachable": true
   },
@@ -944,7 +944,7 @@ var TOKEN_REGISTRY = {
       "req": 0,
       "sup": 0,
       "con": 0,
-      "temporal": 166,
+      "temporal": 170,
       "tests": 0
     },
     "reachable": true
@@ -1603,6 +1603,20 @@ var TOKEN_REGISTRY = {
     },
     "reachable": true
   },
+  "dark_disc_lesion": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 1,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 1
+    },
+    "reachable": true
+  },
   "dark_spots": {
     "type_hint": "symptom",
     "sources": [
@@ -1823,6 +1837,20 @@ var TOKEN_REGISTRY = {
     },
     "reachable": true
   },
+  "disc_coloboma": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 1,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 1
+    },
+    "reachable": true
+  },
   "disc_edema": {
     "type_hint": "derived_measurement_or_history",
     "sources": [
@@ -1991,8 +2019,8 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 9,
-      "sup": 25,
-      "con": 25,
+      "sup": 29,
+      "con": 26,
       "temporal": 0,
       "tests": 0
     },
@@ -2497,7 +2525,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 3,
-      "sup": 15,
+      "sup": 18,
       "con": 33,
       "temporal": 0,
       "tests": 0
@@ -2615,7 +2643,7 @@ var TOKEN_REGISTRY = {
     "usage": {
       "req": 3,
       "sup": 5,
-      "con": 8,
+      "con": 9,
       "temporal": 0,
       "tests": 0
     },
@@ -2645,7 +2673,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 16,
-      "sup": 20,
+      "sup": 21,
       "con": 7,
       "temporal": 0,
       "tests": 1
@@ -2844,7 +2872,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 4,
-      "sup": 29,
+      "sup": 30,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -2897,7 +2925,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 4,
-      "sup": 18,
+      "sup": 19,
       "con": 6,
       "temporal": 0,
       "tests": 0
@@ -2912,7 +2940,7 @@ var TOKEN_REGISTRY = {
     "usage": {
       "req": 0,
       "sup": 0,
-      "con": 68,
+      "con": 69,
       "temporal": 0,
       "tests": 0
     },
@@ -3044,7 +3072,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 0,
-      "sup": 2,
+      "sup": 3,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -3516,6 +3544,20 @@ var TOKEN_REGISTRY = {
     },
     "reachable": true
   },
+  "iris_mass_lesion": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 1,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 1
+    },
+    "reachable": true
+  },
   "irma": {
     "type_hint": "sign",
     "sources": [
@@ -3600,7 +3642,7 @@ var TOKEN_REGISTRY = {
     "usage": {
       "req": 5,
       "sup": 0,
-      "con": 147,
+      "con": 152,
       "temporal": 0,
       "tests": 0
     },
@@ -4774,8 +4816,8 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 8,
-      "sup": 54,
-      "con": 56,
+      "sup": 55,
+      "con": 57,
       "temporal": 0,
       "tests": 0
     },
@@ -4859,7 +4901,7 @@ var TOKEN_REGISTRY = {
     "usage": {
       "req": 10,
       "sup": 35,
-      "con": 69,
+      "con": 74,
       "temporal": 0,
       "tests": 0
     },
@@ -5221,7 +5263,7 @@ var TOKEN_REGISTRY = {
     "usage": {
       "req": 7,
       "sup": 47,
-      "con": 9,
+      "con": 10,
       "temporal": 0,
       "tests": 0
     },
@@ -5250,7 +5292,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 1,
-      "sup": 0,
+      "sup": 1,
       "con": 2,
       "temporal": 0,
       "tests": 1
@@ -5379,7 +5421,7 @@ var TOKEN_REGISTRY = {
       "req": 0,
       "sup": 0,
       "con": 0,
-      "temporal": 72,
+      "temporal": 74,
       "tests": 0
     },
     "reachable": true
@@ -5556,7 +5598,7 @@ var TOKEN_REGISTRY = {
     "usage": {
       "req": 3,
       "sup": 1,
-      "con": 89,
+      "con": 90,
       "temporal": 0,
       "tests": 0
     },
@@ -5761,7 +5803,7 @@ var TOKEN_REGISTRY = {
     "usage": {
       "req": 4,
       "sup": 82,
-      "con": 123,
+      "con": 128,
       "temporal": 0,
       "tests": 0
     },
@@ -5895,8 +5937,8 @@ var TOKEN_REGISTRY = {
       "symptom_chip"
     ],
     "usage": {
-      "req": 10,
-      "sup": 172,
+      "req": 11,
+      "sup": 176,
       "con": 83,
       "temporal": 0,
       "tests": 1
@@ -5941,6 +5983,20 @@ var TOKEN_REGISTRY = {
       "con": 6,
       "temporal": 0,
       "tests": 8
+    },
+    "reachable": true
+  },
+  "retinal_astrocytic_lesion": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 1,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 1
     },
     "reachable": true
   },
@@ -6606,7 +6662,7 @@ var TOKEN_REGISTRY = {
       "req": 0,
       "sup": 0,
       "con": 0,
-      "temporal": 39,
+      "temporal": 40,
       "tests": 0
     },
     "reachable": true
@@ -6707,7 +6763,7 @@ var TOKEN_REGISTRY = {
     "usage": {
       "req": 1,
       "sup": 17,
-      "con": 27,
+      "con": 28,
       "temporal": 0,
       "tests": 0
     },
@@ -6723,7 +6779,7 @@ var TOKEN_REGISTRY = {
     "usage": {
       "req": 3,
       "sup": 1,
-      "con": 64,
+      "con": 66,
       "temporal": 0,
       "tests": 0
     },
@@ -7485,8 +7541,8 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 23,
-      "sup": 60,
-      "con": 19,
+      "sup": 62,
+      "con": 20,
       "temporal": 0,
       "tests": 0
     },
@@ -7507,8 +7563,8 @@ var TOKEN_REGISTRY = {
 };
 
 var TOKEN_REGISTRY_STATS = {
-  "total": 528,
-  "reachable": 428,
+  "total": 532,
+  "reachable": 432,
   "unreachable_required": [],
   "unreachable_supportive": [],
   "test_label_only": 96,

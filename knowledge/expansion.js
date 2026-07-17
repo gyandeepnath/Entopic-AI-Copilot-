@@ -749,6 +749,23 @@ var KB_EXPANSION = [
   "con": ["itching_dominant", "gradual_onset", "older_age", "gradual_blur"], "temporal": ["acute", "subacute"], "tests": [], "exclusions": [] },
 { "name": "Bietti Crystalline Dystrophy", "domain": "Retina", "route": "retina",
   "req": ["night_blindness", "central_scotoma"], "sup": ["glare", "reduced_vision", "field_loss", "gradual_blur"],
-  "con": ["pain", "redness", "sudden_vision_loss", "distortion", "itching_dominant"], "temporal": ["chronic", "progressive"], "tests": [], "exclusions": [] }
+  "con": ["pain", "redness", "sudden_vision_loss", "distortion", "itching_dominant"], "temporal": ["chronic", "progressive"], "tests": [], "exclusions": [] },
+
+/* ═══ Batch 11 (2026-07-17) — intraocular tumours & disc anomalies (new tokens) ═══ */
+{ "name": "Iris Melanoma", "domain": "Anterior / Uveitis", "route": "anterior",
+  "req": ["iris_mass_lesion"], "sup": ["heterochromia", "reduced_vision", "older_age", "glare", "distortion", "pigment_dispersion"],
+  "con": ["pain", "redness", "itching_dominant", "photophobia", "sudden_onset"], "temporal": ["chronic", "progressive"], "tests": ["iris_mass_lesion"], "exclusions": [] },
+{ "name": "Optic Disc Melanocytoma", "domain": "Neuro-Ophthalmic", "route": "neuro",
+  "req": ["dark_disc_lesion"], "sup": ["reduced_vision", "field_loss", "central_scotoma"],
+  "con": ["pain", "redness", "distortion", "itching_dominant", "sudden_vision_loss"], "temporal": ["chronic"], "tests": ["dark_disc_lesion"], "exclusions": [] },
+{ "name": "Retinal Astrocytic Hamartoma", "domain": "Retina", "route": "retina",
+  "req": ["retinal_astrocytic_lesion"], "sup": ["reduced_vision", "floaters", "young_age", "distortion"],
+  "con": ["pain", "redness", "itching_dominant", "gradual_onset", "purulent_discharge"], "temporal": ["chronic"], "tests": ["retinal_astrocytic_lesion"], "exclusions": [] },
+{ "name": "Optic Disc Coloboma", "domain": "Neuro-Ophthalmic", "route": "neuro",
+  "req": ["disc_coloboma"], "sup": ["field_loss", "reduced_vision", "young_age", "central_scotoma", "distortion"],
+  "con": ["pain", "redness", "sudden_vision_loss", "itching_dominant", "older_age"], "temporal": ["chronic"], "tests": ["disc_coloboma"], "exclusions": [] },
+{ "name": "Choroidal Metastasis", "domain": "Retina", "route": "retina",
+  "req": ["choroidal_lesion_elevated", "reduced_vision"], "sup": ["distortion", "field_loss", "central_scotoma", "gradual_blur"],
+  "con": ["young_age", "itching_dominant", "pain", "redness", "flashes"], "temporal": ["subacute", "progressive"], "tests": ["choroidal_lesion_elevated"], "exclusions": [] }
 
 ];
