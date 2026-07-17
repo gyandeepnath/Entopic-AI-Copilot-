@@ -2238,6 +2238,300 @@ var CONDITION_INFO = {
       "The 'cells' are shed photoreceptor material, not true inflammation."
     ],
     review: true
+  },
+
+  /* ═══ Retina (curated) — Session 10j ═══ */
+
+  "Central Serous Chorioretinopathy": {
+    summary: "A serous (fluid) detachment of the neurosensory retina at the macula from focal leakage at the retinal pigment epithelium, typically in stressed, 'type A' middle-aged men. It causes a fairly sudden central blur, a dark or dim central patch, micropsia and reduced colour saturation in one eye.",
+    facts: [
+      "Ask about corticosteroids (any route) and stress — both are strongly associated.",
+      "The acute form usually resolves spontaneously over a few months with good vision.",
+      "OCT shows the subretinal fluid; recurrent or chronic disease can leave lasting deficit."
+    ],
+    review: true
+  },
+
+  "Macular Hole": {
+    summary: "A full-thickness defect at the centre of the macula, usually from vitreous traction in older adults. It causes central blur, distortion and a central grey spot, with reduced acuity that depends on the hole's size and duration.",
+    facts: [
+      "Central metamorphopsia and a positive Watzke-Allen sign (a break in a slit beam) are suggestive.",
+      "OCT confirms and stages it and guides surgical timing.",
+      "Surgery (vitrectomy with gas) closes most holes, with better results the earlier it is done."
+    ],
+    review: true
+  },
+
+  "Epiretinal Membrane (ERM)": {
+    summary: "A sheet of fibrocellular tissue that grows on the macular surface and contracts, wrinkling the retina ('macular pucker'). It causes gradual central blur and distortion, ranging from a symptomless cellophane sheen to marked visual loss.",
+    facts: [
+      "Often idiopathic and age-related, but can follow retinal tears, surgery or inflammation.",
+      "OCT shows the membrane and the degree of retinal wrinkling/thickening.",
+      "Surgical peeling helps when distortion or vision loss is significant."
+    ],
+    review: true
+  },
+
+  "Cystoid Macular Edema (CME)": {
+    summary: "Fluid-filled cystic spaces in the central macula, most often after cataract surgery (Irvine-Gass), or from diabetes, vein occlusion or uveitis. It causes blurred and distorted central vision, classically a few weeks after otherwise-successful cataract surgery.",
+    facts: [
+      "A common cause of disappointing vision after cataract surgery — think of it when acuity dips at 4-6 weeks.",
+      "OCT shows the characteristic petaloid cystic spaces at the fovea.",
+      "Treat the cause; post-surgical CME often responds to topical anti-inflammatory therapy."
+    ],
+    review: true
+  },
+
+  "Macular Edema (General)": {
+    summary: "Thickening of the central macula from fluid accumulation, a final common pathway of many retinal diseases (diabetes, vein occlusion, uveitis, post-surgery). It causes central blur and distortion and is a leading cause of vision loss across these conditions.",
+    facts: [
+      "OCT quantifies the thickening and fluid and is central to monitoring treatment.",
+      "Management is directed at the underlying cause as well as the oedema itself.",
+      "Persistent oedema can cause permanent photoreceptor damage, so timely treatment matters."
+    ],
+    review: true
+  },
+
+  "Vitreous Hemorrhage": {
+    summary: "Bleeding into the vitreous cavity, causing sudden floaters, haze or profound painless vision loss depending on the amount. Common causes are proliferative diabetic retinopathy, a retinal tear/detachment, vein occlusion or trauma.",
+    facts: [
+      "A dense haemorrhage that obscures the retina mandates urgent ultrasound to exclude a retinal tear/detachment behind it.",
+      "New floaters with a bleed should be treated as a possible retinal break until proven otherwise.",
+      "Management depends on the cause; many clear spontaneously, others need laser or surgery."
+    ],
+    review: true
+  },
+
+  "Retinitis Pigmentosa": {
+    summary: "A group of inherited progressive photoreceptor (rod-then-cone) dystrophies causing night blindness and gradually constricting peripheral fields ('tunnel vision'), with eventual central involvement. The classic fundus shows bone-spicule pigment, attenuated vessels and a waxy pale disc.",
+    facts: [
+      "Night blindness and progressive peripheral field loss over years is the typical history.",
+      "The ERG is reduced/extinguished and helps confirm and monitor it.",
+      "Can be isolated or part of a syndrome (e.g. Usher with hearing loss) — genetic and systemic assessment matters."
+    ],
+    review: true
+  },
+
+  "Hypertensive Retinopathy": {
+    summary: "Retinal vascular changes from chronic (or acute severe) systemic hypertension — arteriolar narrowing, arteriovenous nicking, flame haemorrhages, cotton-wool spots and, when severe, disc swelling. It is usually asymptomatic but a valuable window on systemic vascular health.",
+    facts: [
+      "The retinal findings mirror systemic vascular damage — a reason to check and manage blood pressure.",
+      "Disc swelling (malignant/accelerated hypertension) is an emergency.",
+      "Graded by severity; changes can partly reverse with blood-pressure control."
+    ],
+    review: true
+  },
+
+  "Branch Retinal Vein Occlusion (BRVO)": {
+    summary: "Occlusion of a branch of the retinal venous system, typically at an arteriovenous crossing, causing sector haemorrhages and oedema in the drained territory. It presents with painless partial visual field loss or central blur if the macula is involved.",
+    facts: [
+      "The haemorrhages are confined to one sector, pointing to the occluded branch.",
+      "Macular oedema is the main cause of vision loss and is treatable.",
+      "Associated with hypertension and vascular risk factors — assess and manage them."
+    ],
+    review: true
+  },
+
+  "Lattice Degeneration": {
+    summary: "A common peripheral retinal thinning with characteristic criss-cross ('lattice') lines and overlying vitreous changes. It is usually asymptomatic but predisposes to retinal tears and detachment, especially in myopic eyes.",
+    facts: [
+      "Often an incidental finding, but it is a recognised risk factor for retinal breaks.",
+      "New flashes, floaters or a shadow in someone with lattice warrant prompt dilated examination.",
+      "Frequently bilateral and commoner in myopes."
+    ],
+    review: true
+  },
+
+  "Choroidal Nevus": {
+    summary: "A common, usually flat, slate-grey pigmented lesion of the choroid — the eye's equivalent of a skin mole. Most are benign and stable, but a minority can transform, so documented surveillance matters.",
+    facts: [
+      "Reassuring features include being flat, small and having drusen on the surface.",
+      "Warning features (thickness, orange pigment, subretinal fluid, symptoms, margin near the disc) raise concern for melanoma.",
+      "Photograph and measure it so growth can be detected over time."
+    ],
+    review: true
+  },
+
+  "Choroidal Melanoma": {
+    summary: "The commonest primary intraocular malignancy in adults, arising from choroidal melanocytes. It may be asymptomatic or cause blurred vision, field loss, floaters or photopsia, appearing as an elevated pigmented (sometimes amelanotic) choroidal mass, often with orange pigment and subretinal fluid.",
+    facts: [
+      "A thick pigmented choroidal lesion with orange pigment and subretinal fluid is suspicious and needs urgent ocular-oncology referral.",
+      "It can metastasise, characteristically to the liver, so systemic surveillance is part of care.",
+      "Ultrasound and imaging distinguish it from a benign nevus and guide treatment."
+    ],
+    review: true
+  },
+
+  "Macular Telangiectasia": {
+    summary: "A bilateral disorder of the small parafoveal retinal capillaries (most often 'type 2', in middle age) causing gradual, usually mild central vision loss, blurring and subtle distortion. Early signs are subtle — a loss of retinal transparency and right-angled venules temporal to the fovea.",
+    facts: [
+      "Subtle bilateral parafoveal changes with a mild central deficit are typical; OCT/angiography help.",
+      "Can be complicated by neovascularisation, which threatens more significant vision loss.",
+      "Distinct from the unilateral, exudative type 1 (aneurysmal) form."
+    ],
+    review: true
+  },
+
+  "Central Retinal Artery Occlusion (Transient / Amaurosis Fugax)": {
+    summary: "A transient, painless loss of vision in one eye — often described as a curtain or shade coming down and then lifting over minutes — from temporary retinal arterial insufficiency, usually embolic from the carotid or heart. It is a warning of impending stroke.",
+    facts: [
+      "Treat it like a transient ischaemic attack (a retinal TIA) — urgent vascular work-up (carotids, heart, and in older patients giant cell arteritis).",
+      "Vision returns fully between episodes, unlike a completed artery occlusion.",
+      "Prompt evaluation can prevent a subsequent, permanent stroke or artery occlusion."
+    ],
+    review: true
+  },
+
+  /* ═══ Neuro-Ophthalmic (curated) — Session 10j ═══ */
+
+  "Ischemic Optic Neuropathy (AION)": {
+    summary: "Sudden, painless loss of vision (often altitudinal — a horizontal half of the field) from infarction of the front of the optic nerve. The non-arteritic form occurs in patients with vascular risk factors and a small, crowded 'disc at risk'; the arteritic form is due to giant cell arteritis.",
+    facts: [
+      "Always distinguish arteritic (giant cell arteritis) from non-arteritic — the arteritic form is an emergency threatening the other eye, so check ESR/CRP and symptoms in the over-50s.",
+      "An altitudinal field defect with disc swelling and an afferent pupillary defect is typical.",
+      "The non-arteritic form is managed by addressing vascular risk factors; there is no proven acute cure."
+    ],
+    review: true
+  },
+
+  "Compressive Optic Neuropathy": {
+    summary: "Slowly progressive optic-nerve dysfunction from a compressive lesion (tumour, thyroid eye disease, aneurysm) along its course. It causes gradual painless vision and colour loss with an afferent pupillary defect, and may show optic-disc pallor or swelling and, sometimes, proptosis.",
+    facts: [
+      "Progressive unexplained optic neuropathy, especially with proptosis or optic-disc shunt vessels, warrants urgent imaging.",
+      "Vision can recover after timely decompression — the key reason not to miss it.",
+      "Colour vision and the afferent pupillary defect are sensitive early markers."
+    ],
+    review: true
+  },
+
+  "Papilledema": {
+    summary: "Swelling of both optic discs specifically due to raised intracranial pressure. Vision is often preserved early, with transient visual obscurations, headache and pulsatile tinnitus; chronic papilloedema threatens the fields and eventually acuity.",
+    facts: [
+      "By convention 'papilloedema' means disc swelling from raised intracranial pressure — it is bilateral and demands urgent neuroimaging.",
+      "Enlarged blind spots and, later, constricted fields are the visual footprint.",
+      "Distinguish it from other causes of a swollen disc (pseudopapilloedema, optic neuritis, ischaemia)."
+    ],
+    review: true
+  },
+
+  "Third Cranial Nerve Palsy": {
+    summary: "Palsy of the oculomotor nerve, causing a 'down-and-out' eye, ptosis and (if the pupil is involved) a dilated pupil, with double vision. Pupil involvement is the crucial branch point in assessing the cause.",
+    facts: [
+      "A painful, pupil-involving third-nerve palsy is a posterior communicating artery aneurysm until proven otherwise — an emergency needing urgent imaging.",
+      "A pupil-sparing palsy in an older vasculopath is often ischaemic (microvascular).",
+      "The ptosis and 'down-and-out' position are characteristic."
+    ],
+    review: true
+  },
+
+  "Sixth Cranial Nerve Palsy": {
+    summary: "Palsy of the abducens nerve, weakening the lateral rectus so the eye cannot fully abduct, causing horizontal double vision worse in the direction of the weak muscle and at distance. Its long intracranial course makes it a sensitive but non-specific localiser.",
+    facts: [
+      "Often microvascular and self-limiting in older vasculopaths, but can be a false-localising sign of raised intracranial pressure.",
+      "In children or with other signs, image to exclude a compressive/inflammatory cause.",
+      "Horizontal diplopia worst on gaze toward the affected side is typical."
+    ],
+    review: true
+  },
+
+  "Fourth Cranial Nerve Palsy": {
+    summary: "Palsy of the trochlear nerve, weakening the superior oblique, causing vertical/torsional double vision that is worse on looking down and toward the nose — so patients struggle reading or on stairs and adopt a compensatory head tilt away from the affected side.",
+    facts: [
+      "The head tilt (away from the palsy) and a positive Bielschowsky head-tilt test are characteristic.",
+      "Commonly congenital (decompensating in adulthood) or from head trauma.",
+      "Look at old photographs for a long-standing head tilt suggesting a congenital cause."
+    ],
+    review: true
+  },
+
+  "Internuclear Ophthalmoplegia (INO)": {
+    summary: "A disorder of horizontal gaze from a lesion of the medial longitudinal fasciculus in the brainstem, causing failure of adduction of one eye with nystagmus of the abducting fellow eye. It produces horizontal double vision on lateral gaze.",
+    facts: [
+      "In a young patient, especially if bilateral, it strongly suggests demyelination (multiple sclerosis); in older patients, a brainstem stroke.",
+      "Convergence may be preserved, helping localise the lesion.",
+      "Warrants neuroimaging to identify the cause."
+    ],
+    review: true
+  },
+
+  "Homonymous Hemianopia": {
+    summary: "Loss of the same half of the visual field in both eyes, from a lesion of the retrochiasmal visual pathway (optic tract to occipital cortex). It preserves central acuity but causes people to miss things and bump into objects on the affected side.",
+    facts: [
+      "A field defect respecting the vertical midline localises behind the chiasm; the more congruous, the more posterior.",
+      "An acute hemianopia is usually a stroke and should be managed as such.",
+      "Formal perimetry maps it and helps with rehabilitation and driving advice."
+    ],
+    review: true
+  },
+
+  "Bitemporal Hemianopia": {
+    summary: "Loss of both temporal (outer) half-fields from compression of the optic chiasm, classically by a pituitary tumour growing upward. Central vision is preserved until late, so the defect can go unnoticed by the patient.",
+    facts: [
+      "A field defect respecting the vertical midline that affects both temporal fields localises to the chiasm — image the pituitary/sella.",
+      "May come with endocrine symptoms or, acutely and painfully, pituitary apoplexy.",
+      "Often recovers after decompression if treated before optic atrophy sets in."
+    ],
+    review: true
+  },
+
+  "Quadrantanopia": {
+    summary: "Loss of one quarter of the visual field in both eyes, from a lesion of the optic radiations — temporal-lobe lesions give a superior ('pie in the sky') quadrantanopia, parietal lesions an inferior one. Central acuity is preserved.",
+    facts: [
+      "The quadrant affected helps localise the lesion (temporal vs parietal radiation).",
+      "Usually reflects a stroke, tumour or other structural lesion — image accordingly.",
+      "Congruity and associated signs refine the localisation."
+    ],
+    review: true
+  },
+
+  "Optic Atrophy": {
+    summary: "Pallor of the optic disc reflecting loss of nerve fibres — the final common endpoint of many optic neuropathies (compressive, ischaemic, inflammatory, hereditary, toxic, glaucomatous). It signals established, usually irreversible, damage with reduced acuity, colour vision and an afferent pupillary defect.",
+    facts: [
+      "Optic atrophy is a sign, not a diagnosis — the task is to find and treat any ongoing/treatable cause.",
+      "Reduced colour vision and a relative afferent pupillary defect accompany unilateral cases.",
+      "The pattern of pallor and history guide the cause (e.g. temporal pallor in some hereditary/toxic causes)."
+    ],
+    review: true
+  },
+
+  "Cortical Visual Impairment": {
+    summary: "Reduced vision from damage to the brain's visual pathways/cortex rather than the eyes, so the eye examination and pupils are often normal. In children it commonly follows hypoxic or developmental brain injury; in adults it follows stroke or trauma.",
+    facts: [
+      "Normal-looking eyes with markedly reduced or variable visual behaviour point to a cortical cause.",
+      "Vision can fluctuate and is often better for familiar or moving/coloured targets, especially in children.",
+      "Management is rehabilitative and multidisciplinary."
+    ],
+    review: true
+  },
+
+  "Thyroid Eye Disease": {
+    summary: "An autoimmune orbital inflammation associated with thyroid dysfunction (usually Graves'), causing lid retraction, proptosis, restrictive double vision and surface irritation. In its active phase it can threaten sight through corneal exposure or optic-nerve compression at the orbital apex.",
+    facts: [
+      "Lid retraction and proptosis are the classic signs; asymmetric or unilateral cases still need imaging.",
+      "Reduced colour vision or acuity suggests compressive optic neuropathy — a sight-threatening emergency.",
+      "Smoking markedly worsens it; disease activity and thyroid status both guide management."
+    ],
+    review: true
+  },
+
+  "Horner Syndrome": {
+    summary: "Interruption of the sympathetic supply to the eye, giving the triad of a mild ptosis, a small pupil (miosis) and reduced facial sweating on the same side. The pupils are more unequal in the dark, and the small pupil dilates slowly.",
+    facts: [
+      "A painful, acute Horner (especially with neck pain) can signal carotid dissection — an emergency.",
+      "The lesion can be anywhere along a long sympathetic pathway; associated signs and pharmacological testing help localise it.",
+      "A Horner with a lung apex history raises the question of a Pancoast tumour."
+    ],
+    review: true
+  },
+
+  "Migraine with Visual Aura": {
+    summary: "A transient, fully reversible visual disturbance — classically a shimmering, expanding zigzag (fortification) or a scintillating scotoma — lasting up to about an hour and often followed by headache. It reflects a spreading wave of cortical activity, affecting both eyes' fields together.",
+    facts: [
+      "The aura builds and moves over minutes and resolves completely — a key distinction from a fixed vascular field loss.",
+      "It is binocular (a hemifield phenomenon), even though patients often perceive it as one eye.",
+      "New, atypical or persistent visual symptoms, or a first aura in an older patient, warrant assessment to exclude other causes."
+    ],
+    review: true
   }
 
 };
