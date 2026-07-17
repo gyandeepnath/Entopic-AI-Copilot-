@@ -56,3 +56,22 @@ test("normal exam values do NOT emit sign tokens (no false positives)", () => {
   const t = toks({ sl: { od: { lids: "WNL", conj: "White and quiet", cornea: "Clear", cells: "0", flare: "0", ns: "0", c: "0", psc: "0" }, os: { lids: "WNL", conj: "White and quiet", cornea: "Clear", cells: "0", flare: "0", ns: "0", c: "0", psc: "0" }, findings: [] } });
   ["cells_present", "flare_present", "corneal_edema", "nuclear_sclerosis_grade_2"].forEach((x) => assert.ok(!t.includes(x), "normal exam should not emit " + x));
 });
+
+test("free-text NEGATIONS are not read as positive findings", () => {
+  // A truly blank visit (and our own default placeholders) must emit nothing.
+  assert.strictEqual(toks({}).length, 0, "a blank visit emits no tokens");
+  // The default fundus placeholder "Flat, no breaks" must NOT fabricate a break.
+  assert.ok(!toks({ fun: { od: { periph: "Flat, no breaks" }, os: { periph: "Flat, no breaks" }, findings: [] } }).includes("retinal_break"),
+    'default "Flat, no breaks" must not emit retinal_break');
+  // Negation with an adjective in between.
+  assert.ok(!toks({ fun: { od: { vessels: "no hard exudates, no hemorrhage" }, os: {}, findings: [] } }).includes("hard_exudates"),
+    '"no hard exudates" must not emit hard_exudates');
+  // Negation carries across "and" but an adversative "but" resets it.
+  assert.ok(!toks({ fun: { od: { vessels: "no exudates and hemorrhage" }, os: {}, findings: [] } }).includes("hard_exudates"),
+    '"no exudates and hemorrhage" negates both');
+  assert.ok(toks({ fun: { od: { vessels: "no injection but hard exudates present" }, os: {}, findings: [] } }).includes("hard_exudates"),
+    '"... but exudates present" is a positive finding');
+  // A REAL positive finding still fires.
+  assert.ok(toks({ fun: { od: { periph: "superior horseshoe tear" }, os: {}, findings: [] } }).includes("retinal_break"),
+    "a real horseshoe tear still emits retinal_break");
+});

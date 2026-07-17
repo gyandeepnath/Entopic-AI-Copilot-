@@ -6,6 +6,40 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-07-16 — Session 9b: negation-safe free-text parsing (junk-finding fix)
+
+**Caught during verification of Session 9.** The new free-text tokenizer read
+the *default* fundus placeholder `"Flat, no breaks"` as a positive **retinal
+break** — so **every blank/normal exam** silently carried a `retinal_break`
+token (a would-be urgent finding fabricated from nothing). Root cause: naive
+substring matching ignores negation.
+
+- `slParseText` is now **negation-aware** (`slNegatedAt`): a keyword only emits
+  a token if it isn't negated earlier in its clause. "no breaks", "without
+  exudates", "denies floaters", "free of NVE" no longer fire; negation carries
+  across "and" ("no exudates and hemorrhage" → neither) but an adversative
+  "but"/"however" or a clause break resets it ("no injection but exudates
+  present" → exudates). Real findings ("superior horseshoe tear") still fire.
+- New guard test asserts a blank visit and the default placeholders emit **zero**
+  tokens, that adjective-separated and "and"-joined negations are suppressed, and
+  that a genuine positive still fires. 166/166 tests pass; cross-conflict at
+  baseline.
+
+**Why it matters:** this is exactly the "junk diagnosis" class the founder
+flagged — a fabricated finding on a normal eye. It is now impossible via the
+free-text path.
+
+*Verification note for the founder:* an **isolated** sign entered as free text
+only surfaces a condition when the knowledge base has a condition that
+*requires* that sign (e.g. LOCS grades → cataract works, because a high grade
+also implies gradual blur; gonio narrow angle → angle conditions work). A
+free-text "retinal tear" with no symptoms currently surfaces nothing because no
+KB condition lists `retinal_break` as a required finding — a **KB content gap**,
+not an engine fault, and a candidate for a future batch (a dedicated "Retinal
+Break / Tear" entry, clinically reviewed).
+
+---
+
 ## 2026-07-16 — Session 9: structured exam fields now drive the engine live
 
 **Founder ask:** "more than 50% of clickable options in the slit lamp and other

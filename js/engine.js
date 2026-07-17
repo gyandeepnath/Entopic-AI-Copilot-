@@ -76,11 +76,39 @@ function collectTokens() {
     return m ? Math.round(parseFloat(m[1])) : 0;
   }
   function slNum(v) { var n = parseFloat(v); return (isNaN(n) || n <= 0) ? 999 : n; }
+  /* Free-text keyword tokenizer for exam boxes. NEGATION-AWARE: a clinician (and
+     our own default placeholders like "Flat, no breaks") routinely records the
+     ABSENCE of a sign — "no breaks", "without exudates", "denies floaters". A
+     naive substring match would read "no breaks" as a retinal break and fabricate
+     an urgent finding. So before emitting a token we confirm the keyword is not
+     immediately preceded by a negation cue. This keeps the free-text path from
+     manufacturing junk (a hard guardrail: no invented findings). */
+  var SL_NEG_CUES = ["no ", "no-", "not ", "non-", "without", "w/o", "neg ", "negative", "denies", "absent", "free of", "-free", "resolved", "r/o", "rule out", "ruled out", "unremarkable"];
+  function slNegatedAt(s, idx) {
+    /* Clause-scoped negation: find the clause the keyword sits in (bounded by a
+       clause separator or an adversative like "but"), then negate only if a cue
+       appears earlier in THAT clause. So "no hard exudates" negates exudates, but
+       "no injection but exudates present" does not. "and"/"with" do NOT break the
+       clause, so "no exudates and hemorrhage" negates both. */
+    var pre = s.slice(0, idx);
+    var seps = [",", ";", ".", " but ", " however ", "+"];
+    var start = 0;
+    for (var k = 0; k < seps.length; k++) {
+      var p = pre.lastIndexOf(seps[k]);
+      if (p >= 0 && p + seps[k].length > start) start = p + seps[k].length;
+    }
+    var clause = pre.slice(start);
+    for (var n = 0; n < SL_NEG_CUES.length; n++) if (clause.indexOf(SL_NEG_CUES[n]) >= 0) return true;
+    return false;
+  }
   function slParseText(vals, map, add) {
     for (var i = 0; i < vals.length; i++) {
       var s = (vals[i] || "").toLowerCase();
       if (!s || s === "clear" || s === "white and quiet" || s === "wnl" || s === "normal") continue;
-      for (var kw in map) if (s.indexOf(kw) >= 0) add(map[kw]);
+      for (var kw in map) {
+        var idx = s.indexOf(kw);
+        if (idx >= 0 && !slNegatedAt(s, idx)) add(map[kw]);
+      }
     }
   }
 
