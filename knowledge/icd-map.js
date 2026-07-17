@@ -524,6 +524,34 @@ var ICD_MAP = {
   "Acute Retinal Necrosis (ARN)":
     { icd10: "H30.899", label: "Other chorioretinal inflammations, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "usually herpetic (VZV/HSV) necrotizing retinitis; code the viral cause (B00.-/B02.-)", verified: "2026-07-17 ICD-10-CM 2026" },
   "Cytomegalovirus (CMV) Retinitis":
-    { icd10: "B25.9", label: "Cytomegaloviral disease, unspecified", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "CMV retinitis; typically in immunocompromise; code the immune status alongside", verified: "2026-07-17 ICD-10-CM 2026" }
+    { icd10: "B25.9", label: "Cytomegaloviral disease, unspecified", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "CMV retinitis; typically in immunocompromise; code the immune status alongside", verified: "2026-07-17 ICD-10-CM 2026" },
+
+  /* ─ Retina (batch D — completes the domain) ─ */
+  "Chorioretinal Coloboma":
+    { icd10: "Q14.3", label: "Congenital malformation of choroid", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "chorioretinal coloboma; iris/lens/disc colobomas coded separately (Q13.0/Q12.2/Q14.2)", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Ocular Albinism":
+    { icd10: "E70.319", label: "Ocular albinism, unspecified", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "X-linked (Nettleship-Falls) is E70.310; distinguish oculocutaneous forms (E70.3-)", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Achromatopsia":
+    { icd10: "H53.51", label: "Achromatopsia", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Terson Syndrome":
+    { icd10: "H43.10", label: "Vitreous hemorrhage, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "vitreous/intraretinal hemorrhage with intracranial hemorrhage — code the CNS bleed (I60.-) alongside", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Serpiginous Choroiditis":
+    { icd10: "H30.899", label: "Other chorioretinal inflammations, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "serpiginous (geographic) choroiditis; no distinct code", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Leber Congenital Amaurosis":
+    { icd10: "H35.50", label: "Unspecified hereditary retinal dystrophy", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "severe infantile hereditary retinal dystrophy; no LCA-specific code", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Uveal Effusion Syndrome":
+    { icd10: "H31.409", label: "Unspecified choroidal detachment, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "idiopathic uveal effusion; serous choroidal/ciliary detachment", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Choroidal Effusion (Post-operative)":
+    { icd10: "H31.409", label: "Unspecified choroidal detachment, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "post-operative serous choroidal effusion; serous variant is H31.41-, hemorrhagic H31.42-", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Multifocal Choroiditis & Panuveitis":
+    { icd10: "H30.899", label: "Other chorioretinal inflammations, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "multifocal choroiditis with panuveitis; no distinct code", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Acute Zonal Occult Outer Retinopathy (AZOOR)":
+    { icd10: "H35.89", label: "Other specified retinal disorders", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "AZOOR outer-retinopathy spectrum; no distinct code", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Cancer-Associated Retinopathy (CAR)":
+    { icd10: "H35.89", label: "Other specified retinal disorders", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "paraneoplastic retinopathy; code the underlying malignancy alongside", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Eales Disease":
+    { icd10: "H35.069", label: "Retinal vasculitis, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "Eales' idiopathic peripheral periphlebitis; retinal-vasculitis bucket", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Hypotony Maculopathy":
+    { icd10: "H44.40", label: "Unspecified hypotony of eye", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "maculopathy secondary to ocular hypotony; code the cause (over-filtration, leak, cyclitis)", verified: "2026-07-17 ICD-10-CM 2026" }
 
 };

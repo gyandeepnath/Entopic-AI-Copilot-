@@ -734,6 +734,138 @@ var CONDITION_INFO = {
       "Immune recovery (e.g. starting antiretrovirals) can trigger a secondary uveitis."
     ],
     review: true
+  },
+
+  /* ═══ Retina — batch D, completes the domain (Session 10f) ═══ */
+
+  "Chorioretinal Coloboma": {
+    summary: "A congenital gap in the retina and choroid from incomplete closure of the embryonic fissure, typically inferonasal, exposing bare sclera. It causes a corresponding field defect and, depending on macular involvement, variable central vision.",
+    facts: [
+      "Often part of a wider spectrum (iris/lens/disc coloboma) and can be associated with syndromes (e.g. CHARGE).",
+      "Retinal detachment can arise from breaks within the coloboma — a lifelong risk.",
+      "Vision depends on whether the macula and disc are involved."
+    ],
+    review: true
+  },
+
+  "Ocular Albinism": {
+    summary: "A predominantly X-linked disorder of ocular melanin with iris transillumination, foveal hypoplasia and fundus hypopigmentation. It causes reduced acuity, nystagmus and photophobia, with relatively normal skin and hair pigment.",
+    facts: [
+      "Foveal hypoplasia and nystagmus limit best-corrected acuity from infancy.",
+      "Iris transillumination and a blond fundus are characteristic signs.",
+      "Distinguished from oculocutaneous albinism, which also affects skin and hair."
+    ],
+    review: true
+  },
+
+  "Achromatopsia": {
+    summary: "A congenital, usually complete absence of cone function, causing markedly reduced acuity, absent colour vision, pronounced photophobia (day blindness) and nystagmus from early life. The fundus often looks near-normal.",
+    facts: [
+      "Colour vision is absent and light sensitivity is severe — tinted lenses often help symptomatically.",
+      "A stationary (non-progressive) cone disorder, unlike progressive cone dystrophy.",
+      "The ERG shows absent cone responses with preserved rod responses."
+    ],
+    review: true
+  },
+
+  "Terson Syndrome": {
+    summary: "Intraocular (vitreous, sub-hyaloid or intraretinal) haemorrhage occurring in association with acute intracranial haemorrhage or a sudden rise in intracranial pressure. It presents with sudden reduced vision or floaters in a patient with a severe headache or reduced consciousness.",
+    facts: [
+      "A marker of serious intracranial pathology — the systemic emergency takes priority.",
+      "Often bilateral; vision usually recovers as the blood clears, sometimes needing vitrectomy.",
+      "May be discovered on eye examination of an obtunded patient after subarachnoid haemorrhage."
+    ],
+    review: true
+  },
+
+  "Serpiginous Choroiditis": {
+    summary: "A chronic, recurrent inflammation of the choroid and RPE that spreads in a geographic, snake-like pattern outward from the disc. It causes scotomata and central vision loss when the macula is involved, with active grey-white edges and atrophic older areas.",
+    facts: [
+      "Recurrences extend from the edges of old scars — a characteristic serpiginous progression.",
+      "Macular involvement and secondary CNV are the main threats to central vision.",
+      "An infective mimic (e.g. tuberculous serpiginous-like choroiditis) should be considered before immunosuppression."
+    ],
+    review: true
+  },
+
+  "Leber Congenital Amaurosis": {
+    summary: "A group of severe inherited retinal dystrophies presenting in infancy with profound vision loss, nystagmus, sluggish pupils and the eye-poking (oculodigital) sign. The fundus can look near-normal early despite a severely abnormal ERG.",
+    facts: [
+      "One of the most severe inherited retinal dystrophies, presenting in the first months of life.",
+      "The ERG is severely reduced or extinguished even when the fundus looks unremarkable.",
+      "Genetic subtype matters — some forms are now gene-therapy targets, so genetic testing is important."
+    ],
+    review: true
+  },
+
+  "Uveal Effusion Syndrome": {
+    summary: "An idiopathic condition, typically in middle-aged hyperopic (nanophthalmic) men, with serous detachment of the choroid, ciliary body and retina from impaired scleral fluid outflow. It causes gradual, sometimes shifting, painless vision loss.",
+    facts: [
+      "Shifting subretinal fluid and 'leopard-spot' RPE changes are characteristic.",
+      "Associated with short, thick-sclera (nanophthalmic) eyes.",
+      "A diagnosis of exclusion — rule out inflammatory, hydrostatic and neoplastic causes of effusion first."
+    ],
+    review: true
+  },
+
+  "Choroidal Effusion (Post-operative)": {
+    summary: "Serous (or haemorrhagic) accumulation in the suprachoroidal space after intraocular surgery, often related to ocular hypotony. It presents as reduced vision and a smooth, dome-shaped peripheral elevation in the early post-operative period.",
+    facts: [
+      "Commonly follows a period of low intraocular pressure (over-filtration or a wound leak).",
+      "Serous effusions frequently settle as the pressure normalises; large or 'kissing' effusions may need drainage.",
+      "A sudden painful haemorrhagic choroidal detachment is a different, more urgent entity."
+    ],
+    review: true
+  },
+
+  "Multifocal Choroiditis & Panuveitis": {
+    summary: "A chronic inflammatory white-dot syndrome with multiple choroidal lesions plus anterior-chamber and vitreous inflammation (panuveitis), typically in myopic women. It causes blurred vision, floaters and scotomata, and can be complicated by CNV.",
+    facts: [
+      "Distinguished from PIC by the presence of anterior-chamber/vitreous inflammation.",
+      "Recurrent and often needs long-term immunomodulatory control.",
+      "Choroidal neovascularisation is the main threat to central vision."
+    ],
+    review: true
+  },
+
+  "Acute Zonal Occult Outer Retinopathy (AZOOR)": {
+    summary: "An uncommon condition, often in young myopic women, in which zones of outer-retinal dysfunction cause acute photopsia and scotomata with a normal-looking fundus early on. The field loss corresponds to the affected outer-retinal zones.",
+    facts: [
+      "Photopsia with field loss but a near-normal fundus is the classic mismatch — imaging and ERG reveal the outer-retinal loss.",
+      "Often begins near the blind spot and enlarges.",
+      "Course is variable; some stabilise while others progress."
+    ],
+    review: true
+  },
+
+  "Cancer-Associated Retinopathy (CAR)": {
+    summary: "A paraneoplastic retinopathy in which anti-retinal autoantibodies (classically anti-recoverin) cause progressive, usually bilateral photoreceptor loss. It presents with subacute vision loss, photopsia, night blindness and a ring scotoma, sometimes before the cancer is known.",
+    facts: [
+      "Can be the presenting sign of an occult malignancy (often small-cell lung) — prompts systemic work-up.",
+      "The ERG is markedly reduced, reflecting widespread photoreceptor dysfunction.",
+      "Distinguished from melanoma-associated retinopathy (MAR), which has a different antibody and ERG pattern."
+    ],
+    review: true
+  },
+
+  "Eales Disease": {
+    summary: "An idiopathic occlusive peripheral retinal periphlebitis, typically in young adult men, causing peripheral non-perfusion and neovascularisation. It often presents with sudden floaters or vision loss from a vitreous haemorrhage.",
+    facts: [
+      "A diagnosis of exclusion — rule out other causes of retinal vasculitis (including tuberculosis, with which it is associated in endemic areas).",
+      "Peripheral, so it is often silent until neovascular bleeding occurs.",
+      "Management targets the ischaemia and neovascularisation to prevent recurrent haemorrhage."
+    ],
+    review: true
+  },
+
+  "Hypotony Maculopathy": {
+    summary: "Macular dysfunction from chronically low intraocular pressure, in which the eye wall and choroid fold and the macula develops chorioretinal striae. It causes blurred, distorted vision and is usually reversible if the pressure is restored.",
+    facts: [
+      "Common causes are over-filtration after glaucoma surgery, a wound leak, or ciliary-body shutdown.",
+      "Chorioretinal folds radiating through the macula are the characteristic sign.",
+      "Vision typically improves once the intraocular pressure is normalised, especially if treated early."
+    ],
+    review: true
   }
 
 };

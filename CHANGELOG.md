@@ -6,6 +6,21 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-07-17 — Session 10f: Retina domain COMPLETE — ICD + richer About (plan B)
+
+Finished all 52 Retina expansion conditions on both fronts (batches C+D added 26:
+Coats, sickle-cell, angioid streaks, POHS, MEWDS, APMPPE, PIC, asteroid hyalosis,
+vitreous amyloidosis, FEVR, retinoblastoma, ARN, CMV retinitis, chorioretinal
+coloboma, ocular albinism, achromatopsia, Terson, serpiginous choroiditis, LCA,
+uveal effusion, post-op choroidal effusion, multifocal choroiditis/panuveitis,
+AZOOR, CAR, Eales, hypotony maculopathy). Every ICD-10 code validated real +
+billable; every About summary qualitative + review-flagged.
+
+Running totals: **ICD 99/197 coded; authored About 83** (was 31). Retina: 0
+uncoded. 176/176 tests pass. Next domains: Cornea, Neuro-Ophthalmic, Surface.
+
+---
+
 ## 2026-07-17 — Session 10e: Retina batches A+B — ICD codes + richer About (plan B)
 
 Working domain-by-domain (founder chose plan B): each body-area gets both its
