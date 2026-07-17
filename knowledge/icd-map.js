@@ -552,6 +552,34 @@ var ICD_MAP = {
   "Eales Disease":
     { icd10: "H35.069", label: "Retinal vasculitis, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "Eales' idiopathic peripheral periphlebitis; retinal-vasculitis bucket", verified: "2026-07-17 ICD-10-CM 2026" },
   "Hypotony Maculopathy":
-    { icd10: "H44.40", label: "Unspecified hypotony of eye", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "maculopathy secondary to ocular hypotony; code the cause (over-filtration, leak, cyclitis)", verified: "2026-07-17 ICD-10-CM 2026" }
+    { icd10: "H44.40", label: "Unspecified hypotony of eye", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "maculopathy secondary to ocular hypotony; code the cause (over-filtration, leak, cyclitis)", verified: "2026-07-17 ICD-10-CM 2026" },
+
+  /* ─ Cornea (batch A) ─ */
+  "Acanthamoeba Keratitis":
+    { icd10: "B60.13", label: "Keratoconjunctivitis due to Acanthamoeba", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "sight-threatening; strongly linked to contact-lens wear/water exposure", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Fungal Keratitis":
+    { icd10: "H16.8", label: "Other keratitis", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "no fungal-specific keratitis code; code the organism (B35-B49) alongside", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Filamentary Keratitis":
+    { icd10: "H16.129", label: "Filamentary keratitis, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Map-Dot-Fingerprint Dystrophy":
+    { icd10: "H18.599", label: "Other hereditary corneal dystrophies, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "epithelial basement membrane dystrophy; hereditary-dystrophy bucket", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Lattice Corneal Dystrophy":
+    { icd10: "H18.549", label: "Lattice corneal dystrophy, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Granular Corneal Dystrophy":
+    { icd10: "H18.539", label: "Granular corneal dystrophy, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Terrien Marginal Degeneration":
+    { icd10: "H18.49", label: "Other corneal degeneration", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "Terrien marginal degeneration; other-corneal-degeneration bucket", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Superior Limbic Keratoconjunctivitis":
+    { icd10: "H16.299", label: "Other keratoconjunctivitis, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "SLK; no distinct code; consider thyroid association", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Contact Lens Corneal Warpage":
+    { icd10: "H18.899", label: "Other specified disorders of cornea, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "contact-lens-induced warpage; no distinct code", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Corneal Foreign Body (Metallic)":
+    { icd10: "T15.00XA", label: "Foreign body in cornea, unspecified eye, initial encounter", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "7th char A = initial encounter; set laterality (T15.01/02) and encounter type per visit", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Vortex Keratopathy (Drug-Induced)":
+    { icd10: "H18.899", label: "Other specified disorders of cornea, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "cornea verticillata; code the causative drug (T-code) alongside", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Iron Line (Corneal)":
+    { icd10: "H18.069", label: "Stromal corneal pigmentations, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "corneal iron line (Hudson-Stahli/Fleischer); pigmentation/deposit family, layer not captured in code", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Limbal Stem Cell Deficiency":
+    { icd10: "H18.899", label: "Other specified disorders of cornea, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "LSCD; no distinct code; code the cause (chemical burn, aniridia, CL) alongside", verified: "2026-07-17 ICD-10-CM 2026" }
 
 };

@@ -866,6 +866,138 @@ var CONDITION_INFO = {
       "Vision typically improves once the intraocular pressure is normalised, especially if treated early."
     ],
     review: true
+  },
+
+  /* ═══ Cornea — batch A (Session 10g) ═══ */
+
+  "Acanthamoeba Keratitis": {
+    summary: "A severe, often contact-lens-associated corneal infection by the free-living Acanthamoeba protozoon. It causes disproportionately severe pain, redness and photophobia, sometimes with a ring-shaped stromal infiltrate and perineural inflammation.",
+    facts: [
+      "Pain out of proportion to signs in a contact-lens wearer is a classic warning.",
+      "Strongly linked to water exposure in lenses (showering, swimming, tap-water rinsing).",
+      "A sight-threatening emergency — often misdiagnosed early as herpetic keratitis, delaying treatment."
+    ],
+    review: true
+  },
+
+  "Fungal Keratitis": {
+    summary: "A corneal infection by filamentary fungi or yeasts, classically after vegetative/organic trauma or in contact-lens wearers. It causes a grey-white infiltrate with feathery margins, satellite lesions and sometimes a hypopyon, often with a more indolent course than bacterial keratitis.",
+    facts: [
+      "Ask about organic trauma (a branch, plant matter) or agricultural work.",
+      "Feathery-edged infiltrate and satellite lesions are suggestive; corneal scraping/culture guides treatment.",
+      "A sight-threatening infection that can be slow to respond and may need prolonged therapy."
+    ],
+    review: true
+  },
+
+  "Filamentary Keratitis": {
+    summary: "A surface disorder in which strands of mucus and degenerated epithelium (filaments) adhere to the cornea, causing a sharp foreign-body sensation, pain on blinking and photophobia. It is a sign of an underlying problem, most often severe dry eye.",
+    facts: [
+      "Nearly always secondary — look for the driver (dry eye, superior limbic keratoconjunctivitis, prolonged patching).",
+      "The filaments stain and tug painfully with each blink.",
+      "Removing filaments relieves symptoms, but treating the underlying cause prevents recurrence."
+    ],
+    review: true
+  },
+
+  "Map-Dot-Fingerprint Dystrophy": {
+    summary: "The commonest anterior corneal dystrophy (epithelial basement membrane dystrophy), with map-like, dot and fingerprint patterns in the epithelium. It is often asymptomatic but can cause recurrent corneal erosions and intermittent blur.",
+    facts: [
+      "A frequent cause of recurrent erosion syndrome — painful episodes, often on waking.",
+      "Usually bilateral, though the patterns can be subtle and shift over time.",
+      "Vision fluctuates when the irregular epithelium involves the visual axis."
+    ],
+    review: true
+  },
+
+  "Lattice Corneal Dystrophy": {
+    summary: "An inherited stromal dystrophy in which amyloid deposits form branching, lattice-like refractile lines in the cornea. It progressively reduces vision and can cause recurrent erosions, typically becoming symptomatic in the first decades of life.",
+    facts: [
+      "Bilateral and progressive; the lattice lines are amyloid.",
+      "Recurrent erosions are common and painful.",
+      "Can recur in a corneal graft, which is relevant when planning surgery."
+    ],
+    review: true
+  },
+
+  "Granular Corneal Dystrophy": {
+    summary: "An inherited stromal dystrophy with discrete white granular (hyaline) deposits in a clear intervening stroma. Vision declines slowly as deposits accumulate; recurrent erosions can occur but are less prominent than in lattice dystrophy.",
+    facts: [
+      "Bilateral, symmetric, and slowly progressive.",
+      "Clear stroma between the deposits is characteristic early on.",
+      "Like other stromal dystrophies, it can recur after corneal grafting."
+    ],
+    review: true
+  },
+
+  "Terrien Marginal Degeneration": {
+    summary: "A slowly progressive, usually painless thinning of the peripheral cornea, often superior, with lipid deposition at the leading edge and intact overlying epithelium. It induces marked astigmatism and, rarely, perforation after minor trauma.",
+    facts: [
+      "Progressive against-the-rule or oblique astigmatism is the main visual effect.",
+      "The epithelium stays intact, distinguishing it from an ulcerative marginal process.",
+      "The thinned cornea is vulnerable to perforation from minor trauma."
+    ],
+    review: true
+  },
+
+  "Superior Limbic Keratoconjunctivitis": {
+    summary: "A chronic, recurrent inflammation of the superior bulbar conjunctiva and upper limbus, with fine papillae, superior corneal filaments and injection. It causes foreign-body sensation, burning and photophobia, often bilaterally.",
+    facts: [
+      "Redness and staining are concentrated superiorly — lift the upper lid to see it.",
+      "Associated with thyroid dysfunction and dry eye — worth screening.",
+      "A relapsing course; treatment targets the mechanical/tear-film contribution."
+    ],
+    review: true
+  },
+
+  "Contact Lens Corneal Warpage": {
+    summary: "Reversible distortion of corneal shape from long-term (often rigid) contact-lens wear, causing blurred or fluctuating vision and unstable refraction/keratometry. It can mimic early keratoconus on topography.",
+    facts: [
+      "Suspect it with unstable topography and spectacle blur in a long-term lens wearer.",
+      "Ceasing lens wear allows the cornea to recover over weeks — a key distinction from keratoconus.",
+      "Important to exclude before diagnosing ectasia or planning refractive surgery."
+    ],
+    review: true
+  },
+
+  "Corneal Foreign Body (Metallic)": {
+    summary: "A metallic particle embedded in the cornea, typically from grinding or hammering, causing sharp pain, watering and photophobia. Iron-containing particles leave a rust ring in the surrounding stroma.",
+    facts: [
+      "Ask about high-velocity metal-on-metal work and always consider an intraocular foreign body.",
+      "A rust ring often remains after removing the particle and may need separate removal.",
+      "Evert the lid and check for additional particles; update tetanus status as appropriate."
+    ],
+    review: true
+  },
+
+  "Vortex Keratopathy (Drug-Induced)": {
+    summary: "A whorl-like pattern of fine golden-brown deposits in the corneal epithelium (cornea verticillata), most often from certain systemic medications. It is usually asymptomatic and rarely affects vision.",
+    facts: [
+      "Commonly caused by drugs such as amiodarone and some antimalarials — review the medication list.",
+      "The whorl pattern sweeps from a point below the pupil, a characteristic appearance.",
+      "Usually reversible on stopping the drug and rarely a reason to change essential therapy by itself."
+    ],
+    review: true
+  },
+
+  "Iron Line (Corneal)": {
+    summary: "A linear deposition of iron in the corneal epithelium at sites of surface irregularity or tear pooling (e.g. Hudson-Stähli line, Fleischer ring in keratoconus, Stocker line at a pterygium). It is usually an incidental, harmless finding.",
+    facts: [
+      "The location is a clue — a Fleischer ring around a cone suggests keratoconus.",
+      "Typically asymptomatic and does not itself require treatment.",
+      "Marks chronic surface topography changes rather than active disease."
+    ],
+    review: true
+  },
+
+  "Limbal Stem Cell Deficiency": {
+    summary: "Loss or dysfunction of the limbal stem cells that renew the corneal epithelium, allowing conjunctival tissue to encroach onto the cornea. It causes chronic irritation, recurrent epithelial breakdown, vascularisation and progressive vision loss.",
+    facts: [
+      "Suspect it with a persistent epithelial defect, conjunctivalisation and superficial vascularisation.",
+      "Causes include chemical burns, aniridia, contact-lens overwear and Stevens-Johnson syndrome.",
+      "Management is complex and may require limbal stem-cell grafting — specialist referral is appropriate."
+    ],
+    review: true
   }
 
 };
