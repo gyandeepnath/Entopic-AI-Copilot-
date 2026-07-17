@@ -496,6 +496,34 @@ var ICD_MAP = {
   "Purtscher Retinopathy":
     { icd10: "H35.89", label: "Other specified retinal disorders", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "Purtscher/Purtscher-like; no distinct code; code the precipitant (trauma/pancreatitis)", verified: "2026-07-17 ICD-10-CM 2026" },
   "Optic Pit Maculopathy":
-    { icd10: "Q14.2", label: "Congenital malformation of optic disc", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "the pit is congenital (Q14.2); the serous maculopathy component is coded separately (H35.-)", verified: "2026-07-17 ICD-10-CM 2026" }
+    { icd10: "Q14.2", label: "Congenital malformation of optic disc", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "the pit is congenital (Q14.2); the serous maculopathy component is coded separately (H35.-)", verified: "2026-07-17 ICD-10-CM 2026" },
+
+  /* ─ Retina (batch C) ─ */
+  "Coats Disease":
+    { icd10: "H35.029", label: "Exudative retinopathy, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "Coats' telangiectatic exudative retinopathy; no eponymous code", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Sickle Cell Retinopathy":
+    { icd10: "H35.89", label: "Other specified retinal disorders", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "code the sickle-cell disease (D57.-) alongside; no distinct sickle-retinopathy code", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Angioid Streaks":
+    { icd10: "H35.33", label: "Angioid streaks of macula", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "consider systemic association (pseudoxanthoma elasticum, Paget, sickle) and code it", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Ocular Histoplasmosis Syndrome (POHS)":
+    { icd10: "H30.899", label: "Other chorioretinal inflammations, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "presumed ocular histoplasmosis; no distinct code; CNV component coded separately", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Multiple Evanescent White Dot Syndrome (MEWDS)":
+    { icd10: "H30.899", label: "Other chorioretinal inflammations, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "white-dot syndrome; no distinct MEWDS code", verified: "2026-07-17 ICD-10-CM 2026" },
+  "APMPPE (Acute Posterior Multifocal Placoid Pigment Epitheliopathy)":
+    { icd10: "H30.149", label: "Acute posterior multifocal placoid pigment epitheliopathy, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Punctate Inner Choroidopathy (PIC)":
+    { icd10: "H30.899", label: "Other chorioretinal inflammations, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "white-dot/inner-choroidopathy syndrome; no distinct PIC code", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Asteroid Hyalosis":
+    { icd10: "H43.819", label: "Vitreous degeneration, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "asteroid hyalosis sits in the vitreous-degeneration bucket", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Vitreous Amyloidosis":
+    { icd10: "H43.89", label: "Other disorders of vitreous body", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "code the underlying amyloidosis (E85.-) alongside", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Familial Exudative Vitreoretinopathy (FEVR)":
+    { icd10: "H35.029", label: "Exudative retinopathy, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "familial exudative vitreoretinopathy; exudative-retinopathy bucket", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Retinoblastoma":
+    { icd10: "C69.20", label: "Malignant neoplasm of unspecified retina", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "sight/life-threatening malignancy; set laterality (C69.21 R / C69.22 L); bilateral in hereditary form", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Acute Retinal Necrosis (ARN)":
+    { icd10: "H30.899", label: "Other chorioretinal inflammations, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "usually herpetic (VZV/HSV) necrotizing retinitis; code the viral cause (B00.-/B02.-)", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Cytomegalovirus (CMV) Retinitis":
+    { icd10: "B25.9", label: "Cytomegaloviral disease, unspecified", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "CMV retinitis; typically in immunocompromise; code the immune status alongside", verified: "2026-07-17 ICD-10-CM 2026" }
 
 };

@@ -602,6 +602,138 @@ var CONDITION_INFO = {
       "Vision declines when the macula detaches; the fluid source is the pit, not a retinal break."
     ],
     review: true
+  },
+
+  /* ═══ Retina — batch C (Session 10f) ═══ */
+
+  "Coats Disease": {
+    summary: "A sporadic, usually unilateral retinal vascular anomaly with telangiectatic vessels that leak, producing heavy yellowish (lipid) exudation and, in advanced cases, exudative retinal detachment. It typically presents in young males, sometimes with leukocoria or strabismus.",
+    facts: [
+      "Leukocoria in a child is a red flag — it must be distinguished from retinoblastoma.",
+      "Massive intra- and subretinal lipid exudation is the hallmark.",
+      "Early treatment of the leaking vessels aims to prevent exudative detachment."
+    ],
+    review: true
+  },
+
+  "Sickle Cell Retinopathy": {
+    summary: "Retinal vascular damage from sickling of red cells causing peripheral capillary occlusion and, in proliferative disease, sea-fan neovascularisation that can bleed or cause tractional detachment. It is often asymptomatic until a vitreous haemorrhage occurs.",
+    facts: [
+      "Proliferative change is commoner in HbSC and sickle-thalassaemia than in homozygous SS disease.",
+      "Peripheral, so central vision is often preserved until a bleed or detachment.",
+      "A systemic haemoglobinopathy — coordinate with haematology."
+    ],
+    review: true
+  },
+
+  "Angioid Streaks": {
+    summary: "Irregular, reddish-brown crack-like lines radiating from the optic disc, caused by breaks in a brittle, calcified Bruch's membrane. They are often symptomless but predispose to choroidal neovascularisation and to macular bleeding after minor trauma.",
+    facts: [
+      "Frequently associated with systemic disease — pseudoxanthoma elasticum, Paget's, sickle-cell — so look beyond the eye.",
+      "New distortion suggests choroidal neovascularisation needing prompt referral.",
+      "The fragile Bruch's membrane means even mild ocular trauma can cause a sight-threatening bleed."
+    ],
+    review: true
+  },
+
+  "Ocular Histoplasmosis Syndrome (POHS)": {
+    summary: "A presumed sequela of prior histoplasma exposure, with the triad of punched-out chorioretinal 'histo' scars, peripapillary atrophy, and a quiet vitreous. Vision is threatened when choroidal neovascularisation develops at a macular scar.",
+    facts: [
+      "The vitreous is characteristically clear — inflammation is not seen, distinguishing it from active uveitis.",
+      "Central vision loss comes from macular CNV, which needs prompt treatment.",
+      "Associated with residence in histoplasma-endemic regions."
+    ],
+    review: true
+  },
+
+  "Multiple Evanescent White Dot Syndrome (MEWDS)": {
+    summary: "An acute, usually unilateral white-dot syndrome in young (often female) patients, with transient grey-white outer-retinal dots and foveal granularity. It causes acute blur, photopsia and an enlarged blind spot, frequently after a viral prodrome.",
+    facts: [
+      "Typically self-limiting with good visual recovery over weeks.",
+      "The dots are evanescent — they fade, so timing of examination matters.",
+      "A diagnosis of exclusion among the white-dot syndromes."
+    ],
+    review: true
+  },
+
+  "APMPPE (Acute Posterior Multifocal Placoid Pigment Epitheliopathy)": {
+    summary: "An acute, usually bilateral inflammatory condition with multiple flat, cream-coloured placoid lesions at the level of the RPE/outer retina, often after a viral illness. It causes rapid central or paracentral vision loss that commonly recovers.",
+    facts: [
+      "Usually bilateral (though eyes may be involved sequentially) with a fairly good prognosis.",
+      "Rarely associated with cerebral vasculitis — ask about headache/neurological symptoms.",
+      "The placoid lesions fade to leave RPE pigmentary changes."
+    ],
+    review: true
+  },
+
+  "Punctate Inner Choroidopathy (PIC)": {
+    summary: "A white-dot syndrome of young myopic women, with small punched-out yellow-white inner-choroidal/outer-retinal spots at the posterior pole and a quiet vitreous. It causes blur, scotomata and photopsia, and can be complicated by choroidal neovascularisation.",
+    facts: [
+      "Occurs typically in young, myopic women with a quiet anterior chamber and vitreous.",
+      "CNV is the main threat to central vision and warrants monitoring.",
+      "Distinguished from other white-dot syndromes by lesion size, distribution and course."
+    ],
+    review: true
+  },
+
+  "Asteroid Hyalosis": {
+    summary: "A benign degenerative change in which calcium-lipid 'asteroid bodies' are suspended throughout the vitreous, seen as numerous bright, spherical opacities that move with eye movement. It is usually unilateral and rarely affects vision.",
+    facts: [
+      "Often an incidental finding; patients are frequently asymptomatic despite a striking view.",
+      "The opacities can obscure the clinician's view of the retina more than they trouble the patient.",
+      "Associated with older age and, in some series, diabetes."
+    ],
+    review: true
+  },
+
+  "Vitreous Amyloidosis": {
+    summary: "Deposition of amyloid fibrils in the vitreous, classically in hereditary transthyretin amyloidosis, producing 'glass-wool' or veil-like opacities and progressive painless blur that spectacles do not correct.",
+    facts: [
+      "Can be the presenting feature of systemic hereditary amyloidosis — prompts systemic evaluation.",
+      "The opacities are bilateral and progressive, unlike simple floaters.",
+      "Vitrectomy can clear vision, though deposits may recur."
+    ],
+    review: true
+  },
+
+  "Familial Exudative Vitreoretinopathy (FEVR)": {
+    summary: "An inherited disorder of retinal vascular development in which the peripheral retina fails to vascularise, leading to a spectrum from asymptomatic avascular periphery to traction, exudation and retinal detachment — resembling ROP but without prematurity.",
+    facts: [
+      "Unlike ROP, it occurs in full-term infants — birth history is normal.",
+      "Highly variable within families; examining relatives can reveal mild avascular periphery.",
+      "Peripheral traction and detachment are the main threats and may present at any age."
+    ],
+    review: true
+  },
+
+  "Retinoblastoma": {
+    summary: "The commonest primary intraocular malignancy of childhood, arising from the developing retina. It most often presents with leukocoria (a white pupillary reflex) or a new squint in a young child, and is life-threatening if not treated.",
+    facts: [
+      "Leukocoria or new strabismus in a child demands urgent referral — this is a sight- and life-threatening cancer.",
+      "Can be unilateral (usually sporadic) or bilateral/hereditary (germline RB1), which carries second-cancer risk.",
+      "Management is by a specialist ocular-oncology team; early diagnosis is critical to survival."
+    ],
+    review: true
+  },
+
+  "Acute Retinal Necrosis (ARN)": {
+    summary: "A fulminant, usually herpesvirus-driven necrotising retinitis, with peripheral confluent retinal whitening, occlusive arteritis and vitritis. It causes rapidly progressive vision loss and carries a high risk of retinal detachment.",
+    facts: [
+      "A sight-threatening emergency needing urgent antiviral therapy and specialist care.",
+      "Usually caused by VZV or HSV; can occur in immunocompetent patients.",
+      "The fellow eye is at risk, so prompt treatment protects both eyes."
+    ],
+    review: true
+  },
+
+  "Cytomegalovirus (CMV) Retinitis": {
+    summary: "An opportunistic necrotising retinitis caused by cytomegalovirus, occurring in immunocompromised patients (notably advanced HIV or transplant immunosuppression). It shows granular retinal whitening with haemorrhage ('pizza-pie' fundus) and threatens vision as it spreads.",
+    facts: [
+      "Its presence signals significant immunosuppression — coordinate systemic evaluation and treatment.",
+      "Often painless with few early symptoms until the macula or optic nerve is threatened.",
+      "Immune recovery (e.g. starting antiretrovirals) can trigger a secondary uveitis."
+    ],
+    review: true
   }
 
 };
