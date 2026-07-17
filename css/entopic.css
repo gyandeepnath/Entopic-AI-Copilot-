@@ -873,6 +873,86 @@ input, select, textarea, button {
   font-style: italic;
 }
 
+/* "ⓘ About this condition" disclosure */
+.dx-info-wrap {
+  margin-top: 2px;
+}
+
+.dx-info-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  padding: 2px 0;
+  margin: 0;
+  cursor: pointer;
+  font: inherit;
+  font-size: .52rem;
+  letter-spacing: .02em;
+  text-transform: uppercase;
+  color: var(--sv);
+  transition: color .12s;
+}
+
+.dx-info-btn:hover,
+.dx-info-btn.open {
+  color: var(--pr, var(--sl));
+}
+
+.dx-info-i {
+  font-size: .62rem;
+  line-height: 1;
+}
+
+.dx-info-caret {
+  font-size: .5rem;
+}
+
+.dx-info-body {
+  margin: 3px 0 5px;
+  padding: 7px 9px;
+  border: 1px solid var(--fg);
+  border-left: 3px solid var(--pr, var(--sl));
+  border-radius: var(--r);
+  background: var(--sn);
+}
+
+.dx-info-summary {
+  font-size: .6rem;
+  line-height: 1.5;
+  color: var(--tx, inherit);
+}
+
+.dx-info-facts {
+  margin: 5px 0 0;
+  padding-left: 15px;
+  font-size: .58rem;
+  line-height: 1.45;
+  color: var(--sv);
+}
+
+.dx-info-facts li {
+  margin-bottom: 2px;
+}
+
+.dx-info-review {
+  margin-top: 6px;
+  padding-top: 5px;
+  border-top: 1px dashed var(--ms);
+  font-size: .52rem;
+  line-height: 1.4;
+  color: var(--as);
+  font-style: italic;
+}
+
+.dx-info-none {
+  font-size: .58rem;
+  line-height: 1.45;
+  color: var(--sv);
+  font-style: italic;
+}
+
 /* Alert boxes */
 .alert-box {
   padding: 6px 8px;

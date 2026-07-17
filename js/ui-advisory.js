@@ -60,6 +60,7 @@ function renderAdvisory() {
   h += '</div>';
   if (leadConf) h += '<div style="font-size:.5rem;color:var(--sv)">' + leadConf + ' confidence · most likely by ranking</div>';
   h += '<div style="font-size:.5rem;color:var(--sv);font-style:italic">Advisory only — clinical correlation required. Not a definitive diagnosis.</div>';
+  h += dxInfoToggle(lead.n, "lead");
   h += '</div>';
 
   /* ═══ TAB BAR — show ONE focused view at a time (less overwhelming) ═══ */
@@ -108,6 +109,7 @@ function renderAdvisory() {
           (ev.matched.length > 4 ? '<span class="matched"> +' + (ev.matched.length - 4) + '</span>' : '') +
           (ev.missing && ev.missing.length > 0 ? ' · <span class="missing">need: ' + ev.missing.slice(0, 3).join(", ") + '</span>' : '') + '</div>';
       }
+      h += dxInfoToggle(d.n, "d" + di);
       h += '</div>';
     }
     if (V.dxList.length > maxToShow) {
@@ -167,6 +169,54 @@ function setAdvTab(t) { ADV_TAB = t; renderAdvisory(); }
 function advTabBtn(id, label, count) {
   return '<button class="adv-tab' + (ADV_TAB === id ? ' active' : '') + '" onclick="setAdvTab(\'' + id + '\')">' +
     label + (count ? ' <span class="adv-tab-n">' + count + '</span>' : '') + '</button>';
+}
+
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* "ⓘ ABOUT THIS CONDITION" TOGGLE                                  */
+/* A per-diagnosis disclosure that expands a plain-language reference */
+/* summary from knowledge/condition-info.js. This is REFERENCE prose  */
+/* only — it never feeds the engine. Provisional AI-authored entries  */
+/* carry a visible "pending clinician verification" badge so the       */
+/* founder can tell verified from unverified content at a glance.      */
+/* Conditions without an entry show a neutral "no summary yet" state   */
+/* — nothing is fabricated on the fly (no-fabrication guardrail).      */
+/* ═══════════════════════════════════════════════════════════════ */
+var DX_INFO_OPEN = {}; /* keyed by row id ("lead", "d0"…) → bool */
+
+function toggleDxInfo(rowId) {
+  DX_INFO_OPEN[rowId] = !DX_INFO_OPEN[rowId];
+  renderAdvisory();
+}
+
+function dxInfoToggle(name, rowId) {
+  var open = !!DX_INFO_OPEN[rowId];
+  var info = (typeof getConditionInfo === "function") ? getConditionInfo(name) : null;
+  var h = '<div class="dx-info-wrap">';
+  h += '<button class="dx-info-btn' + (open ? ' open' : '') + '" onclick="event.stopPropagation();toggleDxInfo(\'' + rowId + '\')" ' +
+    'aria-expanded="' + (open ? 'true' : 'false') + '">' +
+    '<span class="dx-info-i">ⓘ</span> About this condition <span class="dx-info-caret">' + (open ? '▾' : '▸') + '</span></button>';
+  if (open) {
+    h += '<div class="dx-info-body">';
+    if (info) {
+      h += '<div class="dx-info-summary">' + escH(info.summary) + '</div>';
+      if (info.facts && info.facts.length) {
+        h += '<ul class="dx-info-facts">';
+        for (var i = 0; i < info.facts.length; i++) h += '<li>' + escH(info.facts[i]) + '</li>';
+        h += '</ul>';
+      }
+      if (info.review) {
+        h += '<div class="dx-info-review">⚠ Provisional reference summary — pending clinician verification. ' +
+          'Not a source of clinical thresholds, doses, or statistics.</div>';
+      }
+    } else {
+      h += '<div class="dx-info-none">No clinician-verified summary for this condition yet. ' +
+        'You can add one in the Knowledge Base editor.</div>';
+    }
+    h += '</div>';
+  }
+  h += '</div>';
+  return h;
 }
 
 

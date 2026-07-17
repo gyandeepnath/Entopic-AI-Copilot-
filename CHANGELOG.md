@@ -6,6 +6,40 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-07-17 — Session 10: "About this condition" reference toggle
+
+**Founder ask:** "final suggestion diagnosis have a toggle button to provide a
+brief paragraph of the scientific condition and other important facts the
+clinician would find useful if required."
+
+1. **New `ⓘ About this condition` disclosure** on the leading impression and on
+   every ranked differential. Tapping it expands a plain-language summary +
+   a few key clinical facts for that condition, then collapses again.
+2. **Kept safe by design (no-fabrication guardrail):**
+   - Reference prose lives in a **separate module** (`knowledge/condition-info.js`),
+     deliberately OUTSIDE the diagnostic KB, so it can **never** influence the
+     engine — scoring/routing/alerts still read only the structured req/sup/con
+     tokens.
+   - Content is intentionally **qualitative** — no invented statistics,
+     likelihood ratios, numeric thresholds, drug doses, ICD codes, or citations.
+     Just what the condition is, how it typically presents, and why it matters.
+   - Every entry is **flagged provisional** and renders a visible *"pending
+     clinician verification"* badge until the founder verifies it.
+   - Conditions **without** an entry show a neutral *"no verified summary yet —
+     add one in the KB editor"* state. Nothing is ever generated on the fly.
+3. **Seeded ~31 common conditions** (uveitis, the cataract types, POAG/angle
+   closure, dry eye/MGD, the conjunctivitides, blepharitis, diabetic retinopathy,
+   dry/wet AMD, PVD/retinal tear/detachment, CRAO/CRVO, optic neuritis, corneal
+   abrasion/microbial keratitis, keratoconus, scleritis/episcleritis, etc.).
+   **All are `NEEDS_CLINICAL_REVIEW`** — please skim and correct any wording;
+   I'll flip each to verified as you confirm it.
+4. **New integrity tests** (`condition-info`, 5 cases): every key matches a real
+   condition name, every entry is well-formed, all are flagged provisional, and
+   a guard rejects any numeric/statistic/ratio/dose figure sneaking into the
+   prose. 171/171 tests pass.
+
+---
+
 ## 2026-07-16 — Session 9b: negation-safe free-text parsing (junk-finding fix)
 
 **Caught during verification of Session 9.** The new free-text tokenizer read
