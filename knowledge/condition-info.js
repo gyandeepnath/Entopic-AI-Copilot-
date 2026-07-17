@@ -2532,6 +2532,258 @@ var CONDITION_INFO = {
       "New, atypical or persistent visual symptoms, or a first aura in an older patient, warrant assessment to exclude other causes."
     ],
     review: true
+  },
+
+  /* ═══ Anterior / Uveitis (Session 10j) ═══ */
+
+  "Anterior Uveitis (Chronic / Recurrent)": {
+    summary: "Anterior-chamber inflammation that is persistent or repeatedly recurrent, sometimes with few symptoms between episodes. Chronic disease risks complications — posterior synechiae, cataract, raised pressure and macular oedema — even when the eye is relatively white.",
+    facts: [
+      "Recurrent or bilateral disease warrants a systemic work-up for an underlying cause.",
+      "Chronic low-grade inflammation can be surprisingly quiet yet still damaging — monitor for complications.",
+      "Look for posterior synechiae, band keratopathy and pressure changes over time."
+    ],
+    review: true
+  },
+
+  "Intermediate Uveitis": {
+    summary: "Inflammation centred on the vitreous and peripheral retina (the pars plana), with vitreous cells, 'snowballs' and inferior 'snowbanking'. It typically causes floaters and blurred vision with a relatively white, painless eye, often in younger patients.",
+    facts: [
+      "Floaters and blur with minimal redness or pain are characteristic.",
+      "Cystoid macular oedema is the main cause of vision loss and needs monitoring.",
+      "Often idiopathic but can be associated with sarcoidosis and multiple sclerosis."
+    ],
+    review: true
+  },
+
+  "Posterior Uveitis": {
+    summary: "Inflammation of the choroid and/or retina (chorioretinitis, retinitis), causing floaters, blurred vision and scotomata, usually with a quiet anterior segment. Because the retina and choroid are involved, it can directly and permanently threaten central vision.",
+    facts: [
+      "The pattern and distribution of lesions guide the (often infective or systemic) cause — imaging and targeted tests are key.",
+      "Infective causes (e.g. toxoplasma, viral, tuberculous, syphilitic) must be considered before immunosuppression.",
+      "Macular and optic-nerve involvement carry the greatest visual risk."
+    ],
+    review: true
+  },
+
+  "Panuveitis": {
+    summary: "Inflammation involving the anterior chamber, vitreous and retina/choroid together — the whole uveal tract. It causes a red, painful, photophobic eye with floaters and marked vision loss, and often reflects a significant systemic or infective disease.",
+    facts: [
+      "Whole-eye inflammation warrants a thorough systemic and infective work-up (e.g. sarcoid, Behçet, VKH, tuberculosis, syphilis).",
+      "Vision is threatened from multiple directions, so treatment is often aggressive.",
+      "Exclude infective causes before starting immunosuppression."
+    ],
+    review: true
+  },
+
+  "HLA-B27 Associated Uveitis": {
+    summary: "A recurrent, typically unilateral, acute anterior uveitis associated with the HLA-B27 tissue type and the seronegative spondyloarthropathies. Attacks are often sudden and severe, with intense redness, pain, photophobia and sometimes a hypopyon or fibrin.",
+    facts: [
+      "Ask about back stiffness, joint and bowel symptoms — it links to ankylosing spondylitis, reactive arthritis and inflammatory bowel disease.",
+      "Attacks are acute and recurrent, often alternating between eyes over time.",
+      "Usually responds well to prompt topical treatment, but recurrences are the rule."
+    ],
+    review: true
+  },
+
+  "Herpetic Anterior Uveitis": {
+    summary: "Anterior-chamber inflammation caused by herpes simplex or zoster virus, often with raised intraocular pressure, patchy iris atrophy and sometimes reduced corneal sensation or a history of corneal disease. It is typically unilateral and recurrent.",
+    facts: [
+      "Uveitis with raised pressure and sectoral iris atrophy strongly suggests a herpetic cause.",
+      "Look for associated corneal scarring/dendrites and reduced corneal sensation.",
+      "Needs antiviral cover — treating it as a simple uveitis with steroids alone can worsen it."
+    ],
+    review: true
+  },
+
+  "Traumatic Iritis": {
+    summary: "Anterior-chamber inflammation following blunt ocular trauma, causing an aching, photophobic eye with tenderness and a small pupil a day or two after the injury. It is a common, usually self-limiting consequence of a knock to the eye.",
+    facts: [
+      "Examine for other blunt-trauma damage (hyphema, angle recession, commotio, retinal breaks).",
+      "Photophobia and pain on accommodation/convergence are typical.",
+      "Usually settles with cycloplegia and topical anti-inflammatory treatment."
+    ],
+    review: true
+  },
+
+  "Lens-induced Uveitis": {
+    summary: "Inflammation triggered by exposure of the immune system to lens proteins, from a leaking hypermature cataract, a ruptured lens capsule after trauma or retained lens material after surgery. It causes a red, painful eye, sometimes with raised pressure.",
+    facts: [
+      "Suspect it with uveitis in an eye that has an advanced cataract, recent trauma or recent lens surgery.",
+      "Definitive treatment is removing the offending lens material.",
+      "Can be mistaken for endophthalmitis, which must be excluded."
+    ],
+    review: true
+  },
+
+  "Hypopyon Uveitis": {
+    summary: "Anterior uveitis severe enough to layer white cells as a visible fluid level (hypopyon) in the anterior chamber. It signals intense inflammation and demands a search for a specific cause — notably Behçet disease, HLA-B27 disease, or infection.",
+    facts: [
+      "A hypopyon is a sign of severe inflammation or infection — endophthalmitis and infective keratitis must be excluded urgently.",
+      "A mobile, shifting hypopyon is classically described in Behçet disease.",
+      "The underlying cause dictates urgent versus routine management."
+    ],
+    review: true
+  },
+
+  "Endophthalmitis": {
+    summary: "A sight-threatening infection of the inside of the eye, most often after intraocular surgery or a penetrating injury, or spread from the bloodstream. It causes rapidly worsening pain, redness, reduced vision and a hypopyon, with intense vitreous inflammation.",
+    facts: [
+      "An emergency — rapidly increasing pain and vision loss after eye surgery or injury is endophthalmitis until proven otherwise.",
+      "Needs urgent sampling and intravitreal antibiotics; delay costs vision.",
+      "Endogenous cases point to a systemic source (e.g. bloodstream infection) needing systemic work-up."
+    ],
+    review: true
+  },
+
+  "Fuchs Heterochromic Uveitis": {
+    summary: "A chronic, low-grade, usually unilateral anterior uveitis characterised by diffuse stellate keratic precipitates, iris atrophy causing heterochromia (the affected eye often lighter), and few symptoms. Cataract and glaucoma are the main long-term issues.",
+    facts: [
+      "A quiet chronic uveitis with iris heterochromia and no synechiae is characteristic.",
+      "It responds poorly to (and generally does not need) intensive steroid treatment.",
+      "Cataract surgery is common but carries a higher risk of intraoperative bleeding (Amsler sign)."
+    ],
+    review: true
+  },
+
+  "Sarcoid Uveitis": {
+    summary: "Ocular inflammation caused by sarcoidosis, a multisystem granulomatous disease. It can affect any part of the eye — granulomatous anterior uveitis with 'mutton-fat' precipitates, intermediate uveitis with snowballs, or retinal periphlebitis with 'candle-wax' exudates.",
+    facts: [
+      "Granulomatous inflammation with mutton-fat keratic precipitates and iris nodules is suggestive.",
+      "Look beyond the eye — chest imaging and blood tests support the systemic diagnosis.",
+      "Frequently bilateral and chronic, often needing systemic immunosuppression."
+    ],
+    review: true
+  },
+
+  "Toxoplasma Retinochoroiditis": {
+    summary: "The commonest cause of infectious posterior uveitis, from the Toxoplasma parasite. A new focus of retinitis (a fuzzy white lesion) typically flares up next to an old pigmented scar, with overlying vitritis giving a 'headlight in the fog' appearance and causing floaters and blur.",
+    facts: [
+      "A focal retinitis beside a pigmented chorioretinal scar is highly characteristic.",
+      "Lesions near the fovea or optic nerve threaten vision and warrant treatment.",
+      "Usually a reactivation of congenital disease; can be more severe in the immunocompromised."
+    ],
+    review: true
+  },
+
+  "Sympathetic Ophthalmia": {
+    summary: "A rare bilateral granulomatous panuveitis that follows penetrating injury or surgery to one eye, when the immune system attacks uveal antigens in both eyes. The uninjured ('sympathising') eye develops inflammation weeks to months (occasionally years) after the trigger.",
+    facts: [
+      "Any new inflammation in the fellow eye after a penetrating injury/surgery is sympathetic ophthalmia until proven otherwise.",
+      "Early recognition and immunosuppression protect the sympathising eye's vision.",
+      "Very early removal of a blind, severely injured eye can prevent it, but this is a difficult judgement."
+    ],
+    review: true
+  },
+
+  "Pars Planitis": {
+    summary: "The idiopathic subset of intermediate uveitis, with prominent inferior 'snowbanking' over the pars plana and vitreous 'snowballs'. It typically affects children and young adults with floaters and blurred vision in a white, painless eye.",
+    facts: [
+      "Snowbanking and snowballs with a quiet anterior segment are the hallmark.",
+      "Cystoid macular oedema is the leading cause of vision loss.",
+      "A diagnosis of exclusion within intermediate uveitis — consider sarcoid and MS."
+    ],
+    review: true
+  },
+
+  "Posterior Scleritis": {
+    summary: "Inflammation of the sclera behind the equator, causing a deep, boring pain (often with pain on eye movement) and variable vision loss. It can produce disc swelling, choroidal folds, exudative retinal detachment and proptosis, and is easily missed.",
+    facts: [
+      "Deep pain out of proportion to visible signs, with disc swelling or choroidal folds, should raise suspicion — ultrasound (a thickened sclera with fluid) confirms it.",
+      "Frequently associated with systemic inflammatory disease.",
+      "Can masquerade as other causes of disc swelling or a mass, so imaging matters."
+    ],
+    review: true
+  },
+
+  "Traumatic Hyphema": {
+    summary: "Blood in the anterior chamber after blunt or penetrating ocular trauma, seen as a red fluid level or diffuse haze, with reduced vision and often raised pressure. The main dangers are a pressure spike, corneal blood-staining and — most feared — a rebleed a few days later.",
+    facts: [
+      "Assess and control the intraocular pressure and warn about the rebleed risk over the first several days.",
+      "Sickle-cell status matters — even trait raises the risk of pressure complications and influences treatment.",
+      "Rest, a shield and avoidance of anticoagulants/NSAIDs are usual; large hyphemas may need surgery."
+    ],
+    review: true
+  },
+
+  "Toxic Anterior Segment Syndrome": {
+    summary: "A sterile, acute inflammation of the anterior segment after cataract or other anterior-segment surgery, caused by a non-infectious toxic agent (a contaminant on instruments/solutions). It presents within a day of surgery with blurred vision, diffuse corneal oedema and anterior-chamber reaction — but characteristically little pain.",
+    facts: [
+      "Very early onset (12-24 h) with limbus-to-limbus corneal oedema and minimal pain distinguishes it from infective endophthalmitis.",
+      "Endophthalmitis must still be excluded because the treatment is completely different.",
+      "It usually responds to intensive topical steroids; the priority is ruling out infection."
+    ],
+    review: true
+  },
+
+  "Vogt-Koyanagi-Harada Disease": {
+    summary: "A bilateral granulomatous panuveitis with systemic features (headache, meningism, hearing changes, and later skin/hair depigmentation), thought to be an autoimmune attack on melanocytes. It classically causes bilateral serous retinal detachments and marked vision loss.",
+    facts: [
+      "Bilateral panuveitis with exudative retinal detachments and meningeal/auditory symptoms is characteristic.",
+      "Early, aggressive and sustained immunosuppression improves the visual outcome.",
+      "Later 'sunset-glow' fundus and poliosis/vitiligo reflect melanocyte loss."
+    ],
+    review: true
+  },
+
+  "Behcet Disease (Ocular)": {
+    summary: "The ocular manifestation of Behçet disease, a systemic vasculitis, typically an explosive recurrent panuveitis with occlusive retinal vasculitis and sometimes a shifting hypopyon. Repeated attacks cause cumulative, sight-threatening damage.",
+    facts: [
+      "Ask about recurrent oral and genital ulcers and skin lesions — the systemic clues.",
+      "Occlusive retinal vasculitis is what makes the ocular disease so damaging; prompt systemic immunosuppression is key.",
+      "Attacks can be recurrent and severe, so early aggressive control matters."
+    ],
+    review: true
+  },
+
+  "Ocular Toxocariasis": {
+    summary: "Eye disease from the larvae of the dog/cat roundworm Toxocara, usually in children, producing a granuloma at the posterior pole or periphery, or a chronic endophthalmitis-like picture. It typically causes unilateral vision loss, a squint or leukocoria.",
+    facts: [
+      "Leukocoria or a white retinal granuloma in a child must be distinguished from retinoblastoma and Coats disease.",
+      "Usually unilateral and linked to a history of contact with puppies or soil (pica).",
+      "Tractional complications rather than the live larva often threaten vision."
+    ],
+    review: true
+  },
+
+  "Aniridia": {
+    summary: "A congenital, usually bilateral, near-total absence of the iris (a rudimentary stump remains), part of a pan-ocular developmental disorder. It causes glare, photophobia and reduced vision from associated foveal hypoplasia and nystagmus, and carries lifelong risks of glaucoma, cataract and corneal surface failure.",
+    facts: [
+      "A systemic and genetic diagnosis — sporadic aniridia in a child mandates screening for Wilms tumour (WAGR / PAX6).",
+      "Foveal hypoplasia and nystagmus limit vision, not just the missing iris.",
+      "Lifelong surveillance for glaucoma, cataract and limbal stem-cell failure is needed."
+    ],
+    review: true
+  },
+
+  "Juvenile Idiopathic Arthritis (JIA) Uveitis": {
+    summary: "A chronic, typically bilateral, non-granulomatous anterior uveitis complicating juvenile idiopathic arthritis. It is notoriously silent — the eye stays white and the child asymptomatic — so it is detected by screening, yet it can cause severe complications if missed.",
+    facts: [
+      "The eye is white and painless despite active inflammation — regular slit-lamp screening of at-risk children is essential.",
+      "Highest risk in young girls with oligoarticular, ANA-positive disease.",
+      "Untreated it causes band keratopathy, cataract, glaucoma and vision loss."
+    ],
+    review: true
+  },
+
+  "Tubulointerstitial Nephritis & Uveitis (TINU)": {
+    summary: "A syndrome combining acute tubulointerstitial nephritis with (usually bilateral) anterior uveitis, most often in adolescents and young women. The uveitis can precede, accompany or follow the kidney disease and may recur.",
+    facts: [
+      "Consider it in a young patient with bilateral anterior uveitis — check renal function and urinalysis.",
+      "The kidney and eye disease may not appear at the same time, so keep the link in mind.",
+      "The uveitis can be recurrent or chronic even after the nephritis settles."
+    ],
+    review: true
+  },
+
+  "Syphilitic Uveitis": {
+    summary: "Ocular inflammation from syphilis — 'the great masquerader' — which can mimic almost any uveitis pattern (anterior, posterior with placoid lesions, panuveitis, optic neuritis). It is an important, treatable and often bilateral cause that must be actively excluded.",
+    facts: [
+      "Because it imitates so many patterns, syphilis serology is part of the routine uveitis work-up.",
+      "It is treatable with appropriate antibiotics, and neurosyphilis must be considered/tested.",
+      "A public-health diagnosis — partner notification and screening for co-infection (including HIV) apply."
+    ],
+    review: true
   }
 
 };
