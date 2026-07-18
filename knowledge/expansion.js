@@ -888,6 +888,11 @@ var KB_EXPANSION = [
   "con": ["reduced_vision", "sudden_vision_loss", "pain_severe", "purulent_discharge"], "temporal": ["chronic"], "tests": ["conjunctival_concretions"], "exclusions": [] },
 { "name": "Chemosis (Conjunctival Edema)", "domain": "Surface & Lids", "route": "surface",
   "req": ["conjunctival_edema"], "sup": ["lid_edema_diffuse", "itching_dominant", "redness", "watering"],
-  "con": ["reduced_vision", "gradual_blur", "sudden_vision_loss"], "temporal": ["acute", "subacute"], "tests": ["conjunctival_edema"], "exclusions": [] }
+  "con": ["reduced_vision", "gradual_blur", "sudden_vision_loss"], "temporal": ["acute", "subacute"], "tests": ["conjunctival_edema"], "exclusions": [] },
+
+/* ═══ Batch 16 (2026-07-17) — genuinely-missing common entry ═══ */
+{ "name": "Pseudophakia", "domain": "Lens", "route": "lens",
+  "req": ["iol_in_bag"], "sup": ["post_surgery", "glare", "halos", "reduced_vision", "post_cataract_surgery_blur"],
+  "con": ["pain", "redness", "itching_dominant", "flashes"], "temporal": ["variable"], "tests": ["iol_in_bag"], "exclusions": [] }
 
 ];

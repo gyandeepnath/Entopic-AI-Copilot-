@@ -3902,6 +3902,18 @@ var CONDITION_INFO = {
       "Treatment is directed at the underlying cause."
     ],
     review: true
+  },
+
+  /* ═══ Batch 16 ═══ */
+
+  "Pseudophakia": {
+    summary: "The normal state of an eye after cataract surgery in which the natural lens has been replaced by an intraocular lens implant. It is not a disease but a status — vision is usually good, though the implant does not accommodate, so reading correction is typically needed.",
+    facts: [
+      "A status, not a pathology — but note it, as it changes the differential (e.g. later PCO, dysphotopsia, dislocation or endophthalmitis).",
+      "The implant provides a fixed focus; presbyopic correction or a multifocal/EDOF lens addresses near vision.",
+      "Examine the implant position and capsule at follow-up; new glare or blur may be posterior capsule opacification."
+    ],
+    review: true
   }
 
 };

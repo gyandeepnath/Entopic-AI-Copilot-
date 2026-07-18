@@ -872,6 +872,10 @@ var ICD_MAP = {
   "Conjunctival Concretions":
     { icd10: "H11.129", label: "Conjunctival concretions, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "hard yellow tarsal deposits; only remove if eroding/symptomatic", verified: "2026-07-17 ICD-10-CM 2026" },
   "Chemosis (Conjunctival Edema)":
-    { icd10: "H11.89", label: "Other specified disorders of conjunctiva", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "conjunctival oedema is a sign — find the cause (allergy, infection/orbital cellulitis, thyroid eye disease, venous congestion)", verified: "2026-07-17 ICD-10-CM 2026" }
+    { icd10: "H11.89", label: "Other specified disorders of conjunctiva", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "conjunctival oedema is a sign — find the cause (allergy, infection/orbital cellulitis, thyroid eye disease, venous congestion)", verified: "2026-07-17 ICD-10-CM 2026" },
+
+  /* ─ Batch 16 ─ */
+  "Pseudophakia":
+    { icd10: "Z96.1", label: "Presence of intraocular lens", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "status code (post-cataract-surgery IOL in place); a complication (dysphotopsia, PCO, dislocation) is coded separately", verified: "2026-07-17 ICD-10-CM 2026" }
 
 };

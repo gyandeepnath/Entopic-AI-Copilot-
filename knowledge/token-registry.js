@@ -2727,7 +2727,7 @@ var TOKEN_REGISTRY = {
     "usage": {
       "req": 3,
       "sup": 6,
-      "con": 20,
+      "con": 21,
       "temporal": 0,
       "tests": 0
     },
@@ -2956,7 +2956,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 4,
-      "sup": 37,
+      "sup": 38,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -3084,7 +3084,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 0,
-      "sup": 23,
+      "sup": 24,
       "con": 1,
       "temporal": 0,
       "tests": 0
@@ -3634,11 +3634,11 @@ var TOKEN_REGISTRY = {
       "finding_map"
     ],
     "usage": {
-      "req": 0,
+      "req": 1,
       "sup": 0,
       "con": 0,
       "temporal": 0,
-      "tests": 0
+      "tests": 1
     },
     "reachable": true
   },
@@ -3768,7 +3768,7 @@ var TOKEN_REGISTRY = {
     "usage": {
       "req": 5,
       "sup": 3,
-      "con": 176,
+      "con": 177,
       "temporal": 0,
       "tests": 0
     },
@@ -5139,7 +5139,7 @@ var TOKEN_REGISTRY = {
     "usage": {
       "req": 10,
       "sup": 35,
-      "con": 101,
+      "con": 102,
       "temporal": 0,
       "tests": 0
     },
@@ -5613,7 +5613,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 1,
-      "sup": 0,
+      "sup": 1,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -5628,7 +5628,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 10,
-      "sup": 6,
+      "sup": 7,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -6069,7 +6069,7 @@ var TOKEN_REGISTRY = {
     "usage": {
       "req": 4,
       "sup": 86,
-      "con": 156,
+      "con": 157,
       "temporal": 0,
       "tests": 0
     },
@@ -6204,7 +6204,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 11,
-      "sup": 193,
+      "sup": 194,
       "con": 98,
       "temporal": 0,
       "tests": 1
@@ -7591,7 +7591,7 @@ var TOKEN_REGISTRY = {
       "req": 0,
       "sup": 0,
       "con": 0,
-      "temporal": 10,
+      "temporal": 11,
       "tests": 0
     },
     "reachable": false
@@ -7988,5 +7988,5 @@ var TOKEN_REGISTRY_STATS = {
   "unreachable_required": [],
   "unreachable_supportive": [],
   "test_label_only": 96,
-  "produced_never_consumed": 80
+  "produced_never_consumed": 79
 };

@@ -382,7 +382,7 @@ function showKBInfo() {
         var c = conds[i];
         /* human-readable "what to enter" = its required findings */
         var needs = (c.req || []).map(kbPrettyToken).join(", ");
-        h += '<div class="kbinfo-row" data-name="' + escH((c.name || "").toLowerCase()) + '" style="font-size:.62rem;color:var(--sl);padding:2px 0 2px 10px">' +
+        h += '<div class="kbinfo-row" data-name="' + escH((c.name || "").toLowerCase()) + '" data-keywords="' + escH(kbSearchKeywords(c)) + '" style="font-size:.62rem;color:var(--sl);padding:2px 0 2px 10px">' +
           '<b style="color:var(--ink,#222);font-weight:500">' + escH(c.name) + '</b>' +
           (c.urgent ? ' <span style="color:var(--md);font-weight:600">URGENT</span>' : '') +
           (c.review_status === "NEEDS_CLINICAL_REVIEW" ? ' <span style="color:var(--wa,#e67e22);font-size:.52rem">· provisional</span>' : '') +
@@ -409,12 +409,74 @@ function kbPrettyToken(t) {
   return String(t).replace(/_/g, " ");
 }
 
-/* Filter the KB info list as the owner types. */
+/* Common lay terms / signs / eponyms → extra search keywords, so a clinician
+   searching by a SIGN or SYNONYM ("bitot", "stye", "papillae", "seidel",
+   "wart", "pink eye"…) still finds the condition even though the sign is not in
+   the condition's formal name. Keyed by a substring of the condition name. */
+var KB_SYNONYMS = {
+  "Xerophthalmia": "bitot spot bitot's spots night blindness nyctalopia keratomalacia vitamin a deficiency dry",
+  "Hordeolum": "stye sty lid lump lid bump acute lid swelling",
+  "Chalazion": "meibomian cyst lid lump lid bump granuloma",
+  "Giant Papillary": "papillae papillary gpc contact lens bumps",
+  "Vernal Keratoconjunctivitis": "papillae cobblestone shield ulcer spring catarrh allergy",
+  "Atopic Keratoconjunctivitis": "papillae atopic eczema allergy",
+  "Corneal Laceration": "seidel seidel test aqueous leak cut cornea",
+  "Open Globe": "seidel seidel test ruptured globe rupture penetrating injury",
+  "Eyelid Papilloma": "wart verruca skin tag squamous papilloma lid growth",
+  "Phthiriasis": "lice crab louse pubic louse nits pediculosis itchy lashes",
+  "Pterygium": "surfers eye wing growth on cornea",
+  "Pinguecula": "yellow bump conjunctival degeneration",
+  "Conjunctival Concretions": "concretion lithiasis yellow deposits",
+  "Bacterial Conjunctivitis": "pink eye red eye purulent discharge sticky",
+  "Viral Conjunctivitis": "pink eye adenovirus watery follicles",
+  "Allergic Conjunctivitis": "itchy eyes hay fever papillae allergy",
+  "Blepharitis": "lid margin crusting flaky lashes dandruff",
+  "Keratoconus": "cone cornea irregular astigmatism fleischer ring ectasia",
+  "Retinitis Pigmentosa": "night blindness tunnel vision bone spicule rp",
+  "Nuclear Sclerotic Cataract": "cataract age related lens opacity cloudy lens",
+  "Posterior Capsular Opacification": "pco after cataract secondary cataract yag posterior capsule",
+  "Trichiasis": "ingrown lashes misdirected lashes",
+  "Madarosis": "lash loss eyelash loss thinning brows",
+  "Hypopyon": "pus anterior chamber layered white cells",
+  "Subconjunctival Hemorrhage": "red patch blood in eye bloodshot",
+  "Dacryocystitis": "watering tearing lacrimal sac infection",
+  "Dermatochalasis": "droopy skin baggy lids excess skin hooding",
+  "Xanthelasma": "yellow lid plaque cholesterol lipid deposit",
+  "Distichiasis": "extra lashes double row lashes",
+  "Symblepharon": "adhesion scarring conjunctiva",
+  "Chemosis": "conjunctival swelling boggy oedema edema",
+  "Roth Spots": "white centred hemorrhage endocarditis leukemia",
+  "Hollenhorst": "cholesterol embolus plaque amaurosis fugax carotid",
+  "Hydroxychloroquine": "plaquenil bulls eye maculopathy antimalarial toxicity",
+  "Central Retinal Artery Occlusion (CRAO)": "retinal stroke sudden vision loss cherry red spot",
+  "Central Retinal Vein Occlusion (CRVO)": "blood and thunder vein occlusion",
+  "Age-related Macular Degeneration (Dry)": "amd drusen macular degeneration",
+  "Age-related Macular Degeneration (Wet)": "amd cnv wet macular degeneration distortion",
+  "Diabetic Retinopathy": "diabetes retinopathy microaneurysm",
+  "Primary Open Angle Glaucoma": "glaucoma raised pressure cupping poag",
+  "Acute Angle Closure": "angle closure red painful eye high pressure haloes emergency"
+};
+
+/* Build the searchable keyword blob for a condition: its name, domain, the
+   plain-language findings it uses, plus any matching synonyms above. */
+function kbSearchKeywords(cond) {
+  var parts = [(cond.name || ""), (cond._domain || "")];
+  var toks = [].concat(cond.req || [], cond.sup || [], cond.tests || []);
+  for (var i = 0; i < toks.length; i++) parts.push(kbPrettyToken(toks[i]));
+  for (var key in KB_SYNONYMS) {
+    if ((cond.name || "").indexOf(key) >= 0) { parts.push(KB_SYNONYMS[key]); }
+  }
+  return parts.join(" ").toLowerCase().replace(/_/g, " ");
+}
+
+/* Filter the KB info list as the owner types — matches name, domain, findings
+   and synonyms so a search by SIGN or lay term still finds the condition. */
 function kbInfoFilter(q) {
-  q = (q || "").toLowerCase();
+  q = (q || "").toLowerCase().trim();
   var rows = document.querySelectorAll("#kbInfoList .kbinfo-row");
   for (var i = 0; i < rows.length; i++) {
-    rows[i].style.display = rows[i].getAttribute("data-name").indexOf(q) >= 0 ? "" : "none";
+    var hay = rows[i].getAttribute("data-keywords") || rows[i].getAttribute("data-name") || "";
+    rows[i].style.display = (!q || hay.indexOf(q) >= 0) ? "" : "none";
   }
   /* hide empty domain groups */
   var groups = document.querySelectorAll("#kbInfoList .kbinfo-domain");

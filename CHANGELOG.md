@@ -6,6 +6,32 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-07-17 — Session 10p: KB search by sign/synonym + Pseudophakia (the "missing conditions" fix)
+
+**Founder reported** many common conditions (ptosis, blepharitis, the
+conjunctivitides, hypopyon, chalazion, stye, Bitot spot, pterygium, blepharospasm,
+PCO, retinitis pigmentosa, chemical injury, trichiasis, madarosis, keratoconus,
+concretions, papillae…) as "missing totally from the build."
+
+**Root cause: they were NOT missing — 20 of the 21 listed were already present.**
+Verified the KB browser renders all conditions; the problem was the *search*
+matched only the exact condition NAME, so searching by a **sign, synonym or
+eponym** ("bitot", "seidel", "papillae", "stye"-vs-"hordeolum", "pink eye")
+returned nothing and looked like an absent condition.
+
+Fixes:
+1. **KB search now matches signs, synonyms, findings and domain**, not just the
+   name (`kbSearchKeywords` + a `KB_SYNONYMS` lay-term/eponym map). Now "bitot"
+   → Xerophthalmia, "seidel" → Open Globe/Corneal Laceration, "papillae" → the
+   four papillary conditions, "pco" → Posterior Capsular Opacification, etc.
+2. **Added the one genuinely-missing entry: Pseudophakia** (with ICD Z96.1 and a
+   note). (Seidel is a *test*, not a diagnosis; "low vision" isn't a discrete
+   condition.)
+
+KB now **383 conditions**, all coded + noted (0 missing). 178/178 tests pass.
+
+---
+
 ## 2026-07-17 — Session 10o: sign-rich common-conditions drive — Surface & Lids (+11)
 
 Added 9 new clickable lid/conjunctival findings and 11 common adnexal/surface
