@@ -6,6 +6,54 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-07-18 — Session 11: Reasoning-views layer — SOAP note + de-identified casebook (Vision Moves 1 + 4)
+
+**Founder chose the direction** (from `docs/VISION_THINKTANK.md`): **Move 1
+(documentation-as-exhaust) + Move 4 (diagnosis and education are one act)**.
+These share one foundation, so they're built as a single layer, not two.
+
+**The idea in one line:** *one exam → one reasoning state → many rendered views.*
+The clinician examines; the note and the teaching case both fall out of what the
+deterministic engine already computed. No new charting work.
+
+New module **`js/reasoning-views.js`** (display-only; the engine is untouched):
+- `buildExamState()` — a canonical, DOM-free snapshot of the current encounter's
+  reasoning: captured findings + the engine's ranked differential **with its
+  evidence trail** (`matched / missing / contradicted`) + red-flag alerts + the
+  next discriminating tests. Every view renders from this one object.
+- **Move 1 — `stateToNoteText()`** renders a **SOAP clinical note**: a faithful
+  projection of the reasoning (the Assessment shows *why* each impression, not
+  just the label), with safety alerts pinned above the assessment and the
+  advisory banner stamped on. Surfaced via a **📝 SOAP Note** button on the
+  report page (`#modalNote`, copy/close).
+- **Move 4 — the Casebook**: `deidentifyState()` strips PII (name/MRN removed,
+  age capped 90+, patient's own name scrubbed from free text), then
+  `casebookAdd()` stores a **de-identified** teaching case locally (via
+  `storage.js`). **🎓 Save as teaching case** + **📚 Open casebook** buttons on
+  the report page (`#modalCasebook`) — each case is the same reasoning state
+  viewed for learning, with a faculty/clinician teaching note.
+
+**Anti-fabrication guarantee (patient safety):** a field that was never entered
+is **omitted**, never rendered as an assumed "normal" — the blankVisit defaults
+(WNL / White-and-quiet / ISNT / foveal reflex) never appear unless actually
+recorded. Enforced by a dedicated test.
+
+**Guardrails honoured:** diagnosis stays in `engine.js` (these are views, nothing
+feeds back — firewall verified by test); no LLM, no network, fully offline;
+advisory-only framing on every artifact; casebook is de-identified before storage.
+
+**Divergence from the doc:** the think-tank recommended Move 1 + Move 3; the
+founder preferred **Move 1 + Move 4**, which is a tighter pairing because both are
+views of the *same* state (one renderer serves paperwork *and* teaching). LLM
+prose-polish / ambient voice capture is deliberately **out of this slice**
+(spend + PII gate — founder-decided later).
+
+Tests: **+10** (`tests/reasoning-views.test.js`), plus a headless-browser smoke
+check of both views. **188/188 pass** (was 178). App boots clean; offline path
+intact.
+
+---
+
 ## 2026-07-17 — Session 10p: KB search by sign/synonym + Pseudophakia (the "missing conditions" fix)
 
 **Founder reported** many common conditions (ptosis, blepharitis, the

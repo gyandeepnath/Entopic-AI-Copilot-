@@ -211,6 +211,39 @@
 
 
 <!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SOAP CLINICAL NOTE (documentation-as-exhaust — a view of the    -->
+<!-- engine's reasoning state; never re-diagnoses)                   -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="modalNote" style="display:none">
+  <div class="modal-box">
+    <div class="modal-title">Clinical Note (SOAP)</div>
+    <div class="modal-desc" style="font-size:.66rem">Generated from this exam's reasoning state — only findings you entered are included. Advisory only.</div>
+    <pre id="noteContent" style="white-space:pre-wrap;font-family:var(--mono,monospace);font-size:.7rem;line-height:1.55;background:var(--wh,#fff);border:1px solid var(--ms);border-radius:var(--r);padding:14px;max-height:52vh;overflow:auto"></pre>
+    <div class="btn-g">
+      <button class="btn btn-p" id="copyNoteBtn" onclick="copyClinicalNote()">Copy</button>
+      <button class="btn btn-s" onclick="closeModal('modalNote')">Close</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- CASEBOOK — de-identified teaching cases (diagnosis + education   -->
+<!-- as one act). Stored locally; no patient identifiers.            -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="modalCasebook" style="display:none">
+  <div class="modal-box">
+    <div class="modal-title">Teaching Casebook</div>
+    <div class="modal-desc" style="font-size:.66rem">Real reasoned encounters, de-identified — a living casebook. The same reasoning state, viewed for learning.</div>
+    <div id="casebookContent" style="max-height:56vh;overflow:auto"></div>
+    <div class="btn-g">
+      <button class="btn btn-s" onclick="closeModal('modalCasebook')">Close</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
 <!-- CANVAS: Drawing overlay for slit lamp / fundus sketches        -->
 <!-- ═══════════════════════════════════════════════════════════════ -->
 <div class="canvas-overlay" id="canvasOverlay" style="display:none">
@@ -273,6 +306,7 @@
 <script src="js/ui-pages.js"></script>
 <script src="js/ui-pages-2.js"></script>
 <script src="js/ui-report.js"></script>
+<script src="js/reasoning-views.js"></script>
 <script src="js/ui-flowmap.js"></script>
 <script src="js/ui-kb-editor.js"></script>
 <script src="js/ui-chart.js"></script>

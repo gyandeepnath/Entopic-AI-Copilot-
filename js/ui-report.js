@@ -167,8 +167,14 @@ function pgRpt() {
   h += '<div class="btn-g no-print">';
   h += '<button class="btn btn-s" onclick="nav(\'coding\')">← Back</button>';
   h += '<button class="btn btn-p" onclick="window.print()">🖨 Print Report</button>';
+  h += '<button class="btn btn-s" onclick="showClinicalNote()">📝 SOAP Note</button>';
   h += '<button class="btn btn-s" onclick="generateReferralLetter()">📄 Referral Letter</button>';
   h += '<button class="btn btn-p" onclick="nav(\'prescription\')">Prescription →</button>';
+  h += '</div>';
+  /* Teaching / casebook row (diagnosis + education as one act) */
+  h += '<div class="btn-g no-print" style="margin-top:6px">';
+  h += '<button class="btn btn-s" id="saveCaseBtn" onclick="saveTeachingCase()">🎓 Save as teaching case</button>';
+  h += '<button class="btn btn-s" onclick="showCasebook()">📚 Open casebook</button>';
   h += '</div></div>';
 
   return h;

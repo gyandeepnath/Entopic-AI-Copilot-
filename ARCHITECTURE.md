@@ -213,6 +213,31 @@ These are strong, self-contained clinical features. In Part II they become **plu
 - **Advisory panel** — live differential (name, confidence, evidence chips), alerts, nudges, medication alerts, and (optionally) AI remarks. This is the clinician-facing output of the engine.
 - **Flow map** — a layered visualization that replays the engine's own reasoning: `renderTokenLayer → renderRouteLayer → renderGateLayer → renderScoringLayer → renderExclusionLayer → renderResultLayer`. This is effectively a **built-in audit trail / glass-box view** of a single engine run, and it is a real asset: it is the honest answer to "why did the tool suggest this?" In Part II it becomes the per-problem-loop audit trail.
 
+## 9a. The reasoning-views layer (`reasoning-views.js`) — one state, many views
+
+Realizes vision **Move 1 (documentation-as-exhaust)** + **Move 4 (diagnosis and
+education as one act)** as a single display-only layer over the engine's output.
+The pattern is **one exam → one reasoning state → many rendered views**:
+
+- `buildExamState()` — a canonical, DOM-free snapshot of the encounter's
+  reasoning (captured findings + `V.dxList` with its evidence trail + `V.alerts`
+  + `V.nextTests` + token provenance). This is the single object every view
+  renders from. It **reads** engine output and never writes it back.
+- **SOAP note** (`stateToNoteText`) — a faithful text projection: Assessment
+  shows the engine's *why* (`matched / missing / contradicted`), safety alerts
+  sit above the assessment, advisory framing is stamped on. Reached via the
+  **📝 SOAP Note** button on the report page (`#modalNote`).
+- **Casebook** (`deidentifyState` → `casebookAdd` / `showCasebook`) — the same
+  state, **de-identified** (PII removed, age capped 90+, name scrubbed from free
+  text), stored locally through `storage.js` as a growing library of real
+  reasoned teaching cases (`#modalCasebook`).
+
+**Invariant — anti-fabrication:** a field never entered is omitted, never
+rendered as an assumed normal (blankVisit defaults never leak into a note).
+**Firewall:** this layer is display-only — no scoring, no differential
+generation, nothing feeds back into the engine. Covered by
+`tests/reasoning-views.test.js`.
+
 ## 10. Honest assessment — strengths and the concrete gaps
 
 ### Strengths worth protecting
