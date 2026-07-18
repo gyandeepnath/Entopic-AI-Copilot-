@@ -99,3 +99,20 @@ test("tier locks gate collaboration/backup features regardless of role", () => {
   /* a free capability is unlocked */
   assert.strictEqual(roles.tierUnlocksCap("soap_note"), true);
 });
+
+test("practice records (student mock exams) are NEVER capped — learning is unrestricted", () => {
+  fresh();
+  assert.strictEqual(roles.saveCap("practice"), Infinity);
+  const r = roles.canSave("practice", 5000);
+  assert.strictEqual(r.ok, true, "even thousands of practice exams stay saveable");
+});
+
+test("roleSessionReset clears the in-page role so accounts never inherit each other's mode", () => {
+  fresh();
+  roles.setActiveRole("faculty");
+  assert.strictEqual(roles.getActiveRole(), "faculty");
+  roles.roleSessionReset();
+  /* after reset, no in-page role; (CU/localStorage absent in this harness) */
+  assert.strictEqual(roles.getActiveRole(), null);
+  assert.strictEqual(roles.effectiveRole(), "clinician", "falls back to the safe default");
+});

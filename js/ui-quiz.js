@@ -1,0 +1,242 @@
+/* ═══════════════════════════════════════════════════════════════ */
+/* ENTOPIC — QUIZ / SELF-TEST ("guess the diagnosis")              */
+/*                                                                  */
+/* Student-mode learning feature. Questions are built ONLY from     */
+/* content that already exists in the build:                        */
+/*   • the knowledge base (a condition's own required/supportive    */
+/*     findings become the vignette — nothing is invented), or      */
+/*   • the user's de-identified teaching casebook (real reasoned    */
+/*     encounters).                                                 */
+/* Explanations come from the hand-authored About notes             */
+/* (condition-info.js). Distractors are real KB condition names     */
+/* from the same route/domain.                                      */
+/*                                                                  */
+/* GUARDRAILS: educational only — never touches a live patient      */
+/* exam, never feeds the engine, offline, no LLM, no fabricated     */
+/* clinical content. Free for every role and tier (ALWAYS_ON).      */
+/*                                                                  */
+/* Pure core first (Node-testable); DOM wiring guarded at bottom.   */
+/* ═══════════════════════════════════════════════════════════════ */
+"use strict";
+
+
+/* ── token → clinician-readable label (cached) ── */
+var _quizLabels = null;
+function quizTokenLabel(t) {
+  if (_quizLabels === null) {
+    _quizLabels = {};
+    if (typeof buildNextTestLabels === "function") {
+      try { _quizLabels = buildNextTestLabels() || {}; } catch (e) { _quizLabels = {}; }
+    } else if (typeof NEXT_TEST_LABELS !== "undefined" && NEXT_TEST_LABELS) {
+      _quizLabels = NEXT_TEST_LABELS;
+    }
+  }
+  return _quizLabels[t] || String(t).replace(/_/g, " ");
+}
+
+function quizShuffle(arr, rng) {
+  rng = rng || Math.random;
+  var a = arr.slice();
+  for (var i = a.length - 1; i > 0; i--) {
+    var j = Math.floor(rng() * (i + 1));
+    var tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+  }
+  return a;
+}
+
+/* Conditions rich enough to make a fair vignette (≥1 required and ≥3
+   findings overall, so the answer isn't a single-finding giveaway). */
+function quizCandidates() {
+  if (typeof KNOWLEDGE_ALL === "undefined" || !KNOWLEDGE_ALL) return [];
+  return KNOWLEDGE_ALL.filter(function (c) {
+    return c && c.name && c.req && c.req.length >= 1 &&
+      ((c.req.length + ((c.sup || []).length)) >= 3);
+  });
+}
+
+/* 3 real KB condition names near the answer (same route, then same domain,
+   then anywhere) — never invented, always unique. */
+function quizDistractors(cond, n, rng) {
+  rng = rng || Math.random;
+  var seen = {}; seen[cond.name] = true;
+  var out = [];
+  function take(pool) {
+    pool = quizShuffle(pool, rng);
+    for (var i = 0; i < pool.length && out.length < n; i++) {
+      var c = pool[i];
+      if (!c || !c.name || seen[c.name]) continue;
+      seen[c.name] = true;
+      out.push(c.name);
+    }
+  }
+  if (typeof KNOWLEDGE_ALL !== "undefined" && KNOWLEDGE_ALL) {
+    take(KNOWLEDGE_ALL.filter(function (c) { return c.route === cond.route; }));
+    take(KNOWLEDGE_ALL.filter(function (c) { return c._domain && c._domain === cond._domain; }));
+    take(KNOWLEDGE_ALL);
+  }
+  return out;
+}
+
+function quizExplanation(name) {
+  var summary = "";
+  if (typeof getConditionInfo === "function") {
+    var info = getConditionInfo(name);
+    if (info && info.summary) summary = info.summary;
+  }
+  return summary;
+}
+
+/* Build a question from the KB. `forceName` (tests) pins the condition. */
+function quizBuildQuestionFromKB(rng, forceName) {
+  rng = rng || Math.random;
+  var pool = quizCandidates();
+  if (!pool.length) return null;
+  var cond = null;
+  if (forceName) {
+    for (var i = 0; i < pool.length; i++) if (pool[i].name === forceName) { cond = pool[i]; break; }
+  }
+  if (!cond) cond = pool[Math.floor(rng() * pool.length)];
+
+  /* The vignette IS the condition's own criteria — its required findings
+     plus a few supportive ones. Nothing invented. */
+  var findings = cond.req.map(quizTokenLabel)
+    .concat(quizShuffle((cond.sup || []), rng).slice(0, 3).map(quizTokenLabel));
+
+  return {
+    source: "kb",
+    findings: findings,
+    answer: cond.name,
+    options: quizShuffle([cond.name].concat(quizDistractors(cond, 3, rng)), rng),
+    explanation: quizExplanation(cond.name),
+    urgent: !!cond.urgent
+  };
+}
+
+/* Build a question from a saved (de-identified) teaching case. */
+function quizBuildQuestionFromCase(entry, rng) {
+  rng = rng || Math.random;
+  if (!entry || !entry.state || !entry.title) return null;
+  var s = entry.state;
+  var findings = [];
+  if (s.subjective && s.subjective.symptoms) findings = findings.concat(s.subjective.symptoms.map(quizTokenLabel));
+  var o = s.objective || {};
+  if (o.anterior) findings = findings.concat(o.anterior);
+  if (o.fundus && o.fundus.findings) findings = findings.concat(o.fundus.findings);
+  if (o.iop) findings.push("IOP OD " + (o.iop.od || "—") + " / OS " + (o.iop.os || "—") + " mmHg");
+  if (o.pupil) findings.push("RAPD " + o.pupil.rapd);
+  if (findings.length < 2) return null;   /* too thin to be a fair question */
+
+  var cond = (typeof findCondition === "function") ? findCondition(entry.title) : null;
+  var distract = cond ? quizDistractors(cond, 3, rng)
+    : quizShuffle(quizCandidates(), rng).slice(0, 3).map(function (c) { return c.name; })
+        .filter(function (n) { return n !== entry.title; }).slice(0, 3);
+
+  return {
+    source: "case",
+    findings: findings,
+    answer: entry.title,
+    options: quizShuffle([entry.title].concat(distract), rng),
+    explanation: quizExplanation(entry.title),
+    urgent: !!(s.assessment && s.assessment[0] && s.assessment[0].urgent)
+  };
+}
+
+/* Next question: mixes the user's own casebook (when it has cases) with
+   KB vignettes, so studying feeds the quiz and the quiz drives studying. */
+function quizNextQuestion(rng) {
+  rng = rng || Math.random;
+  var cases = (typeof casebookLoad === "function") ? casebookLoad() : [];
+  if (cases.length && rng() < 0.4) {
+    var q = quizBuildQuestionFromCase(cases[Math.floor(rng() * cases.length)], rng);
+    if (q) return q;
+  }
+  return quizBuildQuestionFromKB(rng);
+}
+
+
+/* ── Stats (streaks — the habit loop). storage.js when present,      */
+/*    in-memory fallback so the module works anywhere. ── */
+var _quizMemStats = null;
+function quizLoadStats() {
+  if (typeof loadStore === "function") return loadStore("quizstats", null) || { asked: 0, correct: 0, streak: 0, best: 0 };
+  return _quizMemStats || { asked: 0, correct: 0, streak: 0, best: 0 };
+}
+function quizSaveStats(s) {
+  if (typeof saveStore === "function") saveStore("quizstats", s);
+  else _quizMemStats = s;
+}
+function quizRecord(correct) {
+  var s = quizLoadStats();
+  s.asked += 1;
+  if (correct) { s.correct += 1; s.streak += 1; if (s.streak > s.best) s.best = s.streak; }
+  else s.streak = 0;
+  quizSaveStats(s);
+  return s;
+}
+function quizStatsSummary() {
+  var s = quizLoadStats();
+  if (!s.asked) return "Fresh start — every question comes from the knowledge base or your own casebook.";
+  return s.correct + " / " + s.asked + " correct · streak " + s.streak + " (best " + s.best + ")";
+}
+
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* DOM WIRING (browser only)                                       */
+/* ═══════════════════════════════════════════════════════════════ */
+if (typeof document !== "undefined") {
+
+  var _qEsc = (typeof escH === "function") ? escH : function (s) {
+    return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  };
+  var _quizQ = null;
+
+  window.startQuiz = function () {
+    _quizQ = quizNextQuestion();
+    if (!_quizQ) return;
+    var box = document.getElementById("quizContent");
+    if (!box) return;
+    var h = '<div class="quiz-src">' +
+      (_quizQ.source === "case" ? "From your casebook (de-identified)" : "From the knowledge base") + '</div>' +
+      '<div class="quiz-stem">A patient presents with:</div><ul class="quiz-findings">';
+    for (var i = 0; i < _quizQ.findings.length; i++) h += '<li>' + _qEsc(_quizQ.findings[i]) + '</li>';
+    h += '</ul><div class="quiz-stem">Most likely diagnosis?</div><div class="quiz-opts">';
+    for (var o = 0; o < _quizQ.options.length; o++) {
+      h += '<button class="quiz-opt" id="quizOpt' + o + '" onclick="quizAnswer(' + o + ')">' + _qEsc(_quizQ.options[o]) + '</button>';
+    }
+    h += '</div><div id="quizReveal"></div>';
+    box.innerHTML = h;
+    var m = document.getElementById("modalQuiz");
+    if (m) m.style.display = "flex";
+  };
+
+  window.quizAnswer = function (idx) {
+    if (!_quizQ) return;
+    var chosen = _quizQ.options[idx];
+    var correct = (chosen === _quizQ.answer);
+    for (var o = 0; o < _quizQ.options.length; o++) {
+      var b = document.getElementById("quizOpt" + o);
+      if (!b) continue;
+      b.disabled = true;
+      if (_quizQ.options[o] === _quizQ.answer) b.classList.add("quiz-opt-correct");
+      else if (o === idx) b.classList.add("quiz-opt-wrong");
+    }
+    var stats = quizRecord(correct);
+    var reveal = document.getElementById("quizReveal");
+    if (reveal) {
+      reveal.innerHTML =
+        '<div class="quiz-verdict">' + (correct ? "✓ Correct" : "✗ Not this time — it was <b>" + _qEsc(_quizQ.answer) + "</b>") +
+          (_quizQ.urgent ? ' <span class="quiz-urgent">sight-threatening — urgent in real life</span>' : '') + '</div>' +
+        (_quizQ.explanation ? '<div class="quiz-expl">' + _qEsc(_quizQ.explanation) + '</div>' : '') +
+        '<div class="quiz-statline">' + _qEsc(quizStatsSummary()) + '</div>' +
+        '<div class="btn-g"><button class="btn btn-p" onclick="startQuiz()">Next question ▸</button></div>';
+    }
+    _quizQ = null;
+  };
+
+  /* Closing the quiz refreshes the Study tab so its stats line stays live. */
+  window.closeQuiz = function () {
+    var m = document.getElementById("modalQuiz");
+    if (m) m.style.display = "none";
+    if (typeof HOME_TAB !== "undefined" && HOME_TAB === "study" && typeof renderHome === "function") renderHome();
+  };
+}

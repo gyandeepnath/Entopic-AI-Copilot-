@@ -61,6 +61,15 @@
             <option>Ophthalmologist</option>
             <option>Optician</option>
             <option>Technician</option>
+            <option>Student</option>
+          </select>
+        </div>
+        <div class="fi" style="margin-bottom:8px">
+          <label>Using Entopic as</label>
+          <select id="inp_sr">
+            <option value="clinician">Clinician / Doctor</option>
+            <option value="student">Student / Trainee — learning is free</option>
+            <option value="faculty">Faculty / Educator</option>
           </select>
         </div>
         <div class="fi" style="margin-bottom:8px">
@@ -226,6 +235,21 @@
 
 
 <!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- QUIZ / SELF-TEST — guess the diagnosis (educational, offline)   -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="modalQuiz" style="display:none">
+  <div class="modal-box" style="max-width:560px">
+    <div class="modal-title">Self-test — guess the diagnosis</div>
+    <div class="modal-desc" style="font-size:.66rem">Educational only. Vignettes come from the knowledge base and your own de-identified casebook.</div>
+    <div id="quizContent" style="max-height:60vh;overflow:auto"></div>
+    <div class="btn-g">
+      <button class="btn btn-s" onclick="closeQuiz()">Close</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
 <!-- SOAP CLINICAL NOTE (documentation-as-exhaust — a view of the    -->
 <!-- engine's reasoning state; never re-diagnoses)                   -->
 <!-- ═══════════════════════════════════════════════════════════════ -->
@@ -323,6 +347,7 @@
 <script src="js/ui-pages-2.js"></script>
 <script src="js/ui-report.js"></script>
 <script src="js/reasoning-views.js"></script>
+<script src="js/ui-quiz.js"></script>
 <script src="js/ui-flowmap.js"></script>
 <script src="js/ui-kb-editor.js"></script>
 <script src="js/ui-chart.js"></script>

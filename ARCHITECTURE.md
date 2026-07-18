@@ -264,6 +264,17 @@ door only. The free-tier save cap is enforced at `newPatient()` and
 pricing and real entitlement enforcement are Phase 2). Covered by
 `tests/roles.test.js`.
 
+Phase-1 refinement (session 11d): the role is chosen **at signup** ("Using
+Entopic as" in the setup form → `CU.role`; the picker remains only for legacy
+accounts), `roleSessionReset()` isolates role state between accounts on one
+device, and each live role has a real headline feature: **Student** — the quiz
+(`ui-quiz.js`, vignettes built only from KB criteria or casebook cases, About
+notes as explanations, local streak stats) plus uncapped `practice: true`
+records (chip-labelled everywhere; free cap counts real records only);
+**Faculty** — casebook curation (`casebookAnnotate` / `casebookSetReviewed`,
+reviewed badge visible to all roles, review-queue card on the Teaching tab).
+Covered by `tests/quiz.test.js` and the casebook-curation tests.
+
 ## 10. Honest assessment — strengths and the concrete gaps
 
 ### Strengths worth protecting

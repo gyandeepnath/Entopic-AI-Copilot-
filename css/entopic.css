@@ -1350,6 +1350,55 @@ input, select, textarea, button {
 .role-soon-chip { font-size: .62rem; color: var(--sv); border: 1px dashed var(--ms); border-radius: 999px; padding: 2px 8px; }
 
 
+/* ── Practice records + faculty review badges ── */
+.practice-chip {
+  display: inline-block;
+  font-size: .5rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--sl);
+  border: 1px solid var(--ms);
+  border-radius: 999px;
+  padding: 1px 6px;
+  vertical-align: middle;
+  background: var(--sn);
+}
+.reviewed-badge {
+  display: inline-block;
+  font-size: .54rem;
+  font-weight: 600;
+  color: var(--sl);
+  border: 1px solid var(--sl);
+  border-radius: 999px;
+  padding: 0 6px;
+}
+
+/* ── Quiz / self-test ── */
+.quiz-src { font-size: .56rem; text-transform: uppercase; letter-spacing: .04em; color: var(--sv); margin-bottom: 6px; }
+.quiz-stem { font-size: .78rem; font-weight: 600; margin: 6px 0 4px; }
+.quiz-findings { margin: 0 0 8px 18px; padding: 0; }
+.quiz-findings li { font-size: .72rem; line-height: 1.6; }
+.quiz-opts { display: grid; gap: 6px; margin-bottom: 8px; }
+.quiz-opt {
+  text-align: left;
+  font-size: .72rem;
+  padding: 8px 10px;
+  border: 1px solid var(--ms);
+  border-radius: var(--r);
+  background: var(--wh);
+  cursor: pointer;
+}
+.quiz-opt:hover:not(:disabled) { border-color: var(--ink); }
+.quiz-opt:disabled { cursor: default; opacity: .85; }
+.quiz-opt-correct { border-color: #2e7d32; background: #e8f5e9; color: #1b5e20; font-weight: 600; opacity: 1 !important; }
+.quiz-opt-wrong { border-color: #c62828; background: #ffebee; color: #b71c1c; }
+.quiz-verdict { font-size: .76rem; font-weight: 600; margin: 8px 0 4px; }
+.quiz-urgent { font-size: .58rem; font-weight: 600; color: #c62828; text-transform: uppercase; letter-spacing: .03em; }
+.quiz-expl { font-size: .7rem; line-height: 1.55; color: var(--sl); background: var(--sn); border: 1px solid var(--fg); border-radius: var(--r); padding: 8px 10px; margin-bottom: 6px; }
+.quiz-statline { font-size: .6rem; color: var(--sv); margin-bottom: 4px; }
+
+
 /* ── Casebook facet filter chips ── */
 .cb-facets {
   display: flex;

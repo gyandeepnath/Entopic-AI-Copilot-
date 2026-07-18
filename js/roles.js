@@ -105,6 +105,14 @@ function effectiveRole() {
   return (r && roleDef(r) && !roleDef(r).soon) ? r : DEFAULT_ROLE;
 }
 
+/* Clear in-page role state on login/logout so a role chosen by one account
+   never silently leaks into another account on the same device. (CU.role is
+   the durable source once signed in.) */
+function roleSessionReset() {
+  _roleState.active = null;
+  _roleState.tier = null;
+}
+
 function setActiveRole(id) {
   if (!roleDef(id) || roleDef(id).soon) return false;
   _roleState.active = id;
@@ -145,9 +153,11 @@ function tierLabel() {
    Generous, honest caps — enough to try the product for real, capped
    so a practice needs a paid tier. Learning paths never call this. */
 var SAVE_LIMITS = {
-  free:          { patients: 15, cases: 40 },
-  pro:           { patients: Infinity, cases: Infinity },
-  institutional: { patients: Infinity, cases: Infinity }
+  /* `practice` records are LEARNING (student mock exams) — never capped,
+     on any tier. Only real practice-running records are limited on free. */
+  free:          { patients: 15, cases: 40, practice: Infinity },
+  pro:           { patients: Infinity, cases: Infinity, practice: Infinity },
+  institutional: { patients: Infinity, cases: Infinity, practice: Infinity }
 };
 
 function saveCap(kind) {
@@ -211,6 +221,7 @@ if (typeof module !== "undefined" && module.exports) {
   module.exports = {
     ENTOPIC_ROLES: ENTOPIC_ROLES, roleDef: roleDef, activeRoleCatalogue: activeRoleCatalogue,
     getActiveRole: getActiveRole, effectiveRole: effectiveRole, setActiveRole: setActiveRole,
+    roleSessionReset: roleSessionReset,
     getTier: getTier, tierLabel: tierLabel, canSave: canSave, saveCap: saveCap,
     can: can, roleShowsCap: roleShowsCap, tierUnlocksCap: tierUnlocksCap,
     _reset: function () { _roleState = { active: null, tier: null }; }

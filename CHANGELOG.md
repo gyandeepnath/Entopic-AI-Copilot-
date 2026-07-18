@@ -6,6 +6,49 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-07-18 — Session 11d: Phase-1 refinement — real features for every role, deeply integrated
+
+**Founder:** "work on the relevant steps of phase 1. Refine. Add relevant
+features for all. Make it well Integrated." Both "coming soon" stubs are now
+real, and the role system is woven through signup, the exam, and the casebook:
+
+- **Student — Quiz / self-test is live** (`js/ui-quiz.js` + `#modalQuiz`).
+  "Guess the diagnosis": vignettes are built ONLY from existing content — a KB
+  condition's own required/supportive findings (anti-fabrication enforced by
+  test) or the user's de-identified casebook cases; distractors are real KB
+  conditions from the same route/domain; the explanation is the hand-authored
+  About note; urgent conditions carry a "sight-threatening" flag. Local
+  streak/best stats make the habit loop; the Study tab shows the live stat line.
+- **Student — practice exams are never capped.** Student-mode `newPatient()`
+  creates records flagged `practice: true`: exempt from the free save limit
+  (learning is unrestricted — `SAVE_LIMITS.*.practice = Infinity`), labelled
+  with a "practice" chip in every patient list and a PRACTICE tag in the exam
+  header, and listed under "My practice exams" on the Study tab. The free cap
+  now counts **real records only**.
+- **Faculty — case review is live.** In the casebook, faculty get **✎ Annotate**
+  (edit the teaching note; timestamped) and **✓ Mark reviewed** (toggle,
+  timestamped); the reviewed badge shows to every role so students can spot
+  faculty-approved cases. The Teaching tab now has a **review-queue card**
+  ("N of M cases awaiting your review"). Student logbooks across accounts stay
+  "coming soon" (needs shared accounts).
+- **Integration: role is chosen at signup.** The account-creation form asks
+  "Using Entopic as" (Clinician / Student / Faculty), so new users land straight
+  in their workspace — the picker now only appears for legacy accounts with no
+  saved role. `roleSessionReset()` on login/logout/setup prevents one account's
+  role leaking into another on the same device (first-run check is now
+  per-ACCOUNT, `CU.role`, not per-device).
+
+Guardrails: quiz is educational-only (never touches a live exam, never feeds
+the engine, offline, no LLM, no invented content); practice/real split keeps
+"free limits saving, never learning" exact.
+
+Tests **+11** (quiz 6, roles 2, casebook curation 3); **213/213 pass**. Browser
+smoke end-to-end: role-at-signup (no picker) + legacy picker, quiz answer flow
+with stats, uncapped labelled practice exams, faculty annotate/review with
+badge, cap blocking real records while practice stays open.
+
+---
+
 ## 2026-07-18 — Session 11c: Roles & modes — per-persona workspaces on one switchable account (Phase 1)
 
 **Founder:** ship Student / Clinician / Faculty; each gets **different tabs +

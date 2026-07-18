@@ -387,13 +387,19 @@ function deidentifyState(state) {
 /* storage.js (loadStore/saveStore) so it participates in the same  */
 /* offline persistence + safety mirror as the rest of the app.      */
 /* ═══════════════════════════════════════════════════════════════ */
+/* In-memory fallback store: keeps the casebook API fully functional where
+   storage.js isn't loaded (Node tests, harness) — the browser always
+   persists through loadStore/saveStore. */
+var _rvMemCasebook = [];
+
 function casebookLoad() {
   if (typeof loadStore === "function") return loadStore(RV_CASEBOOK_KEY, []) || [];
-  return [];
+  return _rvMemCasebook;
 }
 
 function casebookSave(list) {
   if (typeof saveStore === "function") saveStore(RV_CASEBOOK_KEY, list);
+  else _rvMemCasebook = list;
 }
 
 /* Build a de-identified case object from the CURRENT encounter. Pure
@@ -427,6 +433,35 @@ function casebookDelete(id) {
   var list = casebookLoad().filter(function (e) { return e.id !== id; });
   casebookSave(list);
   return list;
+}
+
+/* Faculty curation: update the teaching note on a stored case. */
+function casebookAnnotate(id, note) {
+  var list = casebookLoad();
+  for (var i = 0; i < list.length; i++) {
+    if (list[i].id === id) {
+      list[i].teachingNote = note || "";
+      list[i].annotatedAt = new Date().toISOString();
+      casebookSave(list);
+      return list[i];
+    }
+  }
+  return null;
+}
+
+/* Faculty curation: mark a case reviewed (or clear it). The badge shows to
+   every role — students see which cases carry a faculty sign-off. */
+function casebookSetReviewed(id, flag) {
+  var list = casebookLoad();
+  for (var i = 0; i < list.length; i++) {
+    if (list[i].id === id) {
+      list[i].reviewed = !!flag;
+      list[i].reviewedAt = flag ? new Date().toISOString() : null;
+      casebookSave(list);
+      return list[i];
+    }
+  }
+  return null;
 }
 
 
@@ -696,6 +731,24 @@ if (typeof document !== "undefined") {
     _rvCasebookRender();   /* preserve current filters */
   };
 
+  /* Faculty: edit the teaching note on a stored case. */
+  window.casebookAnnotateUi = function (id) {
+    var list = casebookLoad(), current = "";
+    for (var i = 0; i < list.length; i++) if (list[i].id === id) { current = list[i].teachingNote || ""; break; }
+    var note = (typeof prompt === "function") ? prompt("Teaching note for this case:", current) : null;
+    if (note === null) return;   /* cancelled */
+    casebookAnnotate(id, note);
+    _rvCasebookRender();
+  };
+
+  /* Faculty: toggle the reviewed sign-off. */
+  window.casebookReviewUi = function (id) {
+    var list = casebookLoad(), cur = false;
+    for (var i = 0; i < list.length; i++) if (list[i].id === id) { cur = !!list[i].reviewed; break; }
+    casebookSetReviewed(id, !cur);
+    _rvCasebookRender();
+  };
+
   function _rvCaseCard(entry) {
     var s = entry.state || {};
     var when = new Date(entry.savedAt);
@@ -713,10 +766,24 @@ if (typeof document !== "undefined") {
     var teaching = entry.teachingNote
       ? '<div style="margin-top:8px;padding:8px;background:var(--hl,#fff8e1);border-left:3px solid var(--ac,#c8a200);border-radius:4px;font-size:.72rem"><b>Teaching note:</b> ' + _esc(entry.teachingNote) + '</div>'
       : '';
+
+    /* Faculty curate: annotate + mark reviewed. The reviewed badge shows to
+       every role, so students can spot faculty-approved cases. */
+    var isFaculty = (typeof effectiveRole === "function" && effectiveRole() === "faculty");
+    var actions = '<div class="btn-g" style="margin-top:6px">';
+    if (isFaculty) {
+      actions += '<button class="btn btn-s" onclick="casebookAnnotateUi(\'' + entry.id + '\')" style="font-size:.62rem">✎ Annotate</button>' +
+        '<button class="btn btn-s" onclick="casebookReviewUi(\'' + entry.id + '\')" style="font-size:.62rem">' +
+        (entry.reviewed ? "Unmark reviewed" : "✓ Mark reviewed") + '</button>';
+    }
+    actions += '<button class="btn btn-s" onclick="casebookRemove(\'' + entry.id + '\')" style="font-size:.62rem">Delete case</button></div>';
+
     return '<div style="border:1px solid var(--ms);border-radius:var(--r);margin-bottom:6px;overflow:hidden">' +
       '<div style="padding:7px 10px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px" onclick="casebookToggle(\'' + entry.id + '\')">' +
         '<div style="min-width:0">' +
-          '<div style="font-size:.68rem;color:var(--sv)">' + (meta.join(" · ") || "Case") + (urgent ? ' <span style="color:var(--ac,#c00);font-weight:600">· URGENT</span>' : '') + '</div>' +
+          '<div style="font-size:.68rem;color:var(--sv)">' + (meta.join(" · ") || "Case") +
+            (urgent ? ' <span style="color:var(--ac,#c00);font-weight:600">· URGENT</span>' : '') +
+            (entry.reviewed ? ' <span class="reviewed-badge">✓ reviewed</span>' : '') + '</div>' +
           (cue ? '<div style="font-size:.72rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + _esc(cue) + '</div>' : '') +
         '</div>' +
         '<span style="font-size:.62rem;color:var(--sv);white-space:nowrap">▼ view</span>' +
@@ -724,7 +791,7 @@ if (typeof document !== "undefined") {
       '<div id="casebody_' + entry.id + '" style="display:none;padding:0 10px 10px">' +
         teaching +
         '<pre style="white-space:pre-wrap;font-family:var(--mono,monospace);font-size:.66rem;line-height:1.5;background:var(--wh,#fff);border:1px solid var(--ms);border-radius:4px;padding:10px;margin-top:8px;overflow-x:auto">' + _esc(body) + '</pre>' +
-        '<div class="btn-g" style="margin-top:6px"><button class="btn btn-s" onclick="casebookRemove(\'' + entry.id + '\')" style="font-size:.62rem">Delete case</button></div>' +
+        actions +
       '</div>' +
     '</div>';
   }

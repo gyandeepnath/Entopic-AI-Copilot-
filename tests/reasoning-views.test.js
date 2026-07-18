@@ -243,3 +243,36 @@ test("casebookHomeSummary returns a human string", () => {
   assert.strictEqual(typeof s, "string");
   assert.ok(s.length > 0);
 });
+
+
+/* ═══ FACULTY CURATION: annotate + reviewed sign-off ═══ */
+
+test("casebookAdd persists (mem store), casebookAnnotate updates the teaching note", () => {
+  evalIn("casebookSave([])");
+  eng.runCase({ sl: { findings: ["Hypopyon"] } });
+  const id = evalIn("casebookAdd('first note').id");
+  assert.strictEqual(evalIn("casebookLoad().length"), 1, "case persisted");
+  const updated = evalIn("casebookAnnotate('" + id + "', 'sharper teaching point')");
+  assert.strictEqual(updated.teachingNote, "sharper teaching point");
+  assert.ok(updated.annotatedAt, "annotation is timestamped");
+  assert.strictEqual(evalIn("casebookLoad()[0].teachingNote"), "sharper teaching point", "persisted");
+});
+
+test("casebookSetReviewed toggles the faculty sign-off", () => {
+  evalIn("casebookSave([])");
+  eng.runCase({ sl: { findings: ["Hypopyon"] } });
+  const id = evalIn("casebookAdd('to review').id");
+  let e = evalIn("casebookSetReviewed('" + id + "', true)");
+  assert.strictEqual(e.reviewed, true);
+  assert.ok(e.reviewedAt, "sign-off is timestamped");
+  e = evalIn("casebookSetReviewed('" + id + "', false)");
+  assert.strictEqual(e.reviewed, false);
+  assert.strictEqual(e.reviewedAt, null);
+});
+
+test("annotate/review on a missing id returns null and changes nothing", () => {
+  evalIn("casebookSave([])");
+  assert.strictEqual(evalIn("casebookAnnotate('nope', 'x')"), null);
+  assert.strictEqual(evalIn("casebookSetReviewed('nope', true)"), null);
+  assert.strictEqual(evalIn("casebookLoad().length"), 0);
+});

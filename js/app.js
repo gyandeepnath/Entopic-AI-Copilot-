@@ -99,6 +99,9 @@ function doLogin() {
 
   CU = found;
   errEl.style.display = "none";
+  /* Fresh role state per sign-in: this account's own saved role (CU.role)
+     drives the workspace, never a leftover from another account. */
+  if (typeof roleSessionReset === "function") roleSessionReset();
   showHomePage();
 }
 
@@ -122,6 +125,10 @@ function doSetup() {
     }
   }
 
+  /* "Using Entopic as" — the mode chosen at signup; switchable any time. */
+  var roleSel = document.getElementById("inp_sr");
+  var role = roleSel ? roleSel.value : "clinician";
+
   var user = {
     id: "u" + Date.now().toString(36),
     username: uname,
@@ -129,12 +136,15 @@ function doSetup() {
     name: name,
     cred: cred,
     clinic: clinic,
+    role: role,
     created: new Date().toISOString()
   };
 
   users.push(user);
   saveUsers(users);
   CU = user;
+  if (typeof roleSessionReset === "function") roleSessionReset();
+  if (typeof setActiveRole === "function") setActiveRole(role);
   showHomePage();
 }
 
@@ -144,6 +154,7 @@ function doLogout() {
   CV = null;
   P = {};
   V = {};
+  if (typeof roleSessionReset === "function") roleSessionReset();
   showPage("pgLogin");
 }
 
@@ -161,8 +172,10 @@ function showHomePage() {
 
   renderHome();
 
-  /* First run on this account/device with no chosen mode → ask who's using it. */
-  if (typeof getActiveRole === "function" && !getActiveRole() && typeof showRolePicker === "function") {
+  /* First sign-in on an account that never chose a mode → ask who's using it.
+     (Checked on the ACCOUNT, not the device, so one person's choice never
+     silently applies to a different account on the same machine.) */
+  if (CU && !CU.role && typeof showRolePicker === "function") {
     showRolePicker();
   }
 }
@@ -238,6 +251,20 @@ function renderHomeTab(role, tab) {
   }
 }
 
+/* One patient row (shared by the Patients tab and the Study tab's practice
+   list). Practice records carry a visible chip everywhere. */
+function patientRowHtml(pt) {
+  var nm = (pt.first_name || "New") + " " + (pt.last_name || "Patient");
+  var lastV = getLastVisit(pt.id);
+  var status = lastV && lastV.status === "completed"
+    ? '<span style="color:var(--sl);font-size:.54rem;font-weight:600"> ✓</span>'
+    : '<span style="color:var(--md);font-size:.54rem"> ●</span>';
+  return '<div class="p-row" onclick="openPatient(\'' + pt.id + '\')">' +
+    '<div><b>' + escH(nm) + '</b>' + (pt.practice ? ' <span class="practice-chip">practice</span>' : '') + status + '</div>' +
+    '<span style="font-family:var(--mono);color:var(--sv);font-size:.6rem">' + escH(pt.mrn || "") + '</span>' +
+  '</div>';
+}
+
 /* ── Reusable cards ── */
 function homeCardCasebook() {
   return '<div class="home-settings" style="margin-top:8px">' +
@@ -284,22 +311,14 @@ function homeSecPatients() {
   } else {
     var sorted = patients.slice().reverse();
     for (var i = 0; i < sorted.length; i++) {
-      var pt = sorted[i];
-      var nm = (pt.first_name || "New") + " " + (pt.last_name || "Patient");
-      var lastV = getLastVisit(pt.id);
-      var status = lastV && lastV.status === "completed"
-        ? '<span style="color:var(--sl);font-size:.54rem;font-weight:600"> ✓</span>'
-        : '<span style="color:var(--md);font-size:.54rem"> ●</span>';
-      rows += '<div class="p-row" onclick="openPatient(\'' + pt.id + '\')">' +
-        '<div><b>' + escH(nm) + '</b>' + status + '</div>' +
-        '<span style="font-family:var(--mono);color:var(--sv);font-size:.6rem">' + escH(pt.mrn || "") + '</span>' +
-      '</div>';
+      rows += patientRowHtml(sorted[i]);
     }
   }
 
+  var realCount = patients.filter(function (p) { return !p.practice; }).length;
   var cap = (typeof saveCap === "function") ? saveCap("patients") : Infinity;
   var capNote = (cap !== Infinity)
-    ? '<span style="font-size:.58rem;color:var(--sv)">' + patients.length + ' / ' + cap + ' saved (Free)</span>'
+    ? '<span style="font-size:.58rem;color:var(--sv)">' + realCount + ' / ' + cap + ' saved (Free) · practice exams uncounted</span>'
     : '<span style="font-size:.58rem;color:var(--sv)">' + getStorageStats().kb + ' KB used</span>';
 
   return '<div class="home-hd"><h1>Patients</h1>' +
@@ -316,20 +335,35 @@ function homeSecPatients() {
 }
 
 function homeSecStudy() {
+  /* My practice exams — resumable, uncapped (learning is unrestricted). */
+  var practice = loadPatients().filter(function (p) { return p.practice; }).reverse();
+  var practiceHtml = "";
+  if (practice.length) {
+    practiceHtml = '<div class="p-list" style="margin-top:8px">' +
+      '<div class="p-list-h"><span>My practice exams</span>' +
+      '<span style="font-size:.58rem;color:var(--sv)">' + practice.length + ' · never counted against your plan</span></div>';
+    for (var i = 0; i < Math.min(practice.length, 8); i++) practiceHtml += patientRowHtml(practice[i]);
+    practiceHtml += '</div>';
+  }
+
+  var quizLine = (typeof quizStatsSummary === "function") ? quizStatsSummary()
+    : "Guess-the-diagnosis practice drawn from the knowledge base and your casebook.";
+
   return '<div class="home-hd"><h1>Study</h1></div>' +
     '<div class="study-hero">Learn by reasoning. The full diagnostic engine, glass-box "why", knowledge base and casebook are open and free — no restrictions on learning.</div>' +
-    homeCardCasebook() +
-    homeCardKB() +
     '<div class="home-settings" style="margin-top:8px">' +
-      '<div class="home-settings-title">🩺 Practice exam</div>' +
-      '<div class="home-settings-desc">Run a full mock exam through the live engine and see the reasoning build.</div>' +
-      '<button class="btn btn-s" onclick="newPatient()" style="font-size:.62rem">Start a practice exam</button>' +
+      '<div class="home-settings-title">🧠 Quiz — guess the diagnosis</div>' +
+      '<div class="home-settings-desc">' + escH(quizLine) + '</div>' +
+      '<button class="btn btn-p" onclick="startQuiz()" style="font-size:.62rem">Start quiz</button>' +
     '</div>' +
     '<div class="home-settings" style="margin-top:8px">' +
-      '<div class="home-settings-title">🧠 Quiz / self-test</div>' +
-      '<div class="home-settings-desc">Guess-the-diagnosis practice drawn from real reasoned cases.</div>' +
-      '<span class="soon-badge">Coming soon</span>' +
-    '</div>';
+      '<div class="home-settings-title">🩺 Practice exam</div>' +
+      '<div class="home-settings-desc">Run a full mock exam through the live engine and watch the reasoning build. Practice records are labelled and never count against a save limit.</div>' +
+      '<button class="btn btn-s" onclick="newPatient()" style="font-size:.62rem">Start a practice exam</button>' +
+    '</div>' +
+    practiceHtml +
+    homeCardCasebook() +
+    homeCardKB();
 }
 
 function homeSecTeaching() {
@@ -342,11 +376,28 @@ function homeSecTeaching() {
       '<button class="btn btn-s" onclick="showKBInfo()" style="font-size:.62rem">Browse conditions</button>' +
       '<span id="kbEditorCardSlot"></span>' +
     '</div>' +
+    reviewQueueCard() +
     '<div class="home-settings" style="margin-top:8px">' +
-      '<div class="home-settings-title">🎓 Student logbooks &amp; review</div>' +
-      '<div class="home-settings-desc">Review trainees\' reasoned cases and annotate them.</div>' +
-      '<span class="soon-badge">Coming soon</span>' +
+      '<div class="home-settings-title">🎓 Student logbooks</div>' +
+      '<div class="home-settings-desc">Follow trainees\' reasoned cases across accounts.</div>' +
+      '<span class="soon-badge">Coming soon — needs shared accounts</span>' +
     '</div>';
+}
+
+/* Faculty review queue: how many saved cases still lack a reviewed sign-off. */
+function reviewQueueCard() {
+  var list = (typeof casebookLoad === "function") ? casebookLoad() : [];
+  var pending = list.filter(function (e) { return !e.reviewed; }).length;
+  var desc = list.length === 0
+    ? "No cases saved yet. Cases you or trainees save appear here for annotation and sign-off."
+    : (pending === 0
+        ? "All " + list.length + " cases reviewed ✓"
+        : pending + " of " + list.length + " case" + (list.length === 1 ? "" : "s") + " awaiting your review — open the casebook to annotate and sign off.");
+  return '<div class="home-settings" style="margin-top:8px">' +
+    '<div class="home-settings-title">🗂 Case review</div>' +
+    '<div class="home-settings-desc">' + escH(desc) + '</div>' +
+    '<button class="btn btn-s" onclick="showCasebook()" style="font-size:.62rem">Review cases</button>' +
+  '</div>';
 }
 
 function homeSecCasebook() { return '<div class="home-hd"><h1>Casebook</h1></div>' + homeCardCasebook(); }
@@ -643,13 +694,17 @@ function kbUiCheckUpdates() {
 /* ═══════════════════════════════════════════════════════════════ */
 
 function newPatient() {
-  /* Free-tier SAVE limit (learning is never limited — only how many records
-     persist). Honest message, no paywall; export/delete frees space. */
-  if (typeof canSave === "function") {
-    var chk = canSave("patients", loadPatients().length);
+  /* Student mode creates PRACTICE records: they are learning, so they are
+     never capped and never count against the real-record limit. Real records
+     keep the free-tier SAVE limit (honest message, no paywall; export/delete
+     frees space). */
+  var isPractice = (typeof effectiveRole === "function" && effectiveRole() === "student");
+  if (!isPractice && typeof canSave === "function") {
+    var realCount = loadPatients().filter(function (p) { return !p.practice; }).length;
+    var chk = canSave("patients", realCount);
     if (!chk.ok) {
       alert("Free plan save limit reached (" + chk.cap + " patient records).\n\n" +
-        "Learning stays free and unlimited — the engine, knowledge base and casebook are fully open. " +
+        "Learning stays free and unlimited — the engine, knowledge base, casebook and practice exams are fully open. " +
         "To save more real records you'll need an upgrade (coming soon). You can Export and then delete old records to free space now.");
       return;
     }
@@ -660,6 +715,7 @@ function newPatient() {
   var mrn = "EP-" + Date.now().toString(36).toUpperCase();
 
   P = blankPatient(pid, mrn);
+  if (isPractice) P.practice = true;
   P.updated = P.created; /* per-record stamp for cloud LWW */
   V = blankVisit();
   CP = pid;
@@ -741,6 +797,7 @@ function updateHdr() {
   if (P.age) info += ", " + P.age + "y";
   if (P.sex) info += "/" + P.sex.charAt(0);
   info += " &nbsp; MRN: " + escH(P.mrn);
+  if (P.practice) info += ' <span class="practice-chip">PRACTICE</span>';
 
   document.getElementById("hdrPat").innerHTML = info;
 }
