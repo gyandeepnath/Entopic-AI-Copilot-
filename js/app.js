@@ -82,6 +82,17 @@ function doLogin() {
     return;
   }
 
+  /* Super-admin sign-in: pre-set id + password (hash-checked), everything
+     unlocked at full limits. The admin session is ephemeral — never stored
+     in the users list. */
+  if (typeof adminCheckCredentials === "function" && adminCheckCredentials(u, p)) {
+    CU = adminSessionUser();
+    errEl.style.display = "none";
+    if (typeof roleSessionReset === "function") roleSessionReset();
+    showHomePage();
+    return;
+  }
+
   var users = loadUsers();
   var found = null;
   for (var i = 0; i < users.length; i++) {
@@ -194,6 +205,11 @@ function renderHome() {
     : [{ id: "patients", label: "Patients" }, { id: "casebook", label: "Casebook" },
        { id: "kb", label: "Reference" }, { id: "account", label: "Account" }];
 
+  /* Super admin gets an extra Admin tab on top of whatever mode is active. */
+  if (typeof isAdmin === "function" && isAdmin()) {
+    tabs = tabs.concat([{ id: "admin", label: "Admin" }]);
+  }
+
   if (!HOME_TAB || !homeTabsInclude(tabs, HOME_TAB)) HOME_TAB = tabs[0].id;
 
   document.getElementById("homeContent").innerHTML =
@@ -246,6 +262,7 @@ function renderHomeTab(role, tab) {
     case "casebook": return homeSecCasebook();
     case "kb":       return homeSecKB();
     case "account":  return homeSecAccount();
+    case "admin":    return homeSecAdmin();
     case "patients": /* fall through */
     default:         return homeSecPatients();
   }
@@ -422,6 +439,92 @@ function homeSecAccount() {
     '</div>' +
     renderCloudCard();
 }
+
+/* ── Super-admin panel ──────────────────────────────────────────── */
+function homeSecAdmin() {
+  if (typeof isAdmin !== "function" || !isAdmin()) return homeSecPatients();
+
+  var stats = getStorageStats();
+  var patients = loadPatients();
+  var cases = (typeof casebookLoad === "function") ? casebookLoad() : [];
+
+  /* Accounts on this device */
+  var users = loadUsers();
+  var rows = "";
+  if (!users.length) {
+    rows = '<div class="p-empty">No local accounts yet.</div>';
+  } else {
+    for (var i = 0; i < users.length; i++) {
+      var u = users[i];
+      rows += '<div class="p-row" style="cursor:default">' +
+        '<div><b>' + escH(u.name || u.username) + '</b>' +
+          ' <span style="font-size:.56rem;color:var(--sv)">@' + escH(u.username) + ' · ' + escH(u.cred || "") + ' · mode: ' + escH(u.role || "unset") + '</span></div>' +
+        '<button class="btn btn-s" style="font-size:.56rem;padding:2px 8px" onclick="adminDeleteUser(\'' + u.id + '\')">Delete</button>' +
+      '</div>';
+    }
+  }
+
+  return '<div class="home-hd"><h1>Admin</h1></div>' +
+    '<div class="study-hero">Super admin — every feature unlocked, unlimited saving, all modes available. This gate is a convenience lock on a local offline app; real authentication arrives with the backend.</div>' +
+
+    '<div class="stats">' +
+      '<div class="stat"><div class="v">' + users.length + '</div><div class="l">Accounts</div></div>' +
+      '<div class="stat"><div class="v">' + patients.length + '</div><div class="l">Patient Records</div></div>' +
+      '<div class="stat"><div class="v">' + cases.length + '</div><div class="l">Teaching Cases</div></div>' +
+    '</div>' +
+
+    '<div class="p-list"><div class="p-list-h"><span>Accounts on this device</span>' +
+      '<span style="font-size:.58rem;color:var(--sv)">' + stats.kb + ' KB used</span></div>' + rows +
+      '<div style="font-size:.56rem;color:var(--sv);padding:6px 2px 2px">Deleting an account removes the sign-in only — patient data on this device is shared and stays until exported/cleared.</div>' +
+    '</div>' +
+
+    '<div class="home-settings" style="margin-top:8px">' +
+      '<div class="home-settings-title">🔐 Change admin password</div>' +
+      '<div class="home-settings-desc">Stored locally as a hash (never plaintext). Minimum 8 characters.</div>' +
+      '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">' +
+        '<input id="admNewPass" type="password" placeholder="new password" style="font-size:.62rem;padding:3px 6px;border:1px solid var(--fg);border-radius:2px">' +
+        '<input id="admNewPass2" type="password" placeholder="repeat" style="font-size:.62rem;padding:3px 6px;border:1px solid var(--fg);border-radius:2px">' +
+        '<button class="btn btn-p" style="font-size:.6rem" onclick="adminChangePassword()">Update</button>' +
+        '<span id="admPassMsg" style="font-size:.58rem;color:var(--sv)"></span>' +
+      '</div>' +
+    '</div>' +
+
+    '<div class="home-settings" style="margin-top:8px">' +
+      '<div class="home-settings-title">✎ Knowledge Base Editor</div>' +
+      '<div class="home-settings-desc">Full authoring access — add or refine conditions, evidence and About notes.</div>' +
+      '<button class="btn btn-s" onclick="openKbEditor()" style="font-size:.62rem">Open KB Editor</button>' +
+    '</div>' +
+
+    '<div class="home-settings" style="margin-top:8px">' +
+      '<div class="home-settings-title">📁 Data Management</div>' +
+      '<div class="home-settings-desc">Full export / import of everything on this device.</div>' +
+      '<button class="btn btn-s" onclick="exportAllData()" style="font-size:.62rem">Export all</button> ' +
+      '<input type="file" accept=".json" onchange="if(this.files[0])importData(this.files[0])" style="font-size:.62rem">' +
+    '</div>';
+}
+
+function adminDeleteUser(uid) {
+  if (typeof isAdmin !== "function" || !isAdmin()) return;
+  var users = loadUsers();
+  var name = "";
+  for (var i = 0; i < users.length; i++) if (users[i].id === uid) { name = users[i].username; break; }
+  if (!confirm("Delete the account @" + name + "? (Sign-in only — shared patient data stays.)")) return;
+  saveUsers(users.filter(function (u) { return u.id !== uid; }));
+  renderHome();
+}
+
+function adminChangePassword() {
+  var a = (document.getElementById("admNewPass") || {}).value || "";
+  var b = (document.getElementById("admNewPass2") || {}).value || "";
+  var msg = document.getElementById("admPassMsg");
+  if (a !== b) { if (msg) msg.textContent = "Passwords don't match."; return; }
+  if (typeof adminSetPassword !== "function" || !adminSetPassword(a)) {
+    if (msg) msg.textContent = "Too short (min 8 characters).";
+    return;
+  }
+  if (msg) msg.textContent = "✓ Updated — use it from the next sign-in.";
+}
+
 
 /* ── Role picker (startup "who are you here as?" + switch any time) ── */
 function showRolePicker() {

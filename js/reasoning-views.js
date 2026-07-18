@@ -522,15 +522,17 @@ function casebookFacets(list) {
   return { domains: domains, tokens: tokens, conditions: conditions };
 }
 
-/* Filter the casebook. q = { search, domain, token }. Empty facets =
-   match everything. Matching is case-insensitive substring for search;
-   exact facet membership for domain/token. */
+/* Filter the casebook. q = { search, domain, token, reviewed }. Empty
+   facets = match everything. Matching is case-insensitive substring for
+   search; exact facet membership for domain/token; `reviewed` truthy
+   keeps only faculty-signed-off cases. */
 function casebookFilter(list, q) {
   q = q || {};
   var search = (q.search || "").toLowerCase().trim();
   var domain = (q.domain || "").toLowerCase().trim();
   var token = (q.token || "").toLowerCase().trim();
   return list.filter(function (entry) {
+    if (q.reviewed && !entry.reviewed) return false;
     var f = casebookEntryTokens(entry);
     if (search && f.text.indexOf(search) === -1) return false;
     if (domain && f.domains.indexOf(domain) === -1) return false;
@@ -623,10 +625,10 @@ if (typeof document !== "undefined") {
   };
 
   /* ── Casebook browser modal (Move 4) — grouped by condition, filterable ── */
-  var _cbFilter = { search: "", domain: "", token: "" };
+  var _cbFilter = { search: "", domain: "", token: "", reviewed: "" };
 
   window.showCasebook = function () {
-    _cbFilter = { search: "", domain: "", token: "" };
+    _cbFilter = { search: "", domain: "", token: "", reviewed: "" };
     var m = document.getElementById("modalCasebook");
     if (m) m.style.display = "flex";
     _rvCasebookRender();
@@ -641,7 +643,7 @@ if (typeof document !== "undefined") {
   };
 
   window.casebookClearFilters = function () {
-    _cbFilter = { search: "", domain: "", token: "" };
+    _cbFilter = { search: "", domain: "", token: "", reviewed: "" };
     var si = document.getElementById("cbSearch"); if (si) si.value = "";
     _rvCasebookRender();
   };
@@ -686,12 +688,21 @@ if (typeof document !== "undefined") {
     var tokKeys = Object.keys(facets.tokens).sort(function (a, b) { return facets.tokens[b] - facets.tokens[a]; }).slice(0, 14);
     for (var t = 0; t < tokKeys.length; t++) tokHtml += chip("token", tokKeys[t], _rvTitleCase(tokKeys[t]), facets.tokens[tokKeys[t]]);
 
-    var anyFilter = _cbFilter.search || _cbFilter.domain || _cbFilter.token;
+    /* Reviewed-only toggle (shown once any case carries a faculty sign-off) */
+    var nReviewed = list.filter(function (e) { return e.reviewed; }).length;
+    var revHtml = nReviewed
+      ? '<div class="cb-facets"><span class="cb-facet-lbl">Sign-off</span>' +
+        '<button class="cb-chip' + (_cbFilter.reviewed ? ' cb-chip-on' : '') +
+        '" onclick="casebookFacet(\'reviewed\',\'1\')">✓ Reviewed only <span style="opacity:.6">' + nReviewed + '</span></button></div>'
+      : '';
+
+    var anyFilter = _cbFilter.search || _cbFilter.domain || _cbFilter.token || _cbFilter.reviewed;
     return '<div style="margin-bottom:8px">' +
       '<div style="font-size:.66rem;color:var(--sv);margin-bottom:6px">' + list.length +
         ' de-identified case' + (list.length === 1 ? '' : 's') + ' · organised by condition · stored locally, no identifiers</div>' +
       '<input id="cbSearch" type="text" placeholder="Search condition, sign or token…" oninput="casebookSearch(this.value)" ' +
         'style="width:100%;box-sizing:border-box;padding:6px 8px;font-size:.7rem;border:1px solid var(--ms);border-radius:var(--r);margin-bottom:6px">' +
+      revHtml +
       (domHtml ? '<div class="cb-facets"><span class="cb-facet-lbl">Area</span>' + domHtml + '</div>' : '') +
       (tokHtml ? '<div class="cb-facets"><span class="cb-facet-lbl">Sign / token</span>' + tokHtml + '</div>' : '') +
       (anyFilter ? '<button class="btn btn-s" onclick="casebookClearFilters()" style="font-size:.6rem;margin-top:4px">Clear filters</button>' : '') +

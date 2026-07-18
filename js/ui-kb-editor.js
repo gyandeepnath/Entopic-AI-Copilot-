@@ -26,6 +26,8 @@ var KB_EDITOR = {
    safe, because local authoring only touches this device's KB and cloud
    writes are still RLS-gated. */
 function kbEditorAllowed(cb) {
+  /* Super admin always edits (full access to everything). */
+  if (typeof isAdmin === "function" && isAdmin()) { cb(true); return; }
   var localFlag = false;
   try { localFlag = localStorage.getItem("entopic_kb_editor_local") === "1"; } catch (e) {}
   if (typeof cloudKbIsEditor === "function") {

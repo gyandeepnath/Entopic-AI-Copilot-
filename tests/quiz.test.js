@@ -88,6 +88,50 @@ test("casebook-sourced question: real de-identified case becomes a quiz item", (
   assert.ok(!/Quiz|Seed/.test(joined), "no patient identifiers in the vignette");
 });
 
+/* ── Difficulty tiers (clue count + distractor closeness — never invented
+      prevalence) ── */
+
+test("hard mode shows fewer clues than easy mode for the same condition", () => {
+  const easy = evalIn("quizBuildQuestionFromKB(__mkRng(5), 'Acute Angle Closure Crisis', 'easy')");
+  const hard = evalIn("quizBuildQuestionFromKB(__mkRng(5), 'Acute Angle Closure Crisis', 'hard')");
+  assert.ok(easy.findings.length > hard.findings.length, "easy gives more clues than hard");
+  const reqLen = evalIn("findCondition('Acute Angle Closure Crisis').req.length");
+  const expectedHard = reqLen >= 2 ? reqLen : reqLen + 1;
+  assert.strictEqual(hard.findings.length, expectedHard, "hard shows (nearly) only required findings");
+});
+
+test("hard-mode findings are still only the condition's own criteria (anti-fabrication holds)", () => {
+  const q = evalIn("quizBuildQuestionFromKB(__mkRng(9), 'Acute Angle Closure Crisis', 'hard')");
+  const allowed = evalIn(
+    "(function(){var c=findCondition('Acute Angle Closure Crisis');" +
+    "return [].concat(c.req||[],c.sup||[]).map(quizTokenLabel);})()"
+  );
+  for (const f of q.findings) assert.ok(allowed.indexOf(f) >= 0, "'" + f + "' from own criteria");
+});
+
+test("hard-mode distractors come from the same clinical route when available", () => {
+  const q = evalIn("quizBuildQuestionFromKB(__mkRng(13), 'Acute Angle Closure Crisis', 'hard')");
+  const route = evalIn("findCondition('Acute Angle Closure Crisis').route");
+  const sameRouteCount = evalIn(
+    "KNOWLEDGE_ALL.filter(function(c){return c.route==='" + route + "' && c.name!=='Acute Angle Closure Crisis';}).length"
+  );
+  if (sameRouteCount >= 3) {
+    for (const opt of q.options) {
+      if (opt === q.answer) continue;
+      const r = evalIn("findCondition('" + opt.replace(/'/g, "\\'") + "').route");
+      assert.strictEqual(r, route, "distractor '" + opt + "' shares the route (max confusability)");
+    }
+  }
+});
+
+test("difficulty setting persists in-module and rejects unknown values", () => {
+  assert.strictEqual(evalIn("quizSetDifficulty('hard')"), true);
+  assert.strictEqual(evalIn("quizGetDifficulty()"), "hard");
+  assert.strictEqual(evalIn("quizSetDifficulty('impossible')"), false);
+  assert.strictEqual(evalIn("quizGetDifficulty()"), "hard", "unknown value ignored");
+  evalIn("quizSetDifficulty('standard')");
+});
+
 test("stats: streak counts up on correct, resets on wrong, best is kept", () => {
   evalIn("quizSaveStats({asked:0,correct:0,streak:0,best:0})");
   evalIn("quizRecord(true)");

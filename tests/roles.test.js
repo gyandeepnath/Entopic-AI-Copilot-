@@ -107,6 +107,34 @@ test("practice records (student mock exams) are NEVER capped — learning is unr
   assert.strictEqual(r.ok, true, "even thousands of practice exams stay saveable");
 });
 
+/* ── Super admin ── */
+
+test("adminHash is deterministic and the password is never stored in plaintext", () => {
+  assert.strictEqual(roles.adminHash("abc"), "h3772q3", "stable hash");
+  assert.strictEqual(roles.adminHash("abc"), roles.adminHash("abc"));
+  assert.notStrictEqual(roles.adminHash("abc"), roles.adminHash("abd"));
+});
+
+test("adminCheckCredentials rejects wrong username or password", () => {
+  assert.strictEqual(roles.adminCheckCredentials("entopic-admin", "wrongpass"), false);
+  assert.strictEqual(roles.adminCheckCredentials("someone-else", "anything"), false);
+  assert.strictEqual(roles.adminCheckCredentials("", ""), false);
+});
+
+test("admin session user is institutional, flagged admin, and never in the users store shape", () => {
+  const a = roles.adminSessionUser();
+  assert.strictEqual(a.admin, true);
+  assert.strictEqual(a.tier, "institutional");
+  assert.strictEqual(a.id, "admin");
+  assert.ok(!a.password, "no password field carried on the session user");
+});
+
+test("without an admin session, isAdmin is false and tiers behave normally", () => {
+  fresh();
+  assert.strictEqual(roles.isAdmin(), false);
+  assert.strictEqual(roles.getTier(), "free");
+});
+
 test("roleSessionReset clears the in-page role so accounts never inherit each other's mode", () => {
   fresh();
   roles.setActiveRole("faculty");

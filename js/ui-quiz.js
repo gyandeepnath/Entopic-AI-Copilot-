@@ -86,9 +86,37 @@ function quizExplanation(name) {
   return summary;
 }
 
-/* Build a question from the KB. `forceName` (tests) pins the condition. */
-function quizBuildQuestionFromKB(rng, forceName) {
+/* ── Difficulty ───────────────────────────────────────────────────
+   Difficulty changes HOW MUCH EVIDENCE you get and how confusable the
+   distractors are — it does NOT claim which diseases are common/rare
+   (that would be inventing prevalence data, which the KB doesn't hold):
+     easy     — required findings + up to 4 supportive clues
+     standard — required findings + up to 2 supportive clues
+     hard     — required findings only (min 2 clues), distractors drawn
+                strictly from the same clinical route when possible.   */
+var QUIZ_DIFFICULTIES = ["easy", "standard", "hard"];
+var _quizDifficulty = null;
+
+function quizGetDifficulty() {
+  if (_quizDifficulty) return _quizDifficulty;
+  if (typeof loadStore === "function") {
+    var d = loadStore("quizdiff", null);
+    if (QUIZ_DIFFICULTIES.indexOf(d) >= 0) { _quizDifficulty = d; return d; }
+  }
+  return "standard";
+}
+function quizSetDifficulty(d) {
+  if (QUIZ_DIFFICULTIES.indexOf(d) === -1) return false;
+  _quizDifficulty = d;
+  if (typeof saveStore === "function") saveStore("quizdiff", d);
+  return true;
+}
+
+/* Build a question from the KB. `forceName` (tests) pins the condition;
+   `difficulty` overrides the saved setting. */
+function quizBuildQuestionFromKB(rng, forceName, difficulty) {
   rng = rng || Math.random;
+  difficulty = difficulty || quizGetDifficulty();
   var pool = quizCandidates();
   if (!pool.length) return null;
   var cond = null;
@@ -98,15 +126,29 @@ function quizBuildQuestionFromKB(rng, forceName) {
   if (!cond) cond = pool[Math.floor(rng() * pool.length)];
 
   /* The vignette IS the condition's own criteria — its required findings
-     plus a few supportive ones. Nothing invented. */
+     plus supportive ones per difficulty. Nothing invented. */
+  var supCount = difficulty === "easy" ? 4 : difficulty === "hard" ? (cond.req.length >= 2 ? 0 : 1) : 2;
   var findings = cond.req.map(quizTokenLabel)
-    .concat(quizShuffle((cond.sup || []), rng).slice(0, 3).map(quizTokenLabel));
+    .concat(quizShuffle((cond.sup || []), rng).slice(0, supCount).map(quizTokenLabel));
+
+  /* Hard mode: prefer strictly same-route distractors (most confusable). */
+  var distract;
+  if (difficulty === "hard" && typeof KNOWLEDGE_ALL !== "undefined" && KNOWLEDGE_ALL) {
+    var sameRoute = KNOWLEDGE_ALL.filter(function (c) {
+      return c.route === cond.route && c.name !== cond.name;
+    });
+    if (sameRoute.length >= 3) {
+      distract = quizShuffle(sameRoute, rng).slice(0, 3).map(function (c) { return c.name; });
+    }
+  }
+  if (!distract) distract = quizDistractors(cond, 3, rng);
 
   return {
     source: "kb",
+    difficulty: difficulty,
     findings: findings,
     answer: cond.name,
-    options: quizShuffle([cond.name].concat(quizDistractors(cond, 3, rng)), rng),
+    options: quizShuffle([cond.name].concat(distract), rng),
     explanation: quizExplanation(cond.name),
     urgent: !!cond.urgent
   };
@@ -190,12 +232,27 @@ if (typeof document !== "undefined") {
   };
   var _quizQ = null;
 
+  window.setQuizDifficulty = function (d) {
+    quizSetDifficulty(d);
+    window.startQuiz();   /* new question at the new difficulty */
+  };
+
   window.startQuiz = function () {
     _quizQ = quizNextQuestion();
     if (!_quizQ) return;
     var box = document.getElementById("quizContent");
     if (!box) return;
-    var h = '<div class="quiz-src">' +
+    var cur = quizGetDifficulty();
+    var diffBtns = '<div class="quiz-diff">';
+    for (var d = 0; d < QUIZ_DIFFICULTIES.length; d++) {
+      var dd = QUIZ_DIFFICULTIES[d];
+      diffBtns += '<button class="quiz-diff-btn' + (dd === cur ? ' quiz-diff-on' : '') +
+        '" onclick="setQuizDifficulty(\'' + dd + '\')">' + dd.charAt(0).toUpperCase() + dd.slice(1) + '</button>';
+    }
+    diffBtns += '<span class="quiz-diff-hint">difficulty = fewer clues, closer look-alikes</span></div>';
+
+    var h = diffBtns +
+      '<div class="quiz-src">' +
       (_quizQ.source === "case" ? "From your casebook (de-identified)" : "From the knowledge base") + '</div>' +
       '<div class="quiz-stem">A patient presents with:</div><ul class="quiz-findings">';
     for (var i = 0; i < _quizQ.findings.length; i++) h += '<li>' + _qEsc(_quizQ.findings[i]) + '</li>';

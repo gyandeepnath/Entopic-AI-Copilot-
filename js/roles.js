@@ -134,16 +134,82 @@ function setActiveRole(id) {
 }
 
 
+/* ── Super admin ──────────────────────────────────────────────────
+   A pre-set sign-in that unlocks EVERYTHING at full limits (owner /
+   founder use). The password is stored as a hash, not plaintext, and
+   can be changed from the Admin panel (stored locally).
+
+   HONESTY NOTE: Entopic is currently a fully client-side offline app,
+   so this gate is a convenience lock, not real security — anyone with
+   the device and the source can bypass it. Real authentication and
+   entitlement enforcement arrive with the Phase-2 backend (managed
+   auth, hashed credentials server-side — see CLAUDE.md privacy
+   guardrail). */
+var ADMIN_USERNAME = "entopic-admin";
+var ADMIN_PASS_HASH_DEFAULT = "h11mpz38";   /* hash of the initial password */
+
+/* djb2 — a light, deterministic hash so the password never sits in the
+   source or the store as plaintext. Not cryptographic; see note above. */
+function adminHash(s) {
+  var h = 5381;
+  s = String(s == null ? "" : s);
+  for (var i = 0; i < s.length; i++) { h = ((h << 5) + h + s.charCodeAt(i)) >>> 0; }
+  return "h" + h.toString(36);
+}
+
+function adminPassHash() {
+  if (typeof localStorage !== "undefined") {
+    try { var o = localStorage.getItem("entopic_adminhash"); if (o) return o; } catch (e) {}
+  }
+  return ADMIN_PASS_HASH_DEFAULT;
+}
+
+function adminCheckCredentials(username, password) {
+  return username === ADMIN_USERNAME && adminHash(password) === adminPassHash();
+}
+
+/* Change the admin password (Admin panel). Stored locally as a hash. */
+function adminSetPassword(newPass) {
+  if (!newPass || String(newPass).length < 8) return false;
+  if (typeof localStorage !== "undefined") {
+    try { localStorage.setItem("entopic_adminhash", adminHash(newPass)); return true; } catch (e) {}
+  }
+  return false;
+}
+
+function isAdmin() {
+  return typeof CU !== "undefined" && !!(CU && CU.admin === true);
+}
+
+/* Ephemeral admin session user — never written into the users store, so
+   no admin credential material is persisted with the accounts. */
+function adminSessionUser() {
+  return {
+    id: "admin",
+    username: ADMIN_USERNAME,
+    name: "Administrator",
+    cred: "Super Admin",
+    clinic: "Entopic — Admin",
+    admin: true,
+    tier: "institutional",
+    role: "clinician"   /* lands on the full clinical workspace; switchable */
+  };
+}
+
+
 /* ── Entitlement tier ─────────────────────────────────────────────
    Free by default. Real enforcement (account/licence driven) is a
    later, founder-gated phase; today the tier is a local flag and the
-   only thing it changes is SAVE limits + a few "🔒 upgrade" hints. */
+   only thing it changes is SAVE limits + a few "🔒 upgrade" hints.
+   The super admin is always institutional (everything, full limits). */
 function getTier() {
+  if (isAdmin()) return "institutional";
   if (_roleState.tier) return _roleState.tier;
   if (typeof CU !== "undefined" && CU && CU.tier) return CU.tier;
   return "free";
 }
 function tierLabel() {
+  if (isAdmin()) return "Institutional · Admin";
   var t = getTier();
   return t === "pro" ? "Pro" : t === "institutional" ? "Institutional" : "Free";
 }
@@ -203,11 +269,13 @@ var TIER_LOCKS = {
 };
 
 function roleShowsCap(cap) {
+  if (isAdmin()) return true;             /* admin sees everything */
   if (ALWAYS_ON[cap]) return true;
   var caps = ROLE_CAPS[effectiveRole()] || {};
   return !!caps[cap];
 }
 function tierUnlocksCap(cap) {
+  if (isAdmin()) return true;             /* admin unlocks everything */
   if (ALWAYS_ON[cap]) return true;
   var need = TIER_LOCKS[cap];
   if (!need) return true;                 /* free */
@@ -224,6 +292,9 @@ if (typeof module !== "undefined" && module.exports) {
     roleSessionReset: roleSessionReset,
     getTier: getTier, tierLabel: tierLabel, canSave: canSave, saveCap: saveCap,
     can: can, roleShowsCap: roleShowsCap, tierUnlocksCap: tierUnlocksCap,
+    adminHash: adminHash, adminCheckCredentials: adminCheckCredentials,
+    adminSessionUser: adminSessionUser, isAdmin: isAdmin,
+    ADMIN_USERNAME: ADMIN_USERNAME,
     _reset: function () { _roleState = { active: null, tier: null }; }
   };
 }

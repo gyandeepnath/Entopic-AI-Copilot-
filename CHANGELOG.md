@@ -6,6 +6,49 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-07-18 — Session 11e: Super admin + reviewed-only filter + quiz difficulty
+
+**Founder:** both proposed features, plus a super-admin sign-in with pre-set
+credentials that gets everything at full limits; the full clinician app stays
+the paid offering for others but free via admin.
+
+- **Super admin** (`roles.js` + `app.js`). Signing in with the pre-set id
+  (`entopic-admin`) + password unlocks **everything**: tier forced to
+  Institutional (unlimited saving — the free cap never fires), every role
+  capability and tier lock returns unlocked, KB Editor always accessible, and
+  an extra **Admin tab** appears with: device stats, the list of local accounts
+  (with delete — sign-in only, shared patient data untouched), **change admin
+  password**, KB editor and full export/import. The password lives as a
+  **hash** (djb2), never plaintext, changeable from the panel (stored locally);
+  the admin session is ephemeral and never written to the users store.
+  **Honesty note (also in-code):** Entopic is fully client-side today, so this
+  gate is a convenience lock, not security — real auth/entitlement enforcement
+  is the Phase-2 backend. The clinician workspace itself is unchanged and
+  complete (all 22 exam steps, engine, advisory, flow map, chart, reports, Rx,
+  referral, coding, import/export, cloud card): free users have it with the
+  save cap; the cap/locks become the real paid boundary when licensing lands;
+  admin bypasses it all now.
+- **Casebook: "✓ Reviewed only" filter.** A sign-off facet chip (appears once
+  any case is faculty-reviewed) narrows the casebook to signed-off cases;
+  composes with search/area/token filters; students see exactly the
+  faculty-approved set.
+- **Quiz difficulty tiers: Easy / Standard / Hard.** Difficulty = **fewer
+  clues + closer look-alikes** (easy: required + 4 supportive findings;
+  standard: +2; hard: required only, distractors drawn strictly from the same
+  clinical route). Selector in the quiz, persisted. **Divergence:** the
+  proposal said "common vs rare" tiers, but the KB holds no prevalence data and
+  inventing a commonness list would fabricate clinical facts (hard guardrail) —
+  clue-based difficulty delivers the gradient honestly. A true common/rare tier
+  can be added later from a founder-verified list (NEEDS_CLINICAL_REVIEW flow).
+
+Tests **+9** (admin 4, difficulty 4, reviewed filter 1); **222/222 pass**.
+Browser smoke: admin login → Institutional·Admin, uncapped saving past the free
+limit, every capability unlocked, panel lists/deletes accounts, password change
+(old rejected, new accepted), reviewed chip narrows to the signed-off group,
+difficulty buttons + hard<easy clue counts. All prior smokes still green.
+
+---
+
 ## 2026-07-18 — Session 11d: Phase-1 refinement — real features for every role, deeply integrated
 
 **Founder:** "work on the relevant steps of phase 1. Refine. Add relevant

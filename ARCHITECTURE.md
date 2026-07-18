@@ -264,6 +264,15 @@ door only. The free-tier save cap is enforced at `newPatient()` and
 pricing and real entitlement enforcement are Phase 2). Covered by
 `tests/roles.test.js`.
 
+**Super admin** (session 11e): `adminCheckCredentials` (hash-checked pre-set
+id/password; changeable via the Admin panel, stored locally as a hash) creates
+an ephemeral `adminSessionUser` (never persisted to the users store).
+`isAdmin()` short-circuits `getTier()` → institutional and `can()`/cap checks →
+everything unlocked at full limits, plus an Admin tab (`homeSecAdmin`: device
+stats, local-account management, password change, KB editor, full
+export/import) and `kbEditorAllowed` → true. Client-side only — a convenience
+lock until Phase-2 backend auth.
+
 Phase-1 refinement (session 11d): the role is chosen **at signup** ("Using
 Entopic as" in the setup form → `CU.role`; the picker remains only for legacy
 accounts), `roleSessionReset()` isolates role state between accounts on one

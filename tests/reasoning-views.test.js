@@ -276,3 +276,20 @@ test("annotate/review on a missing id returns null and changes nothing", () => {
   assert.strictEqual(evalIn("casebookSetReviewed('nope', true)"), null);
   assert.strictEqual(evalIn("casebookLoad().length"), 0);
 });
+
+test("casebookFilter with reviewed:true keeps only faculty-signed-off cases", () => {
+  evalIn("casebookSave([])");
+  eng.runCase({ sl: { findings: ["Hypopyon"] } });
+  const idA = evalIn("casebookAdd('case A').id");
+  eng.runCase({ symptoms: ["flashes", "floaters"], temporal: { onset: "sudden_onset" } });
+  evalIn("casebookAdd('case B')");
+  evalIn("casebookSetReviewed('" + idA + "', true)");
+
+  assert.strictEqual(evalIn("casebookFilter(casebookLoad(), {}).length"), 2, "no filter → all");
+  const reviewed = evalIn("casebookFilter(casebookLoad(), {reviewed: '1'})");
+  assert.strictEqual(reviewed.length, 1, "reviewed filter → only signed-off");
+  assert.strictEqual(reviewed[0].id, idA);
+  /* composes with other facets */
+  assert.strictEqual(
+    evalIn("casebookFilter(casebookLoad(), {reviewed:'1', search:'zzz-nomatch'}).length"), 0);
+});
