@@ -824,6 +824,30 @@ var ICD_MAP = {
   "Dissociated Vertical Deviation (DVD)":
     { icd10: "H50.9", label: "Unspecified strabismus", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "DVD has no distinct code; a slow upward drift of the non-fixing eye, usually with infantile strabismus", verified: "2026-07-17 ICD-10-CM 2026" },
   "Pseudostrabismus":
-    { icd10: "H50.9", label: "Unspecified strabismus", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "APPARENT turn from facial features (epicanthus/wide bridge) — NOT a true deviation; confirm with cover test / symmetric corneal reflexes before coding", verified: "2026-07-17 ICD-10-CM 2026" }
+    { icd10: "H50.9", label: "Unspecified strabismus", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "APPARENT turn from facial features (epicanthus/wide bridge) — NOT a true deviation; confirm with cover test / symmetric corneal reflexes before coding", verified: "2026-07-17 ICD-10-CM 2026" },
+
+  /* ─ Batch 14 (common Retina conditions) ─ */
+  "Retinal Arterial Embolus (Hollenhorst Plaque)":
+    { icd10: "H34.9", label: "Unspecified retinal vascular occlusion", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "cholesterol embolus (Hollenhorst); a marker of carotid/cardiac disease — investigate the source (retinal-TIA)", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Branch Retinal Artery Occlusion (BRAO)":
+    { icd10: "H34.239", label: "Retinal artery branch occlusion, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "treat as an acute retinal stroke; find the embolic source (carotid/cardiac; GCA in the elderly)", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Roth Spots":
+    { icd10: "H35.60", label: "Retinal hemorrhage, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "white-centred haemorrhages — a sign, not a diagnosis; investigate for endocarditis, leukaemia, anaemia, diabetes", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Hydroxychloroquine (Plaquenil) Retinopathy":
+    { icd10: "H35.389", label: "Toxic maculopathy, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "drug-induced (antimalarial) bull's-eye maculopathy; also code the drug adverse effect (T37.2X5-); screening is key", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Congenital Hypertrophy of the RPE (CHRPE)":
+    { icd10: "D31.20", label: "Benign neoplasm of unspecified retina", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "benign flat RPE lesion; multiple/atypical (pisciform) CHRPE can signal familial adenomatous polyposis", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Grouped Pigmentation (Bear Tracks)":
+    { icd10: "Q14.1", label: "Congenital malformation of retina", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "benign congenital grouped RPE pigmentation ('bear tracks'); typically asymptomatic", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Torpedo Maculopathy":
+    { icd10: "Q14.1", label: "Congenital malformation of retina", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "congenital torpedo-shaped RPE defect temporal to the fovea; usually asymptomatic", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Myelinated Nerve Fibres":
+    { icd10: "Q14.1", label: "Congenital malformation of retina", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "congenital myelinated retinal nerve-fibre patch; benign but can give a corresponding scotoma", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Retinal Pigment Epithelial Detachment (PED)":
+    { icd10: "H35.729", label: "Serous detachment of retinal pigment epithelium, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "serous PED — search for the cause (AMD/CNV, CSCR, polypoidal vasculopathy); haemorrhagic PED is H35.73-", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Snail-track Degeneration":
+    { icd10: "H35.40", label: "Unspecified peripheral retinal degeneration", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "snail-track (glistening) peripheral degeneration; a retinal-break/detachment risk factor akin to lattice", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Peripheral Cystoid Degeneration":
+    { icd10: "H35.429", label: "Microcystoid degeneration of retina, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "benign peripheral (typically ora) microcystoid change; rarely of clinical consequence", verified: "2026-07-17 ICD-10-CM 2026" }
 
 };

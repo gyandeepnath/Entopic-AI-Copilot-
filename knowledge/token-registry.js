@@ -164,7 +164,7 @@ var TOKEN_REGISTRY = {
       "req": 0,
       "sup": 0,
       "con": 0,
-      "temporal": 89,
+      "temporal": 92,
       "tests": 0
     },
     "reachable": true
@@ -648,6 +648,20 @@ var TOKEN_REGISTRY = {
     },
     "reachable": true
   },
+  "bulls_eye_maculopathy": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 1,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 1
+    },
+    "reachable": true
+  },
   "burning": {
     "type_hint": "sign",
     "sources": [
@@ -831,7 +845,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 11,
-      "sup": 24,
+      "sup": 27,
       "con": 3,
       "temporal": 0,
       "tests": 0
@@ -972,7 +986,7 @@ var TOKEN_REGISTRY = {
       "req": 0,
       "sup": 0,
       "con": 0,
-      "temporal": 180,
+      "temporal": 188,
       "tests": 0
     },
     "reachable": true
@@ -1783,7 +1797,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 0,
-      "sup": 16,
+      "sup": 17,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -2047,8 +2061,8 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 9,
-      "sup": 29,
-      "con": 26,
+      "sup": 30,
+      "con": 32,
       "temporal": 0,
       "tests": 0
     },
@@ -2463,7 +2477,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 11,
-      "sup": 37,
+      "sup": 38,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -2553,8 +2567,8 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 3,
-      "sup": 18,
-      "con": 35,
+      "sup": 24,
+      "con": 36,
       "temporal": 0,
       "tests": 0
     },
@@ -2670,8 +2684,8 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 3,
-      "sup": 5,
-      "con": 17,
+      "sup": 6,
+      "con": 20,
       "temporal": 0,
       "tests": 0
     },
@@ -2701,7 +2715,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 16,
-      "sup": 22,
+      "sup": 24,
       "con": 7,
       "temporal": 0,
       "tests": 1
@@ -2900,7 +2914,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 4,
-      "sup": 36,
+      "sup": 37,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -2953,8 +2967,8 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 4,
-      "sup": 27,
-      "con": 6,
+      "sup": 28,
+      "con": 9,
       "temporal": 0,
       "tests": 0
     },
@@ -2987,6 +3001,20 @@ var TOKEN_REGISTRY = {
       "con": 0,
       "temporal": 0,
       "tests": 0
+    },
+    "reachable": true
+  },
+  "grouped_pigmentation": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 1,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 1
     },
     "reachable": true
   },
@@ -3698,7 +3726,7 @@ var TOKEN_REGISTRY = {
     "usage": {
       "req": 5,
       "sup": 0,
-      "con": 165,
+      "con": 172,
       "temporal": 0,
       "tests": 0
     },
@@ -4611,6 +4639,20 @@ var TOKEN_REGISTRY = {
     },
     "reachable": true
   },
+  "myelinated_nerve_fibres": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 1,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 1
+    },
+    "reachable": true
+  },
   "myopia": {
     "type_hint": "derived_measurement_or_history",
     "sources": [
@@ -4914,7 +4956,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 8,
-      "sup": 60,
+      "sup": 62,
       "con": 59,
       "temporal": 0,
       "tests": 0
@@ -4999,7 +5041,7 @@ var TOKEN_REGISTRY = {
     "usage": {
       "req": 10,
       "sup": 35,
-      "con": 87,
+      "con": 98,
       "temporal": 0,
       "tests": 0
     },
@@ -5252,6 +5294,20 @@ var TOKEN_REGISTRY = {
       "con": 0,
       "temporal": 0,
       "tests": 0
+    },
+    "reachable": true
+  },
+  "peripheral_cystoid": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 1,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 1
     },
     "reachable": true
   },
@@ -5533,7 +5589,7 @@ var TOKEN_REGISTRY = {
       "req": 0,
       "sup": 0,
       "con": 0,
-      "temporal": 79,
+      "temporal": 80,
       "tests": 0
     },
     "reachable": true
@@ -5915,7 +5971,7 @@ var TOKEN_REGISTRY = {
     "usage": {
       "req": 4,
       "sup": 82,
-      "con": 142,
+      "con": 153,
       "temporal": 0,
       "tests": 0
     },
@@ -6050,8 +6106,8 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 11,
-      "sup": 187,
-      "con": 84,
+      "sup": 192,
+      "con": 89,
       "temporal": 0,
       "tests": 1
     },
@@ -6154,6 +6210,20 @@ var TOKEN_REGISTRY = {
     },
     "reachable": true
   },
+  "retinal_embolus": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 1,
+      "sup": 1,
+      "con": 0,
+      "temporal": 0,
+      "tests": 1
+    },
+    "reachable": true
+  },
   "retinal_ischemia": {
     "type_hint": "sign",
     "sources": [
@@ -6253,6 +6323,20 @@ var TOKEN_REGISTRY = {
     },
     "reachable": true
   },
+  "roth_spots": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 1,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 1
+    },
+    "reachable": true
+  },
   "rpe_changes": {
     "type_hint": "sign",
     "sources": [
@@ -6260,6 +6344,34 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 1
+    },
+    "reachable": true
+  },
+  "rpe_detachment": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 1,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 1
+    },
+    "reachable": true
+  },
+  "rpe_hypertrophy_lesion": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 1,
       "sup": 0,
       "con": 0,
       "temporal": 0,
@@ -6453,6 +6565,20 @@ var TOKEN_REGISTRY = {
     },
     "reachable": true
   },
+  "sectoral_retinal_infarct": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 1,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 1
+    },
+    "reachable": true
+  },
   "shadowing": {
     "type_hint": "symptom",
     "sources": [
@@ -6597,6 +6723,20 @@ var TOKEN_REGISTRY = {
       "con": 0,
       "temporal": 0,
       "tests": 0
+    },
+    "reachable": true
+  },
+  "snailtrack_degeneration": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 1,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 1
     },
     "reachable": true
   },
@@ -6788,7 +6928,7 @@ var TOKEN_REGISTRY = {
       "req": 0,
       "sup": 0,
       "con": 0,
-      "temporal": 42,
+      "temporal": 44,
       "tests": 0
     },
     "reachable": true
@@ -6904,8 +7044,8 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 3,
-      "sup": 1,
-      "con": 75,
+      "sup": 2,
+      "con": 80,
       "temporal": 0,
       "tests": 0
     },
@@ -7200,6 +7340,20 @@ var TOKEN_REGISTRY = {
     },
     "reachable": false
   },
+  "torpedo_lesion": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 1,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 1
+    },
+    "reachable": true
+  },
   "toxic_optic_risk": {
     "type_hint": "risk_factor",
     "sources": [
@@ -7222,7 +7376,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 1,
-      "sup": 7,
+      "sup": 8,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -7325,7 +7479,7 @@ var TOKEN_REGISTRY = {
       "req": 0,
       "sup": 0,
       "con": 0,
-      "temporal": 9,
+      "temporal": 10,
       "tests": 0
     },
     "reachable": false
@@ -7681,8 +7835,8 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 25,
-      "sup": 64,
-      "con": 20,
+      "sup": 69,
+      "con": 21,
       "temporal": 0,
       "tests": 0
     },
@@ -7703,8 +7857,8 @@ var TOKEN_REGISTRY = {
 };
 
 var TOKEN_REGISTRY_STATS = {
-  "total": 542,
-  "reachable": 442,
+  "total": 553,
+  "reachable": 453,
   "unreachable_required": [],
   "unreachable_supportive": [],
   "test_label_only": 96,

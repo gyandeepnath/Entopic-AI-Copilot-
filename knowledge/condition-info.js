@@ -3678,6 +3678,118 @@ var CONDITION_INFO = {
       "The apparent turn often lessens as the face grows and the nasal bridge develops."
     ],
     review: true
+  },
+
+  /* ═══ Retina — common conditions batch (Session 10n) ═══ */
+
+  "Retinal Arterial Embolus (Hollenhorst Plaque)": {
+    summary: "A bright, refractile cholesterol embolus lodged at a retinal arteriolar bifurcation, often found incidentally. It is a visible marker of carotid or cardiac disease and a warning of stroke and vascular risk, even when vision is normal.",
+    facts: [
+      "Its presence warrants vascular work-up (carotids, heart, risk factors) as for a transient ischaemic attack — a 'retinal TIA'.",
+      "May be asymptomatic, or associated with episodes of transient monocular vision loss (amaurosis fugax).",
+      "A calcific (dull white) embolus behaves differently and is more likely to cause permanent occlusion."
+    ],
+    review: true
+  },
+
+  "Branch Retinal Artery Occlusion (BRAO)": {
+    summary: "Occlusion of a branch retinal artery, usually embolic, causing sudden painless loss of the corresponding sector of vision with whitening of the affected retina. Central acuity is preserved unless the fovea's supply is involved.",
+    facts: [
+      "Treat as an acute retinal stroke — urgent vascular assessment to find the embolic source and reduce future stroke risk.",
+      "In older patients, always consider and exclude giant cell arteritis.",
+      "The visual field defect corresponds to the ischaemic sector; an embolus may be visible upstream."
+    ],
+    review: true
+  },
+
+  "Roth Spots": {
+    summary: "Retinal haemorrhages with pale (white) centres — a sign rather than a diagnosis, reflecting a systemic condition. They point to causes such as infective endocarditis, leukaemia, severe anaemia, or diabetes.",
+    facts: [
+      "Finding Roth spots should trigger a systemic search — notably for endocarditis and haematological disease.",
+      "The white centre represents fibrin, platelet-fibrin thrombus, or leukaemic cells.",
+      "Vision is usually unaffected unless a haemorrhage involves the fovea."
+    ],
+    review: true
+  },
+
+  "Hydroxychloroquine (Plaquenil) Retinopathy": {
+    summary: "Toxic damage to the macula from long-term antimalarial (hydroxychloroquine/chloroquine) use, classically producing a 'bull's-eye' maculopathy. Early disease is asymptomatic, which is why structured screening is essential; advanced disease causes irreversible central vision loss.",
+    facts: [
+      "Risk rises with cumulative dose and duration, renal impairment and concurrent tamoxifen — screen accordingly.",
+      "Detected early with sensitive tests (OCT, fields, autofluorescence) before symptoms or the bull's-eye appear.",
+      "Stopping the drug is the only intervention; damage already present does not reverse."
+    ],
+    review: true
+  },
+
+  "Congenital Hypertrophy of the RPE (CHRPE)": {
+    summary: "A benign, flat, sharply demarcated darkly pigmented patch of the retinal pigment epithelium, usually an incidental finding. Solitary lesions are harmless, but multiple bilateral atypical lesions can be a marker of systemic disease.",
+    facts: [
+      "Multiple, bilateral, small pisciform ('fish-tail') lesions can signal familial adenomatous polyposis — worth noting the family/bowel history.",
+      "A solitary typical CHRPE is benign and simply documented.",
+      "Flatness and sharp margins distinguish it from a choroidal naevus or melanoma."
+    ],
+    review: true
+  },
+
+  "Grouped Pigmentation (Bear Tracks)": {
+    summary: "A benign congenital pattern of multiple small, grouped, darkly pigmented RPE spots resembling animal footprints ('bear tracks'), usually confined to one sector. It is asymptomatic and needs no treatment.",
+    facts: [
+      "A characteristic clustered, footprint-like pattern that is stable over life.",
+      "Benign and typically an incidental finding — reassurance is all that is required.",
+      "Distinguished from CHRPE by the grouped, smaller, multiple morphology."
+    ],
+    review: true
+  },
+
+  "Torpedo Maculopathy": {
+    summary: "A rare, benign congenital defect of the retinal pigment epithelium shaped like a torpedo, lying temporal to the fovea with its tip pointing toward it. It is usually asymptomatic and found incidentally.",
+    facts: [
+      "The characteristic torpedo shape and temporal-to-fovea location are diagnostic.",
+      "Usually stable and vision is preserved unless it encroaches on the fovea.",
+      "OCT shows the corresponding outer-retinal/RPE changes."
+    ],
+    review: true
+  },
+
+  "Myelinated Nerve Fibres": {
+    summary: "Patches of myelin extending onto the retinal nerve-fibre layer (which is normally unmyelinated), seen as white, feathery-edged areas usually adjacent to the optic disc. They are a benign congenital variant.",
+    facts: [
+      "The feathery leading edge and superficial location that obscures underlying vessels are characteristic.",
+      "Usually asymptomatic, though extensive patches can give a corresponding scotoma; rarely associated with myopia/amblyopia when peripapillary and dense.",
+      "A stable finding needing no treatment, but worth documenting so it is not mistaken for pathology."
+    ],
+    review: true
+  },
+
+  "Retinal Pigment Epithelial Detachment (PED)": {
+    summary: "A separation of the retinal pigment epithelium from the underlying Bruch's membrane by fluid, blood or drusenoid material, seen as a dome-shaped elevation. It causes blurred or distorted central vision and is usually a feature of an underlying macular disease.",
+    facts: [
+      "Look for the cause — age-related macular degeneration/CNV, central serous chorioretinopathy, or polypoidal choroidal vasculopathy.",
+      "OCT characterises the PED (serous, drusenoid, fibrovascular, haemorrhagic), which guides management.",
+      "A tear of the RPE can occur, causing sudden vision change."
+    ],
+    review: true
+  },
+
+  "Snail-track Degeneration": {
+    summary: "A peripheral retinal degeneration appearing as glistening, frost-like or 'snail-track' white dots on a thinned area of retina, related to lattice degeneration. It is usually asymptomatic but predisposes to retinal holes and detachment.",
+    facts: [
+      "A risk factor for retinal breaks and detachment, similar to lattice degeneration.",
+      "New flashes, floaters or a field shadow in someone with peripheral degeneration warrants urgent dilated review.",
+      "Often an incidental finding on peripheral retinal examination."
+    ],
+    review: true
+  },
+
+  "Peripheral Cystoid Degeneration": {
+    summary: "A very common, benign age-related change at the extreme peripheral retina (near the ora serrata) in which tiny cystic spaces form. It is asymptomatic and essentially a normal ageing finding.",
+    facts: [
+      "An almost universal finding with age, seen just behind the ora serrata.",
+      "Benign and of little clinical consequence on its own.",
+      "Rarely, coalescence can contribute to peripheral (typically benign) retinoschisis."
+    ],
+    review: true
   }
 
 };

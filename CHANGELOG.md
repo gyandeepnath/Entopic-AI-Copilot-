@@ -6,6 +6,21 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-07-17 — Session 10n: sign-rich common-conditions drive — Retina (+11)
+
+Started the sign-rich areas. Added 11 new clickable fundus findings (Hollenhorst
+plaque, sectoral infarct, Roth spot, bull's-eye maculopathy, PED, torpedo lesion,
+myelinated fibres, snail-track, peripheral cystoid, CHRPE, bear-tracks) and 11
+common Retina conditions on them: **Retinal Arterial Embolus, Branch Retinal
+Artery Occlusion, Roth Spots, Hydroxychloroquine Retinopathy, CHRPE, Grouped
+Pigmentation, Torpedo Maculopathy, Myelinated Nerve Fibres, RPE Detachment,
+Snail-track & Peripheral Cystoid Degeneration** (Retina 81 → 92). Each with
+reachable inputs, a validated ICD-10 code and a hand-written note. KB now **371
+conditions**, all coded + noted (0 missing). 178/178 tests pass; cross-conflict
+at baseline.
+
+---
+
 ## 2026-07-17 — Session 10m: common-conditions drive — Refractive & Binocular (+6)
 
 Continued the +20-per-area drive. Added 5 new symptom chips (high myopia, image-

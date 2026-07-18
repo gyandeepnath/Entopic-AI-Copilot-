@@ -621,7 +621,8 @@ var FUN_FINDINGS = {
     "Optic pit",
     "Tilted disc",
     "Disc melanocytoma (dark lesion)",
-    "Disc coloboma / excavation"
+    "Disc coloboma / excavation",
+    "Myelinated nerve fibres"
   ],
 
   "Macula": [
@@ -638,7 +639,10 @@ var FUN_FINDINGS = {
     "Macular hole",
     "Foveal reflex absent",
     "Macular star",
-    "Cherry red spot"
+    "Cherry red spot",
+    "Bull's-eye maculopathy",
+    "RPE detachment (PED)",
+    "Torpedo lesion (macula)"
   ],
 
   "Vasculature": [
@@ -655,7 +659,10 @@ var FUN_FINDINGS = {
     "Arteriolar narrowing",
     "Silver/copper wiring",
     "Dilated tortuous veins",
-    "Sectoral hemorrhage"
+    "Sectoral hemorrhage",
+    "Retinal embolus (Hollenhorst plaque)",
+    "Sectoral retinal whitening (infarct)",
+    "Roth spot (white-centred hemorrhage)"
   ],
 
   "Peripheral Retina": [
@@ -668,7 +675,11 @@ var FUN_FINDINGS = {
     "Retinoschisis",
     "Pavingstone degeneration",
     "White without pressure",
-    "Astrocytic hamartoma (mulberry)"
+    "Astrocytic hamartoma (mulberry)",
+    "Snail-track degeneration",
+    "Peripheral cystoid degeneration",
+    "CHRPE (flat dark RPE patch)",
+    "Grouped pigmentation (bear tracks)"
   ],
 
   "Vitreous": [
