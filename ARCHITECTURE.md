@@ -242,6 +242,28 @@ rendered as an assumed normal (blankVisit defaults never leak into a note).
 generation, nothing feeds back into the engine. Covered by
 `tests/reasoning-views.test.js`.
 
+## 9b. Roles, modes & tiers (`roles.js`) — one account, switchable personas
+
+Implements the two-axis model in `docs/ROLES_AND_MODES.md`. **Role** (a
+switchable UI/workflow persona: Student / Clinician / Faculty; more `soon`) is
+separate from **Tier** (entitlement: free / pro / institutional). `roles.js` is a
+DOM-free core: `ENTOPIC_ROLES`, `getActiveRole/setActiveRole/effectiveRole`
+(persisted on `CU.role` + localStorage, so one account switches modes),
+`getTier/tierLabel`, `canSave`/`SAVE_LIMITS` (free tier caps **saving** only),
+and `can()` (capability = role visibility × tier lock). **Learning capabilities
+(`ALWAYS_ON`: engine, safety, advisory, offline, KB, casebook, quiz, present) are
+never gated** — for any role or tier.
+
+`renderHome()` (`app.js`) is role-aware: a mode switcher strip + per-role **tabs**
++ the active tab's workspace (Student→Study, Clinician→Patients, Faculty→
+Teaching, plus shared Casebook/Reference/Account). A first-run **role picker**
+(`#modalRolePicker`) asks "who are you here as?"; "Switch mode ▾" is always
+available. The exam flow, engine and KB are untouched — roles reorganise the front
+door only. The free-tier save cap is enforced at `newPatient()` and
+"Save as teaching case" with an honest message (no payment/paywall built —
+pricing and real entitlement enforcement are Phase 2). Covered by
+`tests/roles.test.js`.
+
 ## 10. Honest assessment — strengths and the concrete gaps
 
 ### Strengths worth protecting

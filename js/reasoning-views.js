@@ -565,6 +565,15 @@ if (typeof document !== "undefined") {
 
   /* ── Save current encounter as a teaching case (Move 4) ── */
   window.saveTeachingCase = function () {
+    /* Free-tier SAVE limit — studying the casebook is never limited, only how
+       many cases you can persist. */
+    if (typeof canSave === "function") {
+      var chk = canSave("cases", casebookLoad().length);
+      if (!chk.ok) {
+        if (typeof alert === "function") alert("Free plan casebook limit reached (" + chk.cap + " saved cases).\n\nStudying the casebook stays free and open — saving more cases needs an upgrade (coming soon). You can delete older cases to free space.");
+        return;
+      }
+    }
     var note = (typeof prompt === "function")
       ? prompt("Teaching note for this case (optional — what should a learner take away?):", "")
       : "";

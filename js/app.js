@@ -160,22 +160,124 @@ function showHomePage() {
   document.getElementById("homeUser").textContent = CU.name + ", " + CU.cred;
 
   renderHome();
+
+  /* First run on this account/device with no chosen mode → ask who's using it. */
+  if (typeof getActiveRole === "function" && !getActiveRole() && typeof showRolePicker === "function") {
+    showRolePicker();
+  }
 }
 
+/* The home screen is now ROLE-AWARE: a mode switcher + a role-specific set of
+   TABS + the active tab's content. Each role (Student / Clinician / Faculty)
+   opens to a differently-organised workspace, switchable on one account. The
+   exam flow, engine and KB are untouched — this reorganises the front door
+   only. See docs/ROLES_AND_MODES.md. */
+var HOME_TAB = null;
+
 function renderHome() {
+  var role = (typeof effectiveRole === "function") ? effectiveRole() : "clinician";
+  var def  = (typeof roleDef === "function" && roleDef(role)) ? roleDef(role) : null;
+  var tabs = (def && def.tabs) ? def.tabs
+    : [{ id: "patients", label: "Patients" }, { id: "casebook", label: "Casebook" },
+       { id: "kb", label: "Reference" }, { id: "account", label: "Account" }];
+
+  if (!HOME_TAB || !homeTabsInclude(tabs, HOME_TAB)) HOME_TAB = tabs[0].id;
+
+  document.getElementById("homeContent").innerHTML =
+    roleSwitcherStrip(role) +
+    homeTabStrip(tabs, HOME_TAB) +
+    '<div class="home-tabbody">' + renderHomeTab(role, HOME_TAB) + '</div>';
+
+  /* Reveal the KB Editor button only for the build owner (async check); the
+     slot only exists on the tabs that show the KB card. */
+  if (typeof kbEditorAllowed === "function") {
+    kbEditorAllowed(function (allowed) {
+      var slot = document.getElementById("kbEditorCardSlot");
+      if (slot && allowed) {
+        slot.innerHTML = ' <button class="btn btn-p" onclick="openKbEditor()" style="font-size:.62rem;margin-left:6px">✎ Edit / Add conditions</button>';
+      }
+    });
+  }
+}
+
+function homeTabsInclude(tabs, id) { for (var i = 0; i < tabs.length; i++) if (tabs[i].id === id) return true; return false; }
+function setHomeTab(id) { HOME_TAB = id; renderHome(); }
+
+/* Mode identity + one-tap switcher (always visible → habit-forming). */
+function roleSwitcherStrip(role) {
+  var def = (typeof roleDef === "function" && roleDef(role)) ? roleDef(role) : { label: role, icon: "" };
+  var tier = (typeof tierLabel === "function") ? tierLabel() : "Free";
+  return '<div class="role-strip">' +
+      '<div class="role-strip-id">' +
+        '<span class="role-strip-icon">' + (def.icon || "") + '</span>' +
+        '<div><div class="role-strip-label">' + escH(def.label || role) + '</div>' +
+        '<div class="role-strip-tier">' + escH(tier) + ' plan · learning always free</div></div>' +
+      '</div>' +
+      '<button class="btn btn-s role-switch-btn" onclick="showRolePicker()" style="font-size:.6rem">Switch mode ▾</button>' +
+    '</div>';
+}
+
+function homeTabStrip(tabs, active) {
+  var h = '<div class="home-tabs">';
+  for (var i = 0; i < tabs.length; i++) {
+    h += '<button class="home-tab' + (tabs[i].id === active ? ' home-tab-on' : '') +
+      '" onclick="setHomeTab(\'' + tabs[i].id + '\')">' + escH(tabs[i].label) + '</button>';
+  }
+  return h + '</div>';
+}
+
+function renderHomeTab(role, tab) {
+  switch (tab) {
+    case "study":    return homeSecStudy();
+    case "teaching": return homeSecTeaching();
+    case "casebook": return homeSecCasebook();
+    case "kb":       return homeSecKB();
+    case "account":  return homeSecAccount();
+    case "patients": /* fall through */
+    default:         return homeSecPatients();
+  }
+}
+
+/* ── Reusable cards ── */
+function homeCardCasebook() {
+  return '<div class="home-settings" style="margin-top:8px">' +
+    '<div class="home-settings-title">📚 Teaching Casebook</div>' +
+    '<div class="home-settings-desc">' + (typeof casebookHomeSummary === "function" ? casebookHomeSummary() : "De-identified teaching cases.") + '</div>' +
+    '<button class="btn btn-s" onclick="showCasebook()" style="font-size:.62rem">Open casebook</button>' +
+  '</div>';
+}
+function homeCardKB() {
+  var n = (typeof KNOWLEDGE_ALL !== "undefined" && Array.isArray(KNOWLEDGE_ALL)) ? KNOWLEDGE_ALL.length : 0;
+  return '<div class="home-settings" style="margin-top:8px">' +
+    '<div class="home-settings-title">📋 Knowledge Base</div>' +
+    '<div class="home-settings-desc">' + n + ' conditions across ' + (typeof KNOWLEDGE_DOMAINS !== "undefined" ? Object.keys(KNOWLEDGE_DOMAINS).length : "—") + ' domains</div>' +
+    '<button class="btn btn-s" onclick="showKBInfo()" style="font-size:.62rem">Browse conditions</button>' +
+    '<span id="kbEditorCardSlot"></span>' +
+  '</div>';
+}
+function homeCardTier() {
+  var tier = (typeof tierLabel === "function") ? tierLabel() : "Free";
+  var isFree = (tier === "Free");
+  var pcap = (typeof saveCap === "function") ? saveCap("patients") : Infinity;
+  var ccap = (typeof saveCap === "function") ? saveCap("cases") : Infinity;
+  var line = isFree
+    ? ('Learning is always free and unrestricted — the engine, reasoning, knowledge base and casebook are fully open. The Free plan saves up to ' + pcap + ' patient records and ' + ccap + ' teaching cases.')
+    : 'Unlimited saving on your plan.';
+  return '<div class="home-settings">' +
+    '<div class="home-settings-title">🪪 Plan — ' + escH(tier) + '</div>' +
+    '<div class="home-settings-desc">' + line + '</div>' +
+    (isFree ? '<span class="soon-badge">Pro / Institutional upgrade — coming soon</span>' : '') +
+  '</div>';
+}
+
+/* ── Sections (tabs) ── */
+function homeSecPatients() {
   var patients = loadPatients();
   var visits   = loadVisits();
   var today    = new Date().toISOString().slice(0, 10);
+  var todayV = visits.filter(function (v) { return v.date && v.date.startsWith(today); });
+  var inProg = visits.filter(function (v) { return v.status === "in_progress"; });
 
-  var todayV = visits.filter(function(v) {
-    return v.date && v.date.startsWith(today);
-  });
-
-  var inProg = visits.filter(function(v) {
-    return v.status === "in_progress";
-  });
-
-  /* Patient rows */
   var rows = "";
   if (patients.length === 0) {
     rows = '<div class="p-empty">No patients yet. Click "New Patient" to begin.</div>';
@@ -188,97 +290,120 @@ function renderHome() {
       var status = lastV && lastV.status === "completed"
         ? '<span style="color:var(--sl);font-size:.54rem;font-weight:600"> ✓</span>'
         : '<span style="color:var(--md);font-size:.54rem"> ●</span>';
-
       rows += '<div class="p-row" onclick="openPatient(\'' + pt.id + '\')">' +
         '<div><b>' + escH(nm) + '</b>' + status + '</div>' +
         '<span style="font-family:var(--mono);color:var(--sv);font-size:.6rem">' + escH(pt.mrn || "") + '</span>' +
-        '</div>';
+      '</div>';
     }
   }
 
-  /* API Key status */
-  var apiStatus = API_KEY
-    ? '<div class="home-settings-status">✓ API key configured — interpretive remarks active</div>'
-    : '<div class="home-settings-status" style="color:var(--md)">⚠ No key — diagnostic engine works offline, interpretive remarks disabled</div>';
+  var cap = (typeof saveCap === "function") ? saveCap("patients") : Infinity;
+  var capNote = (cap !== Infinity)
+    ? '<span style="font-size:.58rem;color:var(--sv)">' + patients.length + ' / ' + cap + ' saved (Free)</span>'
+    : '<span style="font-size:.58rem;color:var(--sv)">' + getStorageStats().kb + ' KB used</span>';
 
-  /* KB info */
-  var kbCondCount = 0;
-  if (typeof KNOWLEDGE_ALL !== "undefined" && Array.isArray(KNOWLEDGE_ALL)) {
-    kbCondCount = KNOWLEDGE_ALL.length;
-  }
-
-  /* Storage stats */
-  var stats = getStorageStats();
-
-  /* Render */
-  document.getElementById("homeContent").innerHTML =
-
-    /* Header */
-    '<div class="home-hd">' +
-      '<h1>Dashboard</h1>' +
+  return '<div class="home-hd"><h1>Patients</h1>' +
       '<div style="display:flex;gap:6px">' +
         '<button class="btn btn-p" onclick="newPatient()">+ New Patient</button>' +
         '<button class="btn btn-s" onclick="exportAllData()" style="font-size:.6rem">Export</button>' +
-      '</div>' +
-    '</div>' +
-
-    /* Stats */
+      '</div></div>' +
     '<div class="stats">' +
       '<div class="stat"><div class="v">' + patients.length + '</div><div class="l">Total Patients</div></div>' +
       '<div class="stat"><div class="v">' + todayV.length + '</div><div class="l">Today</div></div>' +
       '<div class="stat"><div class="v">' + inProg.length + '</div><div class="l">In Progress</div></div>' +
     '</div>' +
+    '<div class="p-list"><div class="p-list-h"><span>Patients</span>' + capNote + '</div>' + rows + '</div>';
+}
 
-    /* Patient list */
-    '<div class="p-list">' +
-      '<div class="p-list-h"><span>Patients</span><span style="font-size:.58rem;color:var(--sv)">' + stats.kb + ' KB used</span></div>' +
-      rows +
-    '</div>' +
-
-    /* Settings — API Key */
-    '<div class="home-settings">' +
-      '<div class="home-settings-title">🔑 AI Interpretive Engine (Claude API)</div>' +
-      '<div class="home-settings-desc">Optional. Provides clinical remarks and speech parsing. The diagnostic engine runs fully offline without this.</div>' +
-      '<div style="display:flex;gap:6px;align-items:center">' +
-        '<button class="btn btn-s" onclick="openModal(\'modalApiKey\')" style="font-size:.62rem">' + (API_KEY ? "Update API Key" : "Configure API Key") + '</button>' +
-      '</div>' +
-      apiStatus +
-    '</div>' +
-
-    /* Settings — Knowledge Base */
+function homeSecStudy() {
+  return '<div class="home-hd"><h1>Study</h1></div>' +
+    '<div class="study-hero">Learn by reasoning. The full diagnostic engine, glass-box "why", knowledge base and casebook are open and free — no restrictions on learning.</div>' +
+    homeCardCasebook() +
+    homeCardKB() +
     '<div class="home-settings" style="margin-top:8px">' +
-      '<div class="home-settings-title">📋 Knowledge Base</div>' +
-      '<div class="home-settings-desc">' + kbCondCount + ' conditions across ' + (typeof KNOWLEDGE_DOMAINS !== "undefined" ? Object.keys(KNOWLEDGE_DOMAINS).length : "—") + ' domains</div>' +
-      '<button class="btn btn-s" onclick="showKBInfo()" style="font-size:.62rem">View Details</button>' +
+      '<div class="home-settings-title">🩺 Practice exam</div>' +
+      '<div class="home-settings-desc">Run a full mock exam through the live engine and see the reasoning build.</div>' +
+      '<button class="btn btn-s" onclick="newPatient()" style="font-size:.62rem">Start a practice exam</button>' +
+    '</div>' +
+    '<div class="home-settings" style="margin-top:8px">' +
+      '<div class="home-settings-title">🧠 Quiz / self-test</div>' +
+      '<div class="home-settings-desc">Guess-the-diagnosis practice drawn from real reasoned cases.</div>' +
+      '<span class="soon-badge">Coming soon</span>' +
+    '</div>';
+}
+
+function homeSecTeaching() {
+  return '<div class="home-hd"><h1>Teaching</h1></div>' +
+    '<div class="study-hero">Teach with real reasoned cases. Curate the casebook and refine the knowledge base your students learn from.</div>' +
+    homeCardCasebook() +
+    '<div class="home-settings" style="margin-top:8px">' +
+      '<div class="home-settings-title">✎ Knowledge base</div>' +
+      '<div class="home-settings-desc">Browse and (for editors) refine conditions, evidence and About notes.</div>' +
+      '<button class="btn btn-s" onclick="showKBInfo()" style="font-size:.62rem">Browse conditions</button>' +
       '<span id="kbEditorCardSlot"></span>' +
     '</div>' +
-
-    /* Settings — Teaching Casebook (de-identified study library) */
     '<div class="home-settings" style="margin-top:8px">' +
-      '<div class="home-settings-title">📚 Teaching Casebook</div>' +
-      '<div class="home-settings-desc">' + casebookHomeSummary() + '</div>' +
-      '<button class="btn btn-s" onclick="showCasebook()" style="font-size:.62rem">Study casebook</button>' +
-    '</div>' +
+      '<div class="home-settings-title">🎓 Student logbooks &amp; review</div>' +
+      '<div class="home-settings-desc">Review trainees\' reasoned cases and annotate them.</div>' +
+      '<span class="soon-badge">Coming soon</span>' +
+    '</div>';
+}
 
-    /* Settings — Import */
+function homeSecCasebook() { return '<div class="home-hd"><h1>Casebook</h1></div>' + homeCardCasebook(); }
+function homeSecKB()       { return '<div class="home-hd"><h1>Reference</h1></div>' + homeCardKB(); }
+
+function homeSecAccount() {
+  var apiStatus = API_KEY
+    ? '<div class="home-settings-status">✓ API key configured — interpretive remarks active</div>'
+    : '<div class="home-settings-status" style="color:var(--md)">⚠ No key — diagnostic engine works offline, interpretive remarks disabled</div>';
+  return '<div class="home-hd"><h1>Account</h1></div>' +
+    homeCardTier() +
+    '<div class="home-settings" style="margin-top:8px">' +
+      '<div class="home-settings-title">🔑 AI Interpretive Engine (Claude API)</div>' +
+      '<div class="home-settings-desc">Optional. Provides clinical remarks and speech parsing. The diagnostic engine runs fully offline without this.</div>' +
+      '<button class="btn btn-s" onclick="openModal(\'modalApiKey\')" style="font-size:.62rem">' + (API_KEY ? "Update API Key" : "Configure API Key") + '</button>' +
+      apiStatus +
+    '</div>' +
     '<div class="home-settings" style="margin-top:8px">' +
       '<div class="home-settings-title">📁 Data Management</div>' +
       '<div class="home-settings-desc">Import a previous Entopic backup file</div>' +
       '<input type="file" accept=".json" onchange="if(this.files[0])importData(this.files[0])" style="font-size:.62rem">' +
     '</div>' +
-
-    /* Settings — Cloud Sync */
     renderCloudCard();
+}
 
-  /* Reveal the KB Editor button only for the build owner (async check). */
-  if (typeof kbEditorAllowed === "function") {
-    kbEditorAllowed(function (allowed) {
-      var slot = document.getElementById("kbEditorCardSlot");
-      if (slot && allowed) {
-        slot.innerHTML = ' <button class="btn btn-p" onclick="openKbEditor()" style="font-size:.62rem;margin-left:6px">✎ Edit / Add conditions</button>';
-      }
-    });
+/* ── Role picker (startup "who are you here as?" + switch any time) ── */
+function showRolePicker() {
+  var cur = (typeof getActiveRole === "function") ? getActiveRole() : null;
+  var live = (typeof activeRoleCatalogue === "function") ? activeRoleCatalogue() : [];
+  var h = '<div class="role-pick-grid">';
+  for (var i = 0; i < live.length; i++) {
+    var r = live[i];
+    h += '<div class="role-card' + (r.id === cur ? ' role-card-on' : '') + '" onclick="pickRole(\'' + r.id + '\')">' +
+      '<div class="role-card-icon">' + (r.icon || "") + '</div>' +
+      '<div class="role-card-label">' + escH(r.label) + '</div>' +
+      '<div class="role-card-blurb">' + escH(r.blurb || "") + '</div>' +
+    '</div>';
   }
+  h += '</div>';
+  var soon = (typeof ENTOPIC_ROLES !== "undefined") ? ENTOPIC_ROLES.filter(function (r) { return r.soon; }) : [];
+  if (soon.length) {
+    h += '<div class="role-soon-title">More modes coming</div><div class="role-soon-row">';
+    for (var s = 0; s < soon.length; s++) {
+      h += '<span class="role-soon-chip">' + (soon[s].icon || "") + ' ' + escH(soon[s].label) + '</span>';
+    }
+    h += '</div>';
+  }
+  var box = document.getElementById("rolePickerContent");
+  if (box) box.innerHTML = h;
+  openModal("modalRolePicker");
+}
+
+function pickRole(id) {
+  if (typeof setActiveRole === "function") setActiveRole(id);
+  closeModal("modalRolePicker");
+  HOME_TAB = null;   /* reset to the new role's landing tab */
+  renderHome();
 }
 
 
@@ -518,6 +643,18 @@ function kbUiCheckUpdates() {
 /* ═══════════════════════════════════════════════════════════════ */
 
 function newPatient() {
+  /* Free-tier SAVE limit (learning is never limited — only how many records
+     persist). Honest message, no paywall; export/delete frees space. */
+  if (typeof canSave === "function") {
+    var chk = canSave("patients", loadPatients().length);
+    if (!chk.ok) {
+      alert("Free plan save limit reached (" + chk.cap + " patient records).\n\n" +
+        "Learning stays free and unlimited — the engine, knowledge base and casebook are fully open. " +
+        "To save more real records you'll need an upgrade (coming soon). You can Export and then delete old records to free space now.");
+      return;
+    }
+  }
+
   var pid = "p" + Date.now().toString(36);
   var vid = "v" + (Date.now() + 1).toString(36);
   var mrn = "EP-" + Date.now().toString(36).toUpperCase();

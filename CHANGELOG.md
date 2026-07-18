@@ -6,6 +6,49 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-07-18 — Session 11c: Roles & modes — per-persona workspaces on one switchable account (Phase 1)
+
+**Founder:** ship Student / Clinician / Faculty; each gets **different tabs +
+a differently organised UI/UX**; **real accounts** for everyone; **free tier
+limits saving, not learning**; habit-forming and **switchable** on the same
+account (Student ⇄ Clinician ⇄ Faculty …).
+
+New module **`js/roles.js`** — the two-axis model from `docs/ROLES_AND_MODES.md`:
+- **Role** (persona/mode) and **Tier** (entitlement) are separate. `ENTOPIC_ROLES`
+  catalogue (student/clinician/faculty live; demonstrator/multi-user/hospital/
+  researcher flagged `soon` — open for scope). `getActiveRole/setActiveRole/
+  effectiveRole` persist the active role **on the account** (`CU.role`) and
+  locally, so one account switches modes freely.
+- **Free tier limits SAVING, never LEARNING.** `canSave(kind,count)` +
+  `SAVE_LIMITS` (free: 15 patient records, 40 cases; pro/institutional
+  unlimited). The engine, red-flag safety, glass-box reasoning, KB and casebook
+  are `ALWAYS_ON` — unlocked for every role and tier. `can()` combines role
+  visibility × tier locks (billing/rx/authoring by role; cloud-sync/publishing/
+  multiuser by tier).
+
+UI:
+- **Startup "Who are you here as?" picker** (`#modalRolePicker`) on first run,
+  and a persistent **"Switch mode ▾"** — habit-forming, one tap, any time.
+- **`renderHome` is now role-aware**: a mode strip + **per-role tabs** + the
+  active tab's workspace. Student → **Study** (casebook, reference, practice
+  exam, quiz-soon); Clinician → **Patients** (today's dashboard); Faculty →
+  **Teaching** (casebook, KB, student-review-soon). Shared Casebook / Reference /
+  Account tabs. The exam flow, engine and KB are untouched — this reorganises the
+  front door only.
+- **Free-tier save cap enforced** at `newPatient()` and "Save as teaching case"
+  with an honest message (no paywall; export/delete frees space). An Account tab
+  shows the plan + "Pro upgrade — coming soon". **No pricing/payment built** —
+  that and real licence enforcement stay founder-gated (Phase 2).
+
+**Divergence from the plan doc:** founder chose **real accounts for students**
+(not sandbox-only) and **saving-limited free tier** — implemented as written.
+
+Tests **+8** (`tests/roles.test.js`); **202/202 pass**. Browser smoke: picker on
+first run, per-role tabs/landings, mode switch on one account, save cap blocks at
+the limit — no page errors.
+
+---
+
 ## 2026-07-18 — Session 11b: Casebook on the homepage — grouped by condition, filterable by sign/token
 
 **Founder:** "continue with the casebook shortcut in the main homepage

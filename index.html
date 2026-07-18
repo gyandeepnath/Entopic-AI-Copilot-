@@ -211,6 +211,21 @@
 
 
 <!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- ROLE / MODE PICKER — "who are you here as?" (startup + switch)  -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="modalRolePicker" style="display:none">
+  <div class="modal-box" style="max-width:640px">
+    <div class="modal-title">Who are you here as?</div>
+    <div class="modal-desc" style="font-size:.68rem">Pick a mode — it tailors your workspace. You can switch any time; the same account carries across modes. Learning is always free.</div>
+    <div id="rolePickerContent"></div>
+    <div class="btn-g">
+      <button class="btn btn-s" onclick="closeModal('modalRolePicker')">Not now</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
 <!-- SOAP CLINICAL NOTE (documentation-as-exhaust — a view of the    -->
 <!-- engine's reasoning state; never re-diagnoses)                   -->
 <!-- ═══════════════════════════════════════════════════════════════ -->
@@ -298,6 +313,7 @@
 <script src="js/kb-remote.js"></script>
 <script src="js/cloud-sync.js"></script>
 <script src="js/storage.js"></script>
+<script src="js/roles.js"></script>
 <script src="js/engine.js"></script>
 
 <!-- UI -->

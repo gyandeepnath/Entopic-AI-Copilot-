@@ -1,9 +1,11 @@
-# Entopic — Roles, Modes & Access Tiers (plan)
+# Entopic — Roles, Modes & Access Tiers
 
-*Planning document. No build yet — this is the "think extensively and plan"
-deliverable for the multi-persona idea. It commits nothing; it lays out a model,
-a recommendation, and the few decisions that are yours (product + spend). Obeys
-every `CLAUDE.md` guardrail; §8 checks each one.*
+*Originally the "think extensively and plan" deliverable. **Phase 1 is now built**
+(2026-07-18): `js/roles.js` + role-tabbed home + first-run picker + switcher +
+free-tier save cap. Founder decisions applied — **real accounts for everyone**
+(not sandbox-only) and **free tier limits saving, not learning**. The rest below
+(Phases 2–3: real entitlement enforcement, hospital/multi-clinician/researcher,
+marketplace) remains the forward plan and stays founder-gated.*
 
 ---
 

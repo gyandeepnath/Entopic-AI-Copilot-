@@ -1264,6 +1264,92 @@ input, select, textarea, button {
 }
 
 
+/* ── Roles / modes: switcher strip, tabs, picker ── */
+.role-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--fg);
+  border-radius: var(--rl);
+  background: var(--wh);
+  margin-bottom: 10px;
+}
+.role-strip-id { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.role-strip-icon { font-size: 1.5rem; line-height: 1; }
+.role-strip-label { font-size: .82rem; font-weight: 600; }
+.role-strip-tier { font-size: .58rem; color: var(--sv); }
+.role-switch-btn { white-space: nowrap; }
+
+.home-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  border-bottom: 1px solid var(--ms);
+  margin-bottom: 12px;
+}
+.home-tab {
+  border: none;
+  background: transparent;
+  color: var(--sl);
+  font-size: .72rem;
+  font-weight: 500;
+  padding: 7px 12px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+.home-tab:hover { color: var(--ink); }
+.home-tab-on { color: var(--ink); border-bottom-color: var(--ink); font-weight: 600; }
+
+.study-hero {
+  font-size: .74rem;
+  line-height: 1.5;
+  color: var(--sl);
+  background: var(--sn);
+  border: 1px solid var(--fg);
+  border-radius: var(--rl);
+  padding: 12px 14px;
+  margin-bottom: 8px;
+}
+
+.soon-badge {
+  display: inline-block;
+  font-size: .56rem;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--sv);
+  border: 1px dashed var(--ms);
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+
+/* Role picker cards */
+.role-pick-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 10px;
+  margin: 8px 0;
+}
+.role-card {
+  border: 1px solid var(--ms);
+  border-radius: var(--rl);
+  padding: 14px;
+  cursor: pointer;
+  background: var(--wh);
+  transition: border-color .12s, box-shadow .12s;
+}
+.role-card:hover { border-color: var(--ink); box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+.role-card-on { border-color: var(--ink); border-width: 2px; }
+.role-card-icon { font-size: 1.8rem; line-height: 1; margin-bottom: 6px; }
+.role-card-label { font-size: .82rem; font-weight: 600; margin-bottom: 4px; }
+.role-card-blurb { font-size: .64rem; color: var(--sl); line-height: 1.45; }
+.role-soon-title { font-size: .6rem; text-transform: uppercase; letter-spacing: .04em; color: var(--sv); margin: 10px 0 5px; }
+.role-soon-row { display: flex; flex-wrap: wrap; gap: 5px; }
+.role-soon-chip { font-size: .62rem; color: var(--sv); border: 1px dashed var(--ms); border-radius: 999px; padding: 2px 8px; }
+
+
 /* ── Casebook facet filter chips ── */
 .cb-facets {
   display: flex;
