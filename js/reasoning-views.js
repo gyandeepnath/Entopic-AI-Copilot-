@@ -176,6 +176,7 @@ function buildExamState() {
       icd: d.icd || "",
       icd_label: d.icd_label || "",
       icd_status: d.icd_status || "",
+      domain: d.domain || "",
       confidence: ev.confidence || "",
       prob: d.prob,
       urgent: !!d.urgent,
@@ -430,6 +431,106 @@ function casebookDelete(id) {
 
 
 /* ═══════════════════════════════════════════════════════════════ */
+/* CASEBOOK ORGANISATION — group by condition, filter by facets    */
+/*                                                                  */
+/* Pure (DOM-free, testable): the study library is organised BY     */
+/* CONDITION and filterable by domain / token / sub-condition, so a */
+/* student can pull up "all my keratitis cases" or "everything with */
+/* an RAPD".                                                        */
+/* ═══════════════════════════════════════════════════════════════ */
+
+/* Filterable facets extracted from one stored case. All lowercased. */
+function casebookEntryTokens(entry) {
+  var s = (entry && entry.state) || {};
+  var conditions = [], domains = [], tokens = [], findings = [];
+  var a = s.assessment || [];
+  for (var i = 0; i < a.length; i++) {
+    if (a[i].n) conditions.push(a[i].n);
+    if (a[i].domain) domains.push(a[i].domain);
+  }
+  if (entry && entry.title) conditions.push(entry.title);
+  tokens = (s.tokens || []).slice();
+  var o = s.objective || {};
+  if (o.anterior) findings = findings.concat(o.anterior);
+  if (o.fundus && o.fundus.findings) findings = findings.concat(o.fundus.findings);
+
+  function uniqLower(arr) {
+    var seen = {}, out = [];
+    for (var j = 0; j < arr.length; j++) {
+      var v = String(arr[j] || "").toLowerCase().trim();
+      if (v && !seen[v]) { seen[v] = 1; out.push(v); }
+    }
+    return out;
+  }
+  var text = [].concat(conditions, domains, tokens, findings,
+    (entry && entry.teachingNote) ? [entry.teachingNote] : []).join(" ").toLowerCase();
+
+  return {
+    conditions: uniqLower(conditions),
+    domains: uniqLower(domains),
+    tokens: uniqLower(tokens),
+    findings: uniqLower(findings),
+    text: text
+  };
+}
+
+/* Aggregate facet counts across the whole casebook (for filter chips). */
+function casebookFacets(list) {
+  var domains = {}, tokens = {}, conditions = {};
+  function bump(map, arr) { for (var i = 0; i < arr.length; i++) map[arr[i]] = (map[arr[i]] || 0) + 1; }
+  for (var e = 0; e < list.length; e++) {
+    var f = casebookEntryTokens(list[e]);
+    bump(domains, f.domains);
+    bump(tokens, f.tokens.concat(f.findings));
+    bump(conditions, f.conditions);
+  }
+  return { domains: domains, tokens: tokens, conditions: conditions };
+}
+
+/* Filter the casebook. q = { search, domain, token }. Empty facets =
+   match everything. Matching is case-insensitive substring for search;
+   exact facet membership for domain/token. */
+function casebookFilter(list, q) {
+  q = q || {};
+  var search = (q.search || "").toLowerCase().trim();
+  var domain = (q.domain || "").toLowerCase().trim();
+  var token = (q.token || "").toLowerCase().trim();
+  return list.filter(function (entry) {
+    var f = casebookEntryTokens(entry);
+    if (search && f.text.indexOf(search) === -1) return false;
+    if (domain && f.domains.indexOf(domain) === -1) return false;
+    if (token && f.tokens.indexOf(token) === -1 && f.findings.indexOf(token) === -1) return false;
+    return true;
+  });
+}
+
+/* One-line summary for the homepage card. */
+function casebookHomeSummary() {
+  var list = casebookLoad();
+  if (!list.length) return "No teaching cases yet — save one from any exam report. De-identified; free to study.";
+  var nConds = casebookGroupByCondition(list).length;
+  return list.length + " de-identified case" + (list.length === 1 ? "" : "s") +
+    " across " + nConds + " condition" + (nConds === 1 ? "" : "s") + " · grouped & filterable for study.";
+}
+
+/* Group a (filtered) list by leading condition, biggest groups first. */
+function casebookGroupByCondition(list) {
+  var groups = {};
+  for (var i = 0; i < list.length; i++) {
+    var title = list[i].title || "Undiagnosed / pending";
+    (groups[title] = groups[title] || []).push(list[i]);
+  }
+  var out = [];
+  for (var k in groups) if (groups.hasOwnProperty(k)) out.push({ condition: k, entries: groups[k] });
+  out.sort(function (a, b) {
+    if (b.entries.length !== a.entries.length) return b.entries.length - a.entries.length;
+    return a.condition.localeCompare(b.condition);
+  });
+  return out;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════ */
 /* DOM WIRING (browser only — guarded so Node tests can load this)  */
 /* ═══════════════════════════════════════════════════════════════ */
 if (typeof document !== "undefined") {
@@ -477,27 +578,103 @@ if (typeof document !== "undefined") {
     return entry;
   };
 
-  /* ── Casebook browser modal (Move 4) ── */
+  /* ── Casebook browser modal (Move 4) — grouped by condition, filterable ── */
+  var _cbFilter = { search: "", domain: "", token: "" };
+
   window.showCasebook = function () {
-    var list = casebookLoad();
-    var h = "";
-    if (!list.length) {
-      h = '<div style="padding:16px;color:var(--sv);font-size:.78rem">' +
-          'No teaching cases yet. Open a completed exam and use ' +
-          '<b>“Save as teaching case”</b> on the report to add a de-identified case here.</div>';
-    } else {
-      h += '<div style="font-size:.66rem;color:var(--sv);margin-bottom:8px">' +
-           list.length + ' de-identified case' + (list.length === 1 ? '' : 's') +
-           ' · stored locally · no patient identifiers</div>';
-      for (var i = 0; i < list.length; i++) {
-        h += _rvCaseCard(list[i]);
-      }
-    }
-    var box = document.getElementById("casebookContent");
-    if (box) box.innerHTML = h;
+    _cbFilter = { search: "", domain: "", token: "" };
     var m = document.getElementById("modalCasebook");
     if (m) m.style.display = "flex";
+    _rvCasebookRender();
   };
+
+  window.casebookSearch = function (val) { _cbFilter.search = val || ""; _rvCasebookRenderList(); };
+
+  window.casebookFacet = function (type, val) {
+    /* toggle: clicking an active facet clears it */
+    _cbFilter[type] = (_cbFilter[type] === val) ? "" : val;
+    _rvCasebookRender();
+  };
+
+  window.casebookClearFilters = function () {
+    _cbFilter = { search: "", domain: "", token: "" };
+    var si = document.getElementById("cbSearch"); if (si) si.value = "";
+    _rvCasebookRender();
+  };
+
+  /* Full render: facet bar + list. */
+  function _rvCasebookRender() {
+    var box = document.getElementById("casebookContent");
+    if (!box) return;
+    var list = casebookLoad();
+    if (!list.length) {
+      box.innerHTML = '<div style="padding:16px;color:var(--sv);font-size:.78rem">' +
+        'No teaching cases yet. Open a completed exam and use ' +
+        '<b>“Save as teaching case”</b> on the report to add a de-identified case here.</div>';
+      return;
+    }
+    box.innerHTML =
+      _rvFacetBar(list) +
+      '<div id="cbList">' + _rvGroupsHTML(list) + '</div>';
+    var si = document.getElementById("cbSearch");
+    if (si) si.value = _cbFilter.search;
+  }
+
+  /* Re-render only the list (keeps the search box focused while typing). */
+  function _rvCasebookRenderList() {
+    var host = document.getElementById("cbList");
+    if (host) host.innerHTML = _rvGroupsHTML(casebookLoad());
+  }
+
+  function _rvFacetBar(list) {
+    var facets = casebookFacets(list);
+    var chip = function (type, val, label, count) {
+      var active = _cbFilter[type] === val;
+      return '<button class="cb-chip' + (active ? ' cb-chip-on' : '') + '" onclick="casebookFacet(\'' + type + '\',\'' +
+        _esc(val).replace(/'/g, "\\'") + '\')">' + _esc(label) + (count ? ' <span style="opacity:.6">' + count + '</span>' : '') + '</button>';
+    };
+    /* domains (specialty areas) */
+    var domHtml = "";
+    var domKeys = Object.keys(facets.domains).sort(function (a, b) { return facets.domains[b] - facets.domains[a]; });
+    for (var d = 0; d < domKeys.length; d++) domHtml += chip("domain", domKeys[d], _rvTitleCase(domKeys[d]), facets.domains[domKeys[d]]);
+    /* top tokens/sub-findings */
+    var tokHtml = "";
+    var tokKeys = Object.keys(facets.tokens).sort(function (a, b) { return facets.tokens[b] - facets.tokens[a]; }).slice(0, 14);
+    for (var t = 0; t < tokKeys.length; t++) tokHtml += chip("token", tokKeys[t], _rvTitleCase(tokKeys[t]), facets.tokens[tokKeys[t]]);
+
+    var anyFilter = _cbFilter.search || _cbFilter.domain || _cbFilter.token;
+    return '<div style="margin-bottom:8px">' +
+      '<div style="font-size:.66rem;color:var(--sv);margin-bottom:6px">' + list.length +
+        ' de-identified case' + (list.length === 1 ? '' : 's') + ' · organised by condition · stored locally, no identifiers</div>' +
+      '<input id="cbSearch" type="text" placeholder="Search condition, sign or token…" oninput="casebookSearch(this.value)" ' +
+        'style="width:100%;box-sizing:border-box;padding:6px 8px;font-size:.7rem;border:1px solid var(--ms);border-radius:var(--r);margin-bottom:6px">' +
+      (domHtml ? '<div class="cb-facets"><span class="cb-facet-lbl">Area</span>' + domHtml + '</div>' : '') +
+      (tokHtml ? '<div class="cb-facets"><span class="cb-facet-lbl">Sign / token</span>' + tokHtml + '</div>' : '') +
+      (anyFilter ? '<button class="btn btn-s" onclick="casebookClearFilters()" style="font-size:.6rem;margin-top:4px">Clear filters</button>' : '') +
+    '</div>';
+  }
+
+  function _rvGroupsHTML(list) {
+    var filtered = casebookFilter(list, _cbFilter);
+    if (!filtered.length) {
+      return '<div style="padding:14px;color:var(--sv);font-size:.72rem">No cases match this filter. <a href="#" onclick="casebookClearFilters();return false" style="color:var(--ac)">Clear filters</a></div>';
+    }
+    var groups = casebookGroupByCondition(filtered);
+    var h = "";
+    for (var g = 0; g < groups.length; g++) {
+      var grp = groups[g];
+      h += '<div style="margin-bottom:10px">' +
+        '<div style="font-weight:600;font-size:.78rem;padding:4px 0;border-bottom:1px solid var(--ms);margin-bottom:6px">' +
+          _esc(grp.condition) + ' <span style="color:var(--sv);font-weight:400;font-size:.66rem">· ' + grp.entries.length + ' case' + (grp.entries.length === 1 ? '' : 's') + '</span></div>';
+      for (var e = 0; e < grp.entries.length; e++) h += _rvCaseCard(grp.entries[e]);
+      h += '</div>';
+    }
+    return h;
+  }
+
+  function _rvTitleCase(s) {
+    return String(s || "").replace(/_/g, " ").replace(/\b\w/g, function (c) { return c.toUpperCase(); });
+  }
 
   window.casebookToggle = function (id) {
     var el = document.getElementById("casebody_" + id);
@@ -507,7 +684,7 @@ if (typeof document !== "undefined") {
   window.casebookRemove = function (id) {
     if (typeof confirm === "function" && !confirm("Delete this teaching case?")) return;
     casebookDelete(id);
-    window.showCasebook();
+    _rvCasebookRender();   /* preserve current filters */
   };
 
   function _rvCaseCard(entry) {
@@ -516,15 +693,24 @@ if (typeof document !== "undefined") {
     var meta = [];
     if (s.patient && s.patient.age !== "") meta.push("Age " + s.patient.age);
     if (s.patient && s.patient.sex) meta.push(_esc(s.patient.sex));
+    if (isNaN(when) === false) meta.push(when.toLocaleDateString());
+    /* a short signpost from the presentation so cases in a group are distinguishable */
+    var cue = "";
+    if (s.subjective && s.subjective.cc) cue = s.subjective.cc;
+    else if (s.subjective && s.subjective.symptoms && s.subjective.symptoms.length) cue = s.subjective.symptoms.slice(0, 3).join(", ");
+    else if (s.objective && s.objective.anterior && s.objective.anterior.length) cue = s.objective.anterior.slice(0, 2).join(", ");
+    var urgent = (s.assessment && s.assessment[0] && s.assessment[0].urgent);
     var body = stateToNoteText(s);
     var teaching = entry.teachingNote
       ? '<div style="margin-top:8px;padding:8px;background:var(--hl,#fff8e1);border-left:3px solid var(--ac,#c8a200);border-radius:4px;font-size:.72rem"><b>Teaching note:</b> ' + _esc(entry.teachingNote) + '</div>'
       : '';
-    return '<div style="border:1px solid var(--ms);border-radius:var(--r);margin-bottom:8px;overflow:hidden">' +
-      '<div style="padding:8px 10px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px" onclick="casebookToggle(\'' + entry.id + '\')">' +
-        '<div><b style="font-size:.8rem">' + _esc(entry.title) + '</b>' +
-        '<div style="font-size:.62rem;color:var(--sv)">' + (isNaN(when) ? "" : when.toLocaleDateString()) + (meta.length ? " · " + meta.join(" · ") : "") + '</div></div>' +
-        '<span style="font-size:.62rem;color:var(--sv)">▼ view</span>' +
+    return '<div style="border:1px solid var(--ms);border-radius:var(--r);margin-bottom:6px;overflow:hidden">' +
+      '<div style="padding:7px 10px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px" onclick="casebookToggle(\'' + entry.id + '\')">' +
+        '<div style="min-width:0">' +
+          '<div style="font-size:.68rem;color:var(--sv)">' + (meta.join(" · ") || "Case") + (urgent ? ' <span style="color:var(--ac,#c00);font-weight:600">· URGENT</span>' : '') + '</div>' +
+          (cue ? '<div style="font-size:.72rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + _esc(cue) + '</div>' : '') +
+        '</div>' +
+        '<span style="font-size:.62rem;color:var(--sv);white-space:nowrap">▼ view</span>' +
       '</div>' +
       '<div id="casebody_' + entry.id + '" style="display:none;padding:0 10px 10px">' +
         teaching +

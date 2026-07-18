@@ -230,7 +230,11 @@ The pattern is **one exam → one reasoning state → many rendered views**:
 - **Casebook** (`deidentifyState` → `casebookAdd` / `showCasebook`) — the same
   state, **de-identified** (PII removed, age capped 90+, name scrubbed from free
   text), stored locally through `storage.js` as a growing library of real
-  reasoned teaching cases (`#modalCasebook`).
+  reasoned teaching cases (`#modalCasebook`). Reachable from the **homepage**
+  (📚 Teaching Casebook card) as a standalone study tool. Cases are **grouped by
+  leading condition** and **filterable** by search + specialty-domain / sign-token
+  chips (pure helpers `casebookFacets` / `casebookFilter` /
+  `casebookGroupByCondition`, tested).
 
 **Invariant — anti-fabrication:** a field never entered is omitted, never
 rendered as an assumed normal (blankVisit defaults never leak into a note).

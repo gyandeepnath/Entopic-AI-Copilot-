@@ -1264,6 +1264,39 @@ input, select, textarea, button {
 }
 
 
+/* ── Casebook facet filter chips ── */
+.cb-facets {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+.cb-facet-lbl {
+  font-size: .56rem;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--sv);
+  margin-right: 2px;
+}
+.cb-chip {
+  font-size: .62rem;
+  padding: 2px 8px;
+  border: 1px solid var(--ms);
+  border-radius: 999px;
+  background: var(--sn);
+  color: var(--ink);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.cb-chip:hover { border-color: var(--ink); }
+.cb-chip-on {
+  background: var(--ink);
+  color: var(--wh);
+  border-color: var(--ink);
+}
+
+
 /* ═══════════════════════════════════════════════════════════════ */
 /* REPORT & PRESCRIPTION (on-screen + print)                       */
 /* ═══════════════════════════════════════════════════════════════ */

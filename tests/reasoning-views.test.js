@@ -177,3 +177,69 @@ test("empty visit produces a valid note with no fabricated content", () => {
   assert.ok(/insufficient clinical evidence/i.test(note), "assessment states there is nothing yet");
   assert.ok(!/WNL|ISNT|White and quiet/.test(note), "nothing fabricated");
 });
+
+
+/* ═══ CASEBOOK organisation: group by condition, filter by facets ═══ */
+
+/* Build a small in-context casebook of distinct cases. */
+function seedCasebook() {
+  evalIn("globalThis.__cases = []");
+  eng.runCase({ symptoms: ["pain_severe", "halos", "vomiting", "reduced_vision"], iop: { od: "48", os: "16" } });
+  evalIn("__cases.push(buildCase('angle closure — check the fellow eye'))");
+  eng.runCase({ symptoms: ["flashes", "floaters"], temporal: { onset: "sudden_onset" } });
+  evalIn("__cases.push(buildCase('acute PVD vs tear'))");
+  eng.runCase({ sl: { findings: ["Hypopyon"] } });
+  evalIn("__cases.push(buildCase('hypopyon — sight-threatening'))");
+  return evalIn("__cases.length");
+}
+
+test("assessment snapshot carries the specialty domain (for grouping/filtering)", () => {
+  eng.runCase({ symptoms: ["pain_severe", "halos", "vomiting", "reduced_vision"], iop: { od: "48", os: "16" } });
+  const dom = evalIn("(buildExamState().assessment[0]||{}).domain");
+  assert.strictEqual(typeof dom, "string");
+  assert.ok(dom.length > 0, "leading dx carries a domain");
+});
+
+test("casebookEntryTokens exposes conditions, domains and tokens for an entry", () => {
+  seedCasebook();
+  const f = evalIn("casebookEntryTokens(__cases[0])");
+  assert.ok(f.conditions.length > 0, "conditions extracted");
+  assert.ok(f.domains.length > 0, "domain extracted");
+  assert.ok(f.tokens.length > 0, "engine tokens extracted");
+  assert.ok(/acute angle closure/.test(f.text), "searchable text includes the condition");
+});
+
+test("casebook groups by leading condition", () => {
+  const total = seedCasebook();
+  const groups = evalIn("casebookGroupByCondition(__cases)");
+  assert.ok(groups.length >= 1 && groups.length <= total, "grouped, not one-per-nothing");
+  /* every entry in a group shares that group's condition title */
+  const okTitles = evalIn(
+    "casebookGroupByCondition(__cases).every(function(g){return g.entries.every(function(e){return e.title===g.condition;});})"
+  );
+  assert.strictEqual(okTitles, true);
+});
+
+test("casebook filters by search term (condition or sign)", () => {
+  seedCasebook();
+  assert.ok(evalIn("casebookFilter(__cases,{search:'angle closure'}).length") >= 1, "search by condition name");
+  assert.ok(evalIn("casebookFilter(__cases,{search:'hypopyon'}).length") >= 1, "search by a sign/token");
+  assert.strictEqual(evalIn("casebookFilter(__cases,{search:'zzz-no-such-thing'}).length"), 0, "no false matches");
+});
+
+test("casebook filters by domain facet, and facets aggregate counts", () => {
+  const total = seedCasebook();
+  const facets = evalIn("casebookFacets(__cases)");
+  const domainKeys = Object.keys(facets.domains);
+  assert.ok(domainKeys.length >= 1, "at least one domain facet");
+  const k = domainKeys[0];
+  const n = evalIn("casebookFilter(__cases,{domain:'" + k + "'}).length");
+  assert.ok(n >= 1 && n <= total, "domain filter returns a valid subset");
+  assert.ok(Object.keys(facets.tokens).length > 0, "token facets aggregated");
+});
+
+test("casebookHomeSummary returns a human string", () => {
+  const s = evalIn("casebookHomeSummary()");
+  assert.strictEqual(typeof s, "string");
+  assert.ok(s.length > 0);
+});

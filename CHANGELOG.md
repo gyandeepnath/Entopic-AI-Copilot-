@@ -6,6 +6,36 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-07-18 — Session 11b: Casebook on the homepage — grouped by condition, filterable by sign/token
+
+**Founder:** "continue with the casebook shortcut in the main homepage
+navigation and cases should be organised according to conditions and then is
+filterable acc to various tokens/sub conditions."
+
+- **Homepage shortcut.** A **📚 Teaching Casebook** card now sits on the
+  dashboard (`renderHome`) with a live summary ("N de-identified cases across M
+  conditions") and a **Study casebook** button — reachable without opening a
+  patient, so it works as a standalone study tool.
+- **Organised by condition.** The casebook modal now groups cases under their
+  leading condition (biggest groups first), each with a case count.
+- **Filterable by facet.** A search box (matches condition, sign, token or
+  teaching note) plus one-click **Area** (specialty domain) and **Sign / token**
+  chips derived from the stored cases. Chips toggle; "Clear filters" resets.
+- Each case card now leads with de-identified metadata (age/sex/date, URGENT
+  flag) and a short presentation cue, so cases within one condition are
+  distinguishable at a glance.
+
+New pure, tested helpers in `reasoning-views.js`: `casebookEntryTokens`,
+`casebookFacets`, `casebookFilter`, `casebookGroupByCondition`,
+`casebookHomeSummary`; `buildExamState` assessment now carries `domain` for
+grouping/filtering. Still de-identified, offline, display-only.
+
+Tests **+6** (13 view tests total in the file); **194/194 pass**. Browser smoke
+check confirms the homepage card, grouping, facet chips, search-narrowing, and
+**no PII leak** in the rendered casebook.
+
+---
+
 ## 2026-07-18 — Session 11: Reasoning-views layer — SOAP note + de-identified casebook (Vision Moves 1 + 4)
 
 **Founder chose the direction** (from `docs/VISION_THINKTANK.md`): **Move 1

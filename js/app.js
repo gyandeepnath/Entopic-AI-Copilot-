@@ -253,6 +253,13 @@ function renderHome() {
       '<span id="kbEditorCardSlot"></span>' +
     '</div>' +
 
+    /* Settings — Teaching Casebook (de-identified study library) */
+    '<div class="home-settings" style="margin-top:8px">' +
+      '<div class="home-settings-title">📚 Teaching Casebook</div>' +
+      '<div class="home-settings-desc">' + casebookHomeSummary() + '</div>' +
+      '<button class="btn btn-s" onclick="showCasebook()" style="font-size:.62rem">Study casebook</button>' +
+    '</div>' +
+
     /* Settings — Import */
     '<div class="home-settings" style="margin-top:8px">' +
       '<div class="home-settings-title">📁 Data Management</div>' +
