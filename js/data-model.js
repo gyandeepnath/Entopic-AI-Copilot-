@@ -480,7 +480,14 @@ var SL_FINDINGS = {
     "Collarettes",
     "Lash debris",
     "Lateral canthus inflammation",
-    "Medial canthus swelling"
+    "Medial canthus swelling",
+    "Dermatochalasis (excess lid skin)",
+    "Xanthelasma (yellow lid plaque)",
+    "Lid papilloma / wart",
+    "Lid cyst (clear / pearly)",
+    "Distichiasis (extra lash row)",
+    "Lid contact dermatitis / eczema",
+    "Phthiriasis (lice/nits on lashes)"
   ],
 
   "Conjunctiva": [
@@ -498,7 +505,9 @@ var SL_FINDINGS = {
     "Conjunctival foreign body",
     "Conjunctival edema",
     "Preauricular lymph node",
-    "Cobblestone papillae"
+    "Cobblestone papillae",
+    "Symblepharon (lid-globe adhesion)",
+    "Conjunctival concretions"
   ],
 
   "Cornea": [

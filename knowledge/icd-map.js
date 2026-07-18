@@ -848,6 +848,30 @@ var ICD_MAP = {
   "Snail-track Degeneration":
     { icd10: "H35.40", label: "Unspecified peripheral retinal degeneration", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "snail-track (glistening) peripheral degeneration; a retinal-break/detachment risk factor akin to lattice", verified: "2026-07-17 ICD-10-CM 2026" },
   "Peripheral Cystoid Degeneration":
-    { icd10: "H35.429", label: "Microcystoid degeneration of retina, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "benign peripheral (typically ora) microcystoid change; rarely of clinical consequence", verified: "2026-07-17 ICD-10-CM 2026" }
+    { icd10: "H35.429", label: "Microcystoid degeneration of retina, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "benign peripheral (typically ora) microcystoid change; rarely of clinical consequence", verified: "2026-07-17 ICD-10-CM 2026" },
+
+  /* ─ Batch 15 (common Surface & Lids / adnexal conditions) ─ */
+  "Dermatochalasis":
+    { icd10: "H02.839", label: "Dermatochalasis of unspecified eye, unspecified eyelid", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "redundant lid skin; upper-lid excess can obscure the superior field (functional vs cosmetic)", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Xanthelasma":
+    { icd10: "H02.60", label: "Xanthelasma of unspecified eye, unspecified eyelid", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "yellow lipid lid plaques; check a fasting lipid profile, especially if young", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Eyelid Papilloma":
+    { icd10: "D23.10", label: "Other benign neoplasm of skin of unspecified eyelid, including canthus", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "benign squamous/viral papilloma; biopsy anything atypical or rapidly growing to exclude malignancy", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Eyelid Epidermoid / Sebaceous Cyst":
+    { icd10: "H02.829", label: "Cysts of unspecified eye, unspecified eyelid", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "benign lid cyst (epidermoid, cyst of Moll/Zeis); simple excision if symptomatic", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Distichiasis":
+    { icd10: "Q10.3", label: "Other congenital malformations of eyelid", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "extra (aberrant) lash row from meibomian orifices; congenital here — acquired cicatricial distichiasis codes differently", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Eyelid Contact Dermatitis":
+    { icd10: "H01.119", label: "Allergic dermatitis of unspecified eye, unspecified eyelid", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "identify and remove the allergen (cosmetics, drops/preservatives, nickel); irritant type is H01.12-", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Phthiriasis Palpebrarum (Lice)":
+    { icd10: "B85.3", label: "Phthiriasis", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "pubic-louse infestation of the lashes; a sexually transmitted/close-contact association — screen and treat contacts", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Congenital Ptosis":
+    { icd10: "Q10.0", label: "Congenital ptosis", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "watch for amblyopia (occlusion / induced astigmatism); a lid covering the axis needs earlier surgery", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Symblepharon":
+    { icd10: "H11.239", label: "Symblepharon, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "conjunctival adhesion — find the cicatrising cause (chemical burn, SJS, pemphigoid, trachoma) and treat it", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Conjunctival Concretions":
+    { icd10: "H11.129", label: "Conjunctival concretions, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "hard yellow tarsal deposits; only remove if eroding/symptomatic", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Chemosis (Conjunctival Edema)":
+    { icd10: "H11.89", label: "Other specified disorders of conjunctiva", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "conjunctival oedema is a sign — find the cause (allergy, infection/orbital cellulitis, thyroid eye disease, venous congestion)", verified: "2026-07-17 ICD-10-CM 2026" }
 
 };

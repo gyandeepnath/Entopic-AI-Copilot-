@@ -6,6 +6,18 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-07-17 — Session 10o: sign-rich common-conditions drive — Surface & Lids (+11)
+
+Added 9 new clickable lid/conjunctival findings and 11 common adnexal/surface
+conditions: **Dermatochalasis, Xanthelasma, Eyelid Papilloma, Eyelid Epidermoid/
+Sebaceous Cyst, Distichiasis, Eyelid Contact Dermatitis, Phthiriasis (lice),
+Congenital Ptosis, Symblepharon, Conjunctival Concretions, Chemosis** (Surface &
+Lids 61 → 72). Each with reachable inputs, a validated ICD-10 code and a
+hand-written note. KB now **382 conditions**, all coded + noted (0 missing).
+178/178 tests pass; cross-conflict at baseline.
+
+---
+
 ## 2026-07-17 — Session 10n: sign-rich common-conditions drive — Retina (+11)
 
 Started the sign-rich areas. Added 11 new clickable fundus findings (Hollenhorst

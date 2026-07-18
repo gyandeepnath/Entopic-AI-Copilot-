@@ -3790,6 +3790,118 @@ var CONDITION_INFO = {
       "Rarely, coalescence can contribute to peripheral (typically benign) retinoschisis."
     ],
     review: true
+  },
+
+  /* ═══ Surface & Lids — common conditions batch (Session 10o) ═══ */
+
+  "Dermatochalasis": {
+    summary: "Redundant, lax upper- (and sometimes lower-) eyelid skin from age-related loss of elasticity. The overhanging skin can be purely cosmetic or, when it droops over the lashes, obstruct the superior visual field and cause brow ache from compensatory forehead lifting.",
+    facts: [
+      "Distinguish it from true ptosis — here the lid margin position is normal; it is the skin that hoods the eye.",
+      "A documented superior visual-field obstruction supports a functional (rather than cosmetic) indication for surgery.",
+      "Often accompanied by brow ptosis, which should be assessed too."
+    ],
+    review: true
+  },
+
+  "Xanthelasma": {
+    summary: "Soft, yellowish plaques of lipid-laden cells, typically at the inner (medial) aspect of the upper and lower eyelids, often bilateral and symmetric. They are harmless but can be a marker of abnormal blood lipids.",
+    facts: [
+      "Check a fasting lipid profile — a substantial proportion of patients (especially younger ones) have dyslipidaemia.",
+      "Purely a cosmetic problem for the eye; removal options exist but recurrence is common.",
+      "Their presence has been linked to cardiovascular risk independent of lipids."
+    ],
+    review: true
+  },
+
+  "Eyelid Papilloma": {
+    summary: "A common benign eyelid growth — either a soft, pedunculated squamous papilloma or a viral wart (verruca). It appears as a fleshy, sometimes finger-like or cauliflower lesion on the lid or margin, occasionally causing irritation.",
+    facts: [
+      "Benign, but any pigmented, ulcerated, rapidly growing or lash-destroying lesion should be biopsied to exclude malignancy.",
+      "Viral (HPV) papillomas can be multiple and are more common in children/young adults.",
+      "Simple excision is curative when removal is wanted."
+    ],
+    review: true
+  },
+
+  "Eyelid Epidermoid / Sebaceous Cyst": {
+    summary: "A benign, smooth, dome-shaped cyst of the eyelid — an epidermoid (keratin-filled) cyst, or a cyst of Moll (clear, sweat gland) or Zeis (sebaceous). It grows slowly and is usually painless unless it becomes inflamed.",
+    facts: [
+      "A cyst of Moll is typically translucent; an epidermoid/sebaceous cyst is more opaque and firm.",
+      "Benign — excised for comfort or cosmesis; complete removal of the wall prevents recurrence.",
+      "Sudden pain, redness and enlargement suggest secondary infection."
+    ],
+    review: true
+  },
+
+  "Distichiasis": {
+    summary: "An extra, aberrant row of eyelashes emerging from the meibomian gland orifices along the lid margin. These misdirected lashes can rub the ocular surface, causing irritation, watering and, if chronic, corneal damage.",
+    facts: [
+      "Distinguished from trichiasis: here a whole extra row arises from the meibomian line, not just misdirected normal lashes.",
+      "Can be congenital (sometimes with lymphoedema — lymphoedema-distichiasis syndrome) or acquired from chronic lid inflammation.",
+      "Treated by epilation or, for lasting control, ablation of the offending lash follicles."
+    ],
+    review: true
+  },
+
+  "Eyelid Contact Dermatitis": {
+    summary: "An eczematous inflammation of the thin eyelid skin from an allergic or irritant reaction — commonly to cosmetics, nail products, eye drops/preservatives or metals. It causes itchy, red, swollen, scaly and sometimes weeping lids.",
+    facts: [
+      "Itch is prominent, and the eyelids are often affected because hands transfer allergens to this delicate skin.",
+      "Identifying and removing the trigger (a careful product/drop history, sometimes patch testing) is the mainstay.",
+      "Preservatives in glaucoma or other eye drops are a frequently overlooked cause."
+    ],
+    review: true
+  },
+
+  "Phthiriasis Palpebrarum (Lice)": {
+    summary: "Infestation of the eyelashes by the pubic (crab) louse, which grips the lash bases with its claws, laying nits along the shafts. It causes persistent itching and irritation of the lid margins and can mimic blepharitis.",
+    facts: [
+      "Look closely at the lash bases for translucent lice and cemented nits — easily missed and often misdiagnosed as blepharitis.",
+      "Usually indicates close/sexual contact — screen for other sexually transmitted infections and treat contacts.",
+      "Treated by mechanically removing lice/nits and smothering them; the lids and contacts both need attention."
+    ],
+    review: true
+  },
+
+  "Congenital Ptosis": {
+    summary: "A droopy upper eyelid present from birth, usually from poor development of the levator muscle, most often unilateral. Its importance is the risk to visual development if the lid covers the visual axis.",
+    facts: [
+      "A lid covering the pupil, or inducing astigmatism, can cause amblyopia — the reason for early assessment and sometimes early surgery.",
+      "Children often adopt a chin-up head posture or lift the brow to see under the lid.",
+      "Poor levator function distinguishes it from acquired aponeurotic ptosis; check for associated syndromes (e.g. Marcus Gunn jaw-winking)."
+    ],
+    review: true
+  },
+
+  "Symblepharon": {
+    summary: "An adhesion between the palpebral (lid) and bulbar (globe) conjunctiva from scarring, which shortens the fornix and can restrict eye movement, disrupt the tear film and pull the lid out of position. It is a sign of a cicatrising process.",
+    facts: [
+      "Always identify the underlying cause — chemical burn, Stevens-Johnson syndrome, mucous membrane pemphigoid or trachoma — and treat it.",
+      "Fornix shortening and restricted movement are the functional consequences.",
+      "Surgical release alone tends to re-scar unless the underlying inflammatory disease is controlled."
+    ],
+    review: true
+  },
+
+  "Conjunctival Concretions": {
+    summary: "Small, hard, yellowish-white deposits of degenerated epithelial cells and secretions within the tarsal (usually lower) conjunctiva, very common in older adults and in chronic inflammation. They are usually asymptomatic.",
+    facts: [
+      "Most are incidental and need no treatment.",
+      "If a concretion erodes through the surface it can cause a foreign-body sensation, and is then simply removed.",
+      "Associated with chronic conjunctival inflammation and ageing."
+    ],
+    review: true
+  },
+
+  "Chemosis (Conjunctival Edema)": {
+    summary: "Swelling of the conjunctiva from fluid accumulation, giving a boggy, ballooned, sometimes gelatinous appearance that can bulge over the lid margin. It is a sign of many processes rather than a diagnosis in itself.",
+    facts: [
+      "Causes span the trivial (allergy, rubbing) to the serious (orbital cellulitis, thyroid eye disease, venous obstruction) — the context decides the urgency.",
+      "Marked chemosis with proptosis, pain or restricted movement should prompt urgent assessment for orbital disease.",
+      "Treatment is directed at the underlying cause."
+    ],
+    review: true
   }
 
 };

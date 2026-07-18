@@ -147,7 +147,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 0,
-      "sup": 3,
+      "sup": 5,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -164,7 +164,7 @@ var TOKEN_REGISTRY = {
       "req": 0,
       "sup": 0,
       "con": 0,
-      "temporal": 92,
+      "temporal": 94,
       "tests": 0
     },
     "reachable": true
@@ -986,7 +986,7 @@ var TOKEN_REGISTRY = {
       "req": 0,
       "sup": 0,
       "con": 0,
-      "temporal": 188,
+      "temporal": 197,
       "tests": 0
     },
     "reachable": true
@@ -1014,7 +1014,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 3,
-      "sup": 32,
+      "sup": 39,
       "con": 11,
       "temporal": 0,
       "tests": 0
@@ -1029,7 +1029,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 6,
-      "sup": 4,
+      "sup": 5,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -1152,6 +1152,20 @@ var TOKEN_REGISTRY = {
     },
     "reachable": true
   },
+  "conjunctival_concretions": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 1,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 1
+    },
+    "reachable": true
+  },
   "conjunctival_cyst": {
     "type_hint": "sign",
     "sources": [
@@ -1172,11 +1186,11 @@ var TOKEN_REGISTRY = {
       "finding_map"
     ],
     "usage": {
-      "req": 0,
+      "req": 1,
       "sup": 1,
       "con": 0,
       "temporal": 0,
-      "tests": 1
+      "tests": 2
     },
     "reachable": true
   },
@@ -1872,8 +1886,8 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 2,
-      "sup": 21,
-      "con": 15,
+      "sup": 22,
+      "con": 16,
       "temporal": 0,
       "tests": 0
     },
@@ -1986,7 +2000,7 @@ var TOKEN_REGISTRY = {
     "usage": {
       "req": 0,
       "sup": 7,
-      "con": 0,
+      "con": 2,
       "temporal": 0,
       "tests": 0
     },
@@ -2356,6 +2370,20 @@ var TOKEN_REGISTRY = {
     },
     "reachable": false
   },
+  "excess_lid_skin": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 1,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 1
+    },
+    "reachable": true
+  },
   "excess_tearing": {
     "type_hint": "symptom",
     "sources": [
@@ -2423,6 +2451,20 @@ var TOKEN_REGISTRY = {
     },
     "reachable": false
   },
+  "extra_lash_row": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 1,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 1
+    },
+    "reachable": true
+  },
   "eye_down_out": {
     "type_hint": "derived_measurement_or_history",
     "sources": [
@@ -2477,7 +2519,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 11,
-      "sup": 38,
+      "sup": 40,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -2567,8 +2609,8 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 3,
-      "sup": 24,
-      "con": 36,
+      "sup": 25,
+      "con": 38,
       "temporal": 0,
       "tests": 0
     },
@@ -2798,8 +2840,8 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 6,
-      "sup": 60,
-      "con": 0,
+      "sup": 65,
+      "con": 1,
       "temporal": 0,
       "tests": 0
     },
@@ -2968,7 +3010,7 @@ var TOKEN_REGISTRY = {
     "usage": {
       "req": 4,
       "sup": 28,
-      "con": 9,
+      "con": 10,
       "temporal": 0,
       "tests": 0
     },
@@ -3725,8 +3767,8 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 5,
-      "sup": 0,
-      "con": 172,
+      "sup": 3,
+      "con": 176,
       "temporal": 0,
       "tests": 0
     },
@@ -3876,6 +3918,20 @@ var TOKEN_REGISTRY = {
       "tests": 1
     },
     "reachable": false
+  },
+  "lash_lice": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 1,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 1
+    },
+    "reachable": true
   },
   "lash_loss": {
     "type_hint": "sign",
@@ -4045,6 +4101,34 @@ var TOKEN_REGISTRY = {
     },
     "reachable": true
   },
+  "lid_cyst": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 1,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 1
+    },
+    "reachable": true
+  },
+  "lid_dermatitis": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 1,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 1
+    },
+    "reachable": true
+  },
   "lid_edema_diffuse": {
     "type_hint": "sign",
     "sources": [
@@ -4052,7 +4136,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 0,
-      "sup": 0,
+      "sup": 2,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -4066,7 +4150,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 0,
-      "sup": 0,
+      "sup": 1,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -4093,10 +4177,24 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 1,
-      "sup": 8,
+      "sup": 9,
       "con": 0,
       "temporal": 0,
       "tests": 0
+    },
+    "reachable": true
+  },
+  "lid_papilloma": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 1,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 1
     },
     "reachable": true
   },
@@ -4956,8 +5054,8 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 8,
-      "sup": 62,
-      "con": 59,
+      "sup": 66,
+      "con": 60,
       "temporal": 0,
       "tests": 0
     },
@@ -5041,7 +5139,7 @@ var TOKEN_REGISTRY = {
     "usage": {
       "req": 10,
       "sup": 35,
-      "con": 98,
+      "con": 101,
       "temporal": 0,
       "tests": 0
     },
@@ -5120,7 +5218,7 @@ var TOKEN_REGISTRY = {
     "usage": {
       "req": 9,
       "sup": 5,
-      "con": 104,
+      "con": 109,
       "temporal": 0,
       "tests": 0
     },
@@ -5589,7 +5687,7 @@ var TOKEN_REGISTRY = {
       "req": 0,
       "sup": 0,
       "con": 0,
-      "temporal": 80,
+      "temporal": 81,
       "tests": 0
     },
     "reachable": true
@@ -5677,11 +5775,11 @@ var TOKEN_REGISTRY = {
       "symptom_chip"
     ],
     "usage": {
-      "req": 5,
+      "req": 6,
       "sup": 7,
       "con": 2,
       "temporal": 0,
-      "tests": 0
+      "tests": 1
     },
     "reachable": true
   },
@@ -5766,7 +5864,7 @@ var TOKEN_REGISTRY = {
     "usage": {
       "req": 3,
       "sup": 1,
-      "con": 91,
+      "con": 98,
       "temporal": 0,
       "tests": 0
     },
@@ -5970,8 +6068,8 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 4,
-      "sup": 82,
-      "con": 153,
+      "sup": 86,
+      "con": 156,
       "temporal": 0,
       "tests": 0
     },
@@ -6076,7 +6174,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 0,
-      "sup": 6,
+      "sup": 7,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -6106,8 +6204,8 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 11,
-      "sup": 192,
-      "con": 89,
+      "sup": 193,
+      "con": 98,
       "temporal": 0,
       "tests": 1
     },
@@ -6928,7 +7026,7 @@ var TOKEN_REGISTRY = {
       "req": 0,
       "sup": 0,
       "con": 0,
-      "temporal": 44,
+      "temporal": 46,
       "tests": 0
     },
     "reachable": true
@@ -7029,7 +7127,7 @@ var TOKEN_REGISTRY = {
     "usage": {
       "req": 1,
       "sup": 17,
-      "con": 30,
+      "con": 31,
       "temporal": 0,
       "tests": 0
     },
@@ -7045,7 +7143,7 @@ var TOKEN_REGISTRY = {
     "usage": {
       "req": 3,
       "sup": 2,
-      "con": 80,
+      "con": 88,
       "temporal": 0,
       "tests": 0
     },
@@ -7076,6 +7174,20 @@ var TOKEN_REGISTRY = {
       "con": 0,
       "temporal": 0,
       "tests": 0
+    },
+    "reachable": true
+  },
+  "symblepharon": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 1,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 1
     },
     "reachable": true
   },
@@ -7746,7 +7858,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 0,
-      "sup": 40,
+      "sup": 42,
       "con": 1,
       "temporal": 0,
       "tests": 0
@@ -7827,6 +7939,20 @@ var TOKEN_REGISTRY = {
     },
     "reachable": true
   },
+  "xanthelasma_plaque": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 1,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 1
+    },
+    "reachable": true
+  },
   "young_age": {
     "type_hint": "derived_measurement_or_history",
     "sources": [
@@ -7834,7 +7960,7 @@ var TOKEN_REGISTRY = {
       "engine_derived"
     ],
     "usage": {
-      "req": 25,
+      "req": 26,
       "sup": 69,
       "con": 21,
       "temporal": 0,
@@ -7857,10 +7983,10 @@ var TOKEN_REGISTRY = {
 };
 
 var TOKEN_REGISTRY_STATS = {
-  "total": 553,
-  "reachable": 453,
+  "total": 562,
+  "reachable": 462,
   "unreachable_required": [],
   "unreachable_supportive": [],
   "test_label_only": 96,
-  "produced_never_consumed": 82
+  "produced_never_consumed": 80
 };
