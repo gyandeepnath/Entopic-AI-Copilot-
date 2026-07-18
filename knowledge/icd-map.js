@@ -810,6 +810,20 @@ var ICD_MAP = {
   "IOL Dislocation":
     { icd10: "T85.22XA", label: "Displacement of intraocular lens, initial encounter", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "7th char A = initial; dislocated/subluxed IOL after cataract surgery", verified: "2026-07-17 ICD-10-CM 2026" },
   "Aphakia":
-    { icd10: "H27.00", label: "Aphakia, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "absence of the lens (surgical or, rarely, congenital); set laterality", verified: "2026-07-17 ICD-10-CM 2026" }
+    { icd10: "H27.00", label: "Aphakia, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "absence of the lens (surgical or, rarely, congenital); set laterality", verified: "2026-07-17 ICD-10-CM 2026" },
+
+  /* ─ Batch 13 (common Refractive & Binocular conditions) ─ */
+  "High (Pathological) Myopia":
+    { icd10: "H44.20", label: "Degenerative myopia, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "pathological/degenerative myopia; simple high myopia without degeneration is H52.1-; watch for RD/CNV/glaucoma", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Aniseikonia":
+    { icd10: "H52.32", label: "Aniseikonia", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "unequal retinal image size, usually from anisometropia; contact lenses often help", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Irregular Astigmatism":
+    { icd10: "H52.219", label: "Irregular astigmatism, unspecified eye", laterality: "unspecified", status: "NEEDS_CLINICAL_REVIEW", caution: "exclude a corneal cause (keratoconus, scar, ectasia); rigid/scleral lenses often needed", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Infantile (Congenital) Esotropia":
+    { icd10: "H50.00", label: "Unspecified esotropia", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "large-angle early-onset esotropia; specify monocular/alternating and constancy (H50.01-/H50.05-)", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Dissociated Vertical Deviation (DVD)":
+    { icd10: "H50.9", label: "Unspecified strabismus", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "DVD has no distinct code; a slow upward drift of the non-fixing eye, usually with infantile strabismus", verified: "2026-07-17 ICD-10-CM 2026" },
+  "Pseudostrabismus":
+    { icd10: "H50.9", label: "Unspecified strabismus", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "APPARENT turn from facial features (epicanthus/wide bridge) — NOT a true deviation; confirm with cover test / symmetric corneal reflexes before coding", verified: "2026-07-17 ICD-10-CM 2026" }
 
 };

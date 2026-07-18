@@ -3616,6 +3616,68 @@ var CONDITION_INFO = {
       "Congenital aphakia is rare; the vast majority is surgical."
     ],
     review: true
+  },
+
+  /* ═══ Refractive & Binocular — common conditions batch (Session 10m) ═══ */
+
+  "High (Pathological) Myopia": {
+    summary: "Severe short-sightedness (typically beyond about -6 dioptres) in an excessively long eye, where the ongoing axial stretching threatens the retina, choroid and optic nerve. Beyond needing a strong correction, it carries a raised lifetime risk of sight-threatening complications.",
+    facts: [
+      "Warrants periodic dilated examination — higher risks of retinal detachment, myopic maculopathy/CNV and glaucoma.",
+      "New floaters, flashes or a field shadow should prompt urgent dilated review for a retinal tear/detachment.",
+      "Distinct from ordinary myopia by the degree and the degenerative fundus changes."
+    ],
+    review: true
+  },
+
+  "Aniseikonia": {
+    summary: "A perceived difference in the size or shape of the image between the two eyes, usually from unequal refractive error (anisometropia), which makes the images hard to fuse. It causes eye strain, headaches, distorted space perception and difficulty with binocular tasks.",
+    facts: [
+      "Suspect it when an anisometropic patient is uncomfortable in their 'correct' full spectacle prescription.",
+      "Contact lenses reduce the image-size disparity that spectacles create and often resolve symptoms.",
+      "Can occur after unilateral cataract surgery or retinal (macular) surgery."
+    ],
+    review: true
+  },
+
+  "Irregular Astigmatism": {
+    summary: "Astigmatism in which the corneal (or lenticular) surface is distorted unevenly, so it cannot be corrected with ordinary sphero-cylindrical spectacles. It causes blur, ghosting and glare that glasses improve only partially.",
+    facts: [
+      "Almost always points to a corneal cause — keratoconus, scarring, ectasia or previous surgery — so examine the cornea and topography.",
+      "Rigid gas-permeable or scleral contact lenses are usually needed to restore good vision.",
+      "Distinguished from regular astigmatism, which glasses correct well."
+    ],
+    review: true
+  },
+
+  "Infantile (Congenital) Esotropia": {
+    summary: "A large, constant inward eye turn appearing in the first months of life, typically with a big angle, cross-fixation and little refractive error. Early treatment matters to give the best chance of some binocular vision.",
+    facts: [
+      "Large, early-onset esotropia — distinguished from accommodative esotropia (later onset, driven by hyperopia).",
+      "Treat any amblyopia first; surgical alignment is usually needed, ideally in early childhood.",
+      "Associated features (inferior oblique overaction, DVD, latent nystagmus) commonly emerge over time."
+    ],
+    review: true
+  },
+
+  "Dissociated Vertical Deviation (DVD)": {
+    summary: "A slow upward drift of one eye when it is covered or during inattention, which returns when fixation resumes — not obeying the usual laws of ocular movement. It is usually bilateral (often asymmetric) and typically accompanies early-onset (infantile) strabismus.",
+    facts: [
+      "The hallmark is a slow upward (and often outward/extorted) drift of the non-fixing eye, with no matching downward movement of the other.",
+      "Frequently seen alongside infantile esotropia and latent nystagmus.",
+      "Surgery is considered when the drift is frequent, large or cosmetically noticeable."
+    ],
+    review: true
+  },
+
+  "Pseudostrabismus": {
+    summary: "The false appearance of an eye turn (usually a convergent squint) created by facial features — prominent epicanthal folds, a wide nasal bridge or a narrow interpupillary distance — when the eyes are actually straight. It is a very common reason infants are referred for a 'squint'.",
+    facts: [
+      "Symmetric corneal light reflexes and a normal cover test confirm the eyes are truly aligned.",
+      "It is reassuring and needs no treatment — but a true squint must be excluded, and can coexist.",
+      "The apparent turn often lessens as the face grows and the nasal bridge develops."
+    ],
+    review: true
   }
 
 };

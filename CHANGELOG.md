@@ -6,6 +6,23 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-07-17 — Session 10m: common-conditions drive — Refractive & Binocular (+6)
+
+Continued the +20-per-area drive. Added 5 new symptom chips (high myopia, image-
+size difference, visible squint, upward eye drift, abnormal head posture) and 6
+common conditions: **High (Pathological) Myopia, Aniseikonia, Irregular
+Astigmatism** (Refractive 8 → 11) and **Infantile Esotropia, Dissociated Vertical
+Deviation, Pseudostrabismus** (Binocular 20 → 23) — each with reachable inputs,
+a validated ICD-10 code and a hand-written note. KB now **360 conditions**, all
+coded + noted (0 missing). 178/178 tests pass; cross-conflict at baseline.
+
+Note: Refractive and Binocular are inherently token-overlap-limited (most present
+as blur/strain/deviation), so they take the genuinely-distinct common additions
+rather than a forced 20; the sign-rich areas (Glaucoma, Anterior, Retina, Cornea,
+Surface, Neuro) will take 20+ next.
+
+---
+
 ## 2026-07-17 — Session 10l: common-conditions drive — Lens batch (+10)
 
 Founder asked for ~20 common, regularly-seen conditions per area. Starting with

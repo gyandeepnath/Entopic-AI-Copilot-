@@ -798,6 +798,26 @@ var KB_EXPANSION = [
   "con": ["itching_dominant", "redness", "pain", "purulent_discharge"], "temporal": ["variable"], "tests": ["iol_decentered"], "exclusions": [] },
 { "name": "Aphakia", "domain": "Lens", "route": "lens",
   "req": ["aphakia"], "sup": ["distance_blur", "reduced_vision", "post_surgery", "gradual_blur"],
-  "con": ["itching_dominant", "redness", "pain", "flashes"], "temporal": ["variable"], "tests": ["aphakia"], "exclusions": [] }
+  "con": ["itching_dominant", "redness", "pain", "flashes"], "temporal": ["variable"], "tests": ["aphakia"], "exclusions": [] },
+
+/* ═══ Batch 13 (2026-07-17) — common Refractive & Binocular conditions ═══ */
+{ "name": "High (Pathological) Myopia", "domain": "Refractive", "route": "refractive",
+  "req": ["high_myopia"], "sup": ["distance_blur", "reduced_vision", "family_history", "floaters", "glare"],
+  "con": ["itching_dominant", "redness", "pain", "near_blur", "sudden_onset"], "temporal": ["chronic", "progressive"], "tests": [], "exclusions": [] },
+{ "name": "Aniseikonia", "domain": "Refractive", "route": "refractive",
+  "req": ["image_size_difference"], "sup": ["eye_strain", "headache", "difficulty_reading", "near_strain"],
+  "con": ["itching_dominant", "redness", "pain", "sudden_vision_loss", "flashes"], "temporal": ["chronic"], "tests": [], "exclusions": [] },
+{ "name": "Irregular Astigmatism", "domain": "Refractive", "route": "refractive",
+  "req": ["irregular_astigmatism"], "sup": ["distance_blur", "ghosting", "glare", "reduced_vision", "fluctuating_blur"],
+  "con": ["itching_dominant", "redness", "pain", "sudden_vision_loss", "field_loss"], "temporal": ["chronic"], "tests": [], "exclusions": [] },
+{ "name": "Infantile (Congenital) Esotropia", "domain": "Binocular Vision", "route": "binocular",
+  "req": ["eye_inward", "young_age"], "sup": ["constant_deviation", "family_history", "manifest_squint", "abnormal_head_posture"],
+  "con": ["diplopia", "near_strain", "older_age", "gradual_onset"], "temporal": ["chronic"], "tests": [], "exclusions": [] },
+{ "name": "Dissociated Vertical Deviation (DVD)", "domain": "Binocular Vision", "route": "binocular",
+  "req": ["vertical_eye_drift"], "sup": ["manifest_squint", "young_age", "family_history", "abnormal_head_posture"],
+  "con": ["diplopia", "pain", "redness", "itching_dominant"], "temporal": ["chronic"], "tests": [], "exclusions": [] },
+{ "name": "Pseudostrabismus", "domain": "Binocular Vision", "route": "binocular",
+  "req": ["manifest_squint", "young_age"], "sup": ["family_history", "abnormal_head_posture", "squinting"],
+  "con": ["diplopia", "constant_deviation", "reduced_vision", "eye_strain"], "temporal": ["chronic"], "tests": [], "exclusions": [] }
 
 ];

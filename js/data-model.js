@@ -239,7 +239,9 @@ var SYM_CATS = {
     squinting:           "Squinting to see far",
     better_near:         "Better near than far",
     clear_near:          "Clear near vision",
-    reduced_vision:      "Reduced overall vision"
+    reduced_vision:      "Reduced overall vision",
+    high_myopia:         "Very short-sighted (high myopia)",
+    image_size_difference: "Objects look a different size in each eye"
   },
 
   /* ── 2. VISION — NEAR ── */
@@ -383,7 +385,10 @@ var SYM_CATS = {
     closing_one_eye:     "Closing one eye to see",
     intermittent_eye_out: "Eye drifting outward",
     eye_inward:          "Eye turning inward",
-    constant_deviation:  "Constant eye turn"
+    constant_deviation:  "Constant eye turn",
+    manifest_squint:     "Visible / obvious eye turn",
+    vertical_eye_drift:  "One eye drifts upward",
+    abnormal_head_posture: "Habitual head turn / tilt"
   },
 
   /* ── 11. ACCOMMODATION & FOCUS ── */
