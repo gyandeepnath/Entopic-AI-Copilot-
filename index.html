@@ -235,6 +235,21 @@
 
 
 <!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- RAPID CLINICAL REVIEW — founder verifies provisional KB entries -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="modalReview" style="display:none">
+  <div class="modal-box" style="max-width:680px">
+    <div class="modal-title">Clinical Review Queue</div>
+    <div class="modal-desc" style="font-size:.66rem">Provisional entries awaiting your clinical sign-off. Verifying attests the findings, urgency flag, ICD code and summary shown. Content edits happen in the KB editor.</div>
+    <div id="reviewContent" style="max-height:62vh;overflow:auto"></div>
+    <div class="btn-g">
+      <button class="btn btn-s" onclick="closeModal('modalReview')">Close</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
 <!-- QUIZ / SELF-TEST — guess the diagnosis (educational, offline)   -->
 <!-- ═══════════════════════════════════════════════════════════════ -->
 <div class="modal-overlay" id="modalQuiz" style="display:none">
@@ -335,6 +350,7 @@
 <script src="js/storage-mirror.js"></script>
 <script src="js/cloud-config.js"></script>
 <script src="js/kb-remote.js"></script>
+<script src="js/kb-review.js"></script>
 <script src="js/cloud-sync.js"></script>
 <script src="js/storage.js"></script>
 <script src="js/roles.js"></script>

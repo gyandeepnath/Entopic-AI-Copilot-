@@ -210,8 +210,17 @@ function dxInfoToggle(name, rowId, dx) {
         for (var i = 0; i < info.facts.length; i++) h += '<li>' + escH(info.facts[i]) + '</li>';
         h += '</ul>';
       }
-      /* Provenance line — verified prose vs. auto-derived from the definition. */
-      if (info.kind === "authored" && info.review) {
+      /* Provenance line — verified prose vs. auto-derived from the definition.
+         A founder sign-off in the Clinical Review Queue flips the live
+         condition to VERIFIED_BY_CLINICIAN, which replaces the provisional
+         warning with the attestation line. */
+      var _verified = (typeof kbConditionVerified === "function") && kbConditionVerified(name);
+      if (_verified && info.kind === "authored") {
+        var _vc = (typeof findCondition === "function") ? findCondition(name) : null;
+        h += '<div class="dx-info-verified">✓ Clinically verified' +
+          (_vc && _vc.review_verified_on ? ' on ' + escH(_vc.review_verified_on) : '') +
+          (_vc && _vc.review_verified_by ? ' by ' + escH(_vc.review_verified_by) : '') + '</div>';
+      } else if (info.kind === "authored" && info.review) {
         h += '<div class="dx-info-review">⚠ Provisional reference summary — pending clinician verification. ' +
           'Not a source of clinical thresholds, doses, or statistics.</div>';
       } else if (info.kind === "derived") {

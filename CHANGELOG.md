@@ -6,6 +6,39 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-07-18 — Session 11f: Rapid Clinical Review Queue (founder verifies the 246 provisional entries)
+
+Long-standing backlog item (CONTINUE_HERE #2), now unblocked by the Admin
+panel. The KB editor already had one-at-a-time verification buried inside it;
+this adds the **fast batch path** the founder actually needs.
+
+New **`js/kb-review.js`** + `#modalReview`:
+- **The queue** (`kbReviewItems`): every `NEEDS_CLINICAL_REVIEW` condition as a
+  compact row showing exactly what the attestation covers — required findings,
+  URGENT flag, ICD-10 code + label, About summary. Urgent entries first (their
+  flags are the riskiest to leave unreviewed), then by specialty area;
+  searchable + area-filter chips.
+- **One-click Verify** (`kbRapidVerify`): flips `review_status` AND
+  `icd_status` to `VERIFIED_BY_CLINICIAN` on the LIVE condition, stamped with
+  who/when. **Review flags only — clinical content (tokens, codes, urgency) is
+  untouched**, enforced by test; content edits stay in the KB editor (which
+  re-stamps provisional, as it must).
+- **Persistence**: reuses the existing local-edits overlay (`kb-remote.js`), so
+  sign-offs survive reloads and remote KB bundle loads — verified in the smoke
+  by reloading the app.
+- **Ripples through the UI**: the "· provisional" chip in the KB browser clears;
+  the About panel's provisional warning becomes "✓ Clinically verified on
+  DATE by NAME"; the Admin tab carries a live "N of M provisional" card.
+- **Admin-gated** — clinical verification is the founder's authority
+  (`isAdmin()`); a normal account cannot open the queue.
+
+Tests **+5** (`tests/kb-review.test.js`, incl. the content-untouched
+invariant); **227/227 pass**. Browser smoke: non-admin blocked, queue opens
+with ICD rows, verify shrinks 246→245, live flip + attribution, local-edits
+persistence, KB-browser chip cleared, and the sign-off survives a reload.
+
+---
+
 ## 2026-07-18 — Session 11e: Super admin + reviewed-only filter + quiz difficulty
 
 **Founder:** both proposed features, plus a super-admin sign-in with pre-set

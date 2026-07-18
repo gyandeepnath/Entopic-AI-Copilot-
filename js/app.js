@@ -489,6 +489,8 @@ function homeSecAdmin() {
       '</div>' +
     '</div>' +
 
+    reviewQueueAdminCard() +
+
     '<div class="home-settings" style="margin-top:8px">' +
       '<div class="home-settings-title">✎ Knowledge Base Editor</div>' +
       '<div class="home-settings-desc">Full authoring access — add or refine conditions, evidence and About notes.</div>' +
@@ -501,6 +503,21 @@ function homeSecAdmin() {
       '<button class="btn btn-s" onclick="exportAllData()" style="font-size:.62rem">Export all</button> ' +
       '<input type="file" accept=".json" onchange="if(this.files[0])importData(this.files[0])" style="font-size:.62rem">' +
     '</div>';
+}
+
+/* Clinical review queue card (Admin tab): live count of provisional entries. */
+function reviewQueueAdminCard() {
+  var n = (typeof kbReviewItems === "function") ? kbReviewItems().length : 0;
+  var total = (typeof KNOWLEDGE_ALL !== "undefined" && KNOWLEDGE_ALL) ? KNOWLEDGE_ALL.length : 0;
+  var desc = n === 0
+    ? "All " + total + " conditions carry a clinical sign-off or curated status. ✓"
+    : n + " of " + total + " conditions are provisional (AI-drafted ICD codes, summaries or urgency flags) awaiting YOUR clinical verification.";
+  return '<div class="home-settings" style="margin-top:8px">' +
+    '<div class="home-settings-title">🩺 Clinical review queue</div>' +
+    '<div class="home-settings-desc">' + escH(desc) + '</div>' +
+    (n > 0 ? '<button class="btn btn-p" onclick="showReviewQueue()" style="font-size:.62rem">Review &amp; verify</button>'
+           : '<button class="btn btn-s" onclick="showReviewQueue()" style="font-size:.62rem">Open queue</button>') +
+  '</div>';
 }
 
 function adminDeleteUser(uid) {

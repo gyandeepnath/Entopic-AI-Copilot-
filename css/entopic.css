@@ -946,6 +946,42 @@ input, select, textarea, button {
   font-style: italic;
 }
 
+.dx-info-verified {
+  margin-top: 6px;
+  padding-top: 5px;
+  border-top: 1px dashed var(--ms);
+  font-size: .52rem;
+  line-height: 1.4;
+  color: var(--sl);
+}
+
+/* ── Rapid clinical review queue rows ── */
+.kr-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  border: 1px solid var(--ms);
+  border-radius: var(--r);
+  padding: 8px 10px;
+  margin-bottom: 6px;
+}
+.kr-main { flex: 1; min-width: 0; }
+.kr-name { font-size: .76rem; font-weight: 600; }
+.kr-urgent {
+  font-size: .52rem;
+  font-weight: 700;
+  color: #c62828;
+  border: 1px solid #c62828;
+  border-radius: 999px;
+  padding: 0 6px;
+  vertical-align: middle;
+}
+.kr-domain { font-size: .56rem; font-weight: 400; color: var(--sv); }
+.kr-icd { font-size: .62rem; color: var(--sl); margin-top: 2px; font-family: var(--mono); }
+.kr-req { font-size: .6rem; color: var(--sv); margin-top: 2px; }
+.kr-sum { font-size: .62rem; color: var(--sl); line-height: 1.45; margin-top: 3px; }
+.kr-verify { font-size: .62rem; white-space: nowrap; align-self: center; }
+
 .dx-info-none {
   font-size: .58rem;
   line-height: 1.45;

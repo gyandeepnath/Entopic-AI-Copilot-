@@ -264,6 +264,17 @@ door only. The free-tier save cap is enforced at `newPatient()` and
 pricing and real entitlement enforcement are Phase 2). Covered by
 `tests/roles.test.js`.
 
+**Rapid Clinical Review Queue** (session 11f, `kb-review.js`): the founder's
+fast batch path for signing off provisional entries. `kbReviewItems()` lists
+every `NEEDS_CLINICAL_REVIEW` condition with the full attestation surface
+(findings, urgency, ICD, summary; urgent first); `kbRapidVerify(name, by)`
+flips `review_status`/`icd_status` → `VERIFIED_BY_CLINICIAN` (flags only —
+content untouched, test-enforced) and persists through the kb-remote
+local-edits overlay so sign-offs survive reloads and bundle loads.
+Admin-gated UI (`#modalReview`, Admin-tab card); a sign-off clears the
+provisional chips in the KB browser and swaps the About panel's warning for a
+dated attestation line (`kbConditionVerified`).
+
 **Super admin** (session 11e): `adminCheckCredentials` (hash-checked pre-set
 id/password; changeable via the Admin panel, stored locally as a hash) creates
 an ephemeral `adminSessionUser` (never persisted to the users store).
