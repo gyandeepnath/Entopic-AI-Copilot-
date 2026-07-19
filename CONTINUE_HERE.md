@@ -27,18 +27,25 @@ just start a session on this repo/branch and read, in order: **`CLAUDE.md` →
 - Branch: `claude/entopic-architecture-review-g79amg` (all work pushed).
 
 ## What was in flight (pick up here)
-1. **Founder reviews** the provisional queue in-app; sign-offs live in the
-   `entopic_kb_local_edits` localStorage overlay. A future session could add
-   "export sign-offs" → bake `VERIFIED_BY_CLINICIAN` into the source KB files.
-2. **"+20 common conditions per area" drive** (founder-requested, paused):
-   still to do — Glaucoma, Anterior/Uveitis, Cornea, Neuro-Ophthalmic.
+1. **Founder reviews** the provisional queue in-app (Admin tab). Sign-offs live
+   in `entopic_kb_local_edits`. **"Export sign-offs" is now built** → downloads
+   `knowledge/verified.js`; commit it to bake attestations permanently.
+2. **"+20 per area" drive — DONE/moot.** Verified the four areas are already
+   saturated (Cornea 59, Neuro 51, Anterior/Uveitis 29, Glaucoma 22). Did NOT
+   fabricate more. **Targeted gap-fill proposed** for genuinely-missing common
+   conditions: Computer Vision Syndrome / Digital Eye Strain, Strabismic
+   Amblyopia, Photokeratitis (UV/welder's flash), benign Vitreous Floaters.
    Pattern per batch: `docs/KB_AUTHORING_CHECKLIST.md`.
-3. **Phase 2 (founder-gated — needs his go + spend decisions):** real backend
-   accounts/licensing (paid tiers become enforceable), hospital/multi-clinician/
-   researcher/demonstrator modes, faculty↔student logbooks across accounts.
-4. Optional next: founder-verified "common conditions" list
-   (NEEDS_CLINICAL_REVIEW flow) for true common/rare quiz tiers; Present mode
-   for conferences; export-approvals tool for item 1.
+3. **Backend Phase 2 — prep DONE, apply is founder-gated.** See
+   `docs/BACKEND_PHASE2.md`. The live `entopic` Supabase project is healthy
+   (advisors clean). Staged migration `db/migrations/002_profiles_and_invites.sql`
+   (per-user `profiles` role+tier; `clinics.join_code` + `join_clinic_by_code`
+   RPC). Next: apply it (Supabase MCP `apply_migration`), wire the client
+   (sign-in→profile sync, "Join clinic" input), and push the full KB with
+   `node tools/seed-cloud-kb.js --version 1.0.0`. Then hospital/multi-clinician/
+   researcher/demonstrator modes + licensing become buildable.
+4. Optional next: common/rare quiz already shipped; Present mode for
+   conferences; the `common-conditions.js` list needs founder verification.
 5. Known small backlog: a few lid-carcinoma ICD codes carry a placeholder
    laterality to set per patient; a "Retinal Break/Tear" KB entry could take
    `retinal_break` as a required token.

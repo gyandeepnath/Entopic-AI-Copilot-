@@ -6,6 +6,50 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-07-18 — Session 11g: Sign-off export, common/rare quiz, KB-saturation finding, backend Phase-2 prep
+
+Batch of the founder's requested follow-ups.
+
+**Export sign-offs → source** (`knowledge/verified.js` + loader + Admin button).
+The Admin panel now exports a ready-to-commit `verified.js` built from the
+device's founder verifications; the loader applies `KB_VERIFIED` at boot so a
+committed file makes sign-offs permanent on every install. Round-trip tested
+(verify → export → bake → fresh boot shows verified). Review flags only.
+
+**Common/All quiz scope** (`knowledge/common-conditions.js` + quiz selector). A
+curated ~90-condition "common in practice" list — **flagged
+NEEDS_CLINICAL_REVIEW** because commonness is a clinical judgement, NOT invented
+prevalence data. The quiz gains a Common/All scope toggle (Common draws only
+from the list). A test enforces every listed name matches a real KB condition.
+
+**KB "+20 per area" — VERIFIED already saturated, did NOT fabricate.** The
+CONTINUE_HERE note said Glaucoma/Anterior-Uveitis/Cornea/Neuro still owed +20
+each. Checked the live counts: **Cornea 59, Neuro-Ophthalmic 51,
+Anterior/Uveitis 29, Glaucoma 22** — the note was stale (later batches already
+grew them). Forcing 20 more marginal entries each would risk fabricating
+low-value conditions (guardrail). Recorded the finding; a *targeted* gap-fill of
+genuinely-missing common conditions (e.g. Computer Vision Syndrome, Strabismic
+Amblyopia, Photokeratitis, benign Vitreous Floaters) is proposed for a future
+batch instead.
+
+**Backend Phase-2 prep** (`docs/BACKEND_PHASE2.md` + `db/migrations/
+002_profiles_and_invites.sql`). Surveyed the live `entopic` Supabase project:
+ACTIVE_HEALTHY, all 8 tables RLS-enabled, 7 migrations applied, **security
+advisors clean**. Identified the three gaps for multi-user / multi-individual /
+cloud-push and **staged** (not auto-applied — live-DB changes are founder-gated)
+an additive, RLS-enabled migration: `public.profiles` (per-user app role +
+tier, so identity persists server-side) and `clinics.join_code` +
+`join_clinic_by_code()` RPC (so a second individual can JOIN a clinic, today
+only creatable). Verified the existing `tools/seed-cloud-kb.js` still emits
+valid SQL for the full 384-condition KB (the cloud-push path). Client wiring +
+KB seed documented as ready next steps.
+
+Tests **+13** (export round-trip, common-list validation, quiz scope);
+**235/235 pass**. Browser smoke: scope/level selectors, new KB files load, no
+errors.
+
+---
+
 ## 2026-07-18 — Session 11f: Rapid Clinical Review Queue (founder verifies the 246 provisional entries)
 
 Long-standing backlog item (CONTINUE_HERE #2), now unblocked by the Admin
