@@ -1423,6 +1423,7 @@ input, select, textarea, button {
 }
 .quiz-diff-on { background: var(--ink); color: var(--wh); border-color: var(--ink); }
 .quiz-diff-hint { font-size: .54rem; color: var(--sv); margin-left: 4px; }
+.quiz-diff-lbl { font-size: .54rem; text-transform: uppercase; letter-spacing: .04em; color: var(--sv); margin-right: 2px; }
 .quiz-src { font-size: .56rem; text-transform: uppercase; letter-spacing: .04em; color: var(--sv); margin-bottom: 6px; }
 .quiz-stem { font-size: .78rem; font-weight: 600; margin: 6px 0 4px; }
 .quiz-findings { margin: 0 0 8px 18px; padding: 0; }

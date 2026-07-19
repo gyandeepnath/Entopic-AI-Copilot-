@@ -44,14 +44,44 @@ function quizShuffle(arr, rng) {
   return a;
 }
 
+/* ── Scope: Common (bread-and-butter) vs All conditions ───────────
+   "Common" draws only from knowledge/common-conditions.js (a founder-
+   reviewable list — NOT invented prevalence data; see that file). */
+var QUIZ_SCOPES = ["common", "all"];
+var _quizScope = null;
+
+function quizGetScope() {
+  if (_quizScope) return _quizScope;
+  if (typeof loadStore === "function") {
+    var s = loadStore("quizscope", null);
+    if (QUIZ_SCOPES.indexOf(s) >= 0) { _quizScope = s; return s; }
+  }
+  /* default to Common only if the list is actually present */
+  return (typeof KB_COMMON_SET !== "undefined") ? "common" : "all";
+}
+function quizSetScope(s) {
+  if (QUIZ_SCOPES.indexOf(s) === -1) return false;
+  _quizScope = s;
+  if (typeof saveStore === "function") saveStore("quizscope", s);
+  return true;
+}
+
 /* Conditions rich enough to make a fair vignette (≥1 required and ≥3
-   findings overall, so the answer isn't a single-finding giveaway). */
-function quizCandidates() {
+   findings overall, so the answer isn't a single-finding giveaway).
+   `scope` narrows to the common list when requested (falls back to all
+   if that would leave too few to build a 4-option question). */
+function quizCandidates(scope) {
   if (typeof KNOWLEDGE_ALL === "undefined" || !KNOWLEDGE_ALL) return [];
-  return KNOWLEDGE_ALL.filter(function (c) {
+  var rich = KNOWLEDGE_ALL.filter(function (c) {
     return c && c.name && c.req && c.req.length >= 1 &&
       ((c.req.length + ((c.sup || []).length)) >= 3);
   });
+  scope = scope || quizGetScope();
+  if (scope === "common" && typeof KB_COMMON_SET !== "undefined") {
+    var common = rich.filter(function (c) { return KB_COMMON_SET[c.name]; });
+    if (common.length >= 4) return common;   /* enough to build a question */
+  }
+  return rich;
 }
 
 /* 3 real KB condition names near the answer (same route, then same domain,
@@ -119,6 +149,7 @@ function quizBuildQuestionFromKB(rng, forceName, difficulty) {
   difficulty = difficulty || quizGetDifficulty();
   var pool = quizCandidates();
   if (!pool.length) return null;
+  var scope = quizGetScope();
   var cond = null;
   if (forceName) {
     for (var i = 0; i < pool.length; i++) if (pool[i].name === forceName) { cond = pool[i]; break; }
@@ -146,6 +177,7 @@ function quizBuildQuestionFromKB(rng, forceName, difficulty) {
   return {
     source: "kb",
     difficulty: difficulty,
+    scope: scope,
     findings: findings,
     answer: cond.name,
     options: quizShuffle([cond.name].concat(distract), rng),
@@ -237,21 +269,36 @@ if (typeof document !== "undefined") {
     window.startQuiz();   /* new question at the new difficulty */
   };
 
+  window.setQuizScope = function (s) {
+    quizSetScope(s);
+    window.startQuiz();
+  };
+
   window.startQuiz = function () {
     _quizQ = quizNextQuestion();
     if (!_quizQ) return;
     var box = document.getElementById("quizContent");
     if (!box) return;
     var cur = quizGetDifficulty();
-    var diffBtns = '<div class="quiz-diff">';
+    var curScope = quizGetScope();
+    var hasCommon = (typeof KB_COMMON_SET !== "undefined");
+    var scopeBtns = "";
+    if (hasCommon) {
+      scopeBtns = '<div class="quiz-diff">' +
+        '<span class="quiz-diff-lbl">Scope</span>' +
+        '<button class="quiz-diff-btn' + (curScope === "common" ? ' quiz-diff-on' : '') + '" onclick="setQuizScope(\'common\')">Common</button>' +
+        '<button class="quiz-diff-btn' + (curScope === "all" ? ' quiz-diff-on' : '') + '" onclick="setQuizScope(\'all\')">All</button>' +
+        '<span class="quiz-diff-hint">common = bread-and-butter conditions</span></div>';
+    }
+    var diffBtns = '<div class="quiz-diff"><span class="quiz-diff-lbl">Level</span>';
     for (var d = 0; d < QUIZ_DIFFICULTIES.length; d++) {
       var dd = QUIZ_DIFFICULTIES[d];
       diffBtns += '<button class="quiz-diff-btn' + (dd === cur ? ' quiz-diff-on' : '') +
         '" onclick="setQuizDifficulty(\'' + dd + '\')">' + dd.charAt(0).toUpperCase() + dd.slice(1) + '</button>';
     }
-    diffBtns += '<span class="quiz-diff-hint">difficulty = fewer clues, closer look-alikes</span></div>';
+    diffBtns += '<span class="quiz-diff-hint">fewer clues, closer look-alikes</span></div>';
 
-    var h = diffBtns +
+    var h = scopeBtns + diffBtns +
       '<div class="quiz-src">' +
       (_quizQ.source === "case" ? "From your casebook (de-identified)" : "From the knowledge base") + '</div>' +
       '<div class="quiz-stem">A patient presents with:</div><ul class="quiz-findings">';

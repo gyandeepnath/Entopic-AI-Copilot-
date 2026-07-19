@@ -38,6 +38,8 @@ const LOAD_ORDER = [
   "knowledge/token-registry.js",
   "knowledge/icd-map.js",
   "knowledge/expansion.js",
+  "knowledge/verified.js",
+  "knowledge/common-conditions.js",
   "knowledge/loader.js",
   "js/data-model.js",
   "js/medication-checker.js", /* defines getMedicationTokens (engine source 10) */

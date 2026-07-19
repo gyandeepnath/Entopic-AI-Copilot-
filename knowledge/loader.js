@@ -97,6 +97,17 @@ if (typeof KB_EXPANSION !== "undefined") {
         cond.icd_status = icdEntry.status;
       }
 
+      /* Apply the founder's exported clinical sign-offs (knowledge/verified.js).
+         A baked-in attestation overrides the provisional stamp so verified
+         conditions stop showing as provisional on every device this build
+         ships to. Review flags only — content is untouched. */
+      if (typeof KB_VERIFIED !== "undefined" && KB_VERIFIED[cond.name]) {
+        cond.review_status = "VERIFIED_BY_CLINICIAN";
+        cond.icd_status = "VERIFIED_BY_CLINICIAN";
+        cond.review_verified_on = KB_VERIFIED[cond.name].on || "";
+        cond.review_verified_by = KB_VERIFIED[cond.name].by || "";
+      }
+
       /* Tag with domain for traceability */
       cond._domain = domain;
       cond._index = totalConditions;

@@ -89,3 +89,46 @@ test("kbConditionVerified is false for unknown or unreviewed conditions", () => 
   const stillProvisional = evalIn("kbReviewItems()[0].name");
   assert.strictEqual(evalIn("kbConditionVerified(" + JSON.stringify(stillProvisional) + ")"), false);
 });
+
+
+/* ═══ EXPORT SIGN-OFFS: verify → export → bake → fresh boot round trip ═══ */
+
+test("kbBuildVerifiedExport produces valid, ready-to-commit verified.js source", () => {
+  const name = evalIn("kbReviewItems()[0].name");
+  evalIn("kbRapidVerify(" + JSON.stringify(name) + ", 'Dr Founder')");
+  const out = evalIn("kbBuildVerifiedExport()");
+  assert.ok(out.count >= 1, "counts the verified entries");
+  assert.ok(out.source.indexOf(JSON.stringify(name)) >= 0, "includes the verified condition");
+  /* the generated file must be valid JS that defines KB_VERIFIED */
+  const sandbox = {};
+  vm.runInNewContext(out.source, sandbox);
+  assert.ok(sandbox.KB_VERIFIED && sandbox.KB_VERIFIED[name], "parses back to KB_VERIFIED");
+  assert.strictEqual(sandbox.KB_VERIFIED[name].by, "Dr Founder");
+});
+
+test("a baked verified.js makes the sign-off permanent on a fresh boot (loader applies it)", () => {
+  /* Verify one condition in the current context and export the file. */
+  const name = evalIn("kbReviewItems()[0].name");
+  evalIn("kbRapidVerify(" + JSON.stringify(name) + ", 'Dr Founder')");
+  const exported = evalIn("kbBuildVerifiedExport()").source;
+
+  /* Boot a brand-new sandbox with the exported file substituted for
+     knowledge/verified.js — simulating the founder committing it. */
+  const { LOAD_ORDER } = require("../tools/lib/load-engine");
+  const sandbox = { console: { log() {}, warn() {}, error() {} } };
+  const ctx = vm.createContext(sandbox);
+  for (const f of LOAD_ORDER) {
+    const src = (f === "knowledge/verified.js")
+      ? exported
+      : fs.readFileSync(path.resolve(__dirname, "..", f), "utf8");
+    vm.runInContext(src, ctx, { filename: f });
+  }
+  const check = vm.runInContext(
+    "(function(){for(var i=0;i<KNOWLEDGE_ALL.length;i++){if(KNOWLEDGE_ALL[i].name===" +
+    JSON.stringify(name) + ")return {rs:KNOWLEDGE_ALL[i].review_status,by:KNOWLEDGE_ALL[i].review_verified_by};}return null;})()",
+    ctx
+  );
+  assert.ok(check, "condition present on the fresh boot");
+  assert.strictEqual(check.rs, "VERIFIED_BY_CLINICIAN", "sign-off survives via the baked file");
+  assert.strictEqual(check.by, "Dr Founder", "attribution carried through");
+});

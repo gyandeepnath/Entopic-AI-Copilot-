@@ -512,11 +512,13 @@ function reviewQueueAdminCard() {
   var desc = n === 0
     ? "All " + total + " conditions carry a clinical sign-off or curated status. ✓"
     : n + " of " + total + " conditions are provisional (AI-drafted ICD codes, summaries or urgency flags) awaiting YOUR clinical verification.";
+  var verified = (typeof kbBuildVerifiedExport === "function") ? kbBuildVerifiedExport().count : 0;
   return '<div class="home-settings" style="margin-top:8px">' +
     '<div class="home-settings-title">🩺 Clinical review queue</div>' +
     '<div class="home-settings-desc">' + escH(desc) + '</div>' +
     (n > 0 ? '<button class="btn btn-p" onclick="showReviewQueue()" style="font-size:.62rem">Review &amp; verify</button>'
            : '<button class="btn btn-s" onclick="showReviewQueue()" style="font-size:.62rem">Open queue</button>') +
+    (verified > 0 ? ' <button class="btn btn-s" onclick="exportSignoffs()" style="font-size:.62rem">Export ' + verified + ' sign-off' + (verified === 1 ? '' : 's') + ' (bake into source)</button>' : '') +
   '</div>';
 }
 
