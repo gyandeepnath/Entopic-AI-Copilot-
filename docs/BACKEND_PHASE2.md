@@ -59,16 +59,19 @@ intact — the exam never waits on the network.
 
 ---
 
-## Prepared step 1 — apply the migration (founder-gated)
+## Step 1 — migration ✅ APPLIED (2026-07-18)
 
-`db/migrations/002_profiles_and_invites.sql` is additive, RLS-enabled, and
-non-destructive (verified against the established patterns). It adds `profiles`
-(own-row RLS), `clinics.join_code`, and the `join_clinic_by_code` RPC
-(authenticated-only, defaults joiners to the least-privileged role).
+`db/migrations/002_profiles_and_invites.sql` was applied to the live `entopic`
+project (migrations `profiles_and_invites` + `harden_touch_updated_at_search_path`).
+Verified post-apply: `public.profiles` exists with RLS on + 3 own-row policies;
+`clinics.join_code` column present; `join_clinic_by_code` RPC (private + public
+wrapper) callable by `authenticated` only.
 
-Apply when ready via the Supabase MCP `apply_migration` (name:
-`profiles_and_invites`) or `psql`. Re-run the security advisor afterward — it
-should stay clean.
+Security advisor after apply: **one intentional, accepted WARN** —
+`public.join_clinic_by_code` is a `SECURITY DEFINER` RPC executable by signed-in
+users. That is by design (it's how a user joins a clinic) and safe: it inserts
+only the caller's OWN membership via `auth.uid()`. All other lints clean
+(the trigger function's mutable-search_path WARN was fixed).
 
 ## Prepared step 2 — client wiring (small, additive; after the migration)
 
@@ -82,14 +85,20 @@ should stay clean.
   /rest/v1/rpc/join_clinic_by_code {p_code}`; on success, resolve + start sync.
 - All best-effort and offline-tolerant: signed-out/offline, the app is unchanged.
 
-## Prepared step 3 — push the full KB to the cloud
+## Step 3 — push the full KB to the cloud (write-path PROVEN; full seed pending)
 
-```
-node tools/seed-cloud-kb.js --version 1.0.0 > kb_seed.sql   # 384 conditions + a bundle
-```
-Apply `kb_seed.sql` (idempotent upsert keyed on name). Then the in-app KB editor
-"Publish to all devices" cuts new `kb_versions`; every install downloads and
-applies on next open (never mid-exam; red flags always preserved).
+The cloud write path is confirmed live: the 11 Refractive conditions were
+upserted via the service role, growing `public.kb_conditions` from 5 → 16 rows.
+The remaining 372 are a bulk load — finish either way:
+
+- **Recommended (production path):** sign in as the KB owner and use the in-app
+  editor's **"Publish to all devices"** — it snapshots the current 383-condition
+  local KB straight into `kb_versions`; every install downloads and applies on
+  next open (never mid-exam; red flags always preserved). This is the actual
+  "push updates to all users" flow and needs no manual SQL.
+- **Or bulk-seed the authoring table** with `node tools/seed-cloud-kb.js
+  --version 1.0.0 > kb_seed.sql` then apply via `psql` (large file; better than
+  the MCP for a 390 KB statement).
 
 ---
 

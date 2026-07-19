@@ -17,6 +17,14 @@
 -- revoked from anon, matching the project's established pattern
 -- (see docs/CLOUD_SETUP.md). No diagnostic logic server-side; PII tables
 -- untouched. Free tier; no new paid resources.
+--
+-- APPLIED to the live `entopic` project on 2026-07-18 (migrations
+-- `profiles_and_invites` + `harden_touch_updated_at_search_path`).
+-- Security advisor after apply: one INTENTIONAL, accepted WARN —
+-- `public.join_clinic_by_code` is a SECURITY DEFINER RPC callable by
+-- `authenticated`. That is by design (it's how a signed-in user joins a
+-- clinic) and safe: it inserts only the caller's OWN membership using
+-- auth.uid(). All other lints clean.
 -- ═══════════════════════════════════════════════════════════════
 
 -- ── 1. Per-user profile (app role + tier) ──────────────────────────
@@ -109,8 +117,11 @@ revoke all on function public.join_clinic_by_code(text) from public, anon;
 grant execute on function public.join_clinic_by_code(text) to authenticated;
 
 -- ── keep updated_at fresh on profiles ──────────────────────────────
+-- search_path pinned (advisor 0011); only calls now() from pg_catalog.
 create or replace function private.touch_updated_at()
-returns trigger language plpgsql as $$
+returns trigger language plpgsql
+set search_path = pg_catalog
+as $$
 begin new.updated_at = now(); return new; end; $$;
 
 drop trigger if exists profiles_touch on public.profiles;
