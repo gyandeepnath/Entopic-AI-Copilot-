@@ -383,26 +383,41 @@ function homeSecPatients() {
 }
 
 function homeSecStudy() {
-  /* My practice exams — resumable, uncapped (learning is unrestricted). */
-  var practice = loadPatients().filter(function (p) { return p.practice; }).reverse();
+  /* My practice exams — resumable, uncapped, manageable (learning is free). */
+  var practice = practicePatients().reverse();
+  var pvisits = loadVisits();
+  function pStatus(pid) {
+    var v = pvisits.filter(function (x) { return x.patient_id === pid; })
+      .sort(function (a, b) { return (b.date || "").localeCompare(a.date || ""); })[0];
+    return v && v.status === "completed" ? "completed" : "in progress";
+  }
   var practiceHtml = "";
   if (practice.length) {
     practiceHtml = '<div class="p-list" style="margin-top:8px">' +
       '<div class="p-list-h"><span>My practice exams</span>' +
-      '<span style="font-size:.58rem;color:var(--sv)">' + practice.length + ' · never counted against your plan</span></div>';
-    for (var i = 0; i < Math.min(practice.length, 8); i++) practiceHtml += patientRowHtml(practice[i]);
+      '<span style="font-size:.58rem;color:var(--sv)">' + practice.length + ' · uncounted · <a href="#" onclick="clearPracticeExams();return false" style="color:var(--md)">clear all</a></span></div>';
+    for (var i = 0; i < Math.min(practice.length, 12); i++) {
+      var pt = practice[i];
+      practiceHtml += '<div class="p-row" onclick="openPatient(\'' + pt.id + '\')">' +
+        '<div><b>' + escH((pt.first_name || "Practice") + " " + (pt.last_name || "case")) + '</b> ' +
+          '<span class="practice-chip">' + pStatus(pt.id) + '</span></div>' +
+        '<span style="font-family:var(--mono);color:var(--sv);font-size:.6rem">' + escH(pt.mrn || "") + '</span>' +
+      '</div>';
+    }
     practiceHtml += '</div>';
   }
 
   var quizLine = (typeof quizStatsSummary === "function") ? quizStatsSummary()
     : "Guess-the-diagnosis practice drawn from the knowledge base and your casebook.";
 
+  var caseCount = (typeof casebookLoad === "function") ? casebookLoad().length : 0;
+
   return '<div class="home-hd"><h1>Study</h1></div>' +
     '<div class="study-hero">Learn by reasoning. The full diagnostic engine, glass-box "why", knowledge base and casebook are open and free — no restrictions on learning.</div>' +
     '<div class="home-settings" style="margin-top:8px">' +
       '<div class="home-settings-title">🧠 Quiz — guess the diagnosis</div>' +
-      '<div class="home-settings-desc">' + escH(quizLine) + '</div>' +
-      '<button class="btn btn-p" onclick="startQuiz()" style="font-size:.62rem">Start quiz</button>' +
+      '<div class="home-settings-desc">' + escH(quizLine) + ' A continuous session — answer with 1–4, Enter for the next.</div>' +
+      '<button class="btn btn-p" onclick="startQuiz()" style="font-size:.62rem">Start quiz session</button>' +
     '</div>' +
     '<div class="home-settings" style="margin-top:8px">' +
       '<div class="home-settings-title">🩺 Practice exam</div>' +
@@ -410,9 +425,25 @@ function homeSecStudy() {
       '<button class="btn btn-s" onclick="newPatient()" style="font-size:.62rem">Start a practice exam</button>' +
     '</div>' +
     practiceHtml +
+    '<div class="home-settings" style="margin-top:8px">' +
+      '<div class="home-settings-title">📚 Study casebook</div>' +
+      '<div class="home-settings-desc">' + (caseCount ? caseCount + ' cases to study — grouped by condition, filterable by sign.' : 'Load a ready-made library of example cases (one per common condition) to study, or save your own.') + '</div>' +
+      '<button class="btn btn-p" onclick="seedExampleCases()" style="font-size:.62rem">Load example cases</button> ' +
+      '<button class="btn btn-s" onclick="showCasebook()" style="font-size:.62rem">Open casebook</button>' +
+    '</div>' +
     (typeof analyticsRoleCard === "function" ? analyticsRoleCard() : "") +
-    homeCardCasebook() +
     homeCardKB();
+}
+
+/* Delete all practice records + their visits (student housekeeping). */
+function clearPracticeExams() {
+  var practice = practicePatients();
+  if (!practice.length) return;
+  if (!confirm("Delete all " + practice.length + " practice exams? (Your real records and casebook are untouched.)")) return;
+  var ids = {}; for (var i = 0; i < practice.length; i++) ids[practice[i].id] = true;
+  savePatients(loadPatients().filter(function (p) { return !p.practice; }));
+  saveVisits(loadVisits().filter(function (v) { return !ids[v.patient_id]; }));
+  renderHome();
 }
 
 function homeSecTeaching() {

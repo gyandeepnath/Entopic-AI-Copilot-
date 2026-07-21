@@ -22,14 +22,13 @@ const vm = require("vm");
 const { createEngine } = require("../tools/lib/load-engine");
 
 const eng = createEngine();
-/* Load the view layer into the SAME context the engine runs in, so it
-   reads the real V / P / ENGINE_STATE globals. document is undefined here,
-   so the browser DOM-wiring block is skipped (as intended). */
-vm.runInContext(
-  fs.readFileSync(path.resolve(__dirname, "..", "js", "reasoning-views.js"), "utf8"),
-  eng.context,
-  { filename: "js/reasoning-views.js" }
-);
+/* Load condition-info (About notes) + the view layer into the SAME context the
+   engine runs in, so views read the real V / P / ENGINE_STATE globals and the
+   authored summaries. document is undefined here, so the browser DOM-wiring
+   block is skipped (as intended). */
+["knowledge/condition-info.js", "js/reasoning-views.js"].forEach(function (f) {
+  vm.runInContext(fs.readFileSync(path.resolve(__dirname, "..", f), "utf8"), eng.context, { filename: f });
+});
 
 /* Run a case, then render the SOAP note string from the resulting state. */
 function noteFor(visit, patient) {
@@ -275,6 +274,41 @@ test("annotate/review on a missing id returns null and changes nothing", () => {
   assert.strictEqual(evalIn("casebookAnnotate('nope', 'x')"), null);
   assert.strictEqual(evalIn("casebookSetReviewed('nope', true)"), null);
   assert.strictEqual(evalIn("casebookLoad().length"), 0);
+});
+
+/* ═══ Built-in EXAMPLE cases (student study library) ═══ */
+
+test("buildExampleCase makes a de-identified, curated case from a KB condition", () => {
+  const ex = evalIn("buildExampleCase('Acute Angle Closure Crisis')");
+  assert.ok(ex, "example built");
+  assert.strictEqual(ex.builtin, true);
+  assert.strictEqual(ex.reviewed, true, "examples are pre-reviewed (curated)");
+  assert.strictEqual(ex.state.deidentified, true);
+  assert.strictEqual(ex.state.patient.name, "", "no identifiers");
+  assert.strictEqual(ex.state.assessment[0].n, "Acute Angle Closure Crisis");
+  assert.ok(ex.state.subjective.symptoms.length >= 1, "vignette carries the condition's own findings");
+  assert.ok(ex.teachingNote.length > 10, "About summary used as the teaching note");
+});
+
+test("example findings come only from the condition's own req/sup tokens (anti-fabrication)", () => {
+  const ex = evalIn("buildExampleCase('Acute Angle Closure Crisis')");
+  const allowed = evalIn(
+    "(function(){var c=findCondition('Acute Angle Closure Crisis');" +
+    "return [].concat(c.req||[],c.sup||[]).map(_rvPretty);})()"
+  );
+  for (const f of ex.state.subjective.symptoms) assert.ok(allowed.indexOf(f) >= 0, "'" + f + "' from own criteria");
+});
+
+test("casebookSeedExamples seeds curated cases and is idempotent", () => {
+  evalIn("casebookSave([])");
+  const added = evalIn("casebookSeedExamples(10)");
+  assert.ok(added >= 1 && added <= 10);
+  assert.strictEqual(evalIn("casebookLoad().length"), added, "cases added to the book");
+  /* builtin examples are pre-reviewed → never in the faculty pending queue */
+  const pending = evalIn("casebookLoad().filter(function(e){return !e.reviewed;}).length");
+  assert.strictEqual(pending, 0);
+  /* re-seeding the same set adds nothing */
+  assert.strictEqual(evalIn("casebookSeedExamples(10)"), 0, "idempotent");
 });
 
 test("casebookFilter with reviewed:true keeps only faculty-signed-off cases", () => {

@@ -435,6 +435,72 @@ function casebookDelete(id) {
   return list;
 }
 
+/* ── Built-in EXAMPLE cases (study library for students) ──────────
+   Synthesised deterministically from KB conditions so a student's
+   casebook is never empty. Each is a de-identified teaching case whose
+   findings are the condition's OWN required/supportive tokens (nothing
+   invented) and whose teaching note is the hand-authored About summary.
+   Tagged builtin+reviewed (curated), so they don't sit in the faculty
+   review queue and don't count against save limits. */
+function _rvPretty(t) {
+  if (typeof kbPrettyToken === "function") return kbPrettyToken(t);
+  if (typeof buildNextTestLabels === "function") { var L = buildNextTestLabels(); if (L && L[t]) return L[t]; }
+  return String(t).replace(/_/g, " ");
+}
+
+function buildExampleCase(condName) {
+  var c = (typeof findCondition === "function") ? findCondition(condName) : null;
+  if (!c) return null;
+  var findFn = (typeof findCondition === "function") ? findCondition : null;
+  var info = (typeof resolveConditionInfo === "function") ? resolveConditionInfo(condName, findFn, _rvPretty) : null;
+  var symptoms = (c.req || []).concat((c.sup || []).slice(0, 3)).map(_rvPretty);
+  return {
+    id: "ex_" + condName.toLowerCase().replace(/[^a-z0-9]+/g, "_"),
+    savedAt: new Date().toISOString(),
+    title: condName,
+    builtin: true,
+    reviewed: true,
+    teachingNote: (info && info.summary) ? info.summary : "",
+    state: {
+      generatedAt: new Date().toISOString(),
+      clinician: null,
+      patient: { name: "", mrn: "", age: "", sex: "", occupation: "" },
+      subjective: { symptoms: symptoms },
+      objective: {},
+      assessment: [{
+        n: c.name, icd: c.icd || "", icd_label: c.icd_label || "", icd_status: c.icd_status || "",
+        domain: c._domain || c.domain || "", confidence: "", prob: 0, urgent: !!c.urgent,
+        matched: [], missing: [], contradicted: []
+      }],
+      alerts: [],
+      plan: {},
+      nextTests: [],
+      tokens: (c.req || []).concat(c.sup || []),
+      deidentified: true
+    }
+  };
+}
+
+/* Seed example cases from the common-conditions list (or any KB conditions)
+   into the casebook, skipping any already present. Returns how many added. */
+function casebookSeedExamples(limit) {
+  var names = (typeof KB_COMMON_CONDITIONS !== "undefined" && KB_COMMON_CONDITIONS.length)
+    ? KB_COMMON_CONDITIONS.slice()
+    : ((typeof KNOWLEDGE_ALL !== "undefined") ? KNOWLEDGE_ALL.map(function (c) { return c.name; }) : []);
+  if (limit) names = names.slice(0, limit);
+  var list = casebookLoad();
+  var have = {};
+  for (var i = 0; i < list.length; i++) if (list[i].builtin) have[list[i].title] = true;
+  var added = 0;
+  for (var n = 0; n < names.length; n++) {
+    if (have[names[n]]) continue;
+    var ex = buildExampleCase(names[n]);
+    if (ex) { list.push(ex); added++; }
+  }
+  if (added) casebookSave(list);
+  return added;
+}
+
 /* Faculty curation: update the teaching note on a stored case. */
 function casebookAnnotate(id, note) {
   var list = casebookLoad();
@@ -752,6 +818,15 @@ if (typeof document !== "undefined") {
     _rvCasebookRender();
   };
 
+  /* Student study: load built-in example cases so the casebook isn't empty. */
+  window.seedExampleCases = function () {
+    var n = casebookSeedExamples(0);
+    if (typeof _rvCasebookRender === "function") _rvCasebookRender();
+    if (typeof renderHome === "function" && typeof HOME_TAB !== "undefined" && (HOME_TAB === "study" || HOME_TAB === "casebook")) renderHome();
+    if (typeof alert === "function") alert(n > 0 ? ("Added " + n + " example study cases to your casebook.") : "Example cases are already loaded.");
+    return n;
+  };
+
   /* Faculty: toggle the reviewed sign-off. */
   window.casebookReviewUi = function (id) {
     var list = casebookLoad(), cur = false;
@@ -794,7 +869,7 @@ if (typeof document !== "undefined") {
         '<div style="min-width:0">' +
           '<div style="font-size:.68rem;color:var(--sv)">' + (meta.join(" · ") || "Case") +
             (urgent ? ' <span style="color:var(--ac,#c00);font-weight:600">· URGENT</span>' : '') +
-            (entry.reviewed ? ' <span class="reviewed-badge">✓ reviewed</span>' : '') + '</div>' +
+            (entry.builtin ? ' <span class="practice-chip">example</span>' : (entry.reviewed ? ' <span class="reviewed-badge">✓ reviewed</span>' : '')) + '</div>' +
           (cue ? '<div style="font-size:.72rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + _esc(cue) + '</div>' : '') +
         '</div>' +
         '<span style="font-size:.62rem;color:var(--sv);white-space:nowrap">▼ view</span>' +

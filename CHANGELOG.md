@@ -6,6 +6,55 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-07-18 — Session 11h: Big polish pass — segregation fix, continuous quiz, KB detail, faculty portal, analytics, student study
+
+Founder-reported issues + requested build-outs, worked through in tested phases.
+
+**BUG — practice records leaked into the clinician view.** A student's practice
+exams were showing in the Clinician Patients tab. Fixed with `realPatients()` /
+`practicePatients()` helpers: the Patients tab and clinical stats now count REAL
+records only; practice lives solely in the student Study workspace.
+
+**BUG — admin didn't segregate users.** The admin console now groups accounts
+by role (🎓 Students · 🩺 Clinicians · 📚 Faculty · Other) with per-cohort
+counts, plus change-mode and delete per account.
+
+**Analytics (new `js/analytics.js`).** Pure aggregation core (accounts by role,
+real/practice split, completion, red-flag rate, diagnosis & domain
+distributions, casebook, quiz, KB coverage) + a role-tailored modal with CSS
+bar charts: student progress, clinician caseload, faculty teaching metrics,
+admin overview with a "view as" switcher. **Researcher promoted to a live role**
+with its own Research portal; its analytics are strictly de-identified aggregate
+(no PII). Analytics cards on every role home.
+
+**Continuous MCQ quiz.** Rebuilt as a running session — persistent header
+(question #, running score, streak, best), questions swap in place one after
+another, no immediate repeats, keyboard 1–4 to answer + Enter/N to advance,
+numbered options. Vastly more variety (KB + casebook, hundreds of vignettes).
+
+**KB — every condition clickable.** Each row opens a full detail card (About
+summary + facts, ICD-10 code/label, urgency, verified/provisional, and the
+required/supportive/against/test findings the engine uses) with a Back button;
+admins get inline Verify + Edit. **Check-for-updates** now applies live
+(re-renders on apply, offers Apply-now reload when deferred) with honest
+offline/disabled/error messages.
+
+**Faculty portal built out.** Teaching workspace with a coverage snapshot,
+casebook build (exemplar exams) + curation, live review queue, KB authoring, and
+teaching analytics.
+
+**Student study built up.** Practice exams get status + a "clear all" control
+(uncounted, resumable). New **example casebook**: `casebookSeedExamples` loads a
+ready-made, de-identified study case per common condition (findings from the
+condition's own tokens — anti-fabrication tested; About note as the teaching
+point; pre-reviewed so they never hit the faculty queue).
+
+Tests **+17** (analytics 7, example cases 3, plus updates); **256/256 pass**.
+Four browser smokes green: segregation + admin grouping + analytics; continuous
+quiz + KB detail; student study + faculty portal.
+
+---
+
 ## 2026-07-18 — Session 11g: Sign-off export, common/rare quiz, KB-saturation finding, backend Phase-2 prep
 
 Batch of the founder's requested follow-ups.
