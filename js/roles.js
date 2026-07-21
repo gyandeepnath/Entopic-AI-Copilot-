@@ -66,11 +66,23 @@ var ENTOPIC_ROLES = [
       { id: "account",  label: "Account" }
     ]
   },
+  {
+    id: "researcher",
+    label: "Researcher",
+    icon: "🔬",
+    blurb: "Study de-identified aggregate data — diagnosis distributions, red-flag rates, the teaching corpus. No patient identifiers.",
+    landing: "research",
+    tabs: [
+      { id: "research", label: "Research" },
+      { id: "casebook", label: "Casebook" },
+      { id: "kb",       label: "Reference" },
+      { id: "account",  label: "Account" }
+    ]
+  },
   /* ── Open for scope (Phase 2 — backend/realtime/governance) ── */
   { id: "demonstrator", label: "Demonstrator", icon: "🧑‍🏫", blurb: "Present interactive reasoning live to a room.", soon: true },
   { id: "multiuser",    label: "Multi-clinician team", icon: "👥", blurb: "Technician → optometrist → ophthalmologist on one shared exam.", soon: true },
-  { id: "hospital",     label: "Hospital / Admin", icon: "🏥", blurb: "Manage clinicians, audit, throughput and quality.", soon: true },
-  { id: "researcher",   label: "Researcher", icon: "🔬", blurb: "Study de-identified, consented aggregate data.", soon: true }
+  { id: "hospital",     label: "Hospital / Admin", icon: "🏥", blurb: "Manage clinicians, audit, throughput and quality.", soon: true }
 ];
 
 /* Roles that are live (selectable and fully wired) this phase. */
@@ -254,9 +266,10 @@ var ALWAYS_ON = {
 
 /* Which capabilities each live role surfaces in its UI. */
 var ROLE_CAPS = {
-  student:   { patients: 1, soap_note: 1, rx_print: 0, coding: 0, kb_authoring: 0, casebook_publish: 0 },
-  clinician: { patients: 1, soap_note: 1, rx_print: 1, coding: 1, kb_authoring: 0, casebook_publish: 0 },
-  faculty:   { patients: 1, soap_note: 1, rx_print: 1, coding: 0, kb_authoring: 1, casebook_publish: 1 }
+  student:    { patients: 1, soap_note: 1, rx_print: 0, coding: 0, kb_authoring: 0, casebook_publish: 0, analytics: 1 },
+  clinician:  { patients: 1, soap_note: 1, rx_print: 1, coding: 1, kb_authoring: 0, casebook_publish: 0, analytics: 1 },
+  faculty:    { patients: 1, soap_note: 1, rx_print: 1, coding: 0, kb_authoring: 1, casebook_publish: 1, analytics: 1 },
+  researcher: { patients: 0, soap_note: 0, rx_print: 0, coding: 0, kb_authoring: 0, casebook_publish: 0, analytics: 1, research_export: 1 }
 };
 
 /* Capabilities that a paid tier unlocks (absent = free). */

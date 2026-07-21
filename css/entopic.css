@@ -1300,6 +1300,21 @@ input, select, textarea, button {
 }
 
 
+/* ── Analytics ── */
+.an-sec { margin-bottom: 14px; }
+.an-sec-t { font-size: .68rem; font-weight: 600; text-transform: uppercase; letter-spacing: .03em; color: var(--sl); margin-bottom: 6px; }
+.an-note { font-size: .62rem; color: var(--sv); background: var(--sn); border: 1px solid var(--fg); border-radius: var(--r); padding: 8px 10px; margin-bottom: 12px; }
+.an-empty { font-size: .64rem; color: var(--sv); padding: 4px 0; }
+.an-bars { display: flex; flex-direction: column; gap: 4px; }
+.an-bar-row { display: flex; align-items: center; gap: 8px; }
+.an-bar-label { flex: 0 0 40%; font-size: .64rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.an-bar-track { flex: 1; height: 12px; background: var(--sn); border-radius: 6px; overflow: hidden; }
+.an-bar-fill { height: 100%; background: var(--ink); border-radius: 6px; min-width: 2px; }
+.an-bar-n { flex: 0 0 auto; font-size: .62rem; color: var(--sl); font-variant-numeric: tabular-nums; min-width: 22px; text-align: right; }
+.an-switch { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; margin-bottom: 12px; font-size: .62rem; color: var(--sv); }
+.an-switch-btn { font-size: .6rem; padding: 2px 9px; border: 1px solid var(--ms); border-radius: 999px; background: var(--sn); color: var(--ink); cursor: pointer; text-transform: capitalize; }
+.an-switch-on { background: var(--ink); color: var(--wh); border-color: var(--ink); }
+
 /* ── Roles / modes: switcher strip, tabs, picker ── */
 .role-strip {
   display: flex;

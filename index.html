@@ -70,6 +70,7 @@
             <option value="clinician">Clinician / Doctor</option>
             <option value="student">Student / Trainee — learning is free</option>
             <option value="faculty">Faculty / Educator</option>
+            <option value="researcher">Researcher</option>
           </select>
         </div>
         <div class="fi" style="margin-bottom:8px">
@@ -235,6 +236,21 @@
 
 
 <!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- ANALYTICS — role-tailored aggregate views (de-identified)       -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="modalAnalytics" style="display:none">
+  <div class="modal-box" style="max-width:720px">
+    <div class="modal-title">Analytics</div>
+    <div class="modal-desc" style="font-size:.66rem">Aggregate views of the data on this device. Read-only; researcher views are de-identified.</div>
+    <div id="analyticsContent" style="max-height:64vh;overflow:auto"></div>
+    <div class="btn-g">
+      <button class="btn btn-s" onclick="closeModal('modalAnalytics')">Close</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
 <!-- RAPID CLINICAL REVIEW — founder verifies provisional KB entries -->
 <!-- ═══════════════════════════════════════════════════════════════ -->
 <div class="modal-overlay" id="modalReview" style="display:none">
@@ -366,6 +382,7 @@
 <script src="js/ui-report.js"></script>
 <script src="js/reasoning-views.js"></script>
 <script src="js/ui-quiz.js"></script>
+<script src="js/analytics.js"></script>
 <script src="js/ui-flowmap.js"></script>
 <script src="js/ui-kb-editor.js"></script>
 <script src="js/ui-chart.js"></script>

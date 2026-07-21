@@ -263,9 +263,38 @@ function renderHomeTab(role, tab) {
     case "kb":       return homeSecKB();
     case "account":  return homeSecAccount();
     case "admin":    return homeSecAdmin();
+    case "research": return homeSecResearch();
     case "patients": /* fall through */
     default:         return homeSecPatients();
   }
+}
+
+/* Researcher portal — de-identified aggregate analytics + the teaching corpus. */
+function homeSecResearch() {
+  var visits = (typeof loadVisits === "function") ? loadVisits().length : 0;
+  var cases  = (typeof casebookLoad === "function") ? casebookLoad().length : 0;
+  return '<div class="home-hd"><h1>Research</h1></div>' +
+    '<div class="study-hero">De-identified aggregate research view — diagnosis distributions, red-flag rates and the reviewed teaching corpus. No patient identifiers anywhere.</div>' +
+    '<div class="home-settings" style="margin-top:8px">' +
+      '<div class="home-settings-title">📊 Aggregate analytics</div>' +
+      '<div class="home-settings-desc">' + visits + ' encounters · ' + cases + ' de-identified cases on this device.</div>' +
+      '<button class="btn btn-p" onclick="showAnalytics(\'researcher\')" style="font-size:.62rem">Open research analytics</button>' +
+    '</div>' +
+    homeCardCasebook() +
+    homeCardKB();
+}
+
+/* ── Practice vs real record segregation ──────────────────────────
+   Student "practice exams" are learning artifacts. They must NEVER show
+   in the Clinician Patients tab or count in clinical stats — only in the
+   student's own Study workspace. These helpers are the single source of
+   that split. */
+function realPatients()     { return loadPatients().filter(function (p) { return !p.practice; }); }
+function practicePatients() { return loadPatients().filter(function (p) { return !!p.practice; }); }
+function realVisitIds() {
+  var real = {}; var ps = realPatients();
+  for (var i = 0; i < ps.length; i++) real[ps[i].id] = true;
+  return real;
 }
 
 /* One patient row (shared by the Patients tab and the Study tab's practice
@@ -316,8 +345,10 @@ function homeCardTier() {
 
 /* ── Sections (tabs) ── */
 function homeSecPatients() {
-  var patients = loadPatients();
-  var visits   = loadVisits();
+  /* REAL patients only — practice exams live in the student Study tab. */
+  var patients = realPatients();
+  var realIds  = realVisitIds();
+  var visits   = loadVisits().filter(function (v) { return realIds[v.patient_id]; });
   var today    = new Date().toISOString().slice(0, 10);
   var todayV = visits.filter(function (v) { return v.date && v.date.startsWith(today); });
   var inProg = visits.filter(function (v) { return v.status === "in_progress"; });
@@ -332,10 +363,9 @@ function homeSecPatients() {
     }
   }
 
-  var realCount = patients.filter(function (p) { return !p.practice; }).length;
   var cap = (typeof saveCap === "function") ? saveCap("patients") : Infinity;
   var capNote = (cap !== Infinity)
-    ? '<span style="font-size:.58rem;color:var(--sv)">' + realCount + ' / ' + cap + ' saved (Free) · practice exams uncounted</span>'
+    ? '<span style="font-size:.58rem;color:var(--sv)">' + patients.length + ' / ' + cap + ' saved (Free)</span>'
     : '<span style="font-size:.58rem;color:var(--sv)">' + getStorageStats().kb + ' KB used</span>';
 
   return '<div class="home-hd"><h1>Patients</h1>' +
@@ -348,7 +378,8 @@ function homeSecPatients() {
       '<div class="stat"><div class="v">' + todayV.length + '</div><div class="l">Today</div></div>' +
       '<div class="stat"><div class="v">' + inProg.length + '</div><div class="l">In Progress</div></div>' +
     '</div>' +
-    '<div class="p-list"><div class="p-list-h"><span>Patients</span>' + capNote + '</div>' + rows + '</div>';
+    '<div class="p-list"><div class="p-list-h"><span>Patients</span>' + capNote + '</div>' + rows + '</div>' +
+    (typeof analyticsRoleCard === "function" ? analyticsRoleCard() : "");
 }
 
 function homeSecStudy() {
@@ -379,27 +410,59 @@ function homeSecStudy() {
       '<button class="btn btn-s" onclick="newPatient()" style="font-size:.62rem">Start a practice exam</button>' +
     '</div>' +
     practiceHtml +
+    (typeof analyticsRoleCard === "function" ? analyticsRoleCard() : "") +
     homeCardCasebook() +
     homeCardKB();
 }
 
 function homeSecTeaching() {
+  var cases = (typeof casebookLoad === "function") ? casebookLoad() : [];
+  var reviewed = cases.filter(function (e) { return e.reviewed; }).length;
+  var conds = (typeof casebookGroupByCondition === "function") ? casebookGroupByCondition(cases).length : 0;
+
   return '<div class="home-hd"><h1>Teaching</h1></div>' +
-    '<div class="study-hero">Teach with real reasoned cases. Curate the casebook and refine the knowledge base your students learn from.</div>' +
-    homeCardCasebook() +
+    '<div class="study-hero">Your educator workspace — build and curate a casebook, sign off cases, refine the knowledge base your students learn from, and track teaching coverage.</div>' +
+
+    /* teaching snapshot */
+    '<div class="stats">' +
+      '<div class="stat"><div class="v">' + cases.length + '</div><div class="l">Teaching cases</div></div>' +
+      '<div class="stat"><div class="v">' + reviewed + '</div><div class="l">Reviewed ✓</div></div>' +
+      '<div class="stat"><div class="v">' + conds + '</div><div class="l">Conditions covered</div></div>' +
+    '</div>' +
+
+    /* build the casebook */
+    '<div class="home-settings" style="margin-top:8px">' +
+      '<div class="home-settings-title">📚 Build the casebook</div>' +
+      '<div class="home-settings-desc">Run an exemplar exam through the engine and save it as a de-identified teaching case (annotate it with the learning point). Or curate what\'s there.</div>' +
+      '<button class="btn btn-p" onclick="newTeachingExam()" style="font-size:.62rem">New exemplar case</button> ' +
+      '<button class="btn btn-s" onclick="showCasebook()" style="font-size:.62rem">Open &amp; curate casebook</button>' +
+    '</div>' +
+
+    reviewQueueCard() +
+
+    /* KB authoring */
     '<div class="home-settings" style="margin-top:8px">' +
       '<div class="home-settings-title">✎ Knowledge base</div>' +
-      '<div class="home-settings-desc">Browse and (for editors) refine conditions, evidence and About notes.</div>' +
+      '<div class="home-settings-desc">Browse conditions students study; editors can refine evidence and About notes, and publish updates to all devices.</div>' +
       '<button class="btn btn-s" onclick="showKBInfo()" style="font-size:.62rem">Browse conditions</button>' +
       '<span id="kbEditorCardSlot"></span>' +
     '</div>' +
-    reviewQueueCard() +
+
+    /* teaching analytics */
+    (typeof analyticsRoleCard === "function" ? analyticsRoleCard() : "") +
+
+    /* student logbooks — honest about the dependency */
     '<div class="home-settings" style="margin-top:8px">' +
       '<div class="home-settings-title">🎓 Student logbooks</div>' +
-      '<div class="home-settings-desc">Follow trainees\' reasoned cases across accounts.</div>' +
-      '<span class="soon-badge">Coming soon — needs shared accounts</span>' +
+      '<div class="home-settings-desc">Follow trainees\' reasoned cases across accounts once shared cloud accounts are enabled (backend Phase 2).</div>' +
+      '<span class="soon-badge">Coming with shared accounts</span>' +
     '</div>';
 }
+
+/* Faculty: start an exemplar exam intended for the casebook (a normal exam;
+   the faculty saves it as a teaching case from the report). Not a practice
+   record — faculty build real reasoned exemplars. */
+function newTeachingExam() { newPatient(); }
 
 /* Faculty review queue: how many saved cases still lack a reviewed sign-off. */
 function reviewQueueCard() {
@@ -445,38 +508,22 @@ function homeSecAdmin() {
   if (typeof isAdmin !== "function" || !isAdmin()) return homeSecPatients();
 
   var stats = getStorageStats();
-  var patients = loadPatients();
   var cases = (typeof casebookLoad === "function") ? casebookLoad() : [];
-
-  /* Accounts on this device */
   var users = loadUsers();
-  var rows = "";
-  if (!users.length) {
-    rows = '<div class="p-empty">No local accounts yet.</div>';
-  } else {
-    for (var i = 0; i < users.length; i++) {
-      var u = users[i];
-      rows += '<div class="p-row" style="cursor:default">' +
-        '<div><b>' + escH(u.name || u.username) + '</b>' +
-          ' <span style="font-size:.56rem;color:var(--sv)">@' + escH(u.username) + ' · ' + escH(u.cred || "") + ' · mode: ' + escH(u.role || "unset") + '</span></div>' +
-        '<button class="btn btn-s" style="font-size:.56rem;padding:2px 8px" onclick="adminDeleteUser(\'' + u.id + '\')">Delete</button>' +
-      '</div>';
-    }
-  }
 
   return '<div class="home-hd"><h1>Admin</h1></div>' +
     '<div class="study-hero">Super admin — every feature unlocked, unlimited saving, all modes available. This gate is a convenience lock on a local offline app; real authentication arrives with the backend.</div>' +
 
     '<div class="stats">' +
       '<div class="stat"><div class="v">' + users.length + '</div><div class="l">Accounts</div></div>' +
-      '<div class="stat"><div class="v">' + patients.length + '</div><div class="l">Patient Records</div></div>' +
+      '<div class="stat"><div class="v">' + realPatients().length + '</div><div class="l">Real Records</div></div>' +
+      '<div class="stat"><div class="v">' + practicePatients().length + '</div><div class="l">Practice Exams</div></div>' +
       '<div class="stat"><div class="v">' + cases.length + '</div><div class="l">Teaching Cases</div></div>' +
     '</div>' +
 
-    '<div class="p-list"><div class="p-list-h"><span>Accounts on this device</span>' +
-      '<span style="font-size:.58rem;color:var(--sv)">' + stats.kb + ' KB used</span></div>' + rows +
-      '<div style="font-size:.56rem;color:var(--sv);padding:6px 2px 2px">Deleting an account removes the sign-in only — patient data on this device is shared and stays until exported/cleared.</div>' +
-    '</div>' +
+    adminUsersByRoleHtml(users) +
+
+    (typeof adminAnalyticsCard === "function" ? adminAnalyticsCard() : "") +
 
     '<div class="home-settings" style="margin-top:8px">' +
       '<div class="home-settings-title">🔐 Change admin password</div>' +
@@ -503,6 +550,61 @@ function homeSecAdmin() {
       '<button class="btn btn-s" onclick="exportAllData()" style="font-size:.62rem">Export all</button> ' +
       '<input type="file" accept=".json" onchange="if(this.files[0])importData(this.files[0])" style="font-size:.62rem">' +
     '</div>';
+}
+
+/* Admin: accounts organised BY ROLE (Student / Clinician / Faculty / other),
+   each with its counts, so the admin manages every cohort independently. */
+function adminUsersByRoleHtml(users) {
+  var ORDER = [
+    { id: "student",  label: "🎓 Students / Trainees" },
+    { id: "clinician", label: "🩺 Clinicians / Doctors" },
+    { id: "faculty",  label: "📚 Faculty / Educators" },
+    { id: "__other",  label: "• Other / unset" }
+  ];
+  var buckets = { student: [], clinician: [], faculty: [], __other: [] };
+  for (var i = 0; i < users.length; i++) {
+    var r = users[i].role;
+    (buckets[r] ? buckets[r] : buckets.__other).push(users[i]);
+  }
+
+  var h = "";
+  for (var g = 0; g < ORDER.length; g++) {
+    var grp = ORDER[g], list = buckets[grp.id];
+    if (!list.length) continue;
+    var rows = "";
+    for (var j = 0; j < list.length; j++) {
+      var u = list[j];
+      rows += '<div class="p-row" style="cursor:default">' +
+        '<div><b>' + escH(u.name || u.username) + '</b>' +
+          ' <span style="font-size:.56rem;color:var(--sv)">@' + escH(u.username) + (u.cred ? ' · ' + escH(u.cred) : '') +
+          (u.created ? ' · joined ' + escH(String(u.created).slice(0, 10)) : '') + '</span></div>' +
+        '<div style="display:flex;gap:4px">' +
+          '<button class="btn btn-s" style="font-size:.54rem;padding:2px 7px" onclick="adminSetUserRole(\'' + u.id + '\')">Change mode</button>' +
+          '<button class="btn btn-s" style="font-size:.54rem;padding:2px 7px" onclick="adminDeleteUser(\'' + u.id + '\')">Delete</button>' +
+        '</div>' +
+      '</div>';
+    }
+    h += '<div class="p-list" style="margin-top:8px">' +
+      '<div class="p-list-h"><span>' + grp.label + '</span>' +
+      '<span style="font-size:.58rem;color:var(--sv)">' + list.length + ' account' + (list.length === 1 ? '' : 's') + '</span></div>' +
+      rows + '</div>';
+  }
+  if (!h) h = '<div class="p-list" style="margin-top:8px"><div class="p-empty">No local accounts yet.</div></div>';
+  return h +
+    '<div style="font-size:.56rem;color:var(--sv);padding:4px 2px 2px">Deleting an account removes the sign-in only — patient data on this device is shared and stays until exported/cleared.</div>';
+}
+
+/* Admin: reassign an account's mode. */
+function adminSetUserRole(uid) {
+  if (typeof isAdmin !== "function" || !isAdmin()) return;
+  var choice = prompt("Set mode for this account (student / clinician / faculty):", "");
+  if (choice === null) return;
+  choice = String(choice).trim().toLowerCase();
+  if (["student", "clinician", "faculty"].indexOf(choice) === -1) { alert("Enter one of: student, clinician, faculty."); return; }
+  var users = loadUsers();
+  for (var i = 0; i < users.length; i++) if (users[i].id === uid) { users[i].role = choice; break; }
+  saveUsers(users);
+  renderHome();
 }
 
 /* Clinical review queue card (Admin tab): live count of provisional entries. */
