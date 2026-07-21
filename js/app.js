@@ -789,10 +789,15 @@ function showKBInfo() {
         var c = conds[i];
         /* human-readable "what to enter" = its required findings */
         var needs = (c.req || []).map(kbPrettyToken).join(", ");
-        h += '<div class="kbinfo-row" data-name="' + escH((c.name || "").toLowerCase()) + '" data-keywords="' + escH(kbSearchKeywords(c)) + '" style="font-size:.62rem;color:var(--sl);padding:2px 0 2px 10px">' +
+        h += '<div class="kbinfo-row" data-name="' + escH((c.name || "").toLowerCase()) + '" data-keywords="' + escH(kbSearchKeywords(c)) + '" ' +
+          'onclick="showKBDetail(\'' + escH(String(c.name)).replace(/'/g, "\\'") + '\')" ' +
+          'style="cursor:pointer;font-size:.62rem;color:var(--sl);padding:3px 6px 3px 10px;border-radius:4px" ' +
+          'onmouseover="this.style.background=\'var(--sn)\'" onmouseout="this.style.background=\'\'">' +
           '<b style="color:var(--ink,#222);font-weight:500">' + escH(c.name) + '</b>' +
           (c.urgent ? ' <span style="color:var(--md);font-weight:600">URGENT</span>' : '') +
-          (c.review_status === "NEEDS_CLINICAL_REVIEW" ? ' <span style="color:var(--wa,#e67e22);font-size:.52rem">· provisional</span>' : '') +
+          (c.review_status === "VERIFIED_BY_CLINICIAN" ? ' <span style="color:var(--sl);font-size:.52rem">· verified ✓</span>' :
+           c.review_status === "NEEDS_CLINICAL_REVIEW" ? ' <span style="color:var(--wa,#e67e22);font-size:.52rem">· provisional</span>' : '') +
+          '<span style="float:right;color:var(--sv);font-size:.6rem">›</span>' +
           (needs ? '<div style="color:var(--sv);font-size:.54rem">enter: ' + escH(needs) + '</div>' : '') +
           '</div>';
       }
@@ -804,6 +809,53 @@ function showKBInfo() {
   }
   document.getElementById("kbInfoContent").innerHTML = h;
   openModal("modalKBInfo");
+}
+
+/* Full basic info for ONE condition — opened by clicking any KB row. Shows the
+   About summary, ICD-10 code, urgency, review status, and the findings the
+   engine uses (required / supportive / against / tests). Read-only reference. */
+function showKBDetail(name) {
+  var c = (typeof findCondition === "function") ? findCondition(name) : null;
+  var box = document.getElementById("kbInfoContent");
+  if (!box) return;
+  if (!c) { box.innerHTML = '<div style="color:var(--sv)">Condition not found.</div>'; return; }
+
+  var findFn = (typeof findCondition === "function") ? findCondition : null;
+  var info = (typeof resolveConditionInfo === "function") ? resolveConditionInfo(name, findFn, kbPrettyToken) : null;
+
+  function chips(arr, cls) {
+    if (!arr || !arr.length) return '<span style="color:var(--sv);font-size:.58rem">—</span>';
+    return arr.map(function (t) { return '<span class="kbd-chip ' + (cls || "") + '">' + escH(kbPrettyToken(t)) + '</span>'; }).join(" ");
+  }
+
+  var verified = c.review_status === "VERIFIED_BY_CLINICIAN";
+  var provisional = c.review_status === "NEEDS_CLINICAL_REVIEW";
+
+  var h = '<div class="kbd">' +
+    '<button class="btn btn-s" onclick="showKBInfo()" style="font-size:.6rem;margin-bottom:8px">← All conditions</button>' +
+    '<div class="kbd-title">' + escH(c.name) +
+      (c.urgent ? ' <span class="kr-urgent">URGENT</span>' : '') + '</div>' +
+    '<div class="kbd-meta">' + escH(c._domain || c.domain || "") +
+      (c.icd ? ' · ICD-10 <b>' + escH(c.icd) + '</b>' + (c.icd_label ? ' — ' + escH(c.icd_label) : '') : ' · no ICD code') + '</div>' +
+    (verified ? '<div class="dx-info-verified" style="border:0;margin:6px 0">✓ Clinically verified' + (c.review_verified_on ? ' on ' + escH(c.review_verified_on) : '') + (c.review_verified_by ? ' by ' + escH(c.review_verified_by) : '') + '</div>'
+     : provisional ? '<div class="dx-info-review" style="border:0;margin:6px 0">⚠ Provisional — AI-drafted, pending clinical verification. Not a source of thresholds, doses or statistics.</div>' : '') +
+
+    (info && info.summary ? '<div class="kbd-summary">' + escH(info.summary) + '</div>' : '') +
+    (info && info.facts && info.facts.length ? '<ul class="kbd-facts">' + info.facts.map(function (f) { return '<li>' + escH(f) + '</li>'; }).join("") + '</ul>' : '') +
+
+    '<div class="kbd-sec"><div class="kbd-sec-t">Required findings</div>' + chips(c.req, "kbd-req") + '</div>' +
+    (c.sup && c.sup.length ? '<div class="kbd-sec"><div class="kbd-sec-t">Supportive</div>' + chips(c.sup) + '</div>' : '') +
+    (c.tests && c.tests.length ? '<div class="kbd-sec"><div class="kbd-sec-t">Confirmatory tests</div>' + chips(c.tests) + '</div>' : '') +
+    (c.con && c.con.length ? '<div class="kbd-sec"><div class="kbd-sec-t">Points against</div>' + chips(c.con, "kbd-con") + '</div>' : '') +
+
+    (typeof isAdmin === "function" && isAdmin() ?
+      '<div class="btn-g" style="margin-top:10px">' +
+        (provisional ? '<button class="btn btn-p" onclick="reviewVerify(\'' + escH(String(c.name)).replace(/'/g, "\\'") + '\');showKBDetail(\'' + escH(String(c.name)).replace(/'/g, "\\'") + '\')" style="font-size:.62rem">Verify ✓</button>' : '') +
+        '<button class="btn btn-s" onclick="openKbEditor(\'' + escH(String(c.name)).replace(/'/g, "\\'") + '\')" style="font-size:.62rem">Edit in KB editor</button>' +
+      '</div>' : '') +
+  '</div>';
+
+  box.innerHTML = h;
 }
 
 /* Prettify a token into a clinician-readable finding name (prefers the
@@ -895,19 +947,33 @@ function kbInfoFilter(q) {
 
 function kbUiCheckUpdates() {
   var msg = document.getElementById("kbUpdMsg");
-  if (msg) msg.textContent = "Checking…";
-  if (typeof kbRemoteCheck !== "function") { if (msg) msg.textContent = "Unavailable."; return; }
+  if (msg) { msg.textContent = "Checking…"; msg.style.color = "var(--md)"; }
+  if (typeof kbRemoteCheck !== "function") { if (msg) msg.textContent = "Updates unavailable in this build."; return; }
   kbRemoteCheck(function (err, outcome) {
     if (!msg) return;
+    if (outcome === "applied") {
+      /* The running KB was replaced in memory — re-render the list right now so
+         the update is visibly live, and report the new count. */
+      var n = (typeof KNOWLEDGE_ALL !== "undefined" && KNOWLEDGE_ALL) ? KNOWLEDGE_ALL.length : "";
+      showKBInfo();
+      var m2 = document.getElementById("kbUpdMsg");
+      if (m2) { m2.style.color = "var(--sl)"; m2.textContent = "✓ Updated live — " + n + " conditions now loaded."; }
+      return;
+    }
+    if (outcome === "deferred") {
+      msg.style.color = "var(--sl)";
+      msg.innerHTML = "Update downloaded — an exam is open, so it applies on restart. " +
+        '<a href="#" onclick="if(confirm(\'Reload now to apply the knowledge-base update?\'))location.reload();return false" style="color:var(--ac,#c8a200)">Apply now (reload)</a>';
+      return;
+    }
     var text = {
-      applied: "Updated! Reopen this window to see the new list.",
-      deferred: "Update downloaded — applies after this exam / on restart.",
-      current: "Already up to date.",
-      none: "No published updates.",
-      rejected: "Update rejected (failed safety validation) — kept current KB.",
-      disabled: "Cloud is disabled.",
-      error: "Couldn't reach the update server (offline?)."
-    }[outcome] || outcome;
+      current: "✓ Already up to date.",
+      none: "No published updates yet.",
+      rejected: "Update rejected — it failed safety validation, so the current KB was kept.",
+      disabled: "Cloud updates are off (fully offline). The KB works locally regardless.",
+      error: "Couldn't reach the update server — you're offline, or it's unreachable. The app is unaffected."
+    }[outcome] || String(outcome);
+    msg.style.color = (outcome === "current") ? "var(--sl)" : "var(--md)";
     msg.textContent = text;
   });
 }

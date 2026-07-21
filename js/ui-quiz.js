@@ -220,11 +220,25 @@ function quizBuildQuestionFromCase(entry, rng) {
 function quizNextQuestion(rng) {
   rng = rng || Math.random;
   var cases = (typeof casebookLoad === "function") ? casebookLoad() : [];
-  if (cases.length && rng() < 0.4) {
+  if (cases.length && rng() < 0.35) {
     var q = quizBuildQuestionFromCase(cases[Math.floor(rng() * cases.length)], rng);
     if (q) return q;
   }
   return quizBuildQuestionFromKB(rng);
+}
+
+/* A fresh question that isn't one of the recently-answered ones — keeps a
+   long continuous session varied. `recent` is an array of answer names. */
+function quizFreshQuestion(recent, rng) {
+  rng = rng || Math.random;
+  recent = recent || [];
+  var q = null;
+  for (var tries = 0; tries < 12; tries++) {
+    q = quizNextQuestion(rng);
+    if (!q) return null;
+    if (recent.indexOf(q.answer) === -1) return q;
+  }
+  return q;   /* give up avoiding repeats after a few tries */
 }
 
 
@@ -262,61 +276,96 @@ if (typeof document !== "undefined") {
   var _qEsc = (typeof escH === "function") ? escH : function (s) {
     return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   };
-  var _quizQ = null;
+  var _quizQ = null;                              /* current question */
+  var _quizAnswered = false;                      /* has the current Q been answered? */
+  var _quizSession = { count: 0, correct: 0, streak: 0 };  /* this sitting */
+  var _quizRecent = [];                           /* recent answers (no-repeat) */
 
-  window.setQuizDifficulty = function (d) {
-    quizSetDifficulty(d);
-    window.startQuiz();   /* new question at the new difficulty */
-  };
-
-  window.setQuizScope = function (s) {
-    quizSetScope(s);
-    window.startQuiz();
-  };
-
+  /* ── the fixed shell: session header + settings + a swappable question ── */
   window.startQuiz = function () {
-    _quizQ = quizNextQuestion();
-    if (!_quizQ) return;
+    _quizSession = { count: 0, correct: 0, streak: 0 };
+    _quizRecent = [];
     var box = document.getElementById("quizContent");
-    if (!box) return;
-    var cur = quizGetDifficulty();
-    var curScope = quizGetScope();
-    var hasCommon = (typeof KB_COMMON_SET !== "undefined");
-    var scopeBtns = "";
-    if (hasCommon) {
-      scopeBtns = '<div class="quiz-diff">' +
-        '<span class="quiz-diff-lbl">Scope</span>' +
-        '<button class="quiz-diff-btn' + (curScope === "common" ? ' quiz-diff-on' : '') + '" onclick="setQuizScope(\'common\')">Common</button>' +
-        '<button class="quiz-diff-btn' + (curScope === "all" ? ' quiz-diff-on' : '') + '" onclick="setQuizScope(\'all\')">All</button>' +
-        '<span class="quiz-diff-hint">common = bread-and-butter conditions</span></div>';
+    if (box) {
+      box.innerHTML =
+        '<div id="quizHeader"></div>' +
+        '<div id="quizSettings"></div>' +
+        '<div id="quizBody"></div>';
     }
-    var diffBtns = '<div class="quiz-diff"><span class="quiz-diff-lbl">Level</span>';
+    var m = document.getElementById("modalQuiz");
+    if (m) m.style.display = "flex";
+    _quizRenderSettings();
+    window.quizNext();
+  };
+
+  window.setQuizDifficulty = function (d) { quizSetDifficulty(d); _quizRenderSettings(); window.quizNext(); };
+  window.setQuizScope = function (s) { quizSetScope(s); _quizRenderSettings(); window.quizNext(); };
+
+  function _quizRenderHeader() {
+    var el = document.getElementById("quizHeader");
+    if (!el) return;
+    var s = _quizSession;
+    var pct = s.count ? Math.round(s.correct / s.count * 100) : 0;
+    var best = quizLoadStats().best || 0;
+    el.innerHTML =
+      '<div class="quiz-session">' +
+        '<span class="quiz-session-q">Question ' + (s.count + (_quizAnswered ? 0 : 1)) + '</span>' +
+        '<span class="quiz-session-stat">' + s.correct + '/' + s.count + (s.count ? ' · ' + pct + '%' : '') + '</span>' +
+        '<span class="quiz-session-stat">streak ' + s.streak + '</span>' +
+        '<span class="quiz-session-stat" style="opacity:.7">best ' + best + '</span>' +
+      '</div>';
+  }
+
+  function _quizRenderSettings() {
+    var el = document.getElementById("quizSettings");
+    if (!el) return;
+    var cur = quizGetDifficulty(), curScope = quizGetScope();
+    var hasCommon = (typeof KB_COMMON_SET !== "undefined");
+    var h = "";
+    if (hasCommon) {
+      h += '<div class="quiz-diff"><span class="quiz-diff-lbl">Scope</span>' +
+        '<button class="quiz-diff-btn' + (curScope === "common" ? ' quiz-diff-on' : '') + '" onclick="setQuizScope(\'common\')">Common</button>' +
+        '<button class="quiz-diff-btn' + (curScope === "all" ? ' quiz-diff-on' : '') + '" onclick="setQuizScope(\'all\')">All</button></div>';
+    }
+    h += '<div class="quiz-diff"><span class="quiz-diff-lbl">Level</span>';
     for (var d = 0; d < QUIZ_DIFFICULTIES.length; d++) {
       var dd = QUIZ_DIFFICULTIES[d];
-      diffBtns += '<button class="quiz-diff-btn' + (dd === cur ? ' quiz-diff-on' : '') +
+      h += '<button class="quiz-diff-btn' + (dd === cur ? ' quiz-diff-on' : '') +
         '" onclick="setQuizDifficulty(\'' + dd + '\')">' + dd.charAt(0).toUpperCase() + dd.slice(1) + '</button>';
     }
-    diffBtns += '<span class="quiz-diff-hint">fewer clues, closer look-alikes</span></div>';
+    h += '<span class="quiz-diff-hint">1–4 to answer · Enter for next</span></div>';
+    el.innerHTML = h;
+  }
 
-    var h = scopeBtns + diffBtns +
-      '<div class="quiz-src">' +
+  /* Load and render the next question into the body (session continues). */
+  window.quizNext = function () {
+    _quizQ = quizFreshQuestion(_quizRecent);
+    _quizAnswered = false;
+    var body = document.getElementById("quizBody");
+    if (!body) return;
+    if (!_quizQ) { body.innerHTML = '<div class="quiz-expl">No questions available.</div>'; return; }
+    _quizRecent.push(_quizQ.answer);
+    if (_quizRecent.length > 15) _quizRecent.shift();
+
+    var h = '<div class="quiz-src">' +
       (_quizQ.source === "case" ? "From your casebook (de-identified)" : "From the knowledge base") + '</div>' +
       '<div class="quiz-stem">A patient presents with:</div><ul class="quiz-findings">';
     for (var i = 0; i < _quizQ.findings.length; i++) h += '<li>' + _qEsc(_quizQ.findings[i]) + '</li>';
     h += '</ul><div class="quiz-stem">Most likely diagnosis?</div><div class="quiz-opts">';
     for (var o = 0; o < _quizQ.options.length; o++) {
-      h += '<button class="quiz-opt" id="quizOpt' + o + '" onclick="quizAnswer(' + o + ')">' + _qEsc(_quizQ.options[o]) + '</button>';
+      h += '<button class="quiz-opt" id="quizOpt' + o + '" onclick="quizAnswer(' + o + ')">' +
+        '<span class="quiz-opt-key">' + (o + 1) + '</span>' + _qEsc(_quizQ.options[o]) + '</button>';
     }
     h += '</div><div id="quizReveal"></div>';
-    box.innerHTML = h;
-    var m = document.getElementById("modalQuiz");
-    if (m) m.style.display = "flex";
+    body.innerHTML = h;
+    _quizRenderHeader();
   };
 
   window.quizAnswer = function (idx) {
-    if (!_quizQ) return;
-    var chosen = _quizQ.options[idx];
-    var correct = (chosen === _quizQ.answer);
+    if (!_quizQ || _quizAnswered) return;
+    if (idx < 0 || idx >= _quizQ.options.length) return;
+    _quizAnswered = true;
+    var correct = (_quizQ.options[idx] === _quizQ.answer);
     for (var o = 0; o < _quizQ.options.length; o++) {
       var b = document.getElementById("quizOpt" + o);
       if (!b) continue;
@@ -324,18 +373,36 @@ if (typeof document !== "undefined") {
       if (_quizQ.options[o] === _quizQ.answer) b.classList.add("quiz-opt-correct");
       else if (o === idx) b.classList.add("quiz-opt-wrong");
     }
-    var stats = quizRecord(correct);
+    /* session + lifetime stats */
+    _quizSession.count += 1;
+    if (correct) { _quizSession.correct += 1; _quizSession.streak += 1; }
+    else _quizSession.streak = 0;
+    quizRecord(correct);
+    _quizRenderHeader();
+
     var reveal = document.getElementById("quizReveal");
     if (reveal) {
       reveal.innerHTML =
         '<div class="quiz-verdict">' + (correct ? "✓ Correct" : "✗ Not this time — it was <b>" + _qEsc(_quizQ.answer) + "</b>") +
           (_quizQ.urgent ? ' <span class="quiz-urgent">sight-threatening — urgent in real life</span>' : '') + '</div>' +
         (_quizQ.explanation ? '<div class="quiz-expl">' + _qEsc(_quizQ.explanation) + '</div>' : '') +
-        '<div class="quiz-statline">' + _qEsc(quizStatsSummary()) + '</div>' +
-        '<div class="btn-g"><button class="btn btn-p" onclick="startQuiz()">Next question ▸</button></div>';
+        '<div class="btn-g"><button class="btn btn-p" id="quizNextBtn" onclick="quizNext()">Next question ▸</button></div>';
+      var nb = document.getElementById("quizNextBtn");
+      if (nb && nb.focus) nb.focus();
     }
-    _quizQ = null;
   };
+
+  /* Keyboard: 1–4 answer the current question; Enter/N advance. */
+  document.addEventListener("keydown", function (e) {
+    var m = document.getElementById("modalQuiz");
+    if (!m || m.style.display !== "flex") return;
+    if (e.key >= "1" && e.key <= "9" && !_quizAnswered) {
+      var idx = parseInt(e.key, 10) - 1;
+      if (_quizQ && idx < _quizQ.options.length) { e.preventDefault(); window.quizAnswer(idx); }
+    } else if ((e.key === "Enter" || e.key === "n" || e.key === "N") && _quizAnswered) {
+      e.preventDefault(); window.quizNext();
+    }
+  });
 
   /* Closing the quiz refreshes the Study tab so its stats line stays live. */
   window.closeQuiz = function () {
