@@ -6,6 +6,44 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-07-24 — Session 11k (cont.): Portable core schema + backend recommendation
+
+**Fixed a real gap in "set up your own backend".** `BACKEND_OWNERSHIP.md` told
+the founder to run `001` then `002`, but **`001` never existed as a file** — the
+core schema (clinics, patients, visits, encounters, KB tables, RLS, the private
+membership helpers) had only ever been applied directly to the not-founder-owned
+project via tooling. So the founder literally could not reproduce the full
+backend on a project they own. Now fixed:
+
+- **`db/migrations/001_core_schema.sql`** — the complete core schema, reconstructed
+  faithfully by introspecting the reference project's live structure (tables,
+  columns, constraints, RLS policies, `private.*` SECURITY DEFINER helpers,
+  indexes, realtime). Idempotent.
+- **Verified by actually running it:** spun up a throwaway PostgreSQL 16, stubbed
+  the Supabase `auth` schema, and applied `001` → `002` on a fresh database. Both
+  apply cleanly and are **re-runnable without error**; the result reproduces the
+  reference exactly — **9 tables, 20 RLS policies, 7 functions**.
+- **Bug found + fixed in `002` while testing:** its `profiles_insert_own` policy
+  was preceded by a `drop policy if exists "profiles_upsert_own"` (wrong name),
+  so a second apply errored. Corrected the drop to match — `002` is now
+  idempotent too. (No effect on any live DB; first-apply was always fine.)
+
+**`docs/BACKEND_RECOMMENDATION.md`** — the plain-language decision doc the founder
+asked for: bottom-line recommendation (**Supabase, own account**; free to start,
+~$25/mo Pro when real patient data arrives), an honest comparison vs Firebase /
+custom server / raw cloud, real cost numbers, a **compliance flag** (HIPAA/GDPR
+BAA needed before real PHI goes cloud-side — a founder spend/legal decision), a
+scaling roadmap, and the exact **~15-minute step list the founder does from their
+side** (create project → copy URL+anon key → run 001+002 in the SQL editor →
+Connect in-app → two-device test). Reaffirms I won't spend their money or send
+data to a backend they don't own.
+
+**Guardrail note:** no diagnostic logic in the database; PII (`patients`) stays
+separate from de-identified analytics (`encounters`); backend remains OFF by
+default and never a runtime dependency for an exam.
+
+---
+
 ## 2026-07-24 — Session 11k: KB batch 19 + onset tokens now feed the engine properly
 
 **KB batch 19 — 2 genuinely-missing conditions** (both ICD validated real +

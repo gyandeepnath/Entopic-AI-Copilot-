@@ -48,7 +48,7 @@ drop policy if exists "profiles_select_own" on public.profiles;
 create policy "profiles_select_own" on public.profiles
   for select using (user_id = auth.uid());
 
-drop policy if exists "profiles_upsert_own" on public.profiles;
+drop policy if exists "profiles_insert_own" on public.profiles;
 create policy "profiles_insert_own" on public.profiles
   for insert with check (user_id = auth.uid());
 
