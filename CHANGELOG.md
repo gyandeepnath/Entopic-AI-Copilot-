@@ -6,6 +6,33 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-07-18 — Session 11j: Backend ownership fix (cloud OFF by default, connect-your-own) + honesty doc
+
+**Founder raised a legitimate concern:** the app was wired to a Supabase project
+they never set up. Investigated: the project lived under an org ("UniOrg", free
+tier) attached to the *development environment's* Supabase connector, created in
+an earlier build session — **not an account the founder owns**, yet its URL +
+anon key were hard-coded in `js/cloud-config.js`, so a signed-in user's data
+would have gone there.
+
+**Fixed — safe by default:**
+- Removed the hard-coded "UniOrg" project. `CLOUD_CONFIG` now defaults to
+  **enabled:false, url:"", anonKey:""** — the cloud is fully OFF; nothing syncs
+  anywhere.
+- Added `configureCloud(url, anonKey)` / `cloudConfigured()` / `disconnectCloud()`
+  — the user connects **their own** Supabase project (validated URL + key), stored
+  only on their device. The Cloud card now shows a **Connect-your-own-project**
+  form when unconfigured, and a Disconnect path.
+- `docs/BACKEND_OWNERSHIP.md`: straight explanation of what happened, why the
+  backend still needs the founder's own account to be robust, and the one-time
+  setup steps. The staged migrations in `db/migrations/` port to any project.
+
+No patient data has a destination now unless the founder deliberately points the
+app at a project they control. Offline-first is unchanged. Tests green; browser
+smoke confirms cloud-off default, connect validation, and disconnect.
+
+---
+
 ## 2026-07-18 — Session 11i: KB batch 17, stress-test + robustness fixes, data export, backend multi-user wiring
 
 **KB batch 17 — 4 genuinely-missing common conditions** (all ICD validated

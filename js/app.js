@@ -728,7 +728,15 @@ function renderCloudCard() {
   var body = "";
 
   if (s.state === "disabled") {
-    body = '<div class="home-settings-status">Cloud sync is turned off. All data stays on this device.</div>';
+    /* Not connected to any backend → offer to connect the user's OWN project. */
+    body =
+      '<div class="home-settings-status">Not connected. Entopic runs fully offline; nothing syncs anywhere until you connect <b>your own</b> Supabase project.</div>' +
+      '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:6px">' +
+        '<input id="cloudCfgUrl" placeholder="https://YOUR-PROJECT.supabase.co" style="font-size:.6rem;padding:3px 5px;border:1px solid var(--fg);border-radius:2px;min-width:220px">' +
+        '<input id="cloudCfgKey" placeholder="anon public key" style="font-size:.6rem;padding:3px 5px;border:1px solid var(--fg);border-radius:2px;min-width:180px">' +
+        '<button class="btn btn-p" style="font-size:.6rem" onclick="cloudUiConnect()">Connect</button>' +
+      '</div>' +
+      '<div id="cloudMsg" class="home-settings-status" style="color:var(--md)">Free to set up (~10 min) — see docs/BACKEND_OWNERSHIP.md. Your patient data lives in an account you control.</div>';
   } else if (s.state === "signedout") {
     body =
       '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">' +
@@ -791,6 +799,22 @@ function cloudUiCreateClinic() {
   if (!n) { cloudUiMsg("Enter a clinic name.", false); return; }
   cloudUiMsg("Creating clinic…", true);
   cloudCreateClinic(n, function (err) { if (err) cloudUiMsg("Failed: " + err.message, false); else renderHome(); });
+}
+function cloudUiConnect() {
+  var url = (document.getElementById("cloudCfgUrl") || {}).value || "";
+  var key = (document.getElementById("cloudCfgKey") || {}).value || "";
+  if (typeof configureCloud !== "function" || !configureCloud(url, key)) {
+    cloudUiMsg("Enter a valid https://…​.supabase.co URL and the anon public key.", false);
+    return;
+  }
+  cloudUiMsg("✓ Connected to your project. Sign in or create an account to sync.", true);
+  renderHome();
+}
+function cloudUiDisconnect() {
+  if (!confirm("Disconnect from your Supabase project? Data on the device stays; syncing stops.")) return;
+  if (typeof cloudSignOut === "function") cloudSignOut();
+  if (typeof disconnectCloud === "function") disconnectCloud();
+  renderHome();
 }
 function cloudUiJoinClinic() {
   var code = (document.getElementById("cloudJoinCode") || {}).value || "";
