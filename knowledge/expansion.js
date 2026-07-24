@@ -907,6 +907,23 @@ var KB_EXPANSION = [
   "con": ["gradual_onset", "itching_dominant", "purulent_discharge"], "temporal": ["acute", "sudden_onset"], "tests": [], "exclusions": [] },
 { "name": "Vitreous Floaters (Benign)", "domain": "Retina", "route": "retina",
   "req": ["floaters"], "sup": ["gradual_onset", "older_age"], "con": ["flashes", "sudden_vision_loss", "field_loss", "reduced_vision"],
-  "temporal": ["chronic"], "tests": [], "exclusions": [] }
+  "temporal": ["chronic"], "tests": [], "exclusions": [] },
+
+/* ═══ Batch 18 (2026-07-18) — genuinely-missing common conditions ═══ */
+{ "name": "Anisometropic Amblyopia", "domain": "Binocular Vision", "route": "binocular",
+  "req": ["reduced_vision", "unequal_refractive_error"], "sup": ["suppression", "unequal_vision", "young_age", "family_history"],
+  "con": ["manifest_squint", "sudden_onset", "pain", "older_age"], "temporal": ["chronic"], "tests": [], "exclusions": [] },
+{ "name": "Uveitic Glaucoma", "domain": "Glaucoma", "route": "glaucoma",
+  "req": ["high_iop", "cells_present"], "sup": ["keratic_precipitates", "reduced_vision"],
+  "con": ["itching_dominant", "gradual_onset", "normal_iop"], "temporal": ["acute", "subacute"], "tests": ["high_iop"], "exclusions": [] },
+{ "name": "Contact Lens Overwear (Corneal Hypoxia)", "domain": "Cornea", "route": "anterior",
+  "req": ["contact_lens_intolerance", "pain"], "sup": ["redness", "photophobia", "foreign_body_sensation", "watering", "reduced_wear_time"],
+  "con": ["gradual_onset", "itching_dominant", "purulent_discharge"], "temporal": ["acute", "subacute"], "tests": [], "exclusions": [] },
+{ "name": "Latent Nystagmus", "domain": "Neuro-Ophthalmic", "route": "neuro",
+  "req": ["nystagmus_other_eye"], "sup": ["manifest_squint", "young_age", "suppression", "reduced_vision"],
+  "con": ["older_age", "sudden_onset", "pain"], "temporal": ["chronic"], "tests": [], "exclusions": [] },
+{ "name": "Optic Disc Drusen", "domain": "Neuro-Ophthalmic", "route": "neuro",
+  "req": ["disc_drusen"], "sup": ["field_loss"], "con": ["reduced_vision", "sudden_vision_loss", "pain"],
+  "temporal": ["chronic"], "tests": ["disc_drusen"], "exclusions": [] }
 
 ];

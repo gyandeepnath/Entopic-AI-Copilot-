@@ -164,7 +164,7 @@ var TOKEN_REGISTRY = {
       "req": 0,
       "sup": 0,
       "con": 0,
-      "temporal": 95,
+      "temporal": 97,
       "tests": 0
     },
     "reachable": true
@@ -811,7 +811,7 @@ var TOKEN_REGISTRY = {
       "finding_map"
     ],
     "usage": {
-      "req": 2,
+      "req": 3,
       "sup": 7,
       "con": 0,
       "temporal": 0,
@@ -986,7 +986,7 @@ var TOKEN_REGISTRY = {
       "req": 0,
       "sup": 0,
       "con": 0,
-      "temporal": 200,
+      "temporal": 203,
       "tests": 0
     },
     "reachable": true
@@ -1287,7 +1287,7 @@ var TOKEN_REGISTRY = {
       "symptom_chip"
     ],
     "usage": {
-      "req": 0,
+      "req": 1,
       "sup": 1,
       "con": 0,
       "temporal": 0,
@@ -1894,6 +1894,20 @@ var TOKEN_REGISTRY = {
     "reachable": true
   },
   "disc_coloboma": {
+    "type_hint": "sign",
+    "sources": [
+      "finding_map"
+    ],
+    "usage": {
+      "req": 1,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 1
+    },
+    "reachable": true
+  },
+  "disc_drusen": {
     "type_hint": "sign",
     "sources": [
       "finding_map"
@@ -2519,7 +2533,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 11,
-      "sup": 41,
+      "sup": 42,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -2609,7 +2623,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 3,
-      "sup": 25,
+      "sup": 26,
       "con": 40,
       "temporal": 0,
       "tests": 0
@@ -2840,7 +2854,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 6,
-      "sup": 66,
+      "sup": 67,
       "con": 1,
       "temporal": 0,
       "tests": 0
@@ -3024,7 +3038,7 @@ var TOKEN_REGISTRY = {
     "usage": {
       "req": 0,
       "sup": 1,
-      "con": 71,
+      "con": 73,
       "temporal": 0,
       "tests": 0
     },
@@ -3197,11 +3211,11 @@ var TOKEN_REGISTRY = {
       "engine_derived"
     ],
     "usage": {
-      "req": 12,
+      "req": 13,
       "sup": 15,
       "con": 2,
       "temporal": 0,
-      "tests": 7
+      "tests": 8
     },
     "reachable": true
   },
@@ -3768,7 +3782,7 @@ var TOKEN_REGISTRY = {
     "usage": {
       "req": 5,
       "sup": 3,
-      "con": 178,
+      "con": 180,
       "temporal": 0,
       "tests": 0
     },
@@ -3808,7 +3822,7 @@ var TOKEN_REGISTRY = {
     "sources": [],
     "usage": {
       "req": 0,
-      "sup": 0,
+      "sup": 1,
       "con": 0,
       "temporal": 0,
       "tests": 1
@@ -4489,8 +4503,8 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 2,
-      "sup": 2,
-      "con": 0,
+      "sup": 3,
+      "con": 1,
       "temporal": 0,
       "tests": 0
     },
@@ -4899,7 +4913,7 @@ var TOKEN_REGISTRY = {
     "usage": {
       "req": 0,
       "sup": 1,
-      "con": 16,
+      "con": 17,
       "temporal": 0,
       "tests": 1
     },
@@ -5038,7 +5052,7 @@ var TOKEN_REGISTRY = {
       "symptom_chip"
     ],
     "usage": {
-      "req": 5,
+      "req": 6,
       "sup": 5,
       "con": 0,
       "temporal": 0,
@@ -5055,7 +5069,7 @@ var TOKEN_REGISTRY = {
     "usage": {
       "req": 8,
       "sup": 67,
-      "con": 61,
+      "con": 63,
       "temporal": 0,
       "tests": 0
     },
@@ -5137,9 +5151,9 @@ var TOKEN_REGISTRY = {
       "symptom_chip"
     ],
     "usage": {
-      "req": 10,
+      "req": 11,
       "sup": 35,
-      "con": 103,
+      "con": 106,
       "temporal": 0,
       "tests": 0
     },
@@ -5514,7 +5528,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 7,
-      "sup": 48,
+      "sup": 49,
       "con": 10,
       "temporal": 0,
       "tests": 0
@@ -5864,7 +5878,7 @@ var TOKEN_REGISTRY = {
     "usage": {
       "req": 3,
       "sup": 1,
-      "con": 99,
+      "con": 100,
       "temporal": 0,
       "tests": 0
     },
@@ -6068,7 +6082,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 4,
-      "sup": 87,
+      "sup": 88,
       "con": 159,
       "temporal": 0,
       "tests": 0
@@ -6203,9 +6217,9 @@ var TOKEN_REGISTRY = {
       "symptom_chip"
     ],
     "usage": {
-      "req": 12,
-      "sup": 194,
-      "con": 99,
+      "req": 13,
+      "sup": 196,
+      "con": 100,
       "temporal": 0,
       "tests": 1
     },
@@ -6219,7 +6233,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 0,
-      "sup": 5,
+      "sup": 6,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -7026,7 +7040,7 @@ var TOKEN_REGISTRY = {
       "req": 0,
       "sup": 0,
       "con": 0,
-      "temporal": 46,
+      "temporal": 48,
       "tests": 0
     },
     "reachable": true
@@ -7127,7 +7141,7 @@ var TOKEN_REGISTRY = {
     "usage": {
       "req": 1,
       "sup": 17,
-      "con": 32,
+      "con": 34,
       "temporal": 1,
       "tests": 0
     },
@@ -7143,7 +7157,7 @@ var TOKEN_REGISTRY = {
     "usage": {
       "req": 3,
       "sup": 2,
-      "con": 90,
+      "con": 91,
       "temporal": 0,
       "tests": 0
     },
@@ -7170,7 +7184,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 0,
-      "sup": 9,
+      "sup": 11,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -7561,7 +7575,7 @@ var TOKEN_REGISTRY = {
       "engine_derived"
     ],
     "usage": {
-      "req": 3,
+      "req": 4,
       "sup": 0,
       "con": 0,
       "temporal": 0,
@@ -7577,7 +7591,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 1,
-      "sup": 5,
+      "sup": 6,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -7872,7 +7886,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 0,
-      "sup": 43,
+      "sup": 44,
       "con": 1,
       "temporal": 0,
       "tests": 0
@@ -7975,7 +7989,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 26,
-      "sup": 70,
+      "sup": 72,
       "con": 21,
       "temporal": 0,
       "tests": 0
@@ -7997,10 +8011,12 @@ var TOKEN_REGISTRY = {
 };
 
 var TOKEN_REGISTRY_STATS = {
-  "total": 563,
-  "reachable": 463,
+  "total": 564,
+  "reachable": 464,
   "unreachable_required": [],
-  "unreachable_supportive": [],
-  "test_label_only": 96,
+  "unreachable_supportive": [
+    "keratic_precipitates"
+  ],
+  "test_label_only": 95,
   "produced_never_consumed": 79
 };

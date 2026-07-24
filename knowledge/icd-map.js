@@ -886,6 +886,18 @@ var ICD_MAP = {
   "Photokeratitis":
     { icd10: "H16.139", label: "Photokeratitis, unspecified eye", laterality: "set per eye", status: "NEEDS_CLINICAL_REVIEW", caution: "UV/actinic (welder's flash, snow blindness); often bilateral (H16.133)", verified: "2026-07-18 ICD-10-CM 2026" },
   "Vitreous Floaters (Benign)":
-    { icd10: "H43.399", label: "Other vitreous opacities, unspecified eye", laterality: "set per eye", status: "NEEDS_CLINICAL_REVIEW", caution: "benign floaters / muscae volitantes; new-onset floaters with flashes require a dilated exam to exclude a retinal tear/detachment", verified: "2026-07-18 ICD-10-CM 2026" }
+    { icd10: "H43.399", label: "Other vitreous opacities, unspecified eye", laterality: "set per eye", status: "NEEDS_CLINICAL_REVIEW", caution: "benign floaters / muscae volitantes; new-onset floaters with flashes require a dilated exam to exclude a retinal tear/detachment", verified: "2026-07-18 ICD-10-CM 2026" },
+
+  /* ─ Batch 18 (genuinely-missing common conditions) ─ */
+  "Anisometropic Amblyopia":
+    { icd10: "H53.029", label: "Refractive amblyopia, unspecified eye", laterality: "set per eye", status: "NEEDS_CLINICAL_REVIEW", caution: "anisometropic amblyopia is a refractive amblyopia; the underlying anisometropia is coded separately (H52.31)", verified: "2026-07-18 ICD-10-CM 2026" },
+  "Uveitic Glaucoma":
+    { icd10: "H40.40X0", label: "Glaucoma secondary to eye inflammation, unspecified eye, stage unspecified", laterality: "set per eye", status: "NEEDS_CLINICAL_REVIEW", caution: "secondary glaucoma; the underlying uveitis is coded additionally; stage digit (0-4) set per exam", verified: "2026-07-18 ICD-10-CM 2026" },
+  "Contact Lens Overwear (Corneal Hypoxia)":
+    { icd10: "H18.829", label: "Corneal disorder due to contact lens, unspecified eye", laterality: "set per eye", status: "NEEDS_CLINICAL_REVIEW", caution: "contact-lens overwear / hypoxia; use corneal-edema-due-to-CL (H18.21-) if oedema dominates", verified: "2026-07-18 ICD-10-CM 2026" },
+  "Latent Nystagmus":
+    { icd10: "H55.02", label: "Latent nystagmus", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "manifests on monocular occlusion; strongly associated with infantile esotropia / DVD", verified: "2026-07-18 ICD-10-CM 2026" },
+  "Optic Disc Drusen":
+    { icd10: "H47.329", label: "Drusen of optic disc, unspecified eye", laterality: "set per eye", status: "NEEDS_CLINICAL_REVIEW", caution: "a cause of pseudopapilledema; distinguish from true disc oedema (imaging/US) before an ICP work-up", verified: "2026-07-18 ICD-10-CM 2026" }
 
 };

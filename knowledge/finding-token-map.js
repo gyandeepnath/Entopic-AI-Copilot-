@@ -148,6 +148,7 @@ var FINDING_TOKEN_MAP = {
   "Peripapillary atrophy — beta zone": ["field_defect","peripapillary_atrophy_beta_zone"],
   "Optic pit": ["optic_pit"],
   "Tilted disc": ["tilted_disc"],
+  "Optic disc drusen (buried / visible)": ["disc_drusen"],
   "Disc melanocytoma (dark lesion)": ["dark_disc_lesion"],
   "Disc coloboma / excavation": ["disc_coloboma"],
   "Myelinated nerve fibres": ["myelinated_nerve_fibres"],

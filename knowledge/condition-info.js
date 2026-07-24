@@ -3953,6 +3953,54 @@ var CONDITION_INFO = {
       "Rarely, very dense symptomatic floaters are treated (laser vitreolysis or vitrectomy), but the default is watchful reassurance."
     ],
     review: true
+  },
+
+  /* ═══ Batch 18 ═══ */
+
+  "Anisometropic Amblyopia": {
+    summary: "Reduced best-corrected vision in one eye because a significant difference in refractive error between the two eyes (anisometropia) left one eye chronically defocused during visual development, so the brain favoured the clearer eye. The eye is structurally normal.",
+    facts: [
+      "Suspect it when one eye reads worse than the other despite full refraction and there is a meaningful spectacle difference between the eyes — often with no visible squint.",
+      "Treatment is full-time correction of the anisometropia, then patching/atropine of the better eye if needed, most effective in the sensitive period.",
+      "The underlying anisometropia is a separate diagnosis and is corrected first."
+    ],
+    review: true
+  },
+  "Uveitic Glaucoma": {
+    summary: "A secondary rise in intraocular pressure driven by intraocular inflammation — from trabecular meshwork obstruction by inflammatory cells, trabeculitis, steroid response, or angle closure from synechiae. It complicates uveitis and threatens the optic nerve if the pressure is sustained.",
+    facts: [
+      "Look for raised IOP together with anterior-chamber cells, flare or keratic precipitates; the pattern can be open-angle or angle-closure.",
+      "Management balances controlling the inflammation with lowering pressure; note that steroids used for the uveitis can themselves raise IOP (steroid response).",
+      "The underlying uveitis is coded and treated in its own right."
+    ],
+    review: true
+  },
+  "Contact Lens Overwear (Corneal Hypoxia)": {
+    summary: "Acute corneal distress from wearing contact lenses too long or overnight, starving the cornea of oxygen. It typically presents hours after lens removal with pain, redness, photophobia and tearing from diffuse epithelial damage and stromal oedema.",
+    facts: [
+      "A history of extended or overnight wear with delayed-onset pain after removal is the giveaway; the epithelium shows diffuse punctate staining.",
+      "Manage by stopping lens wear, lubrication and (if needed) prophylaxis; always exclude microbial keratitis, which is the dangerous look-alike.",
+      "Chronic hypoxia drives corneal neovascularisation — reinforce lens hygiene, wear time and higher-oxygen (silicone hydrogel) materials."
+    ],
+    review: true
+  },
+  "Latent Nystagmus": {
+    summary: "A horizontal jerk nystagmus that appears or worsens when one eye is covered and is usually absent with both eyes open. It is strongly linked to infantile esotropia and dissociated vertical deviation, and reflects an early disruption of binocular development.",
+    facts: [
+      "Because occluding an eye brings it out, measure monocular acuity with a fogging lens rather than a full occluder to avoid under-reading vision.",
+      "It rarely needs treatment itself; management is of the associated strabismus and any amblyopia.",
+      "Distinguish from manifest (constant) nystagmus, which is present with both eyes open."
+    ],
+    review: true
+  },
+  "Optic Disc Drusen": {
+    summary: "Calcified hyaline deposits within the optic nerve head that make the disc look elevated and blurred — a common cause of 'pseudopapilledema'. Usually an incidental, benign finding, though it can produce visual-field defects and, rarely, vascular complications.",
+    facts: [
+      "The key job is to distinguish it from TRUE disc oedema before an intracranial-pressure work-up — B-scan ultrasound, autofluorescence or OCT show the drusen.",
+      "Fields can show an enlarged blind spot or nasal/arcuate defects; monitor rather than treat in most cases.",
+      "Often bilateral and familial; reassurance with periodic field and nerve monitoring is the usual course."
+    ],
+    review: true
   }
 
 };

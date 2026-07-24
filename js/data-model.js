@@ -632,7 +632,8 @@ var FUN_FINDINGS = {
     "Tilted disc",
     "Disc melanocytoma (dark lesion)",
     "Disc coloboma / excavation",
-    "Myelinated nerve fibres"
+    "Myelinated nerve fibres",
+    "Optic disc drusen (buried / visible)"
   ],
 
   "Macula": [

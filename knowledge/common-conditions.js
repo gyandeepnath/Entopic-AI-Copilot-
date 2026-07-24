@@ -31,6 +31,7 @@ var KB_COMMON_CONDITIONS = [
   "Accommodative Esotropia", "Intermittent Exotropia", "Esotropia",
   "Decompensated Phoria", "Vertical Heterophoria",
   "Computer Vision Syndrome (Digital Eye Strain)", "Strabismic Amblyopia",
+  "Anisometropic Amblyopia",
 
   /* Ocular surface, lids & lacrimal */
   "Dry Eye Disease - Aqueous Deficient", "Dry Eye Disease - Evaporative (MGD)",
@@ -47,6 +48,7 @@ var KB_COMMON_CONDITIONS = [
   "Herpes Simplex Keratitis", "Microbial Keratitis", "Corneal Ulcer",
   "Contact Lens Related Keratitis", "Marginal Keratitis",
   "Herpes Zoster Ophthalmicus (Corneal)", "Keratoconus", "Photokeratitis",
+  "Contact Lens Overwear (Corneal Hypoxia)",
 
   /* Lens */
   "Nuclear Sclerotic Cataract", "Cortical Cataract", "Posterior Subcapsular Cataract (PSC)",
@@ -56,6 +58,7 @@ var KB_COMMON_CONDITIONS = [
   "Primary Open Angle Glaucoma (POAG)", "Normal Tension Glaucoma (NTG)",
   "Glaucoma Suspect / Ocular Hypertension", "Primary Angle Closure Glaucoma (PACG)",
   "Acute Angle Closure Crisis", "Pseudoexfoliation Glaucoma", "Pigmentary Glaucoma",
+  "Uveitic Glaucoma",
 
   /* Retina & posterior segment (common) */
   "Diabetic Retinopathy", "Diabetic Macular Edema", "Proliferative Diabetic Retinopathy",
