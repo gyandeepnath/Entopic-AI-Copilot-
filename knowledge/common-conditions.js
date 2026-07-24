@@ -76,6 +76,7 @@ var KB_COMMON_CONDITIONS = [
   "Third Cranial Nerve Palsy", "Sixth Cranial Nerve Palsy", "Optic Neuritis",
   "Papilledema", "Giant Cell Arteritis (Arteritic AION)", "Ischemic Optic Neuropathy (AION)",
   "Migraine with Visual Aura", "Thyroid Eye Disease", "Horner Syndrome",
+  "Facial Nerve Palsy (Bell's) — Ocular",
 
   /* Orbit / trauma / emergencies (common presentations) */
   "Preseptal Cellulitis", "Orbital Cellulitis", "Chemical Eye Burn",

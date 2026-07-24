@@ -4001,6 +4001,24 @@ var CONDITION_INFO = {
       "Often bilateral and familial; reassurance with periodic field and nerve monitoring is the usual course."
     ],
     review: true
+  },
+  "Facial Nerve Palsy (Bell's) — Ocular": {
+    summary: "The ocular consequences of a seventh (facial) nerve palsy: the eyelids no longer close fully (lagophthalmos) and blinking is weakened, so the cornea is left exposed. Bell's palsy is the idiopathic, sudden-onset form; the eye is at risk of exposure keratopathy while the palsy persists.",
+    facts: [
+      "The sight-threatening issue is corneal exposure — check for lagophthalmos, a poor Bell's phenomenon and reduced corneal sensation; protect the eye with copious lubrication, taping or a moisture chamber at night.",
+      "A red or painful exposed eye needs prompt review for exposure keratitis or ulceration.",
+      "New facial palsy is not automatically 'Bell's' — bilateral palsy, other cranial-nerve signs, a slow onset, ear vesicles (Ramsay Hunt) or systemic features warrant a cause work-up before labelling it idiopathic."
+    ],
+    review: true
+  },
+  "Ophthalmoplegic Migraine": {
+    summary: "Recurrent headache accompanied by a transient palsy of an ocular motor nerve (most often the third), producing double vision, a droopy lid and limited eye movement around the headache. Now regarded by headache classification as a recurrent painful ophthalmoplegic neuropathy rather than a true migraine.",
+    facts: [
+      "It is a diagnosis of exclusion — a painful third-nerve palsy, especially with pupil involvement, must be imaged urgently to rule out a posterior communicating artery aneurysm.",
+      "The ophthalmoplegia typically follows the headache and recovers over days to weeks, though repeated episodes can leave a residual deficit.",
+      "Far rarer than the common mimics (microvascular nerve palsy, compressive lesions); the diagnosis is only reasonable once those are excluded on imaging."
+    ],
+    review: true
   }
 
 };

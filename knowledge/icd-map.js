@@ -898,6 +898,12 @@ var ICD_MAP = {
   "Latent Nystagmus":
     { icd10: "H55.02", label: "Latent nystagmus", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "manifests on monocular occlusion; strongly associated with infantile esotropia / DVD", verified: "2026-07-18 ICD-10-CM 2026" },
   "Optic Disc Drusen":
-    { icd10: "H47.329", label: "Drusen of optic disc, unspecified eye", laterality: "set per eye", status: "NEEDS_CLINICAL_REVIEW", caution: "a cause of pseudopapilledema; distinguish from true disc oedema (imaging/US) before an ICP work-up", verified: "2026-07-18 ICD-10-CM 2026" }
+    { icd10: "H47.329", label: "Drusen of optic disc, unspecified eye", laterality: "set per eye", status: "NEEDS_CLINICAL_REVIEW", caution: "a cause of pseudopapilledema; distinguish from true disc oedema (imaging/US) before an ICP work-up", verified: "2026-07-18 ICD-10-CM 2026" },
+
+  /* ── Batch 19 (2026-07-18) ── */
+  "Facial Nerve Palsy (Bell's) — Ocular":
+    { icd10: "G51.0", label: "Bell's palsy", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "the palsy itself is G51.0; the resulting exposure keratopathy / lagophthalmos is coded additionally (e.g. exposure keratoconjunctivitis H16.21-). New-onset facial palsy needs a cause work-up before labelling it idiopathic (Bell's)", verified: "2026-07-18 ICD-10-CM 2026" },
+  "Ophthalmoplegic Migraine":
+    { icd10: "G43.B0", label: "Ophthalmoplegic migraine, not intractable", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "ICHD-3 reclassifies this as recurrent painful ophthalmoplegic neuropathy; ICD-10-CM retains the migraine term. A diagnosis of exclusion — neuroimaging must rule out a compressive third-nerve lesion (aneurysm) first. Use G43.B1 if documented as intractable", verified: "2026-07-18 ICD-10-CM 2026" }
 
 };

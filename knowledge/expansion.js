@@ -924,6 +924,14 @@ var KB_EXPANSION = [
   "con": ["older_age", "sudden_onset", "pain"], "temporal": ["chronic"], "tests": [], "exclusions": [] },
 { "name": "Optic Disc Drusen", "domain": "Neuro-Ophthalmic", "route": "neuro",
   "req": ["disc_drusen"], "sup": ["field_loss"], "con": ["reduced_vision", "sudden_vision_loss", "pain"],
-  "temporal": ["chronic"], "tests": ["disc_drusen"], "exclusions": [] }
+  "temporal": ["chronic"], "tests": ["disc_drusen"], "exclusions": [] },
+
+/* ═══ Batch 19 (2026-07-18) — genuinely-missing common conditions ═══ */
+{ "name": "Facial Nerve Palsy (Bell's) — Ocular", "domain": "Neuro-Ophthalmic", "route": "neuro",
+  "req": ["lagophthalmos", "sudden_onset"], "sup": ["dryness", "foreign_body_sensation", "watering", "redness"],
+  "con": ["reduced_vision", "itching_dominant", "gradual_onset", "diplopia"], "temporal": ["acute", "sudden_onset"], "tests": ["lagophthalmos"], "exclusions": [] },
+{ "name": "Ophthalmoplegic Migraine", "domain": "Neuro-Ophthalmic", "route": "neuro",
+  "req": ["diplopia", "headache"], "sup": ["restricted_motility", "ptosis", "vomiting", "photophobia"],
+  "con": ["sudden_vision_loss", "gradual_onset"], "temporal": ["intermittent"], "tests": [], "exclusions": [] }
 
 ];

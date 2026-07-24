@@ -128,7 +128,16 @@ function collectTokens() {
 
   /* ── SOURCE 3: Temporal pattern ── */
   if (V.temporal) {
-    if (V.temporal.onset) addToken(V.temporal.onset);
+    if (V.temporal.onset) {
+      addToken(V.temporal.onset);
+      /* The onset selector uses the temporal-field vocabulary (acute/gradual/…),
+         but many conditions carry the onset signal in their req/sup/con lists
+         under sudden_onset / gradual_onset. Bridge the two so that explicitly
+         recording onset from the UI actually feeds those matches — otherwise the
+         signal is only reachable via free text. */
+      if (V.temporal.onset === "acute")   addToken("sudden_onset");
+      if (V.temporal.onset === "gradual") addToken("gradual_onset");
+    }
     if (V.temporal.duration) {
       /* Map duration to temporal categories */
       if (V.temporal.duration === "hours" || V.temporal.duration === "days") addToken("acute");

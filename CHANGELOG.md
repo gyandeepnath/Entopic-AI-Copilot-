@@ -6,6 +6,45 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-07-24 — Session 11k: KB batch 19 + onset tokens now feed the engine properly
+
+**KB batch 19 — 2 genuinely-missing conditions** (both ICD validated real +
+billable via the ICD-10 MCP, both `NEEDS_CLINICAL_REVIEW`): Facial Nerve Palsy
+(Bell's) — Ocular (**G51.0**), Ophthalmoplegic Migraine (**G43.B0**). Each ships
+matching tokens (req/sup/con), a validated ICD with a clinical caution, and a
+hand-written "About" note. Bell's added to the "Common in practice" quiz list;
+Ophthalmoplegic Migraine left out (genuinely rare). KB now **394 conditions**.
+
+**Token-mapping fix the founder asked for ("make sure the tokens are mapped
+properly for each and every condition").** Found a real dual-vocabulary gap:
+- The onset selector ("Sudden" / "Gradual") emits the *temporal-field*
+  vocabulary (`acute` / `gradual`), which 98+ conditions use in their
+  `temporal` list — that part worked.
+- But **53 conditions** carry the onset signal in their `req`/`sup`/`con`
+  matching lists under `sudden_onset` / `gradual_onset` (e.g. `sudden_onset`:
+  2 req + 17 sup + 34 con; `gradual_onset`: 75 con). Those tokens were **only
+  reachable via free text** — so a clinician *clicking* "Sudden onset" did not
+  actually feed the match. Bell's Palsy (which requires `sudden_onset`) exposed
+  it: it would not surface from the dropdown, only from typed notes.
+- **Fix (2 lines in `js/engine.js` SOURCE 3):** selecting onset "Sudden" now
+  also emits `sudden_onset`; "Gradual" also emits `gradual_onset`. The clickable
+  onset field now feeds the same tokens the KB matches on. This strengthens
+  contradiction logic across the whole KB when onset is explicitly recorded —
+  which is the correct clinical use of that field.
+
+**Verification:** token registry regenerated (no unreachable required tokens);
+full suite **263/263 green** including the golden clinical vignettes, KB
+cross-conflict, UI-reachability, and the un-suppressible red-flag alerts
+(flashes+floaters, IOP>40, RAPD). Confirmed Bell's now leads its own
+presentation via the realistic clickable path (lagophthalmos chip + "Sudden"
+onset), and Ophthalmoplegic Migraine surfaces alongside Third-Nerve Palsy
+(correctly ranked below it — the dangerous mimic stays on top).
+
+**No engine scoring/alert logic changed** beyond the input-mapping bridge above;
+offline path intact; UI unchanged.
+
+---
+
 ## 2026-07-18 — Session 11j: Backend ownership fix (cloud OFF by default, connect-your-own) + honesty doc
 
 **Founder raised a legitimate concern:** the app was wired to a Supabase project
