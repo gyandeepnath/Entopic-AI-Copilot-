@@ -6,6 +6,42 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-07-18 — Session 11i: KB batch 17, stress-test + robustness fixes, data export, backend multi-user wiring
+
+**KB batch 17 — 4 genuinely-missing common conditions** (all ICD validated
+real+billable via the ICD-10 MCP, all `NEEDS_CLINICAL_REVIEW`): Computer Vision
+Syndrome / Digital Eye Strain (**H53.149**), Strabismic Amblyopia (**H53.039**),
+Photokeratitis (**H16.139**), Vitreous Floaters / Benign (**H43.399**). One new
+`uv_exposure` symptom chip; all other tokens reuse existing reachable ones. About
+notes written; all four added to the common-conditions study list. All four
+surface correctly in the engine. **KB now 387 conditions.**
+
+**Stress-tested the unique features** (`tests/stress-features.test.js`, +13) with
+adversarial input — and it caught **2 real robustness bugs**, now fixed:
+- `analyticsCompute` crashed on null/malformed users, visits or cases → guarded.
+- `casebookGroupByCondition` crashed on a null casebook entry → guarded.
+Also verified: seeded-RNG quiz determinism, near-zero immediate repeats over a
+40-question run, well-formedness across 60 questions, de-identification of
+regex-special/empty names, and role/save-cap edge cases.
+
+**Well-organized data export** (`js/data-export.js`, +6 tests). Open-format
+exports with a tested pure core (RFC-4180 CSV): **Analytics CSV**, **Casebook
+CSV/JSON**, **Records CSV** (real records only — practice excluded, tested), and
+a **de-identified Research CSV** (aggregate distributions only — no PII, tested).
+Role-appropriate export card: everyone gets analytics + casebook; clinician/admin
+get records; researcher/admin get the de-identified research export; admin gets
+the full JSON backup. On the Account and Research tabs.
+
+**Backend multi-user client wiring** (uses the applied migration). `cloudSyncProfile`
+upserts the user's app role to `public.profiles` on sign-in and reads the tier
+back (server-authoritative); `cloudJoinClinic` calls the `join_clinic_by_code`
+RPC so a second person can **join** a clinic — with a join-code input on the
+Cloud card. All best-effort and offline-tolerant (signed-out/offline unchanged).
+
+**274/274 tests pass.** Browser smoke: export cards per role, no console errors.
+
+---
+
 ## 2026-07-18 — Session 11h: Big polish pass — segregation fix, continuous quiz, KB detail, faculty portal, analytics, student study
 
 Founder-reported issues + requested build-outs, worked through in tested phases.

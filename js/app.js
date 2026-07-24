@@ -280,6 +280,7 @@ function homeSecResearch() {
       '<div class="home-settings-desc">' + visits + ' encounters · ' + cases + ' de-identified cases on this device.</div>' +
       '<button class="btn btn-p" onclick="showAnalytics(\'researcher\')" style="font-size:.62rem">Open research analytics</button>' +
     '</div>' +
+    (typeof dataExportCard === "function" ? dataExportCard() : "") +
     homeCardCasebook() +
     homeCardKB();
 }
@@ -526,6 +527,7 @@ function homeSecAccount() {
       '<button class="btn btn-s" onclick="openModal(\'modalApiKey\')" style="font-size:.62rem">' + (API_KEY ? "Update API Key" : "Configure API Key") + '</button>' +
       apiStatus +
     '</div>' +
+    (typeof dataExportCard === "function" ? dataExportCard() : "") +
     '<div class="home-settings" style="margin-top:8px">' +
       '<div class="home-settings-title">📁 Data Management</div>' +
       '<div class="home-settings-desc">Import a previous Entopic backup file</div>' +
@@ -741,9 +743,13 @@ function renderCloudCard() {
       '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">' +
         '<input id="cloudClinicName" placeholder="Clinic name" style="font-size:.62rem;padding:3px 5px;border:1px solid var(--fg);border-radius:2px">' +
         '<button class="btn btn-p" style="font-size:.6rem" onclick="cloudUiCreateClinic()">Create clinic</button>' +
+      '</div>' +
+      '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:5px">' +
+        '<input id="cloudJoinCode" placeholder="or join code (6 chars)" maxlength="6" style="font-size:.62rem;padding:3px 5px;border:1px solid var(--fg);border-radius:2px;text-transform:uppercase">' +
+        '<button class="btn btn-s" style="font-size:.6rem" onclick="cloudUiJoinClinic()">Join a clinic</button>' +
         '<button class="btn btn-s" style="font-size:.6rem" onclick="cloudUiSignOut()">Sign out</button>' +
       '</div>' +
-      '<div id="cloudMsg" class="home-settings-status">Signed in as ' + escH(s.email || "") + '. Create your clinic to start syncing.</div>';
+      '<div id="cloudMsg" class="home-settings-status">Signed in as ' + escH(s.email || "") + '. Create a clinic, or join one with a share code from a colleague.</div>';
   } else {
     body =
       '<div class="home-settings-status">Signed in as ' + escH(s.email || "") + ' · ' + escH(s.label) + '</div>' +
@@ -785,6 +791,16 @@ function cloudUiCreateClinic() {
   if (!n) { cloudUiMsg("Enter a clinic name.", false); return; }
   cloudUiMsg("Creating clinic…", true);
   cloudCreateClinic(n, function (err) { if (err) cloudUiMsg("Failed: " + err.message, false); else renderHome(); });
+}
+function cloudUiJoinClinic() {
+  var code = (document.getElementById("cloudJoinCode") || {}).value || "";
+  if (!code.trim()) { cloudUiMsg("Enter a 6-character join code.", false); return; }
+  cloudUiMsg("Joining…", true);
+  if (typeof cloudJoinClinic !== "function") { cloudUiMsg("Cloud is unavailable.", false); return; }
+  cloudJoinClinic(code, function (err) {
+    if (err) cloudUiMsg("Couldn't join: " + err.message, false);
+    else { cloudUiMsg("Joined ✓ — syncing with the clinic.", true); renderHome(); }
+  });
 }
 function cloudUiSignOut() { cloudSignOut(); renderHome(); }
 function cloudUiSyncNow() { if (typeof cloudPull === "function") cloudPull(function () { renderHome(); }); }

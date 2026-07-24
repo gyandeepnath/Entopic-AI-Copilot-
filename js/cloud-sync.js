@@ -130,9 +130,49 @@ function cloudHandleAuth(err, data, cb) {
   };
   cloudSaveState();
   cloudResolveClinic(function () {
-    cloudStart();
-    cb && cb(null);
+    cloudSyncProfile(function () {
+      cloudStart();
+      cb && cb(null);
+    });
   });
+}
+
+/* ── per-user profile (app role + entitlement tier) ──
+   Upserts THIS user's app role to the server-side profile and reads the
+   tier back (the server is the authority on tier once licensing exists).
+   Best-effort: offline / signed-out, this is a no-op and the app is
+   unaffected. See db/migrations/002_profiles_and_invites.sql. */
+function cloudSyncProfile(cb) {
+  if (!CLOUD.session || !CLOUD.session.access_token || !CLOUD.session.user_id) { cb && cb(); return; }
+  var role = (typeof effectiveRole === "function") ? effectiveRole()
+    : ((typeof CU !== "undefined" && CU && CU.role) ? CU.role : "clinician");
+  cloudApi("/rest/v1/profiles?on_conflict=user_id", {
+    method: "POST",
+    body: { user_id: CLOUD.session.user_id, app_role: role },
+    prefer: "resolution=merge-duplicates,return=representation"
+  }, function (err, rows) {
+    var prof = (!err && rows && rows[0]) ? rows[0] : null;
+    if (prof && typeof CU !== "undefined" && CU) {
+      if (prof.app_role) CU.role = prof.app_role;
+      if (prof.tier) CU.tier = prof.tier;
+    }
+    cb && cb(prof || null);
+  });
+}
+
+/* ── join an existing clinic by its share code (multi-user) ──
+   Calls the join_clinic_by_code RPC (inserts the caller's own membership,
+   defaulting to the least-privileged role). On success, resolves the
+   clinic and starts live sync. */
+function cloudJoinClinic(code, cb) {
+  if (!CLOUD.session || !CLOUD.session.access_token) { cb && cb(new Error("sign in first")); return; }
+  var c = String(code || "").trim().toUpperCase();
+  if (!c) { cb && cb(new Error("enter a join code")); return; }
+  cloudApi("/rest/v1/rpc/join_clinic_by_code", { method: "POST", body: { p_code: c } },
+    function (err, data) {
+      if (err) { cb && cb(err); return; }
+      cloudResolveClinic(function () { cloudStart(); cb && cb(null, data); });
+    });
 }
 function cloudSignUp(email, password, cb) {
   cloudApi("/auth/v1/signup", { method: "POST", body: { email: email, password: password } },

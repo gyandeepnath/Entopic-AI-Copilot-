@@ -620,6 +620,7 @@ function casebookHomeSummary() {
 function casebookGroupByCondition(list) {
   var groups = {};
   for (var i = 0; i < list.length; i++) {
+    if (!list[i]) continue;
     var title = list[i].title || "Undiagnosed / pending";
     (groups[title] = groups[title] || []).push(list[i]);
   }

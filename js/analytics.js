@@ -55,21 +55,22 @@ function analyticsCompute(data) {
   var cases    = data.cases || [];
   var quiz     = data.quiz || { asked: 0, correct: 0, streak: 0, best: 0 };
 
-  /* accounts by role */
+  /* accounts by role (tolerate null / malformed user entries) */
   var roleCounts = { student: 0, clinician: 0, faculty: 0, other: 0 };
   for (var u = 0; u < users.length; u++) {
-    var r = users[u].role;
+    var r = users[u] ? users[u].role : null;
     if (roleCounts[r] === undefined) roleCounts.other++; else roleCounts[r]++;
   }
 
-  /* patients: real vs practice */
-  var realP     = anCount(patients, function (p) { return !p.practice; });
+  /* patients: real vs practice (tolerate nulls) */
+  var realP     = anCount(patients, function (p) { return p && !p.practice; });
   var practiceP = patients.length - realP;
 
   /* visits: completion, red-flags, diagnosis + domain distributions */
   var dxMap = {}, domMap = {}, redFlagVisits = 0, completedVisits = 0, stepSum = 0;
   for (var i = 0; i < visits.length; i++) {
     var v = visits[i];
+    if (!v) continue;
     if (v.status === "completed") completedVisits++;
     if (anVisitHadRedFlag(v)) redFlagVisits++;
     stepSum += anVisitCompletion(v);
@@ -83,6 +84,7 @@ function analyticsCompute(data) {
   var caseCondMap = {}, caseDomMap = {}, reviewed = 0;
   for (var c = 0; c < cases.length; c++) {
     var e = cases[c];
+    if (!e) continue;
     if (e.reviewed) reviewed++;
     if (e.title) caseCondMap[e.title] = (caseCondMap[e.title] || 0) + 1;
     var cdom = (e.state && e.state.assessment && e.state.assessment[0] && e.state.assessment[0].domain) || "";
