@@ -408,6 +408,7 @@ var SYM_CATS = {
   "Functional & Environmental": {
     worse_evening:           "Symptoms worse by evening",
     screen_use_exacerbation: "Worse with screen use",
+    uv_exposure:             "Recent UV / welding / snow-glare exposure",
     contact_lens_intolerance: "Contact lens intolerance",
     reduced_wear_time:       "Reduced CL wearing time",
     worse_distance:          "Worse at distance",

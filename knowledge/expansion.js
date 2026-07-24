@@ -893,6 +893,20 @@ var KB_EXPANSION = [
 /* ═══ Batch 16 (2026-07-17) — genuinely-missing common entry ═══ */
 { "name": "Pseudophakia", "domain": "Lens", "route": "lens",
   "req": ["iol_in_bag"], "sup": ["post_surgery", "glare", "halos", "reduced_vision", "post_cataract_surgery_blur"],
-  "con": ["pain", "redness", "itching_dominant", "flashes"], "temporal": ["variable"], "tests": ["iol_in_bag"], "exclusions": [] }
+  "con": ["pain", "redness", "itching_dominant", "flashes"], "temporal": ["variable"], "tests": ["iol_in_bag"], "exclusions": [] },
+
+/* ═══ Batch 17 (2026-07-18) — genuinely-missing common conditions ═══ */
+{ "name": "Computer Vision Syndrome (Digital Eye Strain)", "domain": "Binocular Vision", "route": "binocular",
+  "req": ["screen_use_exacerbation"], "sup": ["asthenopia", "eye_strain", "headache", "worse_evening", "dryness", "fluctuating_blur", "difficulty_near"],
+  "con": ["sudden_vision_loss", "pain_severe", "redness", "flashes", "field_loss"], "temporal": ["chronic", "intermittent"], "tests": [], "exclusions": [] },
+{ "name": "Strabismic Amblyopia", "domain": "Binocular Vision", "route": "binocular",
+  "req": ["reduced_vision", "manifest_squint"], "sup": ["suppression", "unequal_vision", "young_age", "family_history"],
+  "con": ["sudden_onset", "pain", "redness", "older_age"], "temporal": ["chronic"], "tests": [], "exclusions": [] },
+{ "name": "Photokeratitis", "domain": "Cornea", "route": "anterior",
+  "req": ["pain_severe", "uv_exposure"], "sup": ["photophobia", "foreign_body_sensation", "watering", "redness", "bilateral"],
+  "con": ["gradual_onset", "itching_dominant", "purulent_discharge"], "temporal": ["acute", "sudden_onset"], "tests": [], "exclusions": [] },
+{ "name": "Vitreous Floaters (Benign)", "domain": "Retina", "route": "retina",
+  "req": ["floaters"], "sup": ["gradual_onset", "older_age"], "con": ["flashes", "sudden_vision_loss", "field_loss", "reduced_vision"],
+  "temporal": ["chronic"], "tests": [], "exclusions": [] }
 
 ];

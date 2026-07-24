@@ -3914,6 +3914,45 @@ var CONDITION_INFO = {
       "Examine the implant position and capsule at follow-up; new glare or blur may be posterior capsule opacification."
     ],
     review: true
+  },
+
+  /* ═══ Batch 17 ═══ */
+
+  "Computer Vision Syndrome (Digital Eye Strain)": {
+    summary: "A cluster of eye and vision symptoms from prolonged screen use — eye strain, headache, tired eyes, intermittent blur and dryness, typically worse toward the end of a screen-heavy day. It is a functional strain, not a structural disease, driven by reduced blink rate, sustained near focus and uncorrected refractive/binocular error.",
+    facts: [
+      "Reduced blink rate at screens dries the tear film; convergence and accommodation held at near add to the fatigue.",
+      "Manage with refractive correction (including a small near add or intermediate lenses), the 20-20-20 rule, blink and lubrication, and ergonomics — not a pathological cause.",
+      "Persistent or one-sided symptoms warrant checking for uncorrected error, binocular-vision dysfunction or dry eye disease."
+    ],
+    review: true
+  },
+  "Strabismic Amblyopia": {
+    summary: "Reduced best-corrected vision in one eye because a manifest squint in early childhood caused the brain to suppress that eye's image. The eye is structurally normal; the deficit is developmental and becomes harder to reverse with age.",
+    facts: [
+      "Suspect it when reduced acuity accompanies a longstanding eye turn and does not improve with refraction.",
+      "Treatment (optical correction, patching/atropine of the better eye, sometimes surgery for the strabismus) is most effective in the sensitive period of visual development.",
+      "The underlying strabismus is a separate diagnosis and is coded and managed alongside the amblyopia."
+    ],
+    review: true
+  },
+  "Photokeratitis": {
+    summary: "An acute, painful inflammation of the corneal surface from ultraviolet exposure — welder's flash, snow glare or sunlamps. Symptoms are typically delayed 6–12 hours after exposure and are usually bilateral: intense pain, photophobia, tearing and foreign-body sensation from diffuse punctate epithelial damage.",
+    facts: [
+      "The history of UV exposure and the delayed, bilateral onset are the key discriminators from infective keratitis.",
+      "It is self-limiting over 24–72 hours; management is supportive — lubrication, cycloplegia for comfort, oral analgesia, and photoprotection.",
+      "Take-home message for prevention: appropriate UV-blocking eyewear for welding, high-altitude and snow environments."
+    ],
+    review: true
+  },
+  "Vitreous Floaters (Benign)": {
+    summary: "Small mobile opacities in the vitreous gel (muscae volitantes) seen as drifting dots or threads, especially against bright backgrounds. Longstanding, stable floaters without flashes or field loss are usually benign and need reassurance rather than treatment.",
+    facts: [
+      "Benign when chronic and stable; new or suddenly increased floaters — particularly WITH flashes or a shadow/curtain — require a prompt dilated exam to exclude a retinal tear or detachment.",
+      "They arise from vitreous syneresis and condensation; most people adapt and stop noticing them.",
+      "Rarely, very dense symptomatic floaters are treated (laser vitreolysis or vitrectomy), but the default is watchful reassurance."
+    ],
+    review: true
   }
 
 };

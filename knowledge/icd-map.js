@@ -876,6 +876,16 @@ var ICD_MAP = {
 
   /* ─ Batch 16 ─ */
   "Pseudophakia":
-    { icd10: "Z96.1", label: "Presence of intraocular lens", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "status code (post-cataract-surgery IOL in place); a complication (dysphotopsia, PCO, dislocation) is coded separately", verified: "2026-07-17 ICD-10-CM 2026" }
+    { icd10: "Z96.1", label: "Presence of intraocular lens", laterality: "n/a", status: "NEEDS_CLINICAL_REVIEW", caution: "status code (post-cataract-surgery IOL in place); a complication (dysphotopsia, PCO, dislocation) is coded separately", verified: "2026-07-17 ICD-10-CM 2026" },
+
+  /* ─ Batch 17 (genuinely-missing common conditions) ─ */
+  "Computer Vision Syndrome (Digital Eye Strain)":
+    { icd10: "H53.149", label: "Visual discomfort, unspecified", laterality: "set per eye", status: "NEEDS_CLINICAL_REVIEW", caution: "no dedicated CVS/asthenopia code; mapped to visual discomfort (H53.14-); associated dry eye or accommodative/refractive components may be coded additionally", verified: "2026-07-18 ICD-10-CM 2026" },
+  "Strabismic Amblyopia":
+    { icd10: "H53.039", label: "Strabismic amblyopia, unspecified eye", laterality: "set per eye", status: "NEEDS_CLINICAL_REVIEW", caution: "the underlying strabismus is coded separately (H50.-)", verified: "2026-07-18 ICD-10-CM 2026" },
+  "Photokeratitis":
+    { icd10: "H16.139", label: "Photokeratitis, unspecified eye", laterality: "set per eye", status: "NEEDS_CLINICAL_REVIEW", caution: "UV/actinic (welder's flash, snow blindness); often bilateral (H16.133)", verified: "2026-07-18 ICD-10-CM 2026" },
+  "Vitreous Floaters (Benign)":
+    { icd10: "H43.399", label: "Other vitreous opacities, unspecified eye", laterality: "set per eye", status: "NEEDS_CLINICAL_REVIEW", caution: "benign floaters / muscae volitantes; new-onset floaters with flashes require a dilated exam to exclude a retinal tear/detachment", verified: "2026-07-18 ICD-10-CM 2026" }
 
 };

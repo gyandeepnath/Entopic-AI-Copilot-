@@ -30,6 +30,7 @@ var KB_COMMON_CONDITIONS = [
   "Convergence Insufficiency", "Convergence Excess", "Accommodative Insufficiency",
   "Accommodative Esotropia", "Intermittent Exotropia", "Esotropia",
   "Decompensated Phoria", "Vertical Heterophoria",
+  "Computer Vision Syndrome (Digital Eye Strain)", "Strabismic Amblyopia",
 
   /* Ocular surface, lids & lacrimal */
   "Dry Eye Disease - Aqueous Deficient", "Dry Eye Disease - Evaporative (MGD)",
@@ -45,7 +46,7 @@ var KB_COMMON_CONDITIONS = [
   "Corneal Abrasion", "Corneal Foreign Body (Metallic)", "Recurrent Corneal Erosion",
   "Herpes Simplex Keratitis", "Microbial Keratitis", "Corneal Ulcer",
   "Contact Lens Related Keratitis", "Marginal Keratitis",
-  "Herpes Zoster Ophthalmicus (Corneal)", "Keratoconus",
+  "Herpes Zoster Ophthalmicus (Corneal)", "Keratoconus", "Photokeratitis",
 
   /* Lens */
   "Nuclear Sclerotic Cataract", "Cortical Cataract", "Posterior Subcapsular Cataract (PSC)",
@@ -63,7 +64,7 @@ var KB_COMMON_CONDITIONS = [
   "Retinal Detachment", "Retinal Tear", "Branch Retinal Vein Occlusion (BRVO)",
   "Central Retinal Vein Occlusion (CRVO)", "Central Retinal Artery Occlusion (CRAO)",
   "Epiretinal Membrane (ERM)", "Macular Hole", "Central Serous Chorioretinopathy",
-  "Vitreous Hemorrhage", "Retinitis Pigmentosa",
+  "Vitreous Hemorrhage", "Retinitis Pigmentosa", "Vitreous Floaters (Benign)",
 
   /* Uvea / inflammation (common) */
   "Anterior Uveitis (Acute)",
