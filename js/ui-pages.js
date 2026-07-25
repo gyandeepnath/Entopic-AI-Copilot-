@@ -1040,79 +1040,187 @@ function pgMot() {
 /* Morgan's norms, Hofstetter, vergence ranges                     */
 /* ═══════════════════════════════════════════════════════════════ */
 
+/* ═══════════════════════════════════════════════════════════════ */
+/* PAGE 13: BINOCULAR VISION — full evaluation                      */
+/*                                                                  */
+/* Organised the way the assessment is actually worked through:     */
+/* alignment → motility/comitancy → sensory fusion → vergence →     */
+/* accommodation → analysis. Sections collapse so a routine case    */
+/* stays short and a full orthoptic work-up has room.               */
+/*                                                                  */
+/* Reference values shown are the ones already held in MORGANS /    */
+/* hofstetter() in the data model. No new norms or cut-offs are     */
+/* invented here — fields without an established stored norm simply */
+/* carry no hint. Nothing on this page diagnoses; the engine reads   */
+/* the same fields it always did.                                    */
+/* ═══════════════════════════════════════════════════════════════ */
+
+/* Small helpers so the long form stays readable. */
+function bvIn(key, ph, live, hint) {
+  return '<div class="fi"><label>' + ph + '</label>' +
+    '<input class="e-in" value="' + esc(V.bv[key] || "") + '"' +
+    ' oninput="V.bv[\'' + key + '\']=this.value' + (live ? ';runDiagnosticEngine();renderAdvisory()' : '') + '">' +
+    (hint ? '<div class="fi-hint">' + hint + '</div>' : '') + '</div>';
+}
+
+function bvSel(key, label, opts, live) {
+  return '<div class="fi"><label>' + label + '</label>' +
+    '<select oninput="V.bv[\'' + key + '\']=this.value' + (live ? ';runDiagnosticEngine();renderAdvisory()' : '') + '">' +
+    opts.map(function (o) {
+      return '<option' + ((V.bv[key] || "") === o ? " selected" : "") + '>' + o + '</option>';
+    }).join("") + '</select></div>';
+}
+
+function bvArea(key, label, ph) {
+  return '<div class="fi full"><label>' + label + '</label>' +
+    '<textarea oninput="V.bv[\'' + key + '\']=this.value" placeholder="' + (ph || "") + '">' + esc(V.bv[key] || "") + '</textarea></div>';
+}
+
+/* Collapsible section wrapper, reusing the existing collapse styling. */
+function bvSection(id, title, body, openByDefault) {
+  return '<div class="col-trig" onclick="togCollapse(\'' + id + '\')">' + title +
+      '<span class="col-arrow">▶</span></div>' +
+    '<div class="col-body' + (openByDefault ? " open" : "") + '" id="' + id + '">' + body + '</div>';
+}
+
 function pgBV() {
   var age = parseInt(P.age) || 25;
   var hof = hofstetter(age);
 
-  return '<div class="card">' +
-    '<div class="card-t">Binocular Vision</div>' +
-    '<div class="card-s">Morgan\'s norms shown for reference</div>' +
-
-    /* Cover Test */
-    '<div class="dv"><span>Cover Test</span></div>' +
+  /* ── 1. Alignment ── */
+  var alignment =
     '<div class="eg4">' +
-      '<div></div><div class="e-h">Value</div><div class="e-h">Normal</div><div class="e-h">SD</div>' +
-      '<div class="e-l">Dist</div>' +
+      '<div></div><div class="e-h">Value</div><div class="e-h">Normal</div><div class="e-h"></div>' +
+      '<div class="e-l">Cover test — Dist</div>' +
         '<input class="e-in" value="' + esc(V.bv.ct_d) + '" oninput="V.bv.ct_d=this.value;runDiagnosticEngine();renderAdvisory()" placeholder="e.g. 1 exo">' +
         '<div class="e-r">' + MORGANS.ph_d + '</div><div></div>' +
-      '<div class="e-l">Near</div>' +
+      '<div class="e-l">Cover test — Near</div>' +
         '<input class="e-in" value="' + esc(V.bv.ct_n) + '" oninput="V.bv.ct_n=this.value;runDiagnosticEngine();renderAdvisory()" placeholder="e.g. 6 exo">' +
         '<div class="e-r">' + MORGANS.ph_n + '</div><div></div>' +
     '</div>' +
-
-    /* NPC */
-    '<div class="dv"><span>NPC</span></div>' +
-    '<div class="fg">' +
-      '<div class="fi"><label>Break (cm)</label>' +
-        '<input value="' + esc(V.bv.npc_b) + '" oninput="V.bv.npc_b=this.value;runDiagnosticEngine();renderAdvisory()" placeholder="Normal ≤5cm">' +
-        '<div class="fi-hint">CITT: ≥6cm abnormal</div></div>' +
-      '<div class="fi"><label>Recovery (cm)</label>' +
-        '<input value="' + esc(V.bv.npc_r) + '" oninput="V.bv.npc_r=this.value"></div>' +
+    '<div class="fg" style="margin-top:6px">' +
+      bvSel("ct_type_d", "Distance deviation", ["", "Orthophoria", "Phoria", "Intermittent tropia", "Constant tropia"], true) +
+      bvSel("ct_type_n", "Near deviation", ["", "Orthophoria", "Phoria", "Intermittent tropia", "Constant tropia"], true) +
+      bvSel("ct_lat", "Laterality", ["", "Alternating", "Right eye", "Left eye"]) +
+      bvSel("comitancy", "Comitancy", ["", "Comitant", "Incomitant"], true) +
     '</div>' +
+    '<div class="fg" style="margin-top:6px">' +
+      bvIn("hirsch", "Hirschberg") +
+      bvIn("krimsky", "Krimsky (Δ)") +
+      bvIn("maddox_h", "Maddox rod — horizontal") +
+      bvIn("maddox_v", "Maddox rod — vertical") +
+    '</div>' +
+    '<div class="fg" style="margin-top:6px">' +
+      bvIn("vongraefe_d", "von Graefe — dist horiz") +
+      bvIn("vongraefe_v_d", "von Graefe — dist vert") +
+      bvIn("vongraefe_n", "von Graefe — near horiz") +
+      bvIn("vongraefe_v_n", "von Graefe — near vert") +
+    '</div>' +
+    '<div class="fg" style="margin-top:6px">' +
+      bvIn("thorington_d", "Mod. Thorington — dist") +
+      bvIn("thorington_n", "Mod. Thorington — near") +
+      bvIn("four_bo", "4Δ base-out test") +
+      bvIn("parks", "Park's 3-step") +
+    '</div>' +
+    bvArea("gaze_notes", "Nine positions of gaze / incomitancy detail", "Under-action, over-action, A/V pattern, torsion, Hess or Lees findings…");
 
-    /* Vergence ranges */
-    '<div class="dv"><span>Vergence Ranges (Blur / Break / Recovery)</span></div>' +
-    ['BO Dist:bo_d:' + MORGANS.bo_d, 'BI Dist:bi_d:' + MORGANS.bi_d, 'BO Near:bo_n:' + MORGANS.bo_n, 'BI Near:bi_n:' + MORGANS.bi_n].map(function(r) {
-      var p = r.split(":");
+  /* ── 2. Sensory fusion ── */
+  var sensory =
+    '<div class="fg">' +
+      bvSel("w4d", "Worth 4-dot — distance", ["", "Fusion (4 dots)", "Suppression R (2 red)", "Suppression L (3 green)", "Diplopia (5 dots)", "Alternating"], true) +
+      bvSel("w4n", "Worth 4-dot — near", ["", "Fusion (4 dots)", "Suppression R (2 red)", "Suppression L (3 green)", "Diplopia (5 dots)", "Alternating"], true) +
+      bvSel("bagolini", "Bagolini striated lenses", ["", "Full cross (fusion)", "Gap in one line (suppression)", "Two crosses (diplopia)", "Not done"]) +
+      bvSel("correspondence", "Retinal correspondence", ["", "Normal (NRC)", "Anomalous (ARC)", "Not assessed"]) +
+    '</div>' +
+    '<div class="fg" style="margin-top:6px">' +
+      bvIn("stereo", "Stereoacuity (sec arc)", true, MORGANS.stereo) +
+      bvSel("stereo_test", "Stereo test used", ["", "Titmus / Wirt", "Randot", "TNO", "Frisby", "Lang", "Stereo Fly", "Other"]) +
+      bvIn("suppression", "Suppression (red filter / other)") +
+    '</div>' +
+    '<div class="fg" style="margin-top:6px">' +
+      bvSel("fixation_od", "Fixation OD (visuoscopy)", ["", "Central", "Parafoveal", "Eccentric", "Not assessed"]) +
+      bvSel("fixation_os", "Fixation OS (visuoscopy)", ["", "Central", "Parafoveal", "Eccentric", "Not assessed"]) +
+    '</div>';
+
+  /* ── 3. Vergence ── */
+  var vergence =
+    '<div class="fg">' +
+      bvIn("npc_b", "NPC break (cm)", true, "Stored reference: " + MORGANS.npc + " · CITT ≥6 cm abnormal") +
+      bvIn("npc_r", "NPC recovery (cm)") +
+      bvSel("npc_target", "NPC target", ["", "Accommodative target", "Penlight", "Penlight + red filter"]) +
+    '</div>' +
+    '<div style="font-size:.56rem;color:var(--sl);text-transform:uppercase;letter-spacing:.05em;margin:8px 0 3px">Vergence ranges — blur / break / recovery</div>' +
+    ['BO Dist:bo_d:' + MORGANS.bo_d, 'BI Dist:bi_d:' + MORGANS.bi_d,
+     'BO Near:bo_n:' + MORGANS.bo_n, 'BI Near:bi_n:' + MORGANS.bi_n].map(function (r) {
+      var pt = r.split(":");
       return '<div class="eg5">' +
-        '<div style="font-size:.66rem;font-weight:500">' + p[0] + '</div>' +
-        '<input class="e-in" value="' + esc(V.bv[p[1] + "_bl"]) + '" oninput="V.bv[\'' + p[1] + '_bl\']=this.value" placeholder="Blur">' +
-        '<input class="e-in" value="' + esc(V.bv[p[1] + "_bk"]) + '" oninput="V.bv[\'' + p[1] + '_bk\']=this.value;runDiagnosticEngine();renderAdvisory()" placeholder="Break">' +
-        '<input class="e-in" value="' + esc(V.bv[p[1] + "_r"]) + '" oninput="V.bv[\'' + p[1] + '_r\']=this.value" placeholder="Rec">' +
-        '<div class="e-r">' + p[2] + '</div>' +
+        '<div style="font-size:.66rem;font-weight:500">' + pt[0] + '</div>' +
+        '<input class="e-in" value="' + esc(V.bv[pt[1] + "_bl"]) + '" oninput="V.bv[\'' + pt[1] + '_bl\']=this.value" placeholder="Blur">' +
+        '<input class="e-in" value="' + esc(V.bv[pt[1] + "_bk"]) + '" oninput="V.bv[\'' + pt[1] + '_bk\']=this.value;runDiagnosticEngine();renderAdvisory()" placeholder="Break">' +
+        '<input class="e-in" value="' + esc(V.bv[pt[1] + "_r"]) + '" oninput="V.bv[\'' + pt[1] + '_r\']=this.value" placeholder="Rec">' +
+        '<div class="e-r">' + pt[2] + '</div>' +
       '</div>';
     }).join("") +
+    '<div class="fg" style="margin-top:8px">' +
+      bvIn("vf_cpm", "Vergence facility (cpm)", false, "12Δ BO / 3Δ BI") +
+      bvSel("vf_fail", "Vergence facility — fails on", ["", "Base-out", "Base-in", "Both", "Neither"]) +
+      bvIn("fd_d", "Fixation disparity — distance") +
+      bvIn("fd_n", "Fixation disparity — near") +
+    '</div>' +
+    '<div class="fg" style="margin-top:6px">' +
+      bvIn("assoc_phoria", "Associated phoria (prism to neutralise)") +
+      bvIn("aca", "AC/A (calculated)", true, MORGANS.aca) +
+      bvIn("aca_grad", "AC/A (gradient)") +
+      bvIn("cac", "CA/C ratio") +
+    '</div>';
 
-    /* Accommodation */
-    '<div class="dv"><span>Accommodation</span></div>' +
+  /* ── 4. Accommodation ── */
+  var accom =
     '<div class="fg">' +
-      '<div class="fi"><label>AC/A</label><input value="' + esc(V.bv.aca) + '" oninput="V.bv.aca=this.value;runDiagnosticEngine();renderAdvisory()" placeholder="3:1 to 5:1"></div>' +
-      '<div class="fi"><label>Accom OD (D)</label><input value="' + esc(V.bv.acc_od) + '" oninput="V.bv.acc_od=this.value;runDiagnosticEngine();renderAdvisory()">' +
-        '<div class="fi-hint">Hofstetter min: ' + (hof.min !== null ? hof.min + 'D' : '—') + '</div></div>' +
-      '<div class="fi"><label>Accom OS (D)</label><input value="' + esc(V.bv.acc_os) + '" oninput="V.bv.acc_os=this.value"></div>' +
-      '<div class="fi"><label>MAF OD (cpm)</label><input value="' + esc(V.bv.maf_od) + '" oninput="V.bv.maf_od=this.value;runDiagnosticEngine();renderAdvisory()">' +
-        '<div class="fi-hint">Normal ≥12 cpm (monocular)</div></div>' +
-      '<div class="fi"><label>MAF OS (cpm)</label><input value="' + esc(V.bv.maf_os) + '" oninput="V.bv.maf_os=this.value"></div>' +
-      '<div class="fi"><label>BAF OD (cpm)</label><input value="' + esc(V.bv.baf_od) + '" oninput="V.bv.baf_od=this.value">' +
-        '<div class="fi-hint">Normal ≥8 cpm (binocular)</div></div>' +
-      '<div class="fi"><label>NRA</label><input value="' + esc(V.bv.nra) + '" oninput="V.bv.nra=this.value" placeholder="+2.00 to +2.50"></div>' +
-      '<div class="fi"><label>PRA</label><input value="' + esc(V.bv.pra) + '" oninput="V.bv.pra=this.value" placeholder="-2.00 to -2.50"></div>' +
-      '<div class="fi"><label>MEM OD</label><input value="' + esc(V.bv.mem_od) + '" oninput="V.bv.mem_od=this.value" placeholder="+0.25 to +0.75"></div>' +
-      '<div class="fi"><label>MEM OS</label><input value="' + esc(V.bv.mem_os) + '" oninput="V.bv.mem_os=this.value"></div>' +
+      bvIn("acc_od", "Amplitude OD (D)", true, "Hofstetter min: " + (hof.min !== null ? hof.min + "D" : "—")) +
+      bvIn("acc_os", "Amplitude OS (D)", true) +
+      bvIn("acc_ou", "Amplitude OU (D)") +
+      bvSel("amp_method", "Amplitude method", ["", "Push-up", "Pull-away", "Minus lens"]) +
+    '</div>' +
+    '<div class="fg" style="margin-top:6px">' +
+      bvIn("maf_od", "Monocular facility OD (cpm)", true, MORGANS.maf) +
+      bvIn("maf_os", "Monocular facility OS (cpm)", false, MORGANS.maf) +
+      bvIn("baf_od", "Binocular facility (cpm)", false, MORGANS.baf) +
+      bvSel("facility_fail", "Facility fails on", ["", "Plus lens", "Minus lens", "Both", "Neither"]) +
+    '</div>' +
+    '<div class="fg" style="margin-top:6px">' +
+      bvIn("nra", "NRA", false, MORGANS.nra) +
+      bvIn("pra", "PRA", false, MORGANS.pra) +
+      bvIn("mem_od", "Accommodative lag OD") +
+      bvIn("mem_os", "Accommodative lag OS") +
+      bvSel("lag_method", "Lag method", ["", "MEM retinoscopy", "Nott retinoscopy", "Cross-cylinder (FCC)"]) +
+    '</div>';
+
+  /* ── 5. Analysis ── */
+  var analysis =
+    '<div class="fg">' +
+      bvSel("sheard", "Sheard's criterion", ["", "Met", "Not met", "Not calculated"]) +
+      bvSel("percival", "Percival's criterion", ["", "Met", "Not met", "Not calculated"]) +
+    '</div>' +
+    bvArea("impression", "Binocular vision impression", "e.g. convergence insufficiency — reduced NPC, low BO at near, exo greater at near…") +
+    bvArea("management", "Management", "Vision therapy, prism, added plus, review interval…") +
+    bvArea("notes", "Other notes", "");
+
+  return '<div class="card">' +
+    '<div class="card-t">Binocular Vision</div>' +
+    '<div class="card-s">Full evaluation — open only the sections you need. Reference values are Morgan\'s norms and Hofstetter\'s formula.</div>' +
+
+    '<div class="fg" style="margin-bottom:8px">' +
+      bvSel("correction", "Tested with", ["With habitual Rx", "With new Rx", "Unaided"]) +
+      bvIn("target_d", "Distance target") +
+      bvIn("target_n", "Near target / distance") +
     '</div>' +
 
-    /* Sensory */
-    '<div class="dv"><span>Sensory</span></div>' +
-    '<div class="fg">' +
-      '<div class="fi"><label>Stereopsis</label><input value="' + esc(V.bv.stereo) + '" oninput="V.bv.stereo=this.value" placeholder="e.g. 40 sec arc"></div>' +
-      '<div class="fi"><label>Worth 4-Dot Dist</label>' +
-        '<select oninput="V.bv.w4d=this.value"><option value="">—</option><option>Fusion</option><option>Diplopia</option><option>Suppression OD</option><option>Suppression OS</option></select></div>' +
-      '<div class="fi"><label>Worth 4-Dot Near</label>' +
-        '<select oninput="V.bv.w4n=this.value"><option value="">—</option><option>Fusion</option><option>Diplopia</option><option>Suppression OD</option><option>Suppression OS</option></select></div>' +
-    '</div>' +
-
-    '<div class="fi full" style="margin-top:8px"><label>BV Notes</label>' +
-      '<textarea oninput="V.bv.notes=this.value">' + esc(V.bv.notes) + '</textarea></div>' +
+    bvSection("bvSecAlign",  "① Alignment — cover test, Maddox, von Graefe, comitancy", alignment, true) +
+    bvSection("bvSecSens",   "② Sensory fusion — Worth 4-dot, Bagolini, stereo, correspondence", sensory, false) +
+    bvSection("bvSecVerg",   "③ Vergence — NPC, ranges, facility, fixation disparity, AC/A", vergence, true) +
+    bvSection("bvSecAccom",  "④ Accommodation — amplitude, facility, lag, NRA / PRA", accom, false) +
+    bvSection("bvSecAnalysis", "⑤ Analysis & management", analysis, false) +
 
     '<div class="btn-g">' +
       '<button class="btn btn-s" onclick="nav(\'motility\')">← Back</button>' +

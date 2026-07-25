@@ -205,6 +205,124 @@ var INVESTIGATION_CATALOGUE = [
     { k: "report", l: "Radiology report", type: "textarea" },
     { k: "reported_by", l: "Reported by", type: "text" }
   ]},
+  /* ── Glaucoma / structural add-ons ── */
+  { code: "GONIO_PHOTO", name: "Gonioscopy / angle imaging", cat: "Glaucoma", eyes: true, fields: [
+    { k: "method", l: "Method", type: "select", opts: ["", "Indirect gonioscopy", "Gonio photography", "AS-OCT angle", "UBM"] },
+    { k: "grade", l: "Angle grade described", type: "text" },
+    { k: "pas", l: "PAS / neovascularisation", type: "text" },
+    { k: "pigment", l: "Trabecular pigmentation", type: "text" },
+    { k: "comment", l: "Comment", type: "textarea" }
+  ]},
+  { code: "DIURNAL_IOP", name: "Diurnal IOP / phasing", cat: "Glaucoma", eyes: true, fields: [
+    { k: "readings", l: "Readings with times", type: "textarea" },
+    { k: "peak", l: "Peak (mmHg)", type: "num" },
+    { k: "trough", l: "Trough (mmHg)", type: "num" },
+    { k: "method", l: "Tonometer used", type: "text" }
+  ]},
+  { code: "CORNEAL_HYST", name: "Corneal hysteresis / biomechanics", cat: "Glaucoma", eyes: true, fields: [
+    { k: "ch", l: "Corneal hysteresis (mmHg)", type: "num" },
+    { k: "crf", l: "Corneal resistance factor", type: "num" },
+    { k: "iopcc", l: "Corneal-compensated IOP (mmHg)", type: "num" }
+  ]},
+
+  /* ── Retina add-ons ── */
+  { code: "WIDEFIELD", name: "Ultra-widefield imaging", cat: "Imaging", eyes: true, fields: [
+    { k: "device", l: "Device", type: "text" },
+    { k: "periphery", l: "Peripheral findings", type: "textarea" },
+    { k: "comment", l: "Comment", type: "textarea" }
+  ]},
+  { code: "FAF", name: "Fundus autofluorescence", cat: "Imaging", eyes: true, fields: [
+    { k: "pattern", l: "Pattern (hyper / hypo AF)", type: "text" },
+    { k: "comment", l: "Reported comment", type: "textarea" }
+  ]},
+  { code: "MICROPERIMETRY", name: "Microperimetry", cat: "Function", eyes: true, fields: [
+    { k: "sensitivity", l: "Mean sensitivity (dB)", type: "num" },
+    { k: "fixation", l: "Fixation stability", type: "text" },
+    { k: "comment", l: "Comment", type: "textarea" }
+  ]},
+  { code: "DARK_ADAPT", name: "Dark adaptometry", cat: "Function", eyes: true, fields: [
+    { k: "rod_intercept", l: "Rod intercept time", type: "text" },
+    { k: "comment", l: "Comment", type: "textarea" }
+  ]},
+
+  /* ── Anterior / oculoplastic ── */
+  { code: "MEIBOGRAPHY", name: "Meibography / interferometry", cat: "Cornea", eyes: true, fields: [
+    { k: "dropout", l: "Gland dropout described", type: "text" },
+    { k: "lipid", l: "Lipid layer thickness", type: "text" },
+    { k: "blink", l: "Blink rate / completeness", type: "text" }
+  ]},
+  { code: "CONFOCAL", name: "Confocal microscopy", cat: "Cornea", eyes: true, fields: [
+    { k: "indication", l: "Indication", type: "text" },
+    { k: "findings", l: "Findings", type: "textarea" }
+  ]},
+  { code: "CORNEAL_SCRAPE", name: "Corneal scrape / microbiology", cat: "Cornea", eyes: true, fields: [
+    { k: "site", l: "Site sampled", type: "text" },
+    { k: "gram", l: "Gram stain / smear", type: "textarea" },
+    { k: "culture", l: "Culture result", type: "textarea" },
+    { k: "sensitivity", l: "Sensitivities", type: "textarea" }
+  ]},
+  { code: "EXOPHTHALMOMETRY", name: "Exophthalmometry", cat: "Orbit", eyes: true, fields: [
+    { k: "reading", l: "Reading (mm)", type: "num" },
+    { k: "base", l: "Base setting (mm)", type: "num" },
+    { k: "device", l: "Device", type: "text" }
+  ]},
+  { code: "LACRIMAL", name: "Lacrimal syringing / probing", cat: "Orbit", eyes: true, fields: [
+    { k: "patency", l: "Patency", type: "select", opts: ["", "Patent", "Partially patent", "Blocked", "Regurgitation"] },
+    { k: "level", l: "Level of obstruction", type: "text" },
+    { k: "comment", l: "Comment", type: "textarea" }
+  ]},
+  { code: "DACRYO", name: "Dacryocystography / scintigraphy", cat: "Orbit", eyes: true, fields: [
+    { k: "modality", l: "Modality", type: "select", opts: ["", "Dacryocystography", "Dacryoscintigraphy"] },
+    { k: "report", l: "Report", type: "textarea" }
+  ]},
+
+  /* ── Paediatric / refractive ── */
+  { code: "CYCLO_REF", name: "Cycloplegic refraction", cat: "Paediatric", eyes: true, fields: [
+    { k: "agent", l: "Cycloplegic agent", type: "select", opts: ["", "Cyclopentolate 1%", "Cyclopentolate 0.5%", "Tropicamide 1%", "Homatropine 2%", "Atropine 1%"] },
+    { k: "sph", l: "Sphere (D)", type: "text" },
+    { k: "cyl", l: "Cylinder (D)", type: "text" },
+    { k: "axis", l: "Axis", type: "text" },
+    { k: "comment", l: "Comment", type: "textarea" }
+  ]},
+  { code: "AXIAL_MONITOR", name: "Axial length monitoring (myopia)", cat: "Paediatric", eyes: true, fields: [
+    { k: "al", l: "Axial length (mm)", type: "num" },
+    { k: "prev_al", l: "Previous AL (mm)", type: "num" },
+    { k: "interval", l: "Interval since last", type: "text" },
+    { k: "comment", l: "Comment", type: "textarea" }
+  ]},
+  { code: "PL_ACUITY", name: "Preferential looking / objective acuity", cat: "Paediatric", eyes: true, fields: [
+    { k: "test", l: "Test", type: "select", opts: ["", "Teller acuity cards", "Cardiff cards", "Keeler cards", "Lea gratings"] },
+    { k: "result", l: "Result (cy/deg or equivalent)", type: "text" },
+    { k: "cooperation", l: "Cooperation", type: "text" }
+  ]},
+
+  /* ── Contact lens ── */
+  { code: "CL_FIT", name: "Contact lens fit assessment", cat: "Contact lens", eyes: true, fields: [
+    { k: "lens", l: "Trial lens used", type: "text" },
+    { k: "movement", l: "Movement / lag", type: "text" },
+    { k: "centration", l: "Centration", type: "text" },
+    { k: "fluorescein", l: "Fluorescein pattern", type: "textarea" },
+    { k: "over_ref", l: "Over-refraction", type: "text" },
+    { k: "va", l: "VA with lens", type: "text" },
+    { k: "comment", l: "Comment", type: "textarea" }
+  ]},
+  { code: "KERATOMETRY", name: "Keratometry", cat: "Contact lens", eyes: true, fields: [
+    { k: "k1", l: "K1 (D) @ axis", type: "text" },
+    { k: "k2", l: "K2 (D) @ axis", type: "text" },
+    { k: "mires", l: "Mire quality", type: "text" }
+  ]},
+
+  /* ── Low vision ── */
+  { code: "LV_ASSESS", name: "Low vision assessment", cat: "Low vision", eyes: false, fields: [
+    { k: "goals", l: "Patient's stated goals", type: "textarea" },
+    { k: "best_va", l: "Best VA achieved (distance / near)", type: "text" },
+    { k: "mag_needed", l: "Magnification trialled", type: "text" },
+    { k: "aids", l: "Aids trialled and outcome", type: "textarea" },
+    { k: "lighting", l: "Lighting / contrast preference", type: "text" },
+    { k: "field", l: "Functional field notes", type: "textarea" },
+    { k: "referral", l: "Onward support / registration discussed", type: "textarea" }
+  ]},
+
   { code: "OTHER", name: "Other investigation", cat: "Other", eyes: false, fields: [
     { k: "name", l: "Investigation", type: "text" },
     { k: "result", l: "Result", type: "textarea" }

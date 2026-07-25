@@ -945,22 +945,62 @@ function blankVisit() {
       notes: ""
     },
 
-    /* Binocular Vision */
+    /* Binocular Vision — full evaluation.
+       The engine-facing field names (ct_d, ct_n, npc_b, bo_n_bk, aca, acc_od,
+       acc_os, maf_od) are deliberately unchanged; everything else is added
+       around them. */
     bv: {
-      ct_d: "", ct_n: "",
-      npc_b: "", npc_r: "",
+      /* Conditions of testing */
+      correction: "With habitual Rx",   /* With habitual Rx | With new Rx | Unaided */
+      target_d: "", target_n: "",
+
+      /* ── Alignment ── */
+      ct_d: "", ct_n: "",               /* cover test distance / near */
+      ct_type_d: "", ct_type_n: "",     /* Orthophoria | Phoria | Intermittent tropia | Constant tropia */
+      ct_lat: "",                       /* Alternating | Right | Left */
+      hirsch: "", krimsky: "",
+      maddox_h: "", maddox_v: "",
+      vongraefe_d: "", vongraefe_v_d: "",
+      vongraefe_n: "", vongraefe_v_n: "",
+      thorington_d: "", thorington_n: "",
+      four_bo: "",                      /* 4Δ base-out test */
+      comitancy: "",                    /* Comitant | Incomitant */
+      gaze_notes: "",                   /* 9-position / Park's 3-step findings */
+      parks: "",
+
+      /* ── Sensory fusion ── */
+      w4d: "", w4n: "",                 /* Worth 4-dot distance / near */
+      bagolini: "",
+      stereo: "", stereo_test: "",      /* seconds of arc + which test */
+      suppression: "",
+      correspondence: "",               /* NRC | ARC | Not assessed */
+      fixation_od: "", fixation_os: "", /* central / eccentric (visuoscopy) */
+
+      /* ── Vergence ── */
+      npc_b: "", npc_r: "", npc_target: "",
       bo_d_bl: "", bo_d_bk: "", bo_d_r: "",
       bi_d_bl: "", bi_d_bk: "", bi_d_r: "",
       bo_n_bl: "", bo_n_bk: "", bo_n_r: "",
       bi_n_bl: "", bi_n_bk: "", bi_n_r: "",
-      aca: "",
-      acc_od: "", acc_os: "",
-      maf_od: "", maf_os: "",
-      baf_od: "", baf_os: "",
+      vf_cpm: "", vf_fail: "",          /* vergence facility 12BO/3BI */
+      fd_d: "", fd_n: "",               /* fixation disparity */
+      assoc_phoria: "",                 /* associated phoria / prism to neutralise */
+      aca: "", aca_grad: "", cac: "",
+
+      /* ── Accommodation ── */
+      acc_od: "", acc_os: "", acc_ou: "",   /* amplitude */
+      amp_method: "",                        /* Push-up | Pull-away | Minus lens */
+      maf_od: "", maf_os: "",                /* monocular facility cpm */
+      baf_od: "", baf_os: "",                /* binocular facility cpm */
+      facility_fail: "",                     /* which lens fails: plus / minus */
       nra: "", pra: "",
-      mem_od: "", mem_os: "",
-      stereo: "",
-      w4d: "", w4n: "",
+      mem_od: "", mem_os: "",                /* MEM / Nott lag */
+      lag_method: "",
+
+      /* ── Analysis & impression ── */
+      sheard: "", percival: "",
+      impression: "",
+      management: "",
       notes: ""
     },
 
