@@ -6,6 +6,49 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-07-25 — Session 11m: Whole-build UI/UX wiring audit + refinements
+
+**Founder asked: is everything connected and wired? Then refine the UX.**
+
+**Audit (objective, over the real source):**
+- **No dead buttons.** All 105 inline event handlers across every JS + HTML file
+  resolve to a defined function. Now enforced permanently by
+  `tests/ui-wiring.test.js`.
+- **All 8 modals** have working close buttons; **all 22 exam steps** render real
+  pages (no "under development" fallback); the **mobile engine drawer**
+  (`toggleEngineView` → `body.engine-open`) works at ≤1000px.
+- **Found 5 built-but-ORPHANED features** — real, working panels with NO entry
+  point a user could reach: `renderSpectacleAdvisor`, `renderOSDI` /
+  `renderSmartIntake`, `renderRiskCalculators`, `renderMedicationReview`.
+
+**Refinements this pass (the clinically-safe wirings):**
+- **Spectacle Lens Guidance** wired into the **Refraction** step — standard
+  optical practice (lens index/material, design, coatings) derived from the
+  entered Rx; self-gates until an Rx is present. Verified rendering with a real
+  Rx.
+- **Dry-Eye Score (OSDI)** wired into **Chief Complaint** as a collapsed-by-
+  default optional tool with a running score badge. OSDI is a validated public
+  instrument (Schiffman 2000); scoring is the standard `sum × 25 / answered`
+  with the published severity bands. Screening only — it never auto-adds tokens
+  (the clinician decides). Verified: 3 answers → 58.3 "Severe", correct formula.
+- New guard test asserts these stay reachable so they can't silently orphan again.
+
+**Deliberately NOT wired — flagged for founder's decision** (guardrails: no
+unverified clinical stats, product-placement is the founder's call):
+- `renderRiskCalculators` (OHTS 5-yr conversion %, ETDRS DR grading) and
+  `renderMedicationReview` (drug ocular-effect claims) emit specific clinical
+  figures from a "simplified" model I can't verify against the published
+  sources — surfacing them unverified would breach the no-fabricated-stats
+  guardrail. They need his clinical sign-off (or a cited source) first.
+- `renderSmartIntake` overlaps the existing rich chief-complaint chips — likely
+  redundant; left for a product call on whether it's a distinct quick-entry mode.
+
+**Verification:** full suite **268/268** (266 + 2 UI-wiring guards); no page
+errors at 1440 / 820 / 400 px; offline path and red flags untouched (this is
+presentation + wiring only, no engine/KB logic changed).
+
+---
+
 ## 2026-07-25 — Session 11l: Token synonym integrity — one concept, one token
 
 **Founder caught a real integrity risk.** He noticed `high_iop` and

@@ -213,6 +213,9 @@ function pgCC() {
     }
   }
 
+  /* Optional validated dry-eye score (collapsed by default). */
+  if (typeof osdiTool === "function") h += osdiTool();
+
   /* Symptom chips — expanded 12-group layout */
   h += '<div class="dv"><span>Select Symptoms</span></div>';
   h += '<input class="search-box" placeholder="Search symptoms..." oninput="filterSymptoms(this.value)">';
@@ -518,6 +521,12 @@ function pgRx() {
       '<div class="fi"><label>Autorefractor OD</label><input value="' + esc(V.rx.ar_od) + '" oninput="V.rx.ar_od=this.value"></div>' +
       '<div class="fi"><label>Autorefractor OS</label><input value="' + esc(V.rx.ar_os) + '" oninput="V.rx.ar_os=this.value"></div>' +
     '</div>' +
+
+    /* Spectacle-lens guidance — derived from the entered Rx (standard optical
+       practice: index/material/coating/tint). Self-gates until Rx is present. */
+    '<div class="dv"><span>Spectacle Lens Guidance</span></div>' +
+    (typeof renderSpectacleAdvisor === "function" ? renderSpectacleAdvisor() :
+      '<div style="font-size:.62rem;color:var(--sv);padding:8px">Enter refraction to generate lens recommendations.</div>') +
 
     '<div class="btn-g">' +
       '<button class="btn btn-s" onclick="nav(\'va\')">← Back</button>' +

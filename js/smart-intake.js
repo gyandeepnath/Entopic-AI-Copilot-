@@ -91,6 +91,27 @@ var SPEED_SEVERITY = [
 /* Returns HTML for the OSDI form                                  */
 /* ═══════════════════════════════════════════════════════════════ */
 
+/* Collapsible-tool state for the chief-complaint page (survives renderMain). */
+var OSDI_OPEN = false;
+function toggleOSDI() { OSDI_OPEN = !OSDI_OPEN; if (typeof renderMain === "function") renderMain(); }
+
+/* A compact, collapsed-by-default OSDI entry point for the chief-complaint
+   page. Shows the running score once answered. OSDI is a validated public
+   dry-eye instrument (Schiffman 2000); scoring is the standard
+   (sum × 25 / answered) with the published severity bands. Screening only —
+   never auto-adds tokens; the clinician decides. */
+function osdiTool() {
+  var v = (typeof V !== "undefined" && V.osdi) ? V.osdi : null;
+  var badge = (v && v.total != null && v.total !== "")
+    ? '<span style="font-size:.58rem;color:var(--sv)"> · score ' + v.total + (v.severity ? " (" + v.severity + ")" : "") + '</span>'
+    : '';
+  var h = '<div class="dv"><span>Dry-Eye Score (OSDI) — optional</span></div>';
+  h += '<button class="btn btn-s" style="font-size:.62rem" onclick="toggleOSDI()">' +
+       (OSDI_OPEN ? '▾ Hide OSDI questionnaire' : '▸ Score dry-eye symptoms (OSDI)') + '</button>' + badge;
+  if (OSDI_OPEN) h += '<div style="margin-top:8px">' + renderOSDI() + '</div>';
+  return h;
+}
+
 function renderOSDI() {
   /* Initialize OSDI scores if needed */
   if (!V.osdi) V.osdi = { scores: [], total: null, severity: "" };
