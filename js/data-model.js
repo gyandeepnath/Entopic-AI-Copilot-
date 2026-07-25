@@ -67,8 +67,29 @@ var STEPS = [
   { id: "plan",             l: "Plan / Management",   c: "Management",      n: "19" },
   { id: "coding",           l: "ICD-10 Coding",       c: "Documentation",   n: "20" },
   { id: "report",           l: "Report",              c: "Documentation",   n: "21" },
-  { id: "prescription",     l: "Prescription",        c: "Documentation",   n: "22" }
+  { id: "prescription",     l: "Prescription",        c: "Documentation",   n: "22" },
+
+  /* ── OPTIONAL MODULES ──────────────────────────────────────────
+     The core flow stays 22 steps. These appear in the sidebar only
+     when switched on for a patient (V.modules), so a routine exam is
+     unchanged while a paediatric / low-vision / contact-lens case has
+     a proper section instead of being squeezed into free text. */
+  { id: "paediatric",   l: "Paediatric",     c: "Optional modules", n: "P", opt: "paediatric" },
+  { id: "low_vision",   l: "Low Vision",     c: "Optional modules", n: "L", opt: "low_vision" },
+  { id: "contact_lens", l: "Contact Lens",   c: "Optional modules", n: "C", opt: "contact_lens" }
 ];
+
+/* Modules the clinician can switch on for a visit. */
+var EXAM_MODULES = [
+  { id: "paediatric",   label: "Paediatric",   blurb: "Fixation, objective acuity, cycloplegic Rx, amblyopia and squint work-up." },
+  { id: "low_vision",   label: "Low Vision",   blurb: "Goals, magnification, aids trialled, lighting, functional field and support." },
+  { id: "contact_lens", label: "Contact Lens", blurb: "Fitting, lens parameters, fluorescein pattern, over-refraction and aftercare." }
+];
+
+/* Is an optional module switched on for the current visit? */
+function moduleOn(id) {
+  return !!(typeof V !== "undefined" && V && V.modules && V.modules[id]);
+}
 
 
 /* ═══════════════════════════════════════════════════════════════ */
@@ -1084,6 +1105,61 @@ function blankVisit() {
       mgmt: "", followup: "", education: "",
       ref_to: "", ref_urgency: "",
       ref_letter: ""
+    },
+
+    /* Optional modules switched on for this visit */
+    modules: { paediatric: false, low_vision: false, contact_lens: false },
+
+    /* Paediatric assessment (module) */
+    paed: {
+      birth_hx: "", ga: "", bw: "", milestones: "", systemic: "",
+      fix_od: "", fix_os: "", fix_ou: "",          /* fix & follow / CSM */
+      csm_od: "", csm_os: "",
+      objective_test: "", objective_od: "", objective_os: "",
+      cycloplegic_done: "", cyclo_agent: "",
+      squint_present: "", squint_type: "", squint_onset: "", squint_constancy: "",
+      amblyopia_suspected: "", amblyopia_type: "", amblyopia_density: "",
+      occlusion_hx: "", compliance: "",
+      red_reflex_od: "", red_reflex_os: "",
+      screening_referral: "", school_perf: "",
+      notes: ""
+    },
+
+    /* Low vision assessment (module) */
+    lv: {
+      goals: "", onset: "", diagnosis: "",
+      va_dist_od: "", va_dist_os: "", va_near_od: "", va_near_os: "",
+      va_best_binoc: "", near_chart: "", working_dist: "",
+      contrast_test: "", contrast_score: "",
+      field_status: "", field_notes: "",
+      glare: "", lighting_pref: "", tint_trialled: "",
+      mag_required: "", mag_calc: "",
+      aids_trialled: "", aid_issued: "", aid_outcome: "",
+      eccentric_viewing: "", training_given: "",
+      mobility: "", reading_speed: "",
+      registration: "", support_referral: "",
+      driving_discussed: "",
+      notes: ""
+    },
+
+    /* Contact lens fitting (module) */
+    cl: {
+      indication: "", wear_hx: "", previous_lens: "", wear_time: "",
+      lens_type: "", material: "", modality: "", brand: "",
+      od_bc: "", od_dia: "", od_power: "", od_cyl: "", od_axis: "", od_add: "",
+      os_bc: "", os_dia: "", os_power: "", os_cyl: "", os_axis: "", os_add: "",
+      k_od_1: "", k_od_2: "", k_os_1: "", k_os_2: "",
+      hvid_od: "", hvid_os: "",
+      tbut_od: "", tbut_os: "",
+      centration_od: "", centration_os: "",
+      movement_od: "", movement_os: "",
+      fluorescein_od: "", fluorescein_os: "",
+      over_ref_od: "", over_ref_os: "",
+      va_od: "", va_os: "",
+      comfort: "", handling_taught: "", hygiene_advice: "",
+      solution: "", replacement: "", aftercare: "",
+      complications: "",
+      notes: ""
     },
 
     /* Tracking */

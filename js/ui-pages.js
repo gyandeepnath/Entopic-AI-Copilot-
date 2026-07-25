@@ -33,7 +33,11 @@ function renderMain() {
     plan:             pgPlan,
     coding:           pgCode,
     report:           pgRpt,
-    prescription:     pgRxP
+    prescription:     pgRxP,
+    /* optional modules */
+    paediatric:       (typeof pgPaed === "function" ? pgPaed : null),
+    low_vision:       (typeof pgLowVision === "function" ? pgLowVision : null),
+    contact_lens:     (typeof pgContactLens === "function" ? pgContactLens : null)
   }[V.step];
 
   var el = document.getElementById("mainEl");
@@ -129,6 +133,9 @@ function pgDemo() {
     '</div>' +
 
     '</div>' + /* close .fg */
+
+    /* Optional modules (paediatric / low vision / contact lens) for this exam */
+    (typeof moduleChooser === "function" ? moduleChooser() : "") +
 
     '<div class="btn-g">' +
       '<button class="btn btn-p" onclick="goNext(\'demographics\',\'chief_complaint\')">Continue →</button>' +

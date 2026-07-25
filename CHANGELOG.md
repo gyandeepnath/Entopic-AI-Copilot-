@@ -6,6 +6,81 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-07-25 — Session 11o: Drawing upgrade, full BV evaluation, three new sections
+
+### Drawing — colour-coded charts and real tools
+Was a plain grey circle with a pen and six unlabelled colours; saved drawings
+were **never displayed anywhere**. Now:
+- The conventional ophthalmic **colour code**, every swatch labelled with what
+  it marks, the selected colour's meaning shown live, and the whole key
+  **saved with the drawing** so the meaning travels into the record.
+- Proper templates: fundus is a **concentric chart** (posterior pole / equator
+  / ora serrata) with **12 clock hours**, radial spokes, disc + macula, N/T
+  labels — the layout used to chart breaks and detachments. Anterior segment
+  gets limbus / iris / pupil, a locating grid and clock hours.
+- Tools: pen, straight line, ellipse with live preview, **hatch** (for lattice /
+  thinning), eraser, **undo + redo**, and per-eye OD/OS charts. Canvas 500² → 760×560.
+- Saved drawings render as a gallery on the slit-lamp and fundus pages,
+  clickable to open full size with the colour key, and deletable.
+- ⚠ Colour meanings vary by school/region and chart laterality is a single
+  constant (`DRAW_DISC_SIDE_OD`) — **founder to confirm**.
+
+### Binocular vision — full evaluation
+From ~10 fields to a complete orthoptic work-up in five collapsible sections
+(**72 fields**): alignment (cover test with deviation type + laterality,
+comitancy, Hirschberg, Krimsky, Maddox, von Graefe H+V dist+near, modified
+Thorington, 4Δ BO, Park's 3-step, nine-positions), sensory fusion (Worth 4-dot
+with structured outcomes, Bagolini, stereo + test used, suppression, NRC/ARC,
+visuoscopy fixation), vergence (NPC + target, full BI/BO ranges, vergence
+facility + failing direction, fixation disparity, associated phoria, AC/A
+calculated + gradient, CA/C), accommodation (amplitude OD/OS/OU + method,
+monocular + binocular facility + failing lens, NRA/PRA, MEM/Nott lag), and
+analysis (Sheard's / Percival's, impression, management).
+Engine-facing field names unchanged. **No new norms invented** — only the
+values already stored in `MORGANS` / `hofstetter()` are shown.
+
+### Three new sections, as optional modules
+Paediatric, Low Vision and Contact Lens were "almost negligible". Built as
+**optional modules** so the **core 22-step flow is unchanged** for a routine
+adult exam — switch one on from Demographics and its section appears in the
+sidebar (verified: 22 steps by default, 25 with all three on, and the step
+disappears again when switched off).
+- **Paediatric**: birth/developmental history, fix-and-follow + CSM per eye,
+  objection to occlusion, preferential-looking acuity, red reflex (leukocoria
+  recorded as a finding), cycloplegia, squint type/onset/constancy, amblyopia
+  type/density/occlusion history/compliance, referral source.
+- **Low Vision**: patient's own goals first, distance+near VA, near chart and
+  working distance, contrast, reading speed, functional field, glare/lighting/
+  tint, magnification that worked and how it was arrived at, aids trialled and
+  outcome, eccentric viewing, training, mobility, registration and support
+  referral, driving.
+- **Contact Lens**: indication, wearing history, K readings / HVID / TBUT,
+  lens type/material/modality, full OD+OS parameter table (BC, dia, power, cyl,
+  axis, add), centration, movement, fluorescein pattern, over-refraction, VA,
+  comfort, handling taught, care system, hygiene advice, aftercare interval,
+  complications.
+
+### Investigations
+- Role renamed **"Technician / Investigations" → "Investigation unit"**.
+- Catalogue broadened **26 → 45 tests across 12 categories**: gonioscopy/angle
+  imaging, diurnal IOP phasing, corneal hysteresis, ultra-widefield, fundus
+  autofluorescence, microperimetry, dark adaptometry, meibography/interferometry,
+  confocal microscopy, corneal scrape + microbiology, exophthalmometry, lacrimal
+  syringing, dacryocystography/scintigraphy, cycloplegic refraction, axial-length
+  myopia monitoring, preferential-looking acuity, contact lens fit assessment,
+  keratometry, low-vision assessment.
+
+⚠ All of the above records **fields and descriptive categories only** — no
+thresholds, normal ranges, eligibility criteria or interpretation. Magnification,
+amblyopia management, lens selection and registration remain clinical decisions.
+Nothing in these modules is fed to the diagnostic engine.
+
+**Verification:** suite **275/275**; browser-verified drawing (template, colours,
+shapes, undo/redo, save + gallery), module on/off with step counts, each module
+page rendering and persisting data, and the BV page at 72 fields. No console errors.
+
+---
+
 ## 2026-07-25 — Session 11n: Refraction rebuild, colour vision, file storage, investigation hand-off
 
 Founder review of the clinical depth of the build. Four of the eight items he

@@ -17,6 +17,9 @@ function renderSidebar() {
   for (var i = 0; i < STEPS.length; i++) {
     var s = STEPS[i];
 
+    /* Optional modules only appear once switched on for this visit. */
+    if (s.opt && !(typeof moduleOn === "function" && moduleOn(s.opt))) continue;
+
     /* Category header */
     if (s.c !== lastCat) {
       h += '<div class="sb-cat">' + s.c + '</div>';
@@ -66,7 +69,11 @@ function renderSidebar() {
 
   /* ── Progress indicator ── */
   var completedCount = V.completed ? V.completed.length : 0;
-  var totalSteps = STEPS.length;
+  var totalSteps = 0;
+  for (var ti = 0; ti < STEPS.length; ti++) {
+    if (STEPS[ti].opt && !(typeof moduleOn === "function" && moduleOn(STEPS[ti].opt))) continue;
+    totalSteps++;
+  }
   var pct = totalSteps > 0 ? Math.round((completedCount / totalSteps) * 100) : 0;
 
   h += '<div style="margin:8px 8px;padding:7px;font-size:.54rem;color:var(--sl)">';
