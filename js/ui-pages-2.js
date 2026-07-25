@@ -131,14 +131,92 @@ function pgFun() {
 /* PAGE 16: NEURO-OPHTHALMOLOGY                                    */
 /* ═══════════════════════════════════════════════════════════════ */
 
+/* Colour-vision assessment block.
+   The clinician records an explicit overall RESULT (normal is a first-class
+   choice), then optional detail about how it was assessed. The engine reads
+   the result — and the panel states plainly what it will do, so the link
+   between what is recorded and what is scored stays inspectable. */
+function cvBlock() {
+  if (!V.neuro.cv) {
+    V.neuro.cv = { status: "", test: "Ishihara", plates: "", od_score: "", os_score: "",
+                   nature: "", axis: "", severity: "", d15_od: "", d15_os: "", notes: "" };
+  }
+  var cv = V.neuro.cv;
+  var set = function (k) {
+    return 'V.neuro.cv.' + k + '=this.value;runDiagnosticEngine();renderMain();renderAdvisory()';
+  };
+  var sel = function (k, opts) {
+    return '<select oninput="' + set(k) + '">' + opts.map(function (o) {
+      return '<option' + (cv[k] === o ? " selected" : "") + '>' + o + '</option>';
+    }).join("") + '</select>';
+  };
+  var txt = function (k, ph) {
+    return '<input class="e-in" value="' + esc(cv[k] || "") + '" oninput="V.neuro.cv.' + k + '=this.value" placeholder="' + ph + '">';
+  };
+
+  /* Big, unambiguous result buttons — the common case (normal) is one tap. */
+  var results = ["Normal", "Defective", "Not tested"];
+  var chips = results.map(function (r) {
+    var on = cv.status === r;
+    return '<button class="btn ' + (on ? "btn-p" : "btn-s") + '" style="font-size:.62rem;margin-right:5px"' +
+      ' onclick="V.neuro.cv.status=' + (on ? '\'\'' : '\'' + r + '\'') + ';runDiagnosticEngine();renderMain();renderAdvisory()">' +
+      r + '</button>';
+  }).join("");
+
+  var h = '<div class="dv"><span>Colour Vision</span></div>' +
+    '<div style="margin-bottom:6px">' + chips + '</div>';
+
+  if (cv.status === "Normal") {
+    h += '<div style="font-size:.6rem;color:#2e7d32;margin-bottom:6px">✓ Recorded as normal — no colour-vision signal is sent to the engine.</div>';
+  }
+
+  if (cv.status && cv.status !== "Not tested") {
+    h += '<div class="fg">' +
+      '<div class="fi"><label>Test used</label>' +
+        sel("test", ["Ishihara", "Ishihara (abbreviated)", "HRR", "Farnsworth D-15", "Lanthony D-15 desaturated",
+                     "Farnsworth-Munsell 100 Hue", "City University", "Lantern test", "Other"]) + '</div>' +
+      '<div class="fi"><label>Plates / caps used</label>' + txt("plates", "e.g. 17") + '</div>' +
+      '<div class="fi"><label>Score OD</label>' + txt("od_score", "e.g. 17/17") + '</div>' +
+      '<div class="fi"><label>Score OS</label>' + txt("os_score", "e.g. 12/17") + '</div>' +
+    '</div>';
+  }
+
+  if (cv.status === "Defective") {
+    h += '<div class="fg" style="margin-top:6px">' +
+      '<div class="fi"><label>Nature</label>' +
+        sel("nature", ["", "Acquired / suspected acquired", "Known congenital", "Uncertain"]) + '</div>' +
+      '<div class="fi"><label>Axis</label>' +
+        sel("axis", ["", "Protan", "Deutan", "Tritan", "Mixed", "Not characterised"]) + '</div>' +
+      '<div class="fi"><label>Severity</label>' +
+        sel("severity", ["", "Mild", "Moderate", "Severe"]) + '</div>' +
+    '</div>' +
+    '<div class="fg" style="margin-top:6px">' +
+      '<div class="fi"><label>D-15 / arrangement OD</label>' + txt("d15_od", "Pass / fail + axis") + '</div>' +
+      '<div class="fi"><label>D-15 / arrangement OS</label>' + txt("d15_os", "Pass / fail + axis") + '</div>' +
+    '</div>';
+
+    h += (cv.nature === "Known congenital")
+      ? '<div style="font-size:.6rem;color:var(--sv);margin-top:6px;padding:6px 8px;background:var(--sn);border-radius:var(--r)">' +
+        'Documented as a <b>known congenital</b> defect, so it is <b>not</b> scored as evidence of an acquired optic neuropathy. ' +
+        'Change to “Uncertain” or “Acquired” if an acquired cause is possible.</div>'
+      : '<div style="font-size:.6rem;color:var(--sl);margin-top:6px">Sends <b>colour vision loss</b> to the engine — it is weighed with the rest of the exam, never alone.</div>';
+  }
+
+  if (cv.status && cv.status !== "Not tested") {
+    h += '<div class="fi full" style="margin-top:6px"><label>Colour vision notes</label>' +
+      '<textarea oninput="V.neuro.cv.notes=this.value" placeholder="Conditions of testing, illuminant, monocular/binocular, patient-reported difficulty…">' + esc(cv.notes || "") + '</textarea></div>';
+  }
+  return h;
+}
+
 function pgNeu() {
   return '<div class="card">' +
     '<div class="card-t">Neuro-Ophthalmology</div>' +
+
+    cvBlock() +
+
+    '<div class="dv"><span>Fields, Amsler &amp; Notes</span></div>' +
     '<div class="fg">' +
-      '<div class="fi"><label>Colour Vision OD (Ishihara)</label>' +
-        '<input value="' + esc(V.neuro.color_od) + '" oninput="V.neuro.color_od=this.value;runDiagnosticEngine();renderAdvisory()" placeholder="e.g. 14/14"></div>' +
-      '<div class="fi"><label>Colour Vision OS (Ishihara)</label>' +
-        '<input value="' + esc(V.neuro.color_os) + '" oninput="V.neuro.color_os=this.value;runDiagnosticEngine();renderAdvisory()" placeholder="e.g. 12/14"></div>' +
       '<div class="fi"><label>Confrontation VF OD</label>' +
         '<input value="' + esc(V.neuro.cvf_od) + '" oninput="V.neuro.cvf_od=this.value;runDiagnosticEngine();renderAdvisory()" placeholder="Full / Defect"></div>' +
       '<div class="fi"><label>Confrontation VF OS</label>' +

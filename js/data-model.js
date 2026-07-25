@@ -995,7 +995,24 @@ function blankVisit() {
 
     /* Neuro-Ophthalmology */
     neuro: {
+      /* Legacy free-text colour-vision fields — kept so visits recorded before
+         the structured `cv` block still read correctly. */
       color_od: "", color_os: "",
+      /* Structured colour vision. `status` is the clinician's overall call —
+         recording NORMAL explicitly is a first-class option, so a normal result
+         is never mistaken for a defect. The detail fields document HOW it was
+         assessed; the engine reads `status` (+ `nature`). */
+      cv: {
+        status: "",        /* "" (not recorded) | Normal | Defective | Not tested */
+        test: "Ishihara",  /* which test was used */
+        plates: "",        /* plates/caps used, e.g. 17 */
+        od_score: "", os_score: "",
+        nature: "",        /* Acquired / suspected | Known congenital | Uncertain */
+        axis: "",          /* Protan | Deutan | Tritan | Mixed | Not characterised */
+        severity: "",      /* Mild | Moderate | Severe */
+        d15_od: "", d15_os: "",
+        notes: ""
+      },
       cvf_od: "", cvf_os: "",
       amsler: "Normal",
       notes: ""

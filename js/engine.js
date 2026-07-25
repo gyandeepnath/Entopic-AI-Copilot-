@@ -50,6 +50,21 @@ var ENGINE_STATE = {
 /*   9. Auto-derived from measurements (IOP, BV, Rx, VA, etc.)    */
 /* ═══════════════════════════════════════════════════════════════ */
 
+/* Is a free-text colour-vision entry a DEFECT?
+   Handles the notations clinicians actually type: "17/17" and "14/14" are
+   full scores (normal); "12/17" is a defect; the words normal/full/WNL/NAD
+   are normal; protan/deutan/tritan/defect/fail/abnormal are defects.
+   Anything unrecognised is treated as NOT a defect — the structured
+   colour-vision block is the place to assert one. */
+function colorVisionTextDefective(s) {
+  s = (s || "").trim();
+  if (!s) return false;
+  if (/^(normal|full|wnl|nad|nil|none|pass(ed)?)$/i.test(s)) return false;
+  var m = /^(\d+)\s*\/\s*(\d+)$/.exec(s);
+  if (m) return parseInt(m[1], 10) < parseInt(m[2], 10);
+  return /defect|abnorm|fail|reduced|protan|deutan|tritan|dyschrom|colou?r\s*blind/i.test(s);
+}
+
 function collectTokens() {
 
   var tokens = [];
@@ -532,8 +547,26 @@ function collectTokens() {
 
   /* Neuro fields */
   if (V.neuro) {
-    if (V.neuro.color_od && V.neuro.color_od !== "14/14" && V.neuro.color_od !== "") {
-      addToken("color_vision_loss");
+    /* ── Colour vision ──────────────────────────────────────────────
+       Previously ANY value other than the literal string "14/14" fired
+       color_vision_loss — so a normal "17/17", or the word "Normal", was
+       scored as a defect, and the OS score was never read at all. Now the
+       clinician's explicit result drives it:
+         • Normal / Not tested      → no token
+         • Defective                → color_vision_loss
+       A defect the clinician marks KNOWN CONGENITAL is documented but does
+       not fire the token: a lifelong red-green defect is not evidence of an
+       acquired optic neuropathy, and 15 KB conditions read this token.
+       "Uncertain" still fires (safer default). Visits recorded before the
+       structured block fall back to parsing the legacy free-text fields. */
+    var _cv = V.neuro.cv || {};
+    if (_cv.status === "Defective") {
+      if (_cv.nature !== "Known congenital") addToken("color_vision_loss");
+    } else if (!_cv.status) {
+      if (colorVisionTextDefective(V.neuro.color_od) ||
+          colorVisionTextDefective(V.neuro.color_os)) {
+        addToken("color_vision_loss");
+      }
     }
     if (V.neuro.cvf_od && V.neuro.cvf_od.toLowerCase().indexOf("defect") >= 0) {
       addToken("field_defect");
