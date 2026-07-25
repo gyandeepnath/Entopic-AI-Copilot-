@@ -51,7 +51,7 @@ var KB_REFRACTIVE = [
   "name": "Presbyopia",
   "route": "refractive",
   "req": ["near_blur"],
-  "sup": ["age_over_40", "holding_far", "reading_difficulty", "headache_near", "difficulty_reading", "worse_evening", "improves_with_correction", "older_age"],
+  "sup": ["age_over_40", "holding_far", "difficulty_reading", "headache_near", "difficulty_reading", "worse_evening", "improves_with_correction", "older_age"],
   "con": ["distance_blur", "reduced_vision", "distortion", "field_loss", "young_age", "floaters"],
   "temporal": ["progressive"],
   "tests": ["add_required"],

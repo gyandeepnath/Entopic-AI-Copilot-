@@ -54,8 +54,12 @@ function collectTokens() {
 
   var tokens = [];
 
-  /* Helper: add token if not already present */
+  /* Helper: add token if not already present.
+     Canonicalise synonyms first (see TOKEN_ALIASES) so every producer —
+     chips, free-text, findings, derived measurements — converges on one
+     token and the differential can't fragment on phrasing. */
   function addToken(t) {
+    if (typeof canonicalToken === "function") t = canonicalToken(t);
     if (t && tokens.indexOf(t) === -1) {
       tokens.push(t);
     }
@@ -254,7 +258,7 @@ function collectTokens() {
     var iopOs = parseFloat(V.iop.os) || 0;
     var iopMax = Math.max(iopOd, iopOs);
     if (iopMax > 21) addToken("high_iop");
-    if (iopMax > 30) addToken("IOP_very_high");
+    if (iopMax > 30) addToken("very_high_iop");
     if (iopMax > 0 && iopMax <= 21) addToken("normal_iop");
   }
 
@@ -314,7 +318,7 @@ function collectTokens() {
   /* RAPD */
   if (V.pupil && V.pupil.rapd !== "None") {
     addToken("RAPD_positive");
-    addToken("vision_loss");
+    addToken("reduced_vision");
   }
 
   /* NPC auto-derivation */
@@ -1367,7 +1371,7 @@ var NEXT_TEST_ROUTE_STEP = {
   surface: "slit_lamp", urgent: "slit_lamp"
 };
 var NEXT_TEST_TOKEN_STEP = {
-  IOP_very_high: "iop", high_iop: "iop", normal_iop: "iop", raised_iop_risk: "iop",
+  very_high_iop: "iop", high_iop: "iop", normal_iop: "iop", raised_iop_risk: "iop",
   angle_closure_risk: "gonioscopy", narrow_angle: "gonioscopy", shallow_ac: "gonioscopy",
   pigment_dispersion: "gonioscopy", pxf_material: "gonioscopy", transillumination_defects: "gonioscopy",
   RAPD_positive: "pupil", anisocoria: "pupil", pupil_involvement: "pupil", heterochromia: "pupil",

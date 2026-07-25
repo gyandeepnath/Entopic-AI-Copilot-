@@ -144,7 +144,7 @@ var KB_EXPANSION = [
   "req": ["proptosis", "pain_eye_movement"], "sup": ["redness", "diplopia", "restricted_motility", "reduced_vision", "pain", "tenderness"],
   "con": ["itching_dominant", "gradual_onset", "thyroid_history"], "temporal": ["acute", "subacute"], "tests": [], "urgent": true, "exclusions": [] },
 { "name": "Adie Tonic Pupil", "domain": "Neuro-Ophthalmic", "route": "neuro",
-  "req": ["anisocoria"], "sup": ["photophobia_mild", "difficulty_focusing", "young_age", "blur_near", "near_strain"],
+  "req": ["anisocoria"], "sup": ["photophobia_mild", "difficulty_focusing", "young_age", "near_blur", "near_strain"],
   "con": ["ptosis", "pain_severe", "reduced_vision", "diplopia"], "temporal": ["chronic"], "tests": [], "exclusions": [] },
 
 /* ═══ LENS ═══ */
@@ -153,7 +153,7 @@ var KB_EXPANSION = [
   "con": ["sudden_vision_loss", "pain", "redness", "distortion", "flashes", "field_loss"], "temporal": ["chronic"], "tests": [], "exclusions": [] },
 { "name": "Phacomorphic Angle Closure", "domain": "Lens", "route": "urgent",
   "req": ["high_iop", "narrow_angle"], "sup": ["pain_severe", "halos", "reduced_vision", "older_age", "redness", "vomiting", "corneal_edema", "gradual_blur"],
-  "con": ["itching_dominant", "gradual_onset", "normal_iop"], "temporal": ["acute"], "tests": ["IOP_very_high"], "urgent": true, "exclusions": [] },
+  "con": ["itching_dominant", "gradual_onset", "normal_iop"], "temporal": ["acute"], "tests": ["very_high_iop"], "urgent": true, "exclusions": [] },
 
 /* ═══ OCULOPLASTICS / SURFACE ═══ */
 { "name": "Floppy Eyelid Syndrome", "domain": "Surface & Lids", "route": "surface",
@@ -163,7 +163,7 @@ var KB_EXPANSION = [
   "req": ["spasm"], "sup": ["photophobia", "irritation", "chronic_irritation", "dryness", "bilateral", "worse_evening"],
   "con": ["pain_severe", "reduced_vision", "proptosis", "diplopia"], "temporal": ["chronic"], "tests": [], "exclusions": [] },
 { "name": "Canaliculitis", "domain": "Surface & Lids", "route": "surface",
-  "req": ["medial_canthus_swelling", "recurrent_episode"], "sup": ["discharge", "tearing", "redness", "excess_tearing", "tenderness", "chronic_irritation"],
+  "req": ["medial_canthus_swelling", "recurrent_episode"], "sup": ["discharge", "watering", "redness", "watering", "tenderness", "chronic_irritation"],
   "con": ["proptosis", "restricted_motility", "reduced_vision", "diplopia"], "temporal": ["chronic", "recurrent"], "tests": [], "exclusions": [] },
 { "name": "Sebaceous Gland Carcinoma", "domain": "Surface & Lids", "route": "urgent",
   "req": ["painless_lid_nodule", "recurrent_episode"], "sup": ["lash_loss", "older_age", "chronic_irritation", "redness", "lid_margin_irregularity"],
@@ -194,7 +194,7 @@ var KB_EXPANSION = [
   "req": ["double_vision_near", "reduced_PFV"], "sup": ["asthenopia", "headache_near", "near_strain", "difficulty_reading", "sudden_onset"],
   "con": ["distance_diplopia", "reduced_vision", "constant_deviation"], "temporal": ["subacute"], "tests": [], "exclusions": [] },
 { "name": "Vertical Heterophoria", "domain": "Binocular Vision", "route": "binocular",
-  "req": ["vertical_diplopia", "head_tilt"], "sup": ["asthenopia", "headache", "worse_evening", "fatigue", "reading_difficulty", "intermittent_diplopia"],
+  "req": ["vertical_diplopia", "head_tilt"], "sup": ["asthenopia", "headache", "worse_evening", "fatigue", "difficulty_reading", "intermittent_diplopia"],
   "con": ["horizontal_diplopia", "reduced_vision", "constant_deviation"], "temporal": ["chronic"], "tests": [], "exclusions": [] },
 
 /* ═══ Refractive (batch 2) ═══ */
@@ -227,16 +227,16 @@ var KB_EXPANSION = [
 
 /* ═══ Lacrimal / lids (batch 2) ═══ */
 { "name": "Punctal Stenosis", "domain": "Surface & Lids", "route": "surface",
-  "req": ["excess_tearing", "older_age"], "sup": ["irritation", "chronic_irritation", "tearing", "watering", "blur"],
+  "req": ["watering", "older_age"], "sup": ["irritation", "chronic_irritation", "watering", "watering", "blur"],
   "con": ["reduced_vision", "pain_severe", "purulent_discharge", "proptosis"], "temporal": ["chronic"], "tests": [], "exclusions": [] },
 { "name": "Nasolacrimal Duct Obstruction (Congenital)", "domain": "Surface & Lids", "route": "surface",
-  "req": ["excess_tearing", "young_age"], "sup": ["discharge", "morning_stickiness", "recurrent_episode", "tearing", "medial_canthus_swelling"],
+  "req": ["watering", "young_age"], "sup": ["discharge", "morning_stickiness", "recurrent_episode", "watering", "medial_canthus_swelling"],
   "con": ["reduced_vision", "pain_severe", "older_age", "proptosis"], "temporal": ["chronic"], "tests": [], "exclusions": [] },
 { "name": "Dacryoadenitis", "domain": "Surface & Lids", "route": "surface",
-  "req": ["localized_lid_swelling", "tenderness"], "sup": ["redness", "pain", "fever", "recent_viral_history", "tearing"],
+  "req": ["localized_lid_swelling", "tenderness"], "sup": ["redness", "pain", "fever", "recent_viral_history", "watering"],
   "con": ["proptosis", "restricted_motility", "reduced_vision", "diplopia", "pain_eye_movement"], "temporal": ["acute"], "tests": [], "exclusions": [] },
 { "name": "Involutional Ptosis", "domain": "Surface & Lids", "route": "surface",
-  "req": ["ptosis", "older_age"], "sup": ["reading_difficulty", "fatigue", "worse_evening", "difficulty_reading"],
+  "req": ["ptosis", "older_age"], "sup": ["difficulty_reading", "fatigue", "worse_evening", "difficulty_reading"],
   "con": ["diplopia", "anisocoria", "pain_severe", "sudden_onset", "reduced_vision"], "temporal": ["chronic", "progressive"], "tests": [], "exclusions": [] },
 { "name": "Eyelid Basal Cell Carcinoma", "domain": "Surface & Lids", "route": "urgent",
   "req": ["painless_lid_nodule", "older_age"], "sup": ["lash_loss", "chronic_irritation", "cracking_skin", "redness", "lid_margin_irregularity"],
@@ -299,7 +299,7 @@ var KB_EXPANSION = [
 /* ═══ Glaucoma / lens (batch 2) ═══ */
 { "name": "Neovascular Glaucoma (Diabetic)", "domain": "Glaucoma", "route": "urgent",
   "req": ["high_iop", "rubeosis_iridis"], "sup": ["diabetes_history", "pain_severe", "reduced_vision", "halos", "redness", "retinal_ischemia", "corneal_edema"],
-  "con": ["itching_dominant", "normal_iop", "gradual_onset"], "temporal": ["subacute"], "tests": ["IOP_very_high"], "urgent": true, "exclusions": [] },
+  "con": ["itching_dominant", "normal_iop", "gradual_onset"], "temporal": ["subacute"], "tests": ["very_high_iop"], "urgent": true, "exclusions": [] },
 { "name": "Aphakic Glaucoma", "domain": "Glaucoma", "route": "glaucoma",
   "req": ["high_iop", "post_surgery"], "sup": ["halos", "cd_asymmetry", "increased_cd", "reduced_vision", "field_defect", "glare"],
   "con": ["itching_dominant", "normal_iop", "redness"], "temporal": ["chronic"], "tests": ["increased_cd"], "exclusions": [] },
@@ -333,7 +333,7 @@ var KB_EXPANSION = [
   "req": ["recent_eye_trauma", "color_vision_loss"], "sup": ["reduced_vision", "central_scotoma", "trauma_history", "field_defect", "reduced_contrast"],
   "con": ["itching_dominant", "gradual_onset", "redness"], "temporal": ["acute"], "tests": [], "urgent": true, "exclusions": [] },
 { "name": "Traumatic Mydriasis", "domain": "Neuro-Ophthalmic", "route": "neuro",
-  "req": ["recent_eye_trauma", "anisocoria"], "sup": ["photophobia_mild", "difficulty_focusing", "trauma_history", "blur_near"],
+  "req": ["recent_eye_trauma", "anisocoria"], "sup": ["photophobia_mild", "difficulty_focusing", "trauma_history", "near_blur"],
   "con": ["ptosis", "gradual_onset", "itching_dominant", "diplopia"], "temporal": ["acute"], "tests": [], "exclusions": [] },
 { "name": "Choroidal Rupture", "domain": "Retina", "route": "retina",
   "req": ["recent_eye_trauma", "central_blur"], "sup": ["reduced_vision", "distortion", "trauma_history", "central_scotoma"],
@@ -441,13 +441,13 @@ var KB_EXPANSION = [
 /* Glaucoma / anterior-segment */
 { "name": "Posner-Schlossman Syndrome (Glaucomatocyclitic Crisis)", "domain": "Glaucoma", "route": "glaucoma",
   "req": ["high_iop", "recurrent_episode"], "sup": ["halos", "blur", "pain", "corneal_edema", "cells_present", "reduced_vision"],
-  "con": ["synechiae", "itching_dominant", "purulent_discharge"], "temporal": ["recurrent", "acute"], "tests": ["IOP_very_high", "cells_present"], "exclusions": [] },
+  "con": ["synechiae", "itching_dominant", "purulent_discharge"], "temporal": ["recurrent", "acute"], "tests": ["very_high_iop", "cells_present"], "exclusions": [] },
 { "name": "Iridocorneal Endothelial (ICE) Syndrome", "domain": "Glaucoma", "route": "glaucoma",
   "req": ["corneal_edema", "iris_atrophy"], "sup": ["high_iop", "blur", "reduced_vision", "glare", "older_age", "heterochromia"],
   "con": ["pain_severe", "itching_dominant", "bilateral"], "temporal": ["chronic", "progressive"], "tests": ["guttata"], "exclusions": [] },
 { "name": "Malignant Glaucoma (Aqueous Misdirection)", "domain": "Glaucoma", "route": "urgent",
   "req": ["high_iop", "post_surgery"], "sup": ["shallow_ac", "pain", "reduced_vision", "blur", "redness"],
-  "con": ["itching_dominant", "gradual_onset", "normal_iop"], "temporal": ["acute", "subacute"], "tests": ["IOP_very_high", "shallow_ac"], "urgent": true, "exclusions": [] },
+  "con": ["itching_dominant", "gradual_onset", "normal_iop"], "temporal": ["acute", "subacute"], "tests": ["very_high_iop", "shallow_ac"], "urgent": true, "exclusions": [] },
 
 /* Neuro-ophthalmic / orbital */
 { "name": "Neuroretinitis", "domain": "Neuro-Ophthalmic", "route": "neuro",
@@ -471,7 +471,7 @@ var KB_EXPANSION = [
   "req": ["chronic_redness", "dryness"], "sup": ["foreign_body_sensation", "reduced_tearing", "recurrent_episode", "trichiasis", "entropion"],
   "con": ["itching_dominant", "sudden_onset", "purulent_discharge"], "temporal": ["chronic", "progressive"], "tests": [], "exclusions": [] },
 { "name": "Toxic Keratoconjunctivitis (Medicamentosa)", "domain": "Surface & Lids", "route": "surface",
-  "req": ["chronic_redness", "punctate_staining"], "sup": ["foreign_body_sensation", "burning", "follicles", "chronic_irritation", "tearing"],
+  "req": ["chronic_redness", "punctate_staining"], "sup": ["foreign_body_sensation", "burning", "follicles", "chronic_irritation", "watering"],
   "con": ["itching_dominant", "purulent_discharge", "sudden_onset"], "temporal": ["chronic"], "tests": ["punctate_staining"], "exclusions": [] },
 
 /* Medical retina — inflammatory / white-dot */
@@ -490,7 +490,7 @@ var KB_EXPANSION = [
   "req": ["painless_lid_nodule", "follicles"], "sup": ["chronic_redness", "watering", "foreign_body_sensation", "lid_margin_irregularity", "recurrent_episode"],
   "con": ["pain_severe", "purulent_discharge", "reduced_vision"], "temporal": ["chronic"], "tests": ["follicles"], "exclusions": [] },
 { "name": "Conjunctivochalasis", "domain": "Surface & Lids", "route": "surface",
-  "req": ["excess_tearing", "foreign_body_sensation"], "sup": ["chronic_irritation", "older_age", "dryness", "redness", "burning"],
+  "req": ["watering", "foreign_body_sensation"], "sup": ["chronic_irritation", "older_age", "dryness", "redness", "burning"],
   "con": ["purulent_discharge", "itching_dominant", "sudden_onset"], "temporal": ["chronic"], "tests": [], "exclusions": [] },
 
 /* Cornea */
@@ -515,7 +515,7 @@ var KB_EXPANSION = [
 /* Glaucoma */
 { "name": "Phacolytic Glaucoma", "domain": "Glaucoma", "route": "glaucoma",
   "req": ["high_iop", "white_cataract"], "sup": ["pain", "redness", "reduced_vision", "blur", "older_age", "halos"],
-  "con": ["itching_dominant", "gradual_onset", "young_age"], "temporal": ["acute"], "tests": ["IOP_very_high"], "exclusions": [] },
+  "con": ["itching_dominant", "gradual_onset", "young_age"], "temporal": ["acute"], "tests": ["very_high_iop"], "exclusions": [] },
 { "name": "Plateau Iris Syndrome", "domain": "Glaucoma", "route": "glaucoma",
   "req": ["angle_closure_risk", "narrow_angle"], "sup": ["halos", "high_iop", "intermittent", "blur", "young_age"],
   "con": ["gradual_onset", "itching_dominant", "reduced_corneal_sensation"], "temporal": ["intermittent", "recurrent"], "tests": ["narrow_angle", "shallow_ac"], "exclusions": [] },
@@ -553,8 +553,8 @@ var KB_EXPANSION = [
 
 /* Congenital anterior segment / glaucoma */
 { "name": "Primary Congenital Glaucoma", "domain": "Glaucoma", "route": "glaucoma",
-  "req": ["excess_tearing", "photophobia"], "sup": ["young_age", "corneal_edema", "high_iop", "spasm", "reduced_vision"],
-  "con": ["older_age", "itching_dominant", "purulent_discharge", "gradual_onset"], "temporal": ["chronic"], "tests": ["IOP_very_high"], "exclusions": [] },
+  "req": ["watering", "photophobia"], "sup": ["young_age", "corneal_edema", "high_iop", "spasm", "reduced_vision"],
+  "con": ["older_age", "itching_dominant", "purulent_discharge", "gradual_onset"], "temporal": ["chronic"], "tests": ["very_high_iop"], "exclusions": [] },
 { "name": "Peters Anomaly", "domain": "Cornea", "route": "anterior",
   "req": ["corneal_opacity_central", "young_age"], "sup": ["reduced_vision", "leukocoria", "glare"],
   "con": ["older_age", "pain_severe", "redness", "itching_dominant"], "temporal": ["chronic"], "tests": [], "exclusions": [] },
@@ -655,7 +655,7 @@ var KB_EXPANSION = [
 /* Glaucoma */
 { "name": "Ghost Cell Glaucoma", "domain": "Glaucoma", "route": "glaucoma",
   "req": ["high_iop", "vitreous_hemorrhage"], "sup": ["reduced_vision", "pain", "blur", "older_age", "halos"],
-  "con": ["itching_dominant", "gradual_onset", "normal_iop"], "temporal": ["subacute"], "tests": ["IOP_very_high"], "exclusions": [] },
+  "con": ["itching_dominant", "gradual_onset", "normal_iop"], "temporal": ["subacute"], "tests": ["very_high_iop"], "exclusions": [] },
 
 /* Lens */
 { "name": "Microspherophakia", "domain": "Lens", "route": "lens",
@@ -704,7 +704,7 @@ var KB_EXPANSION = [
 /* Glaucoma */
 { "name": "Schwartz-Matsuo Syndrome", "domain": "Glaucoma", "route": "glaucoma",
   "req": ["high_iop", "retinal_break"], "sup": ["reduced_vision", "floaters", "field_loss", "flashes"],
-  "con": ["normal_iop", "itching_dominant", "gradual_onset"], "temporal": ["subacute"], "tests": ["IOP_very_high"], "exclusions": [] },
+  "con": ["normal_iop", "itching_dominant", "gradual_onset"], "temporal": ["subacute"], "tests": ["very_high_iop"], "exclusions": [] },
 
 /* Cornea — degenerations */
 { "name": "Gelatinous Drop-like Corneal Dystrophy", "domain": "Cornea", "route": "anterior",
@@ -731,7 +731,7 @@ var KB_EXPANSION = [
   "req": ["red_patch", "post_surgery"], "sup": ["localized_conjunctival_elevation", "watering", "foreign_body_sensation", "recent_eye_trauma"],
   "con": ["itching_dominant", "gradual_onset", "reduced_vision"], "temporal": ["subacute"], "tests": [], "exclusions": [] },
 { "name": "Dacryolithiasis", "domain": "Surface & Lids", "route": "surface",
-  "req": ["excess_tearing", "medial_canthus_swelling"], "sup": ["recurrent_episode", "foreign_body_sensation", "discharge", "chronic_irritation"],
+  "req": ["watering", "medial_canthus_swelling"], "sup": ["recurrent_episode", "foreign_body_sensation", "discharge", "chronic_irritation"],
   "con": ["itching_dominant", "sudden_vision_loss", "purulent_discharge"], "temporal": ["recurrent", "chronic"], "tests": [], "exclusions": [] },
 
 /* ═══ Batch 10 (2026-07-17) — posterior-segment tumours & vasculitis ═══ */

@@ -46,20 +46,6 @@ var TOKEN_REGISTRY = {
     },
     "reachable": false
   },
-  "IOP_very_high": {
-    "type_hint": "derived_measurement_or_history",
-    "sources": [
-      "engine_derived"
-    ],
-    "usage": {
-      "req": 0,
-      "sup": 0,
-      "con": 0,
-      "temporal": 0,
-      "tests": 10
-    },
-    "reachable": true
-  },
   "MLF_lesion_sign": {
     "type_hint": "unknown",
     "sources": [],
@@ -601,21 +587,6 @@ var TOKEN_REGISTRY = {
     "usage": {
       "req": 6,
       "sup": 24,
-      "con": 0,
-      "temporal": 0,
-      "tests": 0
-    },
-    "reachable": true
-  },
-  "blur_near": {
-    "type_hint": "symptom",
-    "sources": [
-      "dictionary",
-      "symptom_chip"
-    ],
-    "usage": {
-      "req": 1,
-      "sup": 4,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -1811,7 +1782,7 @@ var TOKEN_REGISTRY = {
     ],
     "usage": {
       "req": 0,
-      "sup": 17,
+      "sup": 20,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -2395,21 +2366,6 @@ var TOKEN_REGISTRY = {
       "con": 0,
       "temporal": 0,
       "tests": 1
-    },
-    "reachable": true
-  },
-  "excess_tearing": {
-    "type_hint": "symptom",
-    "sources": [
-      "dictionary",
-      "symptom_chip"
-    ],
-    "usage": {
-      "req": 6,
-      "sup": 3,
-      "con": 0,
-      "temporal": 0,
-      "tests": 0
     },
     "reachable": true
   },
@@ -4804,8 +4760,8 @@ var TOKEN_REGISTRY = {
       "symptom_chip"
     ],
     "usage": {
-      "req": 3,
-      "sup": 2,
+      "req": 4,
+      "sup": 6,
       "con": 2,
       "temporal": 0,
       "tests": 1
@@ -5983,21 +5939,6 @@ var TOKEN_REGISTRY = {
     },
     "reachable": true
   },
-  "reading_difficulty": {
-    "type_hint": "symptom",
-    "sources": [
-      "dictionary",
-      "symptom_chip"
-    ],
-    "usage": {
-      "req": 0,
-      "sup": 5,
-      "con": 0,
-      "temporal": 0,
-      "tests": 0
-    },
-    "reachable": true
-  },
   "recent_eye_trauma": {
     "type_hint": "symptom",
     "sources": [
@@ -6211,14 +6152,15 @@ var TOKEN_REGISTRY = {
     "reachable": true
   },
   "reduced_vision": {
-    "type_hint": "sign",
+    "type_hint": "derived_measurement_or_history",
     "sources": [
       "dictionary",
+      "engine_derived",
       "finding_map",
       "symptom_chip"
     ],
     "usage": {
-      "req": 13,
+      "req": 16,
       "sup": 196,
       "con": 101,
       "temporal": 0,
@@ -7331,22 +7273,6 @@ var TOKEN_REGISTRY = {
     },
     "reachable": true
   },
-  "tearing": {
-    "type_hint": "sign",
-    "sources": [
-      "dictionary",
-      "finding_map",
-      "symptom_chip"
-    ],
-    "usage": {
-      "req": 0,
-      "sup": 9,
-      "con": 0,
-      "temporal": 0,
-      "tests": 0
-    },
-    "reachable": true
-  },
   "temporal_field_loss": {
     "type_hint": "symptom",
     "sources": [
@@ -7722,6 +7648,20 @@ var TOKEN_REGISTRY = {
     },
     "reachable": true
   },
+  "very_high_iop": {
+    "type_hint": "derived_measurement_or_history",
+    "sources": [
+      "engine_derived"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 10
+    },
+    "reachable": true
+  },
   "vision_hazy": {
     "type_hint": "sign",
     "sources": [
@@ -7732,23 +7672,6 @@ var TOKEN_REGISTRY = {
     "usage": {
       "req": 0,
       "sup": 7,
-      "con": 0,
-      "temporal": 0,
-      "tests": 0
-    },
-    "reachable": true
-  },
-  "vision_loss": {
-    "type_hint": "derived_measurement_or_history",
-    "sources": [
-      "dictionary",
-      "engine_derived",
-      "finding_map",
-      "symptom_chip"
-    ],
-    "usage": {
-      "req": 3,
-      "sup": 0,
       "con": 0,
       "temporal": 0,
       "tests": 0
@@ -7880,15 +7803,16 @@ var TOKEN_REGISTRY = {
     "reachable": true
   },
   "watering": {
-    "type_hint": "symptom",
+    "type_hint": "sign",
     "sources": [
       "dictionary",
+      "finding_map",
       "free_text",
       "symptom_chip"
     ],
     "usage": {
-      "req": 0,
-      "sup": 45,
+      "req": 6,
+      "sup": 51,
       "con": 1,
       "temporal": 0,
       "tests": 0
@@ -8013,8 +7937,8 @@ var TOKEN_REGISTRY = {
 };
 
 var TOKEN_REGISTRY_STATS = {
-  "total": 564,
-  "reachable": 464,
+  "total": 559,
+  "reachable": 459,
   "unreachable_required": [],
   "unreachable_supportive": [
     "keratic_precipitates"

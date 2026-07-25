@@ -6,6 +6,60 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-07-25 — Session 11l: Token synonym integrity — one concept, one token
+
+**Founder caught a real integrity risk.** He noticed `high_iop` and
+`IOP_very_high` looked like "the same thing mapped differently" and suspected
+more cases that would fragment the diagnostic engine. He was right that the
+class of bug exists — though the specific pair he saw turned out to be fine.
+
+**Findings:**
+- **`high_iop` vs `IOP_very_high` is NOT a duplicate** — they're graded tiers
+  (`high_iop` > 21, `very_high_iop` > 30) and BOTH fire above 30, so a condition
+  keyed on the milder token still matches at very high pressure. Cumulative, not
+  competing. But the *name* `IOP_very_high` broke the `high_iop`/`normal_iop`
+  convention, which is exactly what made it look like a bug — renamed to
+  `very_high_iop`.
+- **Real synonym-splits found and fixed** — clinically identical inputs that
+  produced DIFFERENT tokens, so the differential depended on which phrasing the
+  clinician happened to click:
+  - "Watery eyes" / "Excess tearing" / "Overflowing tears" → three tokens
+    (`watering` / `tearing` / `excess_tearing`) → now all `watering`.
+  - "Blurred near vision" / "Difficulty focusing near" (`near_blur` / `blur_near`)
+    → now `near_blur`.
+  - "Difficulty reading" / "Trouble reading" (`difficulty_reading` /
+    `reading_difficulty`) → now `difficulty_reading`.
+  - "Reduced overall vision" / "General vision loss" (`reduced_vision` /
+    `vision_loss`) → now `reduced_vision`.
+
+**The fix (bounded, one mechanism):** a single `TOKEN_ALIASES` map in
+`js/data-model.js` is the source of truth. The engine's `addToken` canonicalises
+EVERY producer through it — chips, free-text, findings, derived measurements —
+so synonyms converge on one token; the KB (all 10 domain files) was migrated to
+the canonical tokens; the registry generator applies the same map. All chips are
+kept (no UI removed) — they just converge internally.
+
+**Safety net added** (`tests/token-synonyms.test.js`): fails if any alias token
+is ever consumed by the KB, if the alias map has chains/self-maps, or if a NEW
+word-order/plural synonym pair appears in the matching vocabulary un-aliased —
+so the next "high_iop vs IOP_high" is caught before it ships.
+
+**Verification:** registry 564→559 tokens; full suite **266/266** (263 + 3 new
+guards) including golden vignettes and the un-suppressible red flags. Confirmed
+all three tearing chips now emit `watering`, and IOP 35 still yields both
+`high_iop` + `very_high_iop`.
+
+**Flagged for founder's clinical call:** consolidating vision-loss surfaced a
+genuine near-tie — **Optic Neuritis vs Stargardt / Cone Dystrophy** for painless
+central/colour vision loss in a young patient (they legitimately share
+reduced_vision, colour-vision loss, central scotoma, reduced contrast). Left as
+a real differential; you may want to sharpen it with a discriminator (RAPD /
+family history). Also: a broader chip-vocabulary review found a few *possible*
+(nuanced) synonym clusters I did NOT auto-merge — asthenopia/eye_strain/fatigue,
+head_tilt/abnormal_head_posture — left for your judgement.
+
+---
+
 ## 2026-07-24 — Session 11k (cont.): Portable core schema + backend recommendation
 
 **Fixed a real gap in "set up your own backend".** `BACKEND_OWNERSHIP.md` told

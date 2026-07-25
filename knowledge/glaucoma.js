@@ -40,7 +40,7 @@ var KB_GLAUCOMA = [
   "sup": ["halos", "redness", "vomiting", "reduced_vision", "photophobia", "headache", "narrow_angle", "hyperopia", "older_age", "corneal_edema"],
   "con": ["itching_dominant", "purulent_discharge", "gradual_onset", "normal_iop"],
   "temporal": ["acute"],
-  "tests": ["IOP_very_high", "shallow_ac", "corneal_edema"],
+  "tests": ["very_high_iop", "shallow_ac", "corneal_edema"],
   "urgent": true,
   "exclusions": []
 },
@@ -96,7 +96,7 @@ var KB_GLAUCOMA = [
   "sup": ["high_iop", "pain", "redness", "diabetes_history", "retinal_ischemia", "reduced_vision", "halos", "hypertension_history", "older_age", "corneal_edema"],
   "con": ["itching_dominant", "normal_iop"],
   "temporal": ["acute", "progressive"],
-  "tests": ["gonioscopy_NVA", "IOP_very_high"],
+  "tests": ["gonioscopy_NVA", "very_high_iop"],
   "urgent": true,
   "exclusions": []
 }

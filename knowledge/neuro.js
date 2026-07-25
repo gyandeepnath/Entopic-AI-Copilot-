@@ -16,7 +16,7 @@ var KB_NEURO = [
 {
   "name": "Optic Neuritis",
   "route": "neuro",
-  "req": ["vision_loss"],
+  "req": ["reduced_vision"],
   "sup": ["pain_eye_movement", "color_vision_loss", "young_age", "reduced_contrast", "central_scotoma"],
   "con": ["pain_severe", "older_age"],
   "temporal": ["acute"],
@@ -87,7 +87,7 @@ var KB_NEURO = [
   "name": "Fourth Cranial Nerve Palsy",
   "route": "neuro",
   "req": ["vertical_diplopia"],
-  "sup": ["head_tilt", "reading_difficulty", "diplopia"],
+  "sup": ["head_tilt", "difficulty_reading", "diplopia"],
   "con": ["horizontal_diplopia"],
   "temporal": ["chronic"],
   "tests": ["superior_oblique_defect"],
@@ -141,7 +141,7 @@ var KB_NEURO = [
 {
   "name": "Optic Atrophy",
   "route": "neuro",
-  "req": ["vision_loss"],
+  "req": ["reduced_vision"],
   "sup": ["pale_disc", "reduced_contrast", "color_vision_loss", "field_defect"],
   "con": ["redness"],
   "temporal": ["chronic"],
@@ -152,7 +152,7 @@ var KB_NEURO = [
 {
   "name": "Cortical Visual Impairment",
   "route": "neuro",
-  "req": ["vision_loss"],
+  "req": ["reduced_vision"],
   "sup": ["young_age", "field_defect", "visual_disturbance"],
   "con": ["redness", "pain"],
   "temporal": ["variable"],

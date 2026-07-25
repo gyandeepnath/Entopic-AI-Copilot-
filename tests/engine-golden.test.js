@@ -176,7 +176,7 @@ test("measurement auto-derivation produces the expected tokens", () => {
   );
   const t = out.tokens;
   assert.ok(t.indexOf("high_iop") >= 0, "IOP>21 → high_iop");
-  assert.ok(t.indexOf("IOP_very_high") >= 0, "IOP>30 → IOP_very_high");
+  assert.ok(t.indexOf("very_high_iop") >= 0, "IOP>30 → very_high_iop");
   assert.ok(t.indexOf("thin_cornea") >= 0, "CCT<520 → thin_cornea");
   assert.ok(t.indexOf("increased_cd") >= 0, "C/D≥0.6 → increased_cd");
   assert.ok(t.indexOf("cd_asymmetry") >= 0, "C/D diff>0.2 → cd_asymmetry");

@@ -5,6 +5,43 @@
 /* ═══════════════════════════════════════════════════════════════ */
 "use strict";
 
+/* ═══════════════════════════════════════════════════════════════ */
+/* TOKEN ALIASES — single source of truth for synonyms             */
+/*                                                                  */
+/* Different inputs that mean the SAME clinical thing must feed the */
+/* engine the SAME token, or the differential fragments depending   */
+/* on which phrasing the clinician happened to pick. Every producer */
+/* (symptom chips, free-text, findings, derived measurements) is    */
+/* canonicalised through this map inside the engine's addToken, and */
+/* the KB is authored against the canonical (right-hand) tokens.    */
+/*                                                                  */
+/* Only EXACT synonyms belong here (word-order variants, identical  */
+/* meaning). Graded tiers that legitimately co-exist (e.g. high_iop */
+/* > 21 vs very_high_iop > 30, which BOTH fire above 30) are NOT    */
+/* aliases — they are distinct, cumulative signals. A test enforces */
+/* that no alias key is ever consumed by the KB. NEEDS_CLINICAL_    */
+/* REVIEW candidates with any nuance are left OUT and flagged to    */
+/* the founder rather than merged.                                  */
+/* ═══════════════════════════════════════════════════════════════ */
+var TOKEN_ALIASES = {
+  /* near-vision blur — "Difficulty focusing near" == "Blurred near vision" */
+  blur_near: "near_blur",
+  /* reading — "Trouble reading / near tasks" == "Difficulty reading" */
+  reading_difficulty: "difficulty_reading",
+  /* epiphora — "Excess tearing" / "Overflowing tears" == "Watery eyes" */
+  tearing: "watering",
+  excess_tearing: "watering",
+  /* generic vision loss — "General vision loss" == "Reduced overall vision" */
+  vision_loss: "reduced_vision",
+  /* naming consistency with high_iop / normal_iop (a rename, not a merge) */
+  IOP_very_high: "very_high_iop"
+};
+
+/* Canonicalise a single token through the alias map (identity if none). */
+function canonicalToken(t) {
+  return (t && TOKEN_ALIASES[t]) ? TOKEN_ALIASES[t] : t;
+}
+
 
 /* ── EXAM STEPS (22 steps, sidebar navigation) ── */
 

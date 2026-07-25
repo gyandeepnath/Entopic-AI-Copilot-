@@ -65,8 +65,14 @@ const engineSrc = fs.readFileSync(path.join(REPO_ROOT, "js", "engine.js"), "utf8
 const medSrc = fs.readFileSync(path.join(REPO_ROOT, "js", "medication-checker.js"), "utf8");
 
 /* ── Producers ── */
+/* Canonicalise every producer through the same alias map the engine uses,
+   so a chip keyed `tearing` is recorded as producing `watering` — the alias
+   source tokens then never appear in the registry (no producer, no consumer). */
+const ALIASES = ctx.TOKEN_ALIASES || {};
+const canon = (t) => (t && ALIASES[t]) ? ALIASES[t] : t;
 const producers = {}; /* token → Set(sources) */
 function addProducer(token, source) {
+  token = canon(token);
   if (!producers[token]) producers[token] = new Set();
   producers[token].add(source);
 }

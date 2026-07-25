@@ -373,7 +373,7 @@ function renderTokenLayer() {
 
   /* Known auto-derived tokens */
   var autoTokens = [
-    "high_iop", "IOP_very_high", "normal_iop", "thin_cornea", "narrow_angle", "shallow_ac",
+    "high_iop", "very_high_iop", "normal_iop", "thin_cornea", "narrow_angle", "shallow_ac",
     "NPC_receded", "exo_near", "eso_near", "exo_distance", "eso_distance",
     "high_ACA_ratio", "reduced_amplitude", "low_amplitude", "reduced_flipper_rate",
     "reduced_PFV", "reduced_vergence_ranges", "myopia", "hyperopia", "astigmatism",
