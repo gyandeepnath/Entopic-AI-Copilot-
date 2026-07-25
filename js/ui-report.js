@@ -175,7 +175,15 @@ function pgRpt() {
   h += '<div class="btn-g no-print" style="margin-top:6px">';
   h += '<button class="btn btn-s" id="saveCaseBtn" onclick="saveTeachingCase()">🎓 Save as teaching case</button>';
   h += '<button class="btn btn-s" onclick="showCasebook()">📚 Open casebook</button>';
-  h += '</div></div>';
+  h += '</div>';
+
+  /* Standard, editable certificates pre-filled from this exam — its own
+     block, outside the button rows so it lays out full width. */
+  if (typeof certBlock === "function") {
+    h += '<div class="no-print" style="margin-top:14px">' + certBlock() + '</div>';
+  }
+
+  h += '</div>';
 
   return h;
 }
