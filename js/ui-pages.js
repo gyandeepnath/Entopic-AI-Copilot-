@@ -863,7 +863,9 @@ function pgSL() {
   fh += '<input class="search-box" placeholder="Search findings..." oninput="filterFinds(this.value,\'slf_\')">';
 
   /* Drawing button */
-  fh += '<div style="margin-bottom:8px"><button class="btn btn-d" onclick="openDrawing(\'slit_lamp\')">✏ Draw Anterior Segment</button></div>';
+  fh += (typeof renderDrawingGallery === "function"
+    ? '<div style="margin-bottom:10px">' + renderDrawingGallery("slit_lamp") + '</div>'
+    : '');
 
   for (var sec in SL_FINDINGS) {
     var items = SL_FINDINGS[sec];

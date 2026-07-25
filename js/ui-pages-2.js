@@ -84,7 +84,9 @@ function pgFun() {
   fh += '<input class="search-box" placeholder="Search fundus findings..." oninput="filterFinds(this.value,\'fdf_\')">';
 
   /* Drawing button */
-  fh += '<div style="margin-bottom:8px"><button class="btn btn-d" onclick="openDrawing(\'fundus\')">✏ Draw Fundus</button></div>';
+  fh += (typeof renderDrawingGallery === "function"
+    ? '<div style="margin-bottom:10px">' + renderDrawingGallery("fundus") + '</div>'
+    : '');
 
   for (var sec in FUN_FINDINGS) {
     var items = FUN_FINDINGS[sec];

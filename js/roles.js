@@ -82,7 +82,7 @@ var ENTOPIC_ROLES = [
   },
   {
     id: "technician",
-    label: "Technician / Investigations",
+    label: "Investigation unit",
     icon: "🔬",
     blurb: "Perform ordered investigations, record the values and upload the reports back to the clinician.",
     landing: "investigations",
