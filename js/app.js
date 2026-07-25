@@ -281,6 +281,7 @@ function renderHomeTab(role, tab) {
     case "account":  return homeSecAccount();
     case "admin":    return homeSecAdmin();
     case "research": return homeSecResearch();
+    case "investigations": return homeSecInvestigations();
     case "patients": /* fall through */
     default:         return homeSecPatients();
   }

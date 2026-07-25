@@ -6,6 +6,84 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-07-25 — Session 11n: Refraction rebuild, colour vision, file storage, investigation hand-off
+
+Founder review of the clinical depth of the build. Four of the eight items he
+raised are done and shipped; the rest are listed at the end as still open.
+
+### 1. Refraction — rebuilt to the real clinical sequence
+Staged: **current correction → objective → subjective → final Rx**.
+- Habitual: spectacles or CL, powers + VA through them, CL base curve /
+  diameter / modality / material, age of the current Rx.
+- Objective: structured autorefractor, and retinoscopy with a **Dry /
+  Cycloplegic** state and working distance. Choosing Cycloplegic opens an
+  agent / drops / instilled-at / hold block with a live **"holding — X of N min"**
+  timer and a *separate* post-cycloplegic table, so the wait is explicit and
+  wet values never overwrite dry ones.
+- Subjective (engine-facing; `od_sph` etc. deliberately unchanged) with BCVA
+  and binocular balance. Final prescription with lens type and wearing advice.
+- Copy-forward buttons move powers between stages; only non-empty values move,
+  so a copy never blanks existing work.
+- VA page gained pinhole interpretation + a remarks field.
+- Spectacle advisor now reads the **issued** Rx (final if written, else subjective).
+
+### 2. Colour vision — and a real engine bug fixed
+The engine fired `color_vision_loss` for **any** value other than the literal
+string `"14/14"` — so a normal `17/17`, or the word `Normal`, was scored as a
+defect — and `color_os` was **never read at all**. 15 KB conditions consume that
+token, so false positives quietly inflated optic-neuropathy differentials.
+Now: explicit one-tap result (Normal / Defective / Not tested), then detail
+(test used, plates, per-eye scores, nature, axis, severity, D-15). A defect
+marked **known congenital** is documented but not scored as acquired disease.
+Legacy free text is parsed as a fraction and understands the usual words.
+`tests/colour-vision.test.js` locks both directions.
+
+### 3. File storage — IndexedDB + compression
+Attachments were base64 data URLs in localStorage (~5 MB for the whole app), so
+files over ~1.5 MB were **rejected outright**. Now blobs go to **IndexedDB**
+(hundreds of MB) with only a small record + thumbnail kept inline, and images
+are downscaled/re-encoded with three clinician-selectable profiles. Measured on
+an 8.77 MB photo: Diagnostic 1.1 MB (−87.5%), Standard 439 KB (−95.1%), Compact
+156 KB (−98.3%). Compression is lossy and the UI says so; PDFs are never
+re-encoded; a "compressed" result is discarded if it is not actually smaller.
+`fsCloudUpload()` copies to the user's **own** Supabase Storage bucket — a no-op
+unless they connected their own project.
+
+### 4. Investigation ordering, hand-off and review (new)
+The missing multi-person workflow, now built end-to-end:
+clinician **orders** (with urgency + clinical question) → order appears in a
+shared **Investigations queue** → a **technician / other clinician** opens it,
+records structured values, uploads the report, marks it done → the ordering
+clinician sees **"results ready"**, reviews and **signs off**.
+- Orders live on the *patient* so they survive the hand-off, but carry the visit
+  they were raised from.
+- New **Technician / Investigations** role with the queue as its landing tab;
+  Investigations tab added for clinicians.
+- A 26-test catalogue supplies both the order picker and the structured result
+  fields, covering the gaps called out: **A-scan biometry** (AL/K1/K2/ACD/LT/
+  formula/IOL/target), **B-scan**, **UBM**, **visual field analysis** (strategy,
+  MD/PSD/VFI, GHT, reliability indices, pattern), **contrast sensitivity**
+  (Pelli-Robson / CSV-1000 / Mars), **ROP screening** (ICROP zone / stage /
+  extent / plus / A-ROP with GA, birth weight, PMA), electrophysiology
+  (ERG / mfERG / PERG, VEP, EOG), specular microscopy, tear-film work-up,
+  topography, orthoptic assessment, bloods and neuroimaging.
+- ⚠ The catalogue records **fields and internationally-used descriptive
+  categories only** — no thresholds, normal ranges or interpretation. Nothing
+  in it diagnoses. Flagged `NEEDS_CLINICAL_REVIEW` for founder sign-off.
+
+**Verification:** suite **275/275**. Browser-verified end-to-end: staged
+refraction copy chain + cycloplegic timer; colour-vision scoring in both
+directions; 8.77 MB image compressed and read back out of IndexedDB; and the
+full order → perform → upload → review → sign-off hand-off across two different
+signed-in users with no console errors.
+
+### Still open from this review (not yet built)
+Low-vision, paediatric, binocular-vision and contact-lens **sections**; the
+anterior/posterior **segment drawing** upgrade; and the **certificates**
+(colour-vision / low-vision clearance) generator.
+
+---
+
 ## 2026-07-25 — Session 11m: Whole-build UI/UX wiring audit + refinements
 
 **Founder asked: is everything connected and wired? Then refine the UX.**

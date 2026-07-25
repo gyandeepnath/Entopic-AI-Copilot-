@@ -444,6 +444,14 @@ function pgPlan() {
         '</select></div>' +
     '</div>' +
 
+    /* Results back from the investigation queue, waiting for this clinician
+       to verify — shown before ordering anything further. */
+    (typeof invReviewBlock === "function" ? invReviewBlock() : "") +
+
+    /* Raise investigation orders: they go to the shared queue for a
+       technician / another clinician to perform and upload. */
+    (typeof invOrderBlock === "function" ? invOrderBlock() : "") +
+
     '<div class="btn-g">' +
       '<button class="btn btn-s" onclick="nav(\'diagnosis\')">← Back</button>' +
       '<button class="btn btn-p" onclick="nav(\'coding\')">Coding →</button>' +

@@ -15,9 +15,11 @@ const roles = require("../js/roles.js");
 function fresh() { roles._reset(); return roles; }
 
 
-test("live catalogue is Student / Clinician / Faculty / Researcher; more are 'coming'", () => {
+test("live catalogue is Student / Clinician / Faculty / Researcher / Technician; more are 'coming'", () => {
+  /* Technician went live with the investigation queue: someone has to be able
+     to perform an ordered test and upload the report back. */
   const live = roles.activeRoleCatalogue().map((r) => r.id);
-  assert.deepStrictEqual(live, ["student", "clinician", "faculty", "researcher"]);
+  assert.deepStrictEqual(live, ["student", "clinician", "faculty", "researcher", "technician"]);
   const all = roles.ENTOPIC_ROLES.map((r) => r.id);
   assert.ok(all.includes("hospital") && all.includes("demonstrator"), "future roles present but flagged soon");
   assert.ok(roles.roleDef("hospital").soon === true);

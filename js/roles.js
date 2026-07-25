@@ -48,6 +48,7 @@ var ENTOPIC_ROLES = [
     landing: "patients",
     tabs: [
       { id: "patients", label: "Patients" },
+      { id: "investigations", label: "Investigations" },
       { id: "casebook", label: "Casebook" },
       { id: "kb",       label: "Reference" },
       { id: "account",  label: "Account" }
@@ -75,6 +76,18 @@ var ENTOPIC_ROLES = [
     tabs: [
       { id: "research", label: "Research" },
       { id: "casebook", label: "Casebook" },
+      { id: "kb",       label: "Reference" },
+      { id: "account",  label: "Account" }
+    ]
+  },
+  {
+    id: "technician",
+    label: "Technician / Investigations",
+    icon: "🔬",
+    blurb: "Perform ordered investigations, record the values and upload the reports back to the clinician.",
+    landing: "investigations",
+    tabs: [
+      { id: "investigations", label: "Investigations" },
       { id: "kb",       label: "Reference" },
       { id: "account",  label: "Account" }
     ]
@@ -269,7 +282,8 @@ var ROLE_CAPS = {
   student:    { patients: 1, soap_note: 1, rx_print: 0, coding: 0, kb_authoring: 0, casebook_publish: 0, analytics: 1 },
   clinician:  { patients: 1, soap_note: 1, rx_print: 1, coding: 1, kb_authoring: 0, casebook_publish: 0, analytics: 1 },
   faculty:    { patients: 1, soap_note: 1, rx_print: 1, coding: 0, kb_authoring: 1, casebook_publish: 1, analytics: 1 },
-  researcher: { patients: 0, soap_note: 0, rx_print: 0, coding: 0, kb_authoring: 0, casebook_publish: 0, analytics: 1, research_export: 1 }
+  researcher: { patients: 0, soap_note: 0, rx_print: 0, coding: 0, kb_authoring: 0, casebook_publish: 0, analytics: 1, research_export: 1 },
+  technician: { patients: 0, soap_note: 0, rx_print: 0, coding: 0, kb_authoring: 0, casebook_publish: 0, analytics: 0, investigations: 1 }
 };
 
 /* Capabilities that a paid tier unlocks (absent = free). */
