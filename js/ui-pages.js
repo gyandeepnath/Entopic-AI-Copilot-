@@ -454,6 +454,22 @@ function pgVA() {
       '<div class="e-l">Near</div>' + vaField("vaOdNr", "va.od_near", "N6", "near") + vaField("vaOsNr", "va.os_near", "N6", "near") +
     '</div>' +
 
+    /* Pinhole interpretation + free remarks — what the clinician concludes
+       from the pinhole is the clinically meaningful part, not just the number.
+       Improvement points to an uncorrected refractive cause; no improvement
+       points away from it (this is recorded, not scored). */
+    '<div class="dv"><span>Interpretation &amp; Remarks</span></div>' +
+    '<div class="fg">' +
+      '<div class="fi"><label>Pinhole</label>' +
+        '<select oninput="V.va.ph_improves=this.value">' +
+          ["", "Improves", "No improvement", "Partial improvement", "Not tested"].map(function (o) {
+            return '<option' + (V.va.ph_improves === o ? " selected" : "") + '>' + o + '</option>';
+          }).join("") +
+        '</select></div>' +
+      '<div class="fi full"><label>Remarks</label>' +
+        '<textarea oninput="V.va.remarks=this.value" placeholder="Fixation, cooperation, eccentric viewing, chart/distance used, crowding, tested with/without correction…">' + esc(V.va.remarks || "") + '</textarea></div>' +
+    '</div>' +
+
     '<div class="btn-g">' +
       '<button class="btn btn-s" onclick="nav(\'hx_family\')">← Back</button>' +
       '<button class="btn btn-p" onclick="goNext(\'va\',\'refraction\')">Continue →</button>' +
@@ -466,28 +482,257 @@ function pgVA() {
 /* PAGE 07: REFRACTION                                             */
 /* ═══════════════════════════════════════════════════════════════ */
 
-function pgRx() {
-  function rxRow(eye) {
-    var e = eye.toLowerCase();
-    return '<tr>' +
-      '<td class="e-l">' + eye + '</td>' +
-      '<td><input class="e-in" value="' + esc(V.rx[e + "_sph"]) + '" oninput="V.rx[\'' + e + '_sph\']=this.value" placeholder="Sph" style="width:58px"></td>' +
-      '<td><input class="e-in" value="' + esc(V.rx[e + "_cyl"]) + '" oninput="V.rx[\'' + e + '_cyl\']=this.value" placeholder="Cyl" style="width:58px"></td>' +
-      '<td><input class="e-in" value="' + esc(V.rx[e + "_ax"]) + '" oninput="V.rx[\'' + e + '_ax\']=this.value" placeholder="Ax" style="width:45px"></td>' +
-      '<td><input class="e-in" value="' + esc(V.rx[e + "_add"]) + '" oninput="V.rx[\'' + e + '_add\']=this.value" placeholder="Add" style="width:52px"></td>' +
-      '<td><input class="e-in" value="' + esc(V.rx[e + "_prism"]) + '" oninput="V.rx[\'' + e + '_prism\']=this.value" placeholder="Δ" style="width:38px"></td>' +
-      '<td><input class="e-in" value="' + esc(V.rx[e + "_base"]) + '" oninput="V.rx[\'' + e + '_base\']=this.value" placeholder="Base" style="width:45px"></td>' +
-    '</tr>';
+/* ── Refraction helpers ─────────────────────────────────────────────
+   Every refraction stage stores its powers under the same suffixes
+   (_sph/_cyl/_ax/_add/_prism/_base) behind a stage prefix, so one row
+   builder and one copy function serve all four stages:
+     ""      → subjective / working refraction (engine-facing, unchanged)
+     "hab"   → habitual (current spectacles / CL)
+     "ar"    → autorefractor
+     "ret"   → retinoscopy (dry)
+     "cyclo" → post-cycloplegic retinoscopy
+     "fin"   → final prescription issued
+   ------------------------------------------------------------------ */
+
+function rxKey(stage, eye, suffix) {
+  return (stage ? stage + "_" : "") + eye + "_" + suffix;
+}
+
+/* One OD/OS power row. opts: {add, prism, live} */
+function rxPowerRow(eyeLabel, stage, opts) {
+  opts = opts || {};
+  var e = eyeLabel.toLowerCase();
+  function cell(suffix, ph, w) {
+    var k = rxKey(stage, e, suffix);
+    return '<td><input class="e-in" value="' + esc(V.rx[k] || "") + '"' +
+      ' oninput="V.rx[\'' + k + '\']=this.value' +
+      (opts.live ? ';runDiagnosticEngine();renderAdvisory()' : '') + '"' +
+      ' placeholder="' + ph + '" style="width:' + w + 'px" autocomplete="off"></td>';
   }
+  var h = '<tr><td class="e-l">' + eyeLabel + '</td>' +
+    cell("sph", "Sph", 58) + cell("cyl", "Cyl", 58) + cell("ax", "Ax", 45);
+  if (opts.add) h += cell("add", "Add", 52);
+  if (opts.prism) h += cell("prism", "Δ", 38) + cell("base", "Base", 45);
+  return h + '</tr>';
+}
+
+/* A titled power table for one stage. */
+function rxPowerTable(stage, opts) {
+  opts = opts || {};
+  var heads = ["Sph", "Cyl", "Ax"];
+  if (opts.add) heads.push("Add");
+  if (opts.prism) heads.push("Prism", "Base");
+  return '<table style="width:100%;border-collapse:collapse;font-size:.72rem">' +
+    '<thead><tr><th style="text-align:left;padding:4px;font-size:.56rem;color:var(--sl);text-transform:uppercase">Eye</th>' +
+      heads.map(function (c) {
+        return '<th style="padding:4px;font-size:.56rem;color:var(--sl);text-transform:uppercase">' + c + '</th>';
+      }).join("") +
+    '</tr></thead><tbody>' +
+      rxPowerRow("OD", stage, opts) + rxPowerRow("OS", stage, opts) +
+    '</tbody></table>';
+}
+
+/* Carry powers from one stage to another (only non-empty values move, so a
+   copy never blanks work already done). Re-runs the engine because the
+   subjective stage is engine-facing. */
+function rxCopyStage(from, to) {
+  var parts = ["sph", "cyl", "ax", "add", "prism", "base"];
+  var moved = 0;
+  ["od", "os"].forEach(function (e) {
+    parts.forEach(function (p) {
+      var src = V.rx[rxKey(from, e, p)];
+      if (src !== undefined && src !== "") { V.rx[rxKey(to, e, p)] = src; moved++; }
+    });
+  });
+  if (!moved) { toast("Nothing to copy — that stage is empty."); return; }
+  if (typeof runDiagnosticEngine === "function") runDiagnosticEngine();
+  renderMain();
+  if (typeof renderAdvisory === "function") renderAdvisory();
+  toast("Copied " + rxStageName(from) + " → " + rxStageName(to) + ".");
+}
+
+function rxStageName(s) {
+  return { "": "subjective", hab: "current Rx", ar: "autorefraction",
+           ret: "retinoscopy", cyclo: "cycloplegic retinoscopy", fin: "final Rx" }[s] || s;
+}
+
+/* True when a stage has any power recorded. */
+function rxStageHasData(stage) {
+  var parts = ["sph", "cyl", "ax", "add"];
+  for (var i = 0; i < 2; i++) {
+    var e = ["od", "os"][i];
+    for (var j = 0; j < parts.length; j++) {
+      var v = V.rx[rxKey(stage, e, parts[j])];
+      if (v !== undefined && v !== "") return true;
+    }
+  }
+  return false;
+}
+
+/* Stamp the cycloplegic instillation time (the "hold" starts now). */
+function rxCycloNow() {
+  var d = new Date();
+  V.rx.cyclo_instilled = ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2);
+  renderMain();
+}
+
+/* Minutes elapsed since instillation, or null if not started / unparseable. */
+function rxCycloElapsed() {
+  var t = (V.rx.cyclo_instilled || "").trim();
+  var m = /^(\d{1,2}):(\d{2})$/.exec(t);
+  if (!m) return null;
+  var now = new Date();
+  var then = new Date(now);
+  then.setHours(parseInt(m[1], 10), parseInt(m[2], 10), 0, 0);
+  var mins = Math.floor((now - then) / 60000);
+  if (mins < 0) mins += 24 * 60; /* instilled just before midnight */
+  return mins;
+}
+
+/* The refraction actually issued: final if written, else subjective. */
+function rxEffectiveStage() { return rxStageHasData("fin") ? "fin" : ""; }
+
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* PAGE 07: REFRACTION                                             */
+/* Staged to follow the clinical sequence a clinician actually      */
+/* works through: current correction → objective (AR, retinoscopy,  */
+/* dry or cycloplegic with a hold) → subjective → final Rx issued.  */
+/* ═══════════════════════════════════════════════════════════════ */
+
+function pgRx() {
+  var isCyclo = V.rx.ret_state === "Cycloplegic";
+  var elapsed = rxCycloElapsed();
+  var waitMin = parseInt(V.rx.cyclo_wait, 10) || 30;
+
+  /* ── ① Current correction ── */
+  var habType = V.rx.hab_type || "None";
+  var habSec =
+    '<div class="dv"><span>① Current correction (habitual)</span></div>' +
+    '<div class="fg" style="margin-bottom:8px">' +
+      '<div class="fi"><label>Wearing</label>' +
+        '<select oninput="V.rx.hab_type=this.value;renderMain()">' +
+          ["None", "Spectacles", "Contact lenses"].map(function (t) {
+            return '<option' + (habType === t ? " selected" : "") + '>' + t + '</option>';
+          }).join("") +
+        '</select></div>' +
+      (habType !== "None"
+        ? '<div class="fi"><label>Age of current Rx</label><input class="e-in" value="' + esc(V.rx.hab_age) + '" oninput="V.rx.hab_age=this.value" placeholder="e.g. 2 years"></div>'
+        : '') +
+    '</div>';
+
+  if (habType !== "None") {
+    habSec +=
+      rxPowerTable("hab", { add: true }) +
+      '<div class="fg" style="margin-top:6px">' +
+        '<div class="fi"><label>VA with current OD</label><input class="e-in" value="' + esc(V.rx.hab_va_od) + '" oninput="V.rx.hab_va_od=this.value" placeholder="6/..."></div>' +
+        '<div class="fi"><label>VA with current OS</label><input class="e-in" value="' + esc(V.rx.hab_va_os) + '" oninput="V.rx.hab_va_os=this.value" placeholder="6/..."></div>' +
+      '</div>';
+    if (habType === "Contact lenses") {
+      habSec +=
+        '<div class="fg" style="margin-top:6px">' +
+          '<div class="fi"><label>Base curve</label><input class="e-in" value="' + esc(V.rx.cl_bc) + '" oninput="V.rx.cl_bc=this.value" placeholder="8.6"></div>' +
+          '<div class="fi"><label>Diameter</label><input class="e-in" value="' + esc(V.rx.cl_dia) + '" oninput="V.rx.cl_dia=this.value" placeholder="14.2"></div>' +
+          '<div class="fi"><label>Modality</label><input class="e-in" value="' + esc(V.rx.cl_modality) + '" oninput="V.rx.cl_modality=this.value" placeholder="Daily / Monthly"></div>' +
+          '<div class="fi"><label>Material</label><input class="e-in" value="' + esc(V.rx.cl_material) + '" oninput="V.rx.cl_material=this.value" placeholder="SiHy"></div>' +
+        '</div>';
+    }
+    habSec +=
+      '<div style="margin-top:6px"><button class="btn btn-s" style="font-size:.58rem" onclick="rxCopyStage(\'hab\',\'\')">Copy current → subjective (start point)</button></div>';
+  }
+
+  /* ── ② Objective ── */
+  var objSec =
+    '<div class="dv"><span>② Objective refraction</span></div>' +
+
+    '<div style="font-size:.58rem;color:var(--sl);text-transform:uppercase;letter-spacing:.04em;margin:6px 0 3px">Autorefractor</div>' +
+    rxPowerTable("ar", {}) +
+    '<div style="margin:4px 0 10px"><button class="btn btn-s" style="font-size:.58rem" onclick="rxCopyStage(\'ar\',\'\')">Copy AR → subjective</button></div>' +
+
+    '<div style="font-size:.58rem;color:var(--sl);text-transform:uppercase;letter-spacing:.04em;margin:6px 0 3px">Retinoscopy</div>' +
+    '<div class="fg" style="margin-bottom:6px">' +
+      '<div class="fi"><label>State</label>' +
+        '<select oninput="V.rx.ret_state=this.value;renderMain()">' +
+          ["Dry", "Cycloplegic"].map(function (t) {
+            return '<option' + (V.rx.ret_state === t ? " selected" : "") + '>' + t + '</option>';
+          }).join("") +
+        '</select></div>' +
+      '<div class="fi"><label>Working distance</label><input class="e-in" value="' + esc(V.rx.ret_wd) + '" oninput="V.rx.ret_wd=this.value" placeholder="0.67 m"></div>' +
+    '</div>' +
+    rxPowerTable("ret", {}) +
+    '<div style="margin:4px 0 6px"><button class="btn btn-s" style="font-size:.58rem" onclick="rxCopyStage(\'ret\',\'\')">Copy retinoscopy → subjective</button></div>';
+
+  /* Cycloplegic sub-block — instil, hold, repeat. */
+  if (isCyclo) {
+    var holdState;
+    if (elapsed === null) {
+      holdState = '<span style="color:var(--sv)">Not started — record the instillation time to begin the hold.</span>';
+    } else if (elapsed < waitMin) {
+      holdState = '<span style="color:var(--wr,#b8860b);font-weight:600">⏳ Holding — ' + elapsed + ' of ' + waitMin +
+        ' min elapsed.</span> <span style="color:var(--sv)">Exam paused for cycloplegia; repeat retinoscopy when ready.</span>';
+    } else {
+      holdState = '<span style="color:#2e7d32;font-weight:600">✓ ' + elapsed + ' min elapsed — ready to repeat retinoscopy.</span>';
+    }
+
+    objSec +=
+      '<div style="border:1px solid var(--fg);border-radius:var(--r);padding:10px;margin:8px 0;background:var(--sn)">' +
+        '<div style="font-weight:600;font-size:.68rem;margin-bottom:6px">Cycloplegia</div>' +
+        '<div class="fg">' +
+          '<div class="fi"><label>Agent</label>' +
+            '<select oninput="V.rx.cyclo_agent=this.value">' +
+              ['', 'Cyclopentolate 1%', 'Cyclopentolate 0.5%', 'Tropicamide 1%', 'Homatropine 2%', 'Atropine 1%', 'Other'].map(function (a) {
+                return '<option' + (V.rx.cyclo_agent === a ? " selected" : "") + '>' + a + '</option>';
+              }).join("") +
+            '</select></div>' +
+          '<div class="fi"><label>Drops</label><input class="e-in" value="' + esc(V.rx.cyclo_drops) + '" oninput="V.rx.cyclo_drops=this.value" placeholder="2"></div>' +
+          '<div class="fi"><label>Instilled at</label><input class="e-in" value="' + esc(V.rx.cyclo_instilled) + '" oninput="V.rx.cyclo_instilled=this.value" placeholder="HH:MM"></div>' +
+          '<div class="fi"><label>Hold (min)</label><input class="e-in" value="' + esc(V.rx.cyclo_wait) + '" oninput="V.rx.cyclo_wait=this.value" placeholder="30"></div>' +
+        '</div>' +
+        '<div style="margin:6px 0"><button class="btn btn-s" style="font-size:.58rem" onclick="rxCycloNow()">⏱ Instilled now</button> ' +
+          '<button class="btn btn-s" style="font-size:.58rem" onclick="renderMain()">↻ Refresh timer</button></div>' +
+        '<div style="font-size:.6rem;margin-bottom:8px">' + holdState + '</div>' +
+        '<div style="font-size:.58rem;color:var(--sl);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px">Post-cycloplegic retinoscopy</div>' +
+        rxPowerTable("cyclo", {}) +
+        '<div style="margin-top:4px"><button class="btn btn-s" style="font-size:.58rem" onclick="rxCopyStage(\'cyclo\',\'\')">Copy cycloplegic → subjective</button></div>' +
+        '<div class="fi full" style="margin-top:6px"><label>Cycloplegia notes</label>' +
+          '<textarea oninput="V.rx.cyclo_notes=this.value" placeholder="Reaction, residual accommodation, post-cyclo advice given…">' + esc(V.rx.cyclo_notes) + '</textarea></div>' +
+      '</div>';
+  }
+
+  /* ── ③ Subjective (engine-facing) ── */
+  var subSec =
+    '<div class="dv"><span>③ Subjective refraction</span></div>' +
+    '<div style="font-size:.58rem;color:var(--sv);margin-bottom:4px">This is the working refraction the diagnostic engine reads.</div>' +
+    rxPowerTable("", { add: true, prism: true, live: true }) +
+    '<div class="fg" style="margin-top:6px">' +
+      '<div class="fi"><label>BCVA OD</label><input class="e-in" value="' + esc(V.rx.sub_va_od) + '" oninput="V.rx.sub_va_od=this.value" placeholder="6/6"></div>' +
+      '<div class="fi"><label>BCVA OS</label><input class="e-in" value="' + esc(V.rx.sub_va_os) + '" oninput="V.rx.sub_va_os=this.value" placeholder="6/6"></div>' +
+      '<div class="fi"><label>Binocular balance</label><input class="e-in" value="' + esc(V.rx.sub_balance) + '" oninput="V.rx.sub_balance=this.value" placeholder="Balanced / prism-dissociated"></div>' +
+    '</div>';
+
+  /* ── ④ Final prescription ── */
+  var finSec =
+    '<div class="dv"><span>④ Final prescription issued</span></div>' +
+    '<div style="margin-bottom:6px">' +
+      '<button class="btn btn-s" style="font-size:.58rem" onclick="rxCopyStage(\'\',\'fin\')">Copy subjective → final</button> ' +
+      (habType !== "None" ? '<button class="btn btn-s" style="font-size:.58rem" onclick="rxCopyStage(\'hab\',\'fin\')">Keep current Rx unchanged</button>' : '') +
+    '</div>' +
+    rxPowerTable("fin", { add: true, prism: true }) +
+    '<div class="fg" style="margin-top:6px">' +
+      '<div class="fi"><label>Lens type</label><input class="e-in" value="' + esc(V.rx.fin_lens_type) + '" oninput="V.rx.fin_lens_type=this.value" placeholder="Single vision / Progressive / Bifocal"></div>' +
+      '<div class="fi"><label>Wearing advice</label><input class="e-in" value="' + esc(V.rx.fin_advice) + '" oninput="V.rx.fin_advice=this.value" placeholder="Constant / near only / driving"></div>' +
+      '<div class="fi full"><label>Prescription notes</label>' +
+        '<textarea oninput="V.rx.fin_notes=this.value" placeholder="Adaptation advice, prism, tint, review interval…">' + esc(V.rx.fin_notes) + '</textarea></div>' +
+    '</div>';
 
   return '<div class="card">' +
     '<div class="card-t">Refraction</div>' +
-    '<div class="card-s">Objective and subjective</div>' +
+    '<div class="card-s">Current correction → objective → subjective → final prescription</div>' +
 
     '<div class="fg" style="margin-bottom:12px">' +
       '<div class="fi"><label>Method</label>' +
         '<select oninput="V.rx.method=this.value">' +
-          RX_METHODS.map(function(m) { return '<option' + (V.rx.method === m ? ' selected' : '') + '>' + m + '</option>'; }).join("") +
+          RX_METHODS.map(function (m) { return '<option' + (V.rx.method === m ? ' selected' : '') + '>' + m + '</option>'; }).join("") +
         '</select></div>' +
       '<div class="fi"><label>PD Type</label>' +
         '<select oninput="V.rx.pd_type=this.value;renderMain()">' +
@@ -505,25 +750,10 @@ function pgRx() {
       ? '<div class="fg" style="margin-bottom:8px"><div class="fi"><label>PD OD (mm)</label><input class="e-in" value="' + esc(V.rx.pd_od) + '" oninput="V.rx.pd_od=this.value"></div><div class="fi"><label>PD OS (mm)</label><input class="e-in" value="' + esc(V.rx.pd_os) + '" oninput="V.rx.pd_os=this.value"></div></div>'
       : '') +
 
-    '<div class="dv"><span>Subjective Refraction</span></div>' +
-    '<table style="width:100%;border-collapse:collapse;font-size:.72rem">' +
-      '<thead><tr>' +
-        '<th style="text-align:left;padding:4px;font-size:.56rem;color:var(--sl);text-transform:uppercase">Eye</th>' +
-        '<th>Sph</th><th>Cyl</th><th>Ax</th><th>Add</th><th>Prism</th><th>Base</th>' +
-      '</tr></thead>' +
-      '<tbody>' + rxRow("OD") + rxRow("OS") + '</tbody>' +
-    '</table>' +
+    habSec + objSec + subSec + finSec +
 
-    '<div class="dv"><span>Objective</span></div>' +
-    '<div class="fg">' +
-      '<div class="fi"><label>Retinoscopy OD</label><input value="' + esc(V.rx.ret_od) + '" oninput="V.rx.ret_od=this.value"></div>' +
-      '<div class="fi"><label>Retinoscopy OS</label><input value="' + esc(V.rx.ret_os) + '" oninput="V.rx.ret_os=this.value"></div>' +
-      '<div class="fi"><label>Autorefractor OD</label><input value="' + esc(V.rx.ar_od) + '" oninput="V.rx.ar_od=this.value"></div>' +
-      '<div class="fi"><label>Autorefractor OS</label><input value="' + esc(V.rx.ar_os) + '" oninput="V.rx.ar_os=this.value"></div>' +
-    '</div>' +
-
-    /* Spectacle-lens guidance — derived from the entered Rx (standard optical
-       practice: index/material/coating/tint). Self-gates until Rx is present. */
+    /* Spectacle-lens guidance — reads the issued Rx (final if written, else
+       subjective). Standard optical practice; self-gates until a power exists. */
     '<div class="dv"><span>Spectacle Lens Guidance</span></div>' +
     (typeof renderSpectacleAdvisor === "function" ? renderSpectacleAdvisor() :
       '<div style="font-size:.62rem;color:var(--sv);padding:8px">Enter refraction to generate lens recommendations.</div>') +

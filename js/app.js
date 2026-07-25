@@ -40,6 +40,23 @@ function showView(showId, hideId) {
 /* MODAL HELPERS                                                   */
 /* ═══════════════════════════════════════════════════════════════ */
 
+/* Brief, non-blocking confirmation of an action ("Copied AR → subjective").
+   Reuses the save-indicator slot so there is one feedback surface, never a
+   blocking alert() in the middle of an exam. */
+function toast(msg, ms) {
+  var el = document.getElementById("saveInd");
+  if (!el) return;
+  if (toast._t) { clearTimeout(toast._t); }
+  if (toast._restore === undefined) toast._restore = el.textContent;
+  el.textContent = msg;
+  el.classList.add("show");
+  toast._t = setTimeout(function () {
+    el.classList.remove("show");
+    el.textContent = toast._restore;
+    toast._t = null;
+  }, ms || 1800);
+}
+
 function openModal(id) {
   document.getElementById(id).style.display = "flex";
 }

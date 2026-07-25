@@ -12,16 +12,25 @@
 "use strict";
 
 
+/* The refraction actually being dispensed: the FINAL prescription when the
+   clinician has written one, otherwise the subjective/working refraction.
+   (rxEffectiveStage lives in ui-pages.js; fall back safely if absent.) */
+function saRx(eye, part) {
+  var stage = (typeof rxEffectiveStage === "function") ? rxEffectiveStage() : "";
+  var k = (stage ? stage + "_" : "") + eye + "_" + part;
+  return V.rx[k];
+}
+
 /* ═══════════════════════════════════════════════════════════════ */
 /* LENS INDEX RECOMMENDATION                                       */
 /* Based on highest sphere + cylinder power                        */
 /* ═══════════════════════════════════════════════════════════════ */
 
 function recommendLensIndex() {
-  var sphOd = Math.abs(parseFloat(V.rx.od_sph) || 0);
-  var sphOs = Math.abs(parseFloat(V.rx.os_sph) || 0);
-  var cylOd = Math.abs(parseFloat(V.rx.od_cyl) || 0);
-  var cylOs = Math.abs(parseFloat(V.rx.os_cyl) || 0);
+  var sphOd = Math.abs(parseFloat(saRx("od","sph")) || 0);
+  var sphOs = Math.abs(parseFloat(saRx("os","sph")) || 0);
+  var cylOd = Math.abs(parseFloat(saRx("od","cyl")) || 0);
+  var cylOs = Math.abs(parseFloat(saRx("os","cyl")) || 0);
 
   /* Calculate effective power (sphere + half cylinder as proxy) */
   var powerOd = sphOd + (cylOd * 0.5);
@@ -69,8 +78,8 @@ function recommendLensIndex() {
 
 function recommendLensDesign() {
   var age = parseInt(P.age) || 0;
-  var hasAdd = !!(V.rx.od_add || V.rx.os_add);
-  var addVal = parseFloat(V.rx.od_add) || parseFloat(V.rx.os_add) || 0;
+  var hasAdd = !!(saRx("od","add") || saRx("os","add"));
+  var addVal = parseFloat(saRx("od","add")) || parseFloat(saRx("os","add")) || 0;
   var occ = (P.occupation || "").toLowerCase();
   var vdu = parseFloat(V.hxS.vdu) || 0;
 
@@ -210,7 +219,7 @@ function recommendCoatings() {
 
 function renderSpectacleAdvisor() {
   /* Check if Rx data exists */
-  if (!V.rx.od_sph && !V.rx.os_sph) {
+  if (!saRx("od","sph") && !saRx("os","sph")) {
     return '<div style="font-size:.62rem;color:var(--sv);padding:8px">Enter refraction data to generate lens recommendations.</div>';
   }
 

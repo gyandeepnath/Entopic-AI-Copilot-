@@ -832,17 +832,58 @@ function blankVisit() {
       od_aid: "", os_aid: "",
       od_ph: "", os_ph: "",
       od_bva: "", os_bva: "",
-      od_near: "", os_near: ""
+      od_near: "", os_near: "",
+      /* Pinhole interpretation + free remarks (fixation, cooperation,
+         eccentric viewing, chart used at a non-standard distance, …). */
+      ph_improves: "", remarks: ""
     },
 
-    /* Refraction */
+    /* Refraction — staged to match the real clinical sequence:
+       habitual correction → objective (AR / retinoscopy, dry or cycloplegic)
+       → subjective → final prescription.
+       NOTE: od_sph/od_cyl/od_ax/od_add (and os_) remain the SUBJECTIVE /
+       working refraction — the engine and the spectacle advisor read these,
+       so the field names are deliberately unchanged. */
     rx: {
       method: "Subjective",
       pd_type: "binocular", pd_bi: "", pd_od: "", pd_os: "",
+
+      /* ① Habitual / current correction */
+      hab_type: "None",              /* None | Spectacles | Contact lenses */
+      hab_age: "",                   /* how old the current correction is */
+      hab_od_sph: "", hab_od_cyl: "", hab_od_ax: "", hab_od_add: "",
+      hab_os_sph: "", hab_os_cyl: "", hab_os_ax: "", hab_os_add: "",
+      hab_va_od: "", hab_va_os: "",  /* VA through the current correction */
+      cl_bc: "", cl_dia: "", cl_modality: "", cl_material: "",
+      hab_notes: "",
+
+      /* ② Objective — autorefraction */
+      ar_od_sph: "", ar_od_cyl: "", ar_od_ax: "",
+      ar_os_sph: "", ar_os_cyl: "", ar_os_ax: "",
+      ar_od: "", ar_os: "",          /* legacy free-text, still honoured */
+
+      /* ② Objective — retinoscopy (dry by default) */
+      ret_state: "Dry",              /* Dry | Cycloplegic */
+      ret_wd: "0.67 m",              /* working distance (for net vs gross) */
+      ret_od_sph: "", ret_od_cyl: "", ret_od_ax: "",
+      ret_os_sph: "", ret_os_cyl: "", ret_os_ax: "",
+      ret_od: "", ret_os: "",        /* legacy free-text, still honoured */
+
+      /* ② Cycloplegic block — instil, hold, then repeat retinoscopy */
+      cyclo_agent: "", cyclo_drops: "", cyclo_instilled: "", cyclo_wait: "30",
+      cyclo_od_sph: "", cyclo_od_cyl: "", cyclo_od_ax: "",
+      cyclo_os_sph: "", cyclo_os_cyl: "", cyclo_os_ax: "",
+      cyclo_notes: "",
+
+      /* ③ Subjective (engine-facing — do not rename) */
       od_sph: "", od_cyl: "", od_ax: "", od_add: "", od_prism: "", od_base: "",
       os_sph: "", os_cyl: "", os_ax: "", os_add: "", os_prism: "", os_base: "",
-      ret_od: "", ret_os: "",
-      ar_od: "", ar_os: ""
+      sub_va_od: "", sub_va_os: "", sub_balance: "",
+
+      /* ④ Final prescription issued */
+      fin_od_sph: "", fin_od_cyl: "", fin_od_ax: "", fin_od_add: "", fin_od_prism: "", fin_od_base: "",
+      fin_os_sph: "", fin_os_cyl: "", fin_os_ax: "", fin_os_add: "", fin_os_prism: "", fin_os_base: "",
+      fin_lens_type: "", fin_advice: "", fin_notes: ""
     },
 
     /* Dilation */
