@@ -77,10 +77,23 @@ directions; 8.77 MB image compressed and read back out of IndexedDB; and the
 full order → perform → upload → review → sign-off hand-off across two different
 signed-in users with no console errors.
 
+### 5. Certificates
+Five **modifiable** templates (colour vision, low vision / visual impairment,
+visual fitness, spectacle prescription, contact-lens specification), each
+pre-filled from the exam as editable label/value rows with an editable
+statement and signature block, printed without app chrome and audit-logged.
+⚠ **No eligibility thresholds or pass/fail logic** are encoded — those vary by
+country, employer and licensing authority. Entopic formats the document and
+fills in the measured findings; the opinion and signature are the clinician's.
+
 ### Still open from this review (not yet built)
-Low-vision, paediatric, binocular-vision and contact-lens **sections**; the
-anterior/posterior **segment drawing** upgrade; and the **certificates**
-(colour-vision / low-vision clearance) generator.
+- **Low-vision, paediatric, binocular-vision and contact-lens sections.** The
+  `bv` data model is already reasonably complete (cover test, NPC, vergence
+  ranges, AC/A, accommodation, MAF/BAF, NRA/PRA, stereo, Worth 4-dot) but the
+  UI is thin; low vision, paediatric and contact lens have no dedicated section
+  at all beyond what the refraction rebuild added (habitual CL parameters).
+- **Anterior/posterior segment drawing upgrade** (colour-coded, standard
+  ophthalmic notation) — flagged by the founder as important for documentation.
 
 ---
 
