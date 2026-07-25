@@ -11,7 +11,18 @@
 /* ═══════════════════════════════════════════════════════════════ */
 "use strict";
 
-var ATTACH_MAX_BYTES = 1.6 * 1024 * 1024; /* ~1.5 MB/file — localStorage is small */
+/* Chosen compression profile for image attachments (see js/file-store.js).
+   Persisted per device so a clinician's preference sticks. */
+var ATTACH_PROFILE = (function () {
+  try { return localStorage.getItem("entopic_attach_profile") || "standard"; }
+  catch (e) { return "standard"; }
+})();
+
+function attachSetProfile(p) {
+  ATTACH_PROFILE = p;
+  try { localStorage.setItem("entopic_attach_profile", p); } catch (e) {}
+  if (typeof renderMain === "function") renderMain();
+}
 
 function attachGetList(scope) {
   if (scope === "visit") { if (!V.inv.attachments) V.inv.attachments = []; return V.inv.attachments; }
@@ -32,40 +43,48 @@ function attachPersist(scope) {
   }
 }
 
-/* Read the chosen files, convert to data URLs, and store them. */
+/* Read the chosen files, compress images, store the bytes in IndexedDB via
+   the file store, and keep only a small record with the clinical data. */
 function attachHandle(input, scope) {
   var files = input.files;
   if (!files || !files.length) return;
   var list = attachGetList(scope);
   var pending = files.length;
-  function done() { if (--pending <= 0) attachPersist(scope); }
+  var savedBytes = 0, failures = [];
+
+  function done() {
+    if (--pending > 0) return;
+    attachPersist(scope);
+    if (failures.length) alert(failures.join("\n\n"));
+    else if (savedBytes > 0 && typeof toast === "function") {
+      toast("Attached · " + fsHumanSize(savedBytes) + " saved by compression");
+    }
+  }
+
   for (var i = 0; i < files.length; i++) {
     (function (f) {
-      if (f.size > ATTACH_MAX_BYTES) {
-        alert("“" + f.name + "” is " + (f.size / 1048576).toFixed(1) + " MB — too large for on-device storage (max ~1.5 MB).\n\nScan/compress at a lower resolution, or split multi-page PDFs. Large files are best kept in your cloud backup.");
-        done(); return;
-      }
-      var r = new FileReader();
-      r.onload = function () {
-        list.push({
-          id: "a" + Date.now().toString(36) + Math.floor(Math.random() * 1e4).toString(36),
-          name: f.name, type: f.type || "file", size: f.size,
-          dataUrl: r.result,
-          added: new Date().toISOString(),
-          added_by: (typeof CU !== "undefined" && CU) ? (CU.username || "") : ""
-        });
+      fsIngest(f, { profile: ATTACH_PROFILE }).then(function (rec) {
+        savedBytes += Math.max(0, (rec.orig_size || 0) - (rec.size || 0));
+        list.push(rec);
         if (typeof logAudit === "function") {
-          logAudit("file_attached", (scope === "patient" ? "Patient document: " : "Investigation file: ") + f.name,
-            { patient_id: (typeof CP !== "undefined" ? CP : null), visit_id: scope === "visit" ? (typeof CV !== "undefined" ? CV : null) : null });
+          logAudit("file_attached",
+            (scope === "patient" ? "Patient document: " : "Investigation file: ") + rec.name,
+            { patient_id: (typeof CP !== "undefined" ? CP : null),
+              visit_id: scope === "visit" ? (typeof CV !== "undefined" ? CV : null) : null });
         }
+        /* Best-effort cloud copy; a no-op unless the user connected their own
+           project and is signed in. Never blocks documenting the exam. */
+        if (typeof fsCloudUpload === "function") { try { fsCloudUpload(rec); } catch (e) {} }
         done();
-      };
-      r.onerror = function () { done(); };
-      r.readAsDataURL(f);
+      }).catch(function (e) {
+        failures.push(String((e && e.message) || e));
+        done();
+      });
     })(files[i]);
   }
   input.value = "";
 }
+
 
 function attachFind(scope, id) {
   var list = attachGetList(scope);
@@ -77,13 +96,19 @@ function attachFind(scope, id) {
 function openAttachment(scope, id) {
   var a = attachFind(scope, id);
   if (!a) return;
-  try {
-    var w = window.open();
-    if (w) {
-      if (/^image\//.test(a.type)) w.document.write('<img src="' + a.dataUrl + '" style="max-width:100%">');
-      else w.location = a.dataUrl;
-    }
-  } catch (e) { /* fall back: navigate current tab */ }
+  fsResolveUrl(a).then(function (url) {
+    if (!url) { alert("The stored file could not be read back from this device."); return; }
+    try {
+      var w = window.open();
+      if (w) {
+        if (/^image\//.test(a.type)) {
+          w.document.write('<title>' + esc(a.name) + '</title><img src="' + url + '" style="max-width:100%">');
+        } else {
+          w.location = url;
+        }
+      }
+    } catch (e) { /* popup blocked — nothing further to do */ }
+  });
 }
 
 function removeAttachment(scope, id) {
@@ -92,6 +117,7 @@ function removeAttachment(scope, id) {
   for (var i = 0; i < list.length; i++) {
     if (list[i].id === id) {
       if (typeof logAudit === "function") logAudit("file_removed", "Removed file: " + list[i].name, { patient_id: (typeof CP !== "undefined" ? CP : null) });
+      if (typeof fsForget === "function") { try { fsForget(list[i]); } catch (e) {} }
       list.splice(i, 1);
       break;
     }
@@ -108,10 +134,12 @@ function renderAttachList(scope) {
     var a = list[i], isImg = /^image\//.test(a.type);
     h += '<div style="border:1px solid var(--fg);border-radius:var(--r);padding:6px;width:120px;font-size:.54rem">' +
       (isImg
-        ? '<img src="' + a.dataUrl + '" style="width:100%;height:70px;object-fit:cover;border-radius:3px;cursor:pointer" onclick="openAttachment(\'' + scope + '\',\'' + a.id + '\')">'
+        ? '<img src="' + (a.thumb || a.dataUrl || "") + '" style="width:100%;height:70px;object-fit:cover;border-radius:3px;cursor:pointer" onclick="openAttachment(\'' + scope + '\',\'' + a.id + '\')">'
         : '<div onclick="openAttachment(\'' + scope + '\',\'' + a.id + '\')" style="height:70px;display:flex;align-items:center;justify-content:center;background:var(--fg);border-radius:3px;cursor:pointer;font-size:1.5rem">' + (/pdf/.test(a.type) ? "📄" : "📎") + '</div>') +
       '<div style="margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + esc(a.name) + '">' + esc(a.name) + '</div>' +
-      '<div style="color:var(--sv)">' + (a.size / 1024).toFixed(0) + ' KB' + (a.added ? ' · ' + esc(a.added.slice(0, 10)) : '') + '</div>' +
+      '<div style="color:var(--sv)">' + fsHumanSize(a.size) +
+        (a.compressed && a.orig_size > a.size ? ' <span title="compressed from ' + fsHumanSize(a.orig_size) + '">↓</span>' : '') +
+        (a.added ? ' · ' + esc(a.added.slice(0, 10)) : '') + '</div>' +
       '<div style="display:flex;gap:8px;margin-top:2px">' +
         '<span style="cursor:pointer;color:var(--md)" onclick="openAttachment(\'' + scope + '\',\'' + a.id + '\')">open</span>' +
         '<span style="cursor:pointer;color:var(--as,#c0392b)" onclick="removeAttachment(\'' + scope + '\',\'' + a.id + '\')">remove</span>' +
@@ -120,9 +148,36 @@ function renderAttachList(scope) {
   return h + '</div>';
 }
 
-/* A ready-made "Attachments" block (file input + grid) for a scope. */
+/* A ready-made "Attachments" block (quality selector + file input + grid). */
 function attachBlock(scope, label) {
-  return '<input type="file" multiple accept="image/*,application/pdf" onchange="attachHandle(this,\'' + scope + '\')" style="margin-bottom:8px;font-size:.62rem">' +
-    '<div style="font-size:.52rem;color:var(--sv);margin-bottom:6px">Images or PDFs up to ~1.5 MB each · stored on this device with the ' + (scope === "patient" ? "patient" : "visit") + '</div>' +
+  var opts = Object.keys(FS_PROFILES).map(function (k) {
+    return '<option value="' + k + '"' + (ATTACH_PROFILE === k ? " selected" : "") + '>' + FS_PROFILES[k].label + '</option>';
+  }).join("");
+
+  /* Fill in the storage line once this markup is in the DOM (a <script> tag
+     injected through innerHTML would never run). */
+  if (typeof fsUsage === "function") {
+    setTimeout(function () {
+      fsUsage().then(function (u) {
+        var el = document.getElementById("attachUsage_" + scope);
+        if (el && u && u.quota) {
+          el.textContent = "On-device storage used: " + fsHumanSize(u.usage) +
+            " of ~" + fsHumanSize(u.quota) + " available.";
+        }
+      }).catch(function () {});
+    }, 0);
+  }
+
+  return '<div class="fg" style="margin-bottom:6px">' +
+      '<div class="fi"><label>Image quality</label>' +
+        '<select onchange="attachSetProfile(this.value)">' + opts + '</select></div>' +
+    '</div>' +
+    '<input type="file" multiple accept="image/*,application/pdf" onchange="attachHandle(this,\'' + scope + '\')" style="margin-bottom:8px;font-size:.62rem">' +
+    '<div style="font-size:.52rem;color:var(--sv);margin-bottom:6px">' +
+      'Images are downscaled and re-encoded before saving (lossy — pick <b>Diagnostic</b> to keep the most detail). ' +
+      'PDFs are stored unchanged. Files stay on this device with the ' + (scope === "patient" ? "patient" : "visit") +
+      ', and are copied to your cloud project if you have connected one.' +
+    '</div>' +
+    '<div id="attachUsage_' + scope + '" style="font-size:.52rem;color:var(--sv);margin-bottom:6px"></div>' +
     renderAttachList(scope);
 }
