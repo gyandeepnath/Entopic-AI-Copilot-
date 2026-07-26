@@ -129,22 +129,38 @@ function simRandomCase(scope) {
 var SIM = {
   active: false,
   theCase: null,
-  revealed: {},     /* step id -> true */
+  tier: "standard",     /* guided | standard | challenge | osce */
+  revealed: {},         /* step id -> true */
   started: null,
+  deadline: null,       /* epoch ms, OSCE only */
   answered: false,
   guess: "",
-  score: null
+  confidence: "",       /* Low | Moderate | High — drives calibration feedback */
+  score: null,
+  osce: null            /* set when running inside an OSCE circuit */
 };
 
-function simStart(theCase) {
+/* Should the advisory/engine panel be visible right now?
+   Hiding it at the higher tiers is the whole pedagogic point: the student
+   commits unaided, then compares against the engine in the debrief. */
+function simEngineHidden() {
+  return !!(SIM.active && !SIM.answered && !simTier(SIM.tier).engine);
+}
+
+function simStart(theCase, tierId, opts) {
   if (!theCase) { if (typeof toast === "function") toast("No case available."); return; }
+  opts = opts || {};
   SIM.active = true;
   SIM.theCase = theCase;
+  SIM.tier = tierId || SIM.tier || "standard";
   SIM.revealed = {};
   SIM.started = Date.now();
+  SIM.deadline = opts.limitSeconds ? (Date.now() + opts.limitSeconds * 1000) : null;
   SIM.answered = false;
   SIM.guess = "";
+  SIM.confidence = "";
   SIM.score = null;
+  SIM.osce = opts.osce || null;
 
   /* A fresh simulated patient — flagged so it never mixes with real records. */
   if (typeof newPatient === "function") newPatient();
@@ -164,6 +180,13 @@ function simEnd() {
   SIM.theCase = null;
   SIM.revealed = {};
   SIM.answered = false;
+  SIM.deadline = null;
+  SIM.osce = null;
+  /* Repaint, or the exam view keeps showing the simulation banner and the
+     "copilot off" panel behind the debrief after the session has ended. */
+  if (typeof renderMain === "function") renderMain();
+  if (typeof renderAdvisory === "function") renderAdvisory();
+  if (typeof renderSidebar === "function") renderSidebar();
 }
 
 /* Has this step been examined yet? */
@@ -207,9 +230,10 @@ function simMissedSteps() {
 
 /* Score the attempt. Deliberately simple and explainable — it reports what
    happened, it does not grade clinical judgement. */
-function simSubmit(guess) {
+function simSubmit(guess, confidence) {
   if (!SIM.active || !SIM.theCase) return null;
   SIM.guess = guess || "";
+  SIM.confidence = confidence || SIM.confidence || "";
   SIM.answered = true;
 
   var truth = SIM.theCase.condition;
@@ -223,10 +247,36 @@ function simSubmit(guess) {
   var found = (V.symptoms || []);
   var decisiveFound = SIM.theCase.decisive.filter(function (t) { return found.indexOf(t) >= 0; });
 
+  /* EFFICIENCY — brute-forcing every section must not score the same as
+     examining the ones that mattered. Best possible is uncovering all the
+     findings in exactly the sections that hold them. */
+  var efficiency = 0;
+  if (withFindings > 0) {
+    var productive = 0;
+    for (var st in SIM.revealed) if ((SIM.theCase.byStep[st] || []).length) productive++;
+    var wasted = Math.max(0, examined - productive);
+    efficiency = (productive / withFindings) * (productive / Math.max(1, productive + wasted));
+  }
+  efficiency = Math.max(0, Math.min(1, efficiency));
+
+  /* CALIBRATION — knowing how sure you are is a clinical skill in itself. */
+  var calibration = "";
+  if (SIM.confidence) {
+    if (correct && SIM.confidence === "High") calibration = "well-calibrated";
+    else if (correct && SIM.confidence === "Low") calibration = "under-confident";
+    else if (!correct && SIM.confidence === "High") calibration = "over-confident";
+    else if (!correct && SIM.confidence === "Low") calibration = "well-calibrated";
+    else calibration = "reasonable";
+  }
+
   SIM.score = {
     correct: correct,
     truth: truth,
     guess: SIM.guess,
+    tier: SIM.tier,
+    confidence: SIM.confidence,
+    calibration: calibration,
+    efficiency: efficiency,
     stepsExamined: examined,
     stepsWithFindings: withFindings,
     missedSteps: missed,
@@ -234,10 +284,24 @@ function simSubmit(guess) {
     decisiveFound: decisiveFound,
     decisiveMissed: SIM.theCase.decisive.filter(function (t) { return found.indexOf(t) < 0; }),
     seconds: Math.round((Date.now() - SIM.started) / 1000),
+    timedOut: !!(SIM.deadline && Date.now() > SIM.deadline),
     /* engine's own view at the moment of the answer, for the debrief */
     engineTop: (V.dxList || []).slice(0, 5).map(function (d) { return { n: d.n, s: d.score }; })
   };
+
+  /* Learning telemetry (local, per user, never clinical data). */
+  if (typeof simRecordAttempt === "function") {
+    var rec = simRecordAttempt(SIM.score, SIM.theCase, SIM.tier);
+    SIM.score.xpGained = rec.xpGained;
+    SIM.score.progress = simProgressSummary();
+  }
   return SIM.score;
+}
+
+/* Seconds left in a timed station, or null. */
+function simSecondsLeft() {
+  if (!SIM.deadline) return null;
+  return Math.max(0, Math.round((SIM.deadline - Date.now()) / 1000));
 }
 
 if (typeof module !== "undefined" && module.exports) {

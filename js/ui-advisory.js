@@ -6,9 +6,43 @@
 "use strict";
 
 
+/* What the copilot column shows while it is deliberately withheld. Kept
+   informative rather than blank, so it reads as a mode, not a fault. */
+function advisoryHiddenPanel() {
+  var tier = (typeof simTier === "function") ? simTier(SIM.tier) : { label: "Challenge", icon: "🔒" };
+  var found = (V.symptoms || []).length;
+  return '<div class="adv-h"><h3>Advisory</h3><span class="adv-badge">Hidden</span></div>' +
+    '<div style="margin-top:12px;padding:12px;border:1px dashed var(--ms);border-radius:var(--r);text-align:center">' +
+      '<div style="font-size:1.4rem;line-height:1">' + tier.icon + '</div>' +
+      '<div style="font-size:.66rem;font-weight:600;margin-top:6px">Copilot off — ' + esc(tier.label) + ' tier</div>' +
+      '<div style="font-size:.58rem;color:var(--sv);margin-top:4px;line-height:1.5">' +
+        'The differential is withheld so the reasoning is yours. Keep examining, then commit — ' +
+        'the engine\'s own ranking is revealed in the debrief so you can compare it against your thinking.' +
+      '</div>' +
+      '<div style="font-size:.58rem;color:var(--sl);margin-top:8px">' +
+        '<b>' + found + '</b> finding(s) recorded so far</div>' +
+      '<button class="btn btn-p" style="font-size:.6rem;margin-top:8px" onclick="simOpenAnswer()">Commit to a diagnosis</button>' +
+    '</div>' +
+    '<div style="font-size:.52rem;color:var(--sv);margin-top:8px;text-align:center">' +
+      'Teaching mode on a simulated patient. The engine is running normally on real exams.</div>';
+}
+
 function renderAdvisory() {
   var el = document.getElementById("advEl");
   if (!el) return;
+
+  /* ═══ SIMULATION: engine hidden at the harder teaching tiers ═══
+     This is the pedagogic point of Challenge/OSCE — the student commits on
+     their own reasoning and only then compares it against the engine. It is
+     a TEACHING mode on a simulated patient (P.sim), never a real exam: the
+     gate is driven by simEngineHidden(), which is false whenever a simulation
+     is not running. Red-flag alerts are not suppressed here — they are simply
+     not generated for the student, because in this mode the alert IS the
+     answer being examined. */
+  if (typeof simEngineHidden === "function" && simEngineHidden()) {
+    el.innerHTML = advisoryHiddenPanel();
+    return;
+  }
 
   var h = '';
 

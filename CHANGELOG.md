@@ -6,6 +6,107 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-07-26 — Session 11q: Laterality confirmed, modules interconnected, simulation → a real teaching system
+
+### 1. Chart laterality — confirmed and documented
+Founder asked me to confirm it. Web search was unavailable (monthly spend cap),
+so it was settled from anatomy and the reasoning written into the constant:
+the disc sits **nasal** to the fovea; a fundus chart is drawn as the examiner
+views it, un-mirrored; facing the patient, their **right** eye is on the
+examiner's **left**, so the nose — and with it the nasal retina and the disc —
+falls to the examiner's **right**. Cross-checked against the macula being
+temporal. `DRAW_DISC_SIDE_OD` changed `"left"` → `"right"`.
+
+### 2. Optional modules are now wired into the rest of the build
+They were standalone forms. Now:
+- **Into the engine** (`js/engine.js` SOURCE 11) — a white red reflex emits
+  `leukocoria`, a manifest squint emits `manifest_squint`, suspected amblyopia
+  emits `reduced_vision`, poor contact-lens comfort emits
+  `contact_lens_intolerance`. Verified: white red reflex fires the urgent
+  leukocoria alert and yields congenital cataract / retinoblastoma / Coats;
+  a normal red reflex yields nothing. No new clinical claims — every token
+  already existed in the registry.
+- **Across sections** (`js/module-links.js`) — each module shows a read-only
+  "already recorded" strip of the relevant core findings with an edit-jump, so
+  the same value is never asked twice, and contact lens pulls the habitual Rx
+  straight from Refraction.
+- **Into the report** — module findings appear in their own report sections.
+
+### 3. Simulation rebuilt as a progression system, not a one-off drill
+The product question was *"why would a student open this again tomorrow?"*
+Three answers, each in its own inspectable file:
+- **Difficulty that teaches** (`js/simulation-progress.js`). Four tiers, and
+  the lever is not case difficulty — it is **switching the copilot off**.
+  Guided (differentials + next-test hints) → Standard (engine, no hints) →
+  Challenge (**engine hidden**, no shortlist, search the whole KB) → OSCE.
+  The advisory panel, the reasoning map and the header confidence badge all
+  obey the same gate, so nothing leaks the answer; committing reveals the
+  engine again so the student can compare it against their own reasoning.
+  The gate is driven by `simEngineHidden()`, which is false whenever a
+  simulation is not running — **a real exam can never lose its advisory panel**,
+  and a test locks that.
+- **Honest scoring.** Examining every section used to be free. Now **accuracy,
+  efficiency and calibration are scored and shown separately**, so a student
+  sees *which* skill is weak: efficiency penalises brute-forcing (productive
+  sections ÷ sections with findings, times productive ÷ total opened), and
+  calibration compares stated confidence — asked **before** the reveal — with
+  the outcome, calling out confident-and-wrong as over-confident.
+- **A reason to explore.** Recommendations point at the conditions they got
+  wrong, domains never touched, their weakest domain, and stepping up a tier —
+  each with the reason shown. Plus XP weighted toward the harder tiers, levels,
+  mastery (repeat success, not one lucky guess) and a daily streak.
+
+### 4. OSCE circuit (`js/osce.js`, `js/osce-ui.js`)
+Built as an actual circuit, not a harder quiz: fixed station time with a bell
+that **closes the station whether or not you are finished** (recorded, not
+forgiven), engine hidden throughout, no going back, and **marks withheld until
+the circuit ends** so station 1's feedback cannot coach station 2.
+The marking schedule scores four domains **separately** — data gathering,
+finding the decisive sign, the diagnosis, and **safety** — so a student can
+pass on diagnosis and still be told they missed the red flag. Safety is only
+assessed on stations that actually carry an urgent finding.
+⚠ **NEEDS_CLINICAL_REVIEW** — station time (5 min), weights (25/25/35/15) and
+the pass mark (60%) are engineering teaching defaults, **not** a published
+examination standard. All in `OSCE_CONFIG` for the founder to set. Every screen
+says it is practice and certifies nothing.
+
+### 5. Assignments (`js/assignments.js`, `js/assignments-ui.js`)
+Faculty set work from the Teaching tab: title, format (cases or OSCE),
+difficulty, scope (common / anything / red flags / one domain), how many, due
+date, note, and either named students or the whole cohort. Cases are generated
+**at launch time from the KB**, so an assignment is a small rule that never
+goes stale rather than a frozen list of questions.
+Completion counts **distinct conditions**, so repeating one case does not
+finish the work; the next case served is one the student has not done. Students
+see assigned work on Study with live progress and stay inside the assignment
+between cases. Faculty see per-student cohort progress. A station closed by the
+bell is credited exactly like one the student finished.
+Learning telemetry only — namespaced per user, kept out of patient storage, and
+a test asserts one student's progress cannot leak into another's.
+
+### Fixed along the way
+- The simulation banner and the "copilot off" panel stayed on screen behind the
+  debrief after a session ended — `simEnd()` now repaints.
+- Free practice no longer gets silently credited to an assignment the student
+  was working on earlier.
+- "End" inside a circuit now marks the stations already completed instead of
+  discarding them.
+- The Study "Suggested next → Go" button launched a freshly re-rolled
+  suggestion rather than the one shown; recommendations are now cached.
+
+**Verification:** suite **304/304** (23 new in `tests/simulation-osce.test.js`
+covering anti-fabrication, the engine gate, efficiency/calibration/XP, OSCE
+marking and assignment progress). Browser-verified end to end with no console
+errors: engine hidden at Challenge without leaking a differential, full OSCE
+circuit through station break to circuit debrief, assignment created by faculty
+→ visible to the student → cohort progress, and all three modules plus the
+clinic packs rendering. Screenshots 30–49.
+
+**Divergence from ARCHITECTURE.md:** none — the doc does not yet cover the
+teaching layer. Updated there.
+
+---
+
 ## 2026-07-25 — Session 11p: Evidence gate, sourced colour guide, clinic packs, simulation
 
 ### 1. Engine — context can no longer create a differential ⚠ safety

@@ -703,10 +703,15 @@ renderAdvisory = function() {
     _originalRenderAdvisory();
   }
 
+  /* The map is the engine's reasoning made visible, so it must obey the same
+     teaching gate as the panel itself — otherwise the harder simulation tiers
+     would hide the differential and then draw it. */
+  var hidden = (typeof simEngineHidden === "function") && simEngineHidden();
+
   /* Append the live reasoning map — only under the "Reasoning" tab, so the
      panel shows one focused view at a time instead of everything at once. */
   var advEl = document.getElementById("advEl");
-  if (advEl && (typeof ADV_TAB === "undefined" || ADV_TAB === "map")) {
+  if (!hidden && advEl && (typeof ADV_TAB === "undefined" || ADV_TAB === "map")) {
     advEl.innerHTML += renderFlowMap();
   }
 
@@ -731,6 +736,13 @@ function toggleEngineView() {
 function updateEngineBadge() {
   var el = document.getElementById("hdrEngineBadge");
   if (!el) return;
+  /* Same teaching gate — a live confidence % in the header would give the
+     answer away at the tiers where the copilot is deliberately hidden. */
+  if (typeof simEngineHidden === "function" && simEngineHidden()) {
+    el.className = "hdr-engine-badge";
+    el.textContent = "· 🔒";
+    return;
+  }
   var dx = (typeof V !== "undefined" && V.dxList) ? V.dxList : [];
   var urgent = (typeof V !== "undefined" && V.alerts) ? V.alerts.filter(function (a) { return a.l === "urgent"; }).length : 0;
   var parts = [];

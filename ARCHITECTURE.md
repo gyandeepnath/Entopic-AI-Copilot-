@@ -295,6 +295,58 @@ records (chip-labelled everywhere; free cap counts real records only);
 reviewed badge visible to all roles, review-queue card on the Teaching tab).
 Covered by `tests/quiz.test.js` and the casebook-curation tests.
 
+## 9c. The teaching layer — simulation, OSCE, assignments
+
+Added session 11q. It sits **on top of** the exam UI and reuses it wholesale —
+a student works a simulated patient through the same 22 steps, the same engine,
+the same advisory panel. Nothing here is a parallel implementation, and nothing
+here is allowed to originate a clinical claim.
+
+**Files and what each owns**
+
+| File | Owns |
+|---|---|
+| `simulation.js` | case construction from the KB, session state (`SIM`), reveal-on-examine, scoring (`simSubmit`) |
+| `simulation-progress.js` | the four tiers (`SIM_TIERS`), per-user XP/level/streak/mastery, recommendations |
+| `simulation-ui.js` | Study-tab launcher, in-exam banner, confidence-then-commit flow, debrief |
+| `osce.js` / `osce-ui.js` | the timed circuit, the marking schedule (`OSCE_CONFIG`), station break + circuit debrief |
+| `assignments.js` / `assignments-ui.js` | faculty-set work, per-student and cohort progress |
+
+**Invariants this layer must keep**
+
+1. **Anti-fabrication.** A case's ground truth is the condition's own
+   `req` + `sup` + `tests` tokens and its `con` tokens as explicit absences.
+   The teaching layer therefore cannot contain a clinical claim the KB does not
+   already make, and it inherits `NEEDS_CLINICAL_REVIEW`. Locked by
+   `tests/simulation-osce.test.js`.
+2. **The engine gate is teaching-only.** `simEngineHidden()` returns true only
+   while a simulation is running at a tier whose `engine` flag is false and the
+   student has not yet committed. `renderAdvisory()`, the flow-map wrapper and
+   `updateEngineBadge()` all consult that single predicate. Because it is false
+   whenever `SIM.active` is false, **a real exam can never lose its advisory
+   panel** — asserted by a test. This is not red-flag suppression: on a
+   simulated patient the alert *is* the thing being examined, and it is
+   revealed in the debrief.
+3. **Simulated patients are `sim: true` + `practice: true`**, so they reuse the
+   existing exclusion from real patient lists, analytics and export.
+4. **Learning telemetry is not clinical data.** Progress is namespaced per user
+   (`entopic_sim_progress_<username>`) and assignments live under their own
+   keys, entirely outside patient storage.
+5. **Teaching defaults are labelled as such.** `OSCE_CONFIG` (station seconds,
+   domain weights, pass mark) is engineering judgement, not a published
+   standard, and is flagged `NEEDS_CLINICAL_REVIEW` in-file and on-screen.
+
+**Scoring, in one place.** Accuracy, efficiency and calibration are computed
+separately in `simSubmit()` so the debrief can report which skill is weak.
+`osceMark()` maps one attempt onto the four marking domains; safety is only
+assessed when the station carries an urgent finding, and is weighted
+independently of diagnosis so the two can disagree.
+
+**Assignments are rules, not question lists.** An assignment stores a scope and
+a count; `assignNextCase()` generates from the KB at launch. Completion counts
+distinct conditions, so repetition cannot finish the work. Storage is local and
+shaped 1:1 onto a future table, so multi-device cohorts port without a rewrite.
+
 ## 10. Honest assessment — strengths and the concrete gaps
 
 ### Strengths worth protecting

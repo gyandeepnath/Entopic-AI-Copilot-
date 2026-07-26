@@ -492,6 +492,9 @@ function homeSecTeaching() {
 
     reviewQueueCard() +
 
+    /* set practice work + watch the cohort's progress */
+    ((typeof assignFacultyCard === "function") ? assignFacultyCard() : "") +
+
     /* KB authoring */
     '<div class="home-settings" style="margin-top:8px">' +
       '<div class="home-settings-title">✎ Knowledge base</div>' +
