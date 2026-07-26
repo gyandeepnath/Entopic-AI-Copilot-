@@ -91,6 +91,17 @@ function moduleOn(id) {
   return !!(typeof V !== "undefined" && V && V.modules && V.modules[id]);
 }
 
+/* Specialty-clinic sections are appended to STEPS once js/clinics.js has
+   loaded. They behave exactly like optional modules: hidden until the pack
+   that owns them is switched on for the visit. */
+function registerClinicSteps() {
+  if (typeof clinicAllSteps !== "function") return;
+  clinicAllSteps().forEach(function (cs) {
+    for (var i = 0; i < STEPS.length; i++) if (STEPS[i].id === cs.id) return;
+    STEPS.push({ id: cs.id, l: cs.label, c: "Specialty clinic", n: "◆", clinic: cs.packId });
+  });
+}
+
 
 /* ═══════════════════════════════════════════════════════════════ */
 /* VISUAL ACUITY CONSTANTS                                         */
@@ -1109,6 +1120,11 @@ function blankVisit() {
 
     /* Optional modules switched on for this visit */
     modules: { paediatric: false, low_vision: false, contact_lens: false },
+
+    /* Specialty clinic packs switched on, and their recorded values
+       (V.clinic[stepId][fieldKey]) — see js/clinics.js */
+    clinics: {},
+    clinic: {},
 
     /* Paediatric assessment (module) */
     paed: {

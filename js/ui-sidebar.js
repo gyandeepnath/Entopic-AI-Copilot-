@@ -19,6 +19,8 @@ function renderSidebar() {
 
     /* Optional modules only appear once switched on for this visit. */
     if (s.opt && !(typeof moduleOn === "function" && moduleOn(s.opt))) continue;
+    /* Specialty-clinic sections likewise. */
+    if (s.clinic && !(typeof clinicStepOn === "function" && clinicStepOn(s.id))) continue;
 
     /* Category header */
     if (s.c !== lastCat) {
@@ -72,6 +74,7 @@ function renderSidebar() {
   var totalSteps = 0;
   for (var ti = 0; ti < STEPS.length; ti++) {
     if (STEPS[ti].opt && !(typeof moduleOn === "function" && moduleOn(STEPS[ti].opt))) continue;
+    if (STEPS[ti].clinic && !(typeof clinicStepOn === "function" && clinicStepOn(STEPS[ti].id))) continue;
     totalSteps++;
   }
   var pct = totalSteps > 0 ? Math.round((completedCount / totalSteps) * 100) : 0;

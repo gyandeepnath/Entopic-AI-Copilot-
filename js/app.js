@@ -1623,6 +1623,11 @@ function esc(s) {
     if (next !== idx) { e.preventDefault(); nav(STEPS[next].id); }
   });
 
+  /* Append specialty-clinic sections to STEPS (hidden until a pack is
+     switched on for the visit). Done at boot so the step list is complete
+     before any sidebar render. */
+  if (typeof registerClinicSteps === "function") registerClinicSteps();
+
   /* If no users exist, show setup form */
   var users = loadUsers();
   if (users.length === 0) {

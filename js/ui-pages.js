@@ -43,6 +43,13 @@ function renderMain() {
   var el = document.getElementById("mainEl");
   if (!el) return;
 
+  /* Specialty-clinic sections are rendered generically from their data
+     definition (js/clinics.js), so a new clinic needs no new page code. */
+  if (!fn && typeof clinicStepDef === "function" && clinicStepDef(V.step)) {
+    el.innerHTML = pgClinicStep(V.step);
+    return;
+  }
+
   if (fn) {
     el.innerHTML = fn();
   } else {
@@ -136,6 +143,7 @@ function pgDemo() {
 
     /* Optional modules (paediatric / low vision / contact lens) for this exam */
     (typeof moduleChooser === "function" ? moduleChooser() : "") +
+    (typeof clinicChooser === "function" ? clinicChooser() : "") +
 
     '<div class="btn-g">' +
       '<button class="btn btn-p" onclick="goNext(\'demographics\',\'chief_complaint\')">Continue →</button>' +
