@@ -112,6 +112,19 @@ if (typeof KB_EXPANSION !== "undefined") {
       cond._domain = domain;
       cond._index = totalConditions;
 
+      /* PUBLIC domain field. The nine curated KB files carry their domain
+         implicitly — it is the registry key above, never a property on the
+         condition — while the expansion batch carries `domain` inline. That
+         split meant `cond.domain` was undefined for 137 of 394 conditions,
+         including the most common ones in practice (dry eye, the
+         conjunctivitides, blepharitis, stye, chalazion), so anything reading
+         `cond.domain` silently bucketed a third of the KB as "Other":
+         domain-scoped assignments, the study recommendations, OSCE station
+         labels and analytics.
+         Normalising here fixes every reader at once, including ones not yet
+         written, and keeps `_domain` for the code that already reads it. */
+      if (!cond.domain) cond.domain = domain;
+
       KNOWLEDGE_ALL.push(cond);
       totalConditions++;
 

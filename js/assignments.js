@@ -113,6 +113,10 @@ function assignSubmissions(assignmentId, username) {
 function assignProgress(a, username) {
   var subs = assignSubmissions(a.id, username);
   var target = (a.scope === "list" && a.conditions.length) ? a.conditions.length : a.count;
+  /* Clamp to what the scope can actually supply, so a tutor asking for more
+     cases than exist does not leave the class permanently at 15/20. */
+  var pool = assignPoolSize(a);
+  if (pool > 0 && target > pool) target = pool;
   /* Distinct conditions attempted counts toward completion, so repeating one
      case does not finish the assignment. */
   var seen = {};
@@ -147,6 +151,24 @@ function assignCohortProgress(a) {
 
 /* ── Launching an assignment ─────────────────────────────────────── */
 
+/* How many distinct conditions this assignment's scope can actually supply.
+   A "Glaucoma block, 20 cases" cannot be 20 cases if the KB holds 15 usable
+   glaucoma conditions — the target has to reflect that, or the student can
+   never finish. */
+function assignPoolSize(a) {
+  if (typeof KNOWLEDGE_ALL === "undefined") return Infinity;
+  if (a.scope === "list") return (a.conditions || []).length;
+  var usable = KNOWLEDGE_ALL.filter(function (c) { return (c.req || []).length > 0; });
+  if (a.scope === "domain") {
+    return usable.filter(function (c) { return (c.domain || "Other") === a.domain; }).length;
+  }
+  if (a.scope === "urgent") return usable.filter(function (c) { return c.urgent; }).length;
+  if (a.scope === "common" && typeof KB_COMMON_SET !== "undefined") {
+    return usable.filter(function (c) { return KB_COMMON_SET[c.name]; }).length;
+  }
+  return usable.length;
+}
+
 /* Which condition should this student do next for this assignment? */
 function assignNextCase(a, username) {
   var done = {};
@@ -158,10 +180,17 @@ function assignNextCase(a, username) {
     return simBuildCase(pick);
   }
   if (a.scope === "domain" && a.domain && typeof KNOWLEDGE_ALL !== "undefined") {
-    var pool = KNOWLEDGE_ALL.filter(function (c) {
-      return (c.domain || "Other") === a.domain && (c.req || []).length > 0 && !done[c.name];
+    var inDomain = KNOWLEDGE_ALL.filter(function (c) {
+      return (c.domain || "Other") === a.domain && (c.req || []).length > 0;
     });
-    if (pool.length) return simBuildCase(pool[Math.floor(Math.random() * pool.length)].name);
+    var fresh = inDomain.filter(function (c) { return !done[c.name]; });
+    /* Never fall through to the whole KB. A domain assignment that runs out of
+       fresh conditions repeats one from the SAME domain — silently serving a
+       retina case inside a glaucoma block, and then crediting it, would make
+       the record say something untrue about what the student practised. */
+    var from = fresh.length ? fresh : inDomain;
+    if (from.length) return simBuildCase(from[Math.floor(Math.random() * from.length)].name);
+    return null;
   }
   return simRandomCase(a.scope === "all" ? "" : a.scope);
 }

@@ -362,6 +362,63 @@ test("cohort progress reports every student who has attempted the work", () => {
   assert.strictEqual(rows.find((r) => r.username === "ben").accuracy, 0);
 });
 
+/* ── 6. Domain integrity (regressions found by stress-testing) ───── */
+
+test("every condition carries a public domain — none silently bucketed as Other", () => {
+  const gap = evalIn(`KNOWLEDGE_ALL.filter(function (c) { return !c.domain; }).length`);
+  assert.strictEqual(gap, 0, "conditions without a domain would land in 'Other'");
+  const mismatch = evalIn(`KNOWLEDGE_ALL.filter(function (c) {
+    return c._domain && c.domain !== c._domain;
+  }).map(function (c) { return c.name; }).length`);
+  assert.strictEqual(mismatch, 0, "public domain must agree with the registry key");
+});
+
+test("the common conditions are reachable by domain, not dumped in Other", () => {
+  const surface = evalIn(`KNOWLEDGE_ALL.filter(function (c) {
+    return c.domain === "Surface & Lids"; }).length`);
+  const other = evalIn(`KNOWLEDGE_ALL.filter(function (c) {
+    return (c.domain || "Other") === "Other"; }).length`);
+  assert.ok(surface > 60, `Surface & Lids should hold its full set, got ${surface}`);
+  assert.ok(other < 5, `almost nothing should be domainless, got ${other} in Other`);
+});
+
+test("a domain assignment never serves a case from another domain", () => {
+  reset();
+  const leak = evalIn(`(function () {
+    var a = assignCreate({ title: "Glaucoma block", scope: "domain", domain: "Glaucoma", count: 30 });
+    var off = [];
+    for (var i = 0; i < 30; i++) {
+      var c = assignNextCase(a, "student1");
+      if (!c) break;
+      var kb = findCondition(c.condition);
+      if ((kb.domain || "Other") !== "Glaucoma") off.push(c.condition);
+      assignRecord(a.id, { condition: c.condition, correct: true });
+    }
+    return off;
+  })()`);
+  assert.strictEqual(leak.length, 0, `out-of-domain cases served: ${leak}`);
+});
+
+test("a target larger than the scope's pool is clamped, so the work is finishable", () => {
+  reset();
+  const r = evalIn(`(function () {
+    var a = assignCreate({ title: "Too big", scope: "domain", domain: "Glaucoma", count: 500 });
+    var pool = assignPoolSize(a);
+    var seen = {};
+    for (var i = 0; i < 200 && Object.keys(seen).length < pool; i++) {
+      var c = assignNextCase(a, "student1");
+      if (!c) break;
+      seen[c.condition] = true;
+      assignRecord(a.id, { condition: c.condition, correct: true });
+    }
+    var p = assignProgress(a, "student1");
+    return { pool: pool, target: p.target, complete: p.complete };
+  })()`);
+  assert.ok(r.pool > 0 && r.pool < 500);
+  assert.strictEqual(r.target, r.pool, "target clamps to what the domain can supply");
+  assert.strictEqual(r.complete, true, "the assignment is completable");
+});
+
 test("learning progress is stored apart from patient data, per user", () => {
   reset();
   const keys = evalIn(`(function () {
