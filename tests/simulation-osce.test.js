@@ -157,15 +157,31 @@ function runCase(condition, opts) {
   })()`);
 }
 
-test("efficiency penalises brute-forcing every section", () => {
+test("thoroughness is NOT punished — a full systematic exam scores like a focused one", () => {
+  /* The old `efficiency` score gave a complete systematic examination 16% and
+     knowing-where-to-look 100%, i.e. it scored anchoring and premature closure
+     as skill. Examining a section that turns out normal is a negative finding,
+     not waste, and must never cost a student marks. */
   reset();
   const focused = runCase("Acute Angle Closure Crisis");
-  const bruteForce = runCase("Acute Angle Closure Crisis", { examineAll: true });
+  const thorough = runCase("Acute Angle Closure Crisis", { examineAll: true });
   assert.strictEqual(focused.correct, true);
-  assert.strictEqual(bruteForce.correct, true);
-  assert.ok(focused.efficiency > bruteForce.efficiency,
-    `focused ${focused.efficiency} should beat brute force ${bruteForce.efficiency}`);
-  assert.ok(focused.efficiency <= 1 && bruteForce.efficiency >= 0, "efficiency stays in range");
+  assert.strictEqual(thorough.correct, true);
+  assert.strictEqual(thorough.evidence, focused.evidence,
+    "opening extra sections changes nothing about the evidence held");
+  assert.strictEqual(typeof focused.efficiency, "undefined", "the old score is gone");
+});
+
+test("evidence measures what was uncovered before committing", () => {
+  reset();
+  const withEvidence = runCase("Acute Angle Closure Crisis");
+  assert.strictEqual(withEvidence.evidence, 1);
+  assert.strictEqual(withEvidence.prematureClosure, false);
+
+  const blind = runCase("Acute Angle Closure Crisis", { steps: [] });
+  assert.strictEqual(blind.evidence, 0, "committed having uncovered nothing");
+  assert.strictEqual(blind.prematureClosure, true, "a right answer on no evidence is a lucky guess");
+  assert.strictEqual(blind.correct, true);
 });
 
 test("missing a section with findings is reported, not silently forgiven", () => {

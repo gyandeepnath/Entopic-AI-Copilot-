@@ -86,14 +86,69 @@ the upper part of the bracket as a stopgap, changing no clinical claim.
 **Whether `young_age` should be split into paediatric vs young-adult is a
 clinical decision and is yours.**
 
-**Still to come in the rebuild** (agreed, not yet built): incomplete and
-comorbid presentations, cases where the engine's top answer is deliberately
-wrong with a debrief explaining why it was misled, and replacing the
-efficiency score — which currently gives a full systematic examination 16% and
-knowing-where-to-look 100%, rewarding exactly the anchoring that causes
-diagnostic error.
-
 **Verification:** suite **318/318** (14 new).
+
+### Second fix: the engine can now be wrong in front of a student
+New `js/simulation-realism.js`. Cases stop being textbooks and start behaving
+like patients, three ways:
+
+- **Incomplete** (99% of conditions) — supporting features missing, as patients
+  usually are. Defining findings are never dropped.
+- **Two problems** (96%) — a second, genuinely separate condition, chosen from
+  a different domain, never urgent, non-contradictory in both directions.
+  **Either diagnosis is accepted**, because marking a student wrong for
+  spotting the second problem teaches them not to look. This is the product's
+  own multiple-independent-problems idea used for teaching.
+- **Engine misled** (27%) — the copilot's top answer is deliberately not the
+  truth. This is the case the whole rebuild exists for.
+
+Tiers decide what a student meets: **Guided is textbook only** (learn the
+pattern first); **Challenge never shows a textbook case**.
+
+**Why this is safe.** Nothing is invented: every finding added or removed
+already belongs to a real KB condition, and a confuser must **already share
+≥2 findings with the truth** in the KB. Every candidate case is then **run
+through the real engine and discarded if it does not behave as claimed** — a
+case is not shown on the hope that it misleads, it is shown because it was
+verified to. Fenced by 12 tests.
+
+**Two hard rules on the discordant cases:**
+1. **A red flag is never muted.** Misleading the ranking is allowed;
+   suppressing an urgent alert is not. A discordant case built on an urgent
+   condition is only accepted if the engine still raises its alert — which
+   makes the strongest point in the product: *the ranking was wrong and the
+   safety alert was still there, which is exactly why alerts are never ranked.*
+2. **There must be something that separates them, and the student must have
+   been shown it.** Without a discriminator on the chart the case is unfair,
+   not hard. This rule cut discordant buildability from 38% to 27% and was
+   worth it.
+
+The debrief now names the miss: *"It ranked Angular Blepharitis first. The case
+was Viral Conjunctivitis. What pulled it: lateral canthus irritation, burning,
+cracking skin — findings this patient genuinely had, which Angular Blepharitis
+also produces. What should have held you: watery discharge — required by Viral
+Conjunctivitis, and not by Angular Blepharitis."*
+
+### Third fix: the score stopped rewarding anchoring
+`efficiency` is **removed**. It measured productive sections against sections
+opened, which gave a **complete systematic examination 16%** and
+knowing-where-to-look **100%** — it scored anchoring and premature closure, the
+two commonest serious diagnostic errors, as skill. Examining a section that
+turns out normal is a negative finding, not waste.
+
+Replaced by **Evidence** — did you have every defining finding when you
+committed — plus an explicit **premature-closure** callout when a student is
+right on incomplete evidence: *"On this patient it worked; on the next one it
+is how a diagnosis gets missed."* Thoroughness is reported as a plain fact, not
+scored. The OSCE **gathering** mark had the same flaw and was corrected the
+same way. XP now rewards committing with the evidence and working a
+non-textbook case, rather than speed.
+
+**Verification:** suite **331/331** (13 more). Browser-verified end to end with
+no console errors: values landing on the chart (IOP 23/23 in the real field,
+`high_iop` never handed over), a discordant case worked to a debrief that names
+what misled the engine, premature closure flagged, and a comorbid case
+accepting the second diagnosis. Screenshots 50–54.
 
 ---
 

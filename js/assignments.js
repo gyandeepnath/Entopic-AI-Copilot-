@@ -177,7 +177,7 @@ function assignNextCase(a, username) {
   if (a.scope === "list" && a.conditions.length) {
     var remaining = a.conditions.filter(function (c) { return !done[c]; });
     var pick = remaining.length ? remaining[0] : a.conditions[0];
-    return simBuildCase(pick);
+    return simBuildRealisticCase(pick, a.tier);
   }
   if (a.scope === "domain" && a.domain && typeof KNOWLEDGE_ALL !== "undefined") {
     var inDomain = KNOWLEDGE_ALL.filter(function (c) {
@@ -189,7 +189,7 @@ function assignNextCase(a, username) {
        retina case inside a glaucoma block, and then crediting it, would make
        the record say something untrue about what the student practised. */
     var from = fresh.length ? fresh : inDomain;
-    if (from.length) return simBuildCase(from[Math.floor(Math.random() * from.length)].name);
+    if (from.length) return simBuildRealisticCase(from[Math.floor(Math.random() * from.length)].name, a.tier);
     return null;
   }
   return simRandomCase(a.scope === "all" ? "" : a.scope);
@@ -219,7 +219,7 @@ function assignCredit(score, theCase, mode) {
   assignRecord(ASSIGN_ACTIVE.id, {
     condition: theCase.condition,
     correct: score.correct,
-    score: (typeof score.efficiency === "number") ? score.efficiency : null,
+    score: (typeof score.evidence === "number") ? score.evidence : null,
     tier: score.tier || "",
     mode: mode || "simulation"
   });

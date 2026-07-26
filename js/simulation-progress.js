@@ -91,7 +91,8 @@ function simRecordAttempt(result, theCase, tierId) {
   var gained = 0;
   if (result.correct) {
     gained += { guided: 10, standard: 15, challenge: 25, osce: 30 }[tier.id] || 10;
-    if (result.efficiency >= 0.8) gained += 5;      /* found it without brute force */
+    if (result.evidence >= 1) gained += 5;          /* committed WITH the evidence */
+    if (result.realism && result.realism !== "textbook") gained += 5;  /* a patient, not a textbook */
     if (result.calibration === "well-calibrated") gained += 5;
   } else {
     gained += 3;                                     /* attempting still counts */
@@ -222,12 +223,12 @@ function simRecommendations(n) {
 /* Choose a case honouring a recommendation. */
 function simCaseFor(rec) {
   if (!rec) return simRandomCase("common");
-  if (rec.kind === "revisit" && rec.condition) return simBuildCase(rec.condition);
+  if (rec.kind === "revisit" && rec.condition) return simBuildRealisticCase(rec.condition, SIM.tier);
   if (rec.kind === "domain" && rec.domain && typeof KNOWLEDGE_ALL !== "undefined") {
     var pool = KNOWLEDGE_ALL.filter(function (c) {
       return (c.domain || "Other") === rec.domain && (c.req || []).length > 0;
     });
-    if (pool.length) return simBuildCase(pool[Math.floor(Math.random() * pool.length)].name);
+    if (pool.length) return simBuildRealisticCase(pool[Math.floor(Math.random() * pool.length)].name, SIM.tier);
   }
   if (rec.kind === "scope") return simRandomCase(rec.scope);
   return simRandomCase("common");

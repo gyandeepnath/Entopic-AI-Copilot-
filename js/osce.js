@@ -71,7 +71,7 @@ function osceBuild(scope, count) {
     var t = pool[i]; pool[i] = pool[j]; pool[j] = t;
   }
   return pool.slice(0, Math.min(count, pool.length))
-    .map(function (c) { return simBuildCase(c.name); })
+    .map(function (c) { return simBuildRealisticCase(c.name, "osce"); })
     .filter(Boolean);
 }
 
@@ -127,8 +127,11 @@ function osceStopTimer() {
 function osceMark(score, theCase) {
   var w = OSCE_CONFIG.weights;
 
+  /* Gathering = how much of what was THERE the candidate uncovered. It used to
+     subtract sections opened, which penalised a candidate for examining a
+     region that turned out normal — a negative finding is data, not waste. */
   var gathering = score.stepsWithFindings
-    ? Math.min(1, (score.stepsExamined - score.missedSteps.length) / score.stepsWithFindings)
+    ? Math.min(1, (score.stepsWithFindings - score.missedSteps.length) / score.stepsWithFindings)
     : 1;
   gathering = Math.max(0, gathering);
 

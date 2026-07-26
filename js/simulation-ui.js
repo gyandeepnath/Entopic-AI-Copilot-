@@ -333,13 +333,12 @@ function simSkillRow(label, value, note) {
   '</div>';
 }
 
-function simEfficiencyNote(s) {
-  var productive = s.stepsWithFindings - s.missedSteps.length;
-  var wasted = Math.max(0, s.stepsExamined - productive);
-  if (s.efficiency >= 0.8) return "Went almost straight to the sections that mattered.";
-  if (wasted > productive) return wasted + " section(s) examined that held nothing — let the next-test loop steer you.";
-  if (s.missedSteps.length) return s.missedSteps.length + " section(s) with findings left unexamined.";
-  return "Examining everything works, but it is not how a clinic runs.";
+/* Evidence, not speed. Examining a section that turns out normal is a negative
+   finding — it is never reported here as waste. */
+function simEvidenceNote(s) {
+  if (s.evidence >= 1) return "You had every defining finding before you committed.";
+  var missing = s.decisiveMissed.length;
+  return "You committed without " + missing + " defining finding" + (missing === 1 ? "" : "s") + ".";
 }
 
 function simCalibrationRow(s) {
@@ -356,6 +355,55 @@ function simCalibrationRow(s) {
     '<div style="color:' + colour + '"><b>' + esc(s.calibration) + '</b> ' +
       '<span style="color:var(--sv);font-size:.54rem">(said ' + esc(s.confidence) + ') · ' + esc(msg) + '</span></div>' +
   '</div>';
+}
+
+/* What kind of patient this was, and — for the discordant cases — the lesson
+   the whole rebuild exists to teach: the copilot ranked the wrong condition
+   first, here is what pulled it, and here is what should have held you. */
+function simRealismBlock(s) {
+  var pretty = function (t) { return String(t).replace(/_/g, " "); };
+  if (!s.realism || s.realism === "textbook") return "";
+
+  if (s.realism === "comorbid" && s.comorbid) {
+    return '<div style="border-left:3px solid var(--ink);padding:6px 10px;margin:8px 0;background:var(--sn)">' +
+      '<div style="font-size:.62rem;font-weight:600">⧉ This patient had two problems</div>' +
+      '<div style="font-size:.6rem;color:var(--md)">' +
+        esc(s.truth) + ' <b>and</b> ' + esc(s.comorbid) + '. Either was a defensible answer — ' +
+        'real patients rarely have exactly one thing wrong, and the engine carries them as ' +
+        'separate working problems for that reason.</div>' +
+    '</div>';
+  }
+
+  if (s.realism === "incomplete") {
+    return '<div style="border-left:3px solid var(--ms);padding:6px 10px;margin:8px 0;background:var(--sn)">' +
+      '<div style="font-size:.62rem;font-weight:600">◐ An incomplete picture</div>' +
+      '<div style="font-size:.6rem;color:var(--md)">' +
+        'Some supporting features of ' + esc(s.truth) + ' were simply not present in this patient. ' +
+        'The textbook picture is the exception, not the rule.</div>' +
+    '</div>';
+  }
+
+  if (s.realism === "discordant" && s.misledBy) {
+    return '<div style="border-left:3px solid #c0392b;padding:8px 10px;margin:8px 0;background:var(--sn)">' +
+      '<div style="font-size:.64rem;font-weight:600">⚠ The copilot was wrong on this one</div>' +
+      '<div style="font-size:.6rem;color:var(--md);margin-top:3px">' +
+        'It ranked <b>' + esc(s.misledBy) + '</b> first. The answer was <b>' + esc(s.truth) + '</b>.</div>' +
+      (s.misleadingFindings.length
+        ? '<div style="font-size:.58rem;color:var(--md);margin-top:4px"><b>What pulled it:</b> ' +
+            s.misleadingFindings.map(pretty).map(esc).join(" · ") +
+          ' — findings this patient genuinely had, which ' + esc(s.misledBy) + ' also produces.</div>'
+        : '') +
+      (s.discriminators.length
+        ? '<div style="font-size:.58rem;color:#2e7d32;margin-top:4px"><b>What should have held you:</b> ' +
+            s.discriminators.map(pretty).map(esc).join(" · ") +
+          ' — required by ' + esc(s.truth) + ', and not by ' + esc(s.misledBy) + '.</div>'
+        : '') +
+      '<div style="font-size:.56rem;color:var(--sv);margin-top:5px">' +
+        'This is why the ranking is advisory and the red-flag alerts are not. The engine weighs ' +
+        'evidence; it does not examine the patient. You do.</div>' +
+    '</div>';
+  }
+  return "";
 }
 
 function simDebriefHtml(s) {
@@ -385,8 +433,22 @@ function simDebriefHtml(s) {
      WHICH one is weak, not just whether they got it right. */
   h += simSkillRow("Accuracy", s.correct ? 1 : 0,
         s.correct ? "You named the condition." : "You named " + (s.guess || "nothing") + ".") +
-    simSkillRow("Efficiency", s.efficiency, simEfficiencyNote(s)) +
+    simSkillRow("Evidence", s.evidence, simEvidenceNote(s)) +
     (s.calibration ? simCalibrationRow(s) : "");
+
+  /* Right answer on incomplete evidence is a lucky guess, and saying so is the
+     whole point — premature closure is one of the commonest ways a real
+     diagnosis goes wrong. */
+  if (s.prematureClosure) {
+    h += '<div style="border-left:3px solid #b8860b;padding:6px 10px;margin:6px 0;background:var(--sn)">' +
+      '<div style="font-size:.62rem;font-weight:600">Right answer, incomplete evidence</div>' +
+      '<div style="font-size:.58rem;color:var(--md)">You committed before uncovering ' +
+        s.decisiveMissed.map(pretty).map(esc).join(", ") +
+        '. On this patient it worked; on the next one it is how a diagnosis gets missed.</div>' +
+    '</div>';
+  }
+
+  h += simRealismBlock(s);
 
   if (typeof s.xpGained === "number" && s.progress) {
     var pctInto = Math.round(100 * s.progress.into / Math.max(1, s.progress.need));

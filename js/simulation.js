@@ -150,8 +150,28 @@ function simBuildCase(condName, opts) {
     /* the finding(s) without which this condition cannot be reached */
     decisive: (c.req || []).slice(),
     teaching: (info && info.summary) ? info.summary : "",
+    realism: "textbook",
     review_status: SIM_REVIEW_STATUS
   };
+}
+
+/* Build a case and make it behave like a patient rather than a textbook. */
+function simBuildRealisticCase(condName, tierId, opts) {
+  var c = simBuildCase(condName, opts);
+  if (!c) return null;
+  if (typeof simApplyRealism !== "function") return c;
+  var mode = (opts && opts.realism) || simPickRealism(tierId || SIM.tier || "standard");
+  return simApplyRealism(c, mode);
+}
+
+/* Answers this case will accept. Normally just the truth; a case where the
+   patient genuinely has two problems accepts either, because marking a student
+   wrong for spotting the second one teaches them not to look. */
+function simAcceptableAnswers(theCase) {
+  if (!theCase) return [];
+  return (theCase.acceptable && theCase.acceptable.length)
+    ? theCase.acceptable.slice()
+    : [theCase.condition];
 }
 
 /* Pick a case at random, optionally scoped. */
@@ -164,7 +184,7 @@ function simRandomCase(scope) {
   /* only conditions whose required findings can actually be uncovered */
   pool = pool.filter(function (c) { return (c.req || []).length > 0; });
   if (!pool.length) return null;
-  return simBuildCase(pool[Math.floor(Math.random() * pool.length)].name);
+  return simBuildRealisticCase(pool[Math.floor(Math.random() * pool.length)].name, SIM.tier);
 }
 
 
@@ -304,27 +324,37 @@ function simSubmit(guess, confidence) {
   SIM.answered = true;
 
   var truth = SIM.theCase.condition;
-  var correct = SIM.guess === truth;
+  var accepted = simAcceptableAnswers(SIM.theCase);
+  var correct = accepted.indexOf(SIM.guess) >= 0;
 
   var examined = Object.keys(SIM.revealed).length;
   var withFindings = Object.keys(SIM.theCase.byStep).length;
   var missed = simMissedSteps();
 
-  /* Did they uncover the findings the condition actually requires? */
-  var found = (V.symptoms || []);
+  /* Did they uncover the findings the condition actually requires?
+     The engine derives tokens from the chart now, so read them from the
+     engine's own view rather than from the symptom list. */
+  var found = (V.symptoms || []).slice();
+  if (typeof ENGINE_STATE !== "undefined" && ENGINE_STATE && ENGINE_STATE.tokens) {
+    ENGINE_STATE.tokens.forEach(function (t) { if (found.indexOf(t) < 0) found.push(t); });
+  }
   var decisiveFound = SIM.theCase.decisive.filter(function (t) { return found.indexOf(t) >= 0; });
 
-  /* EFFICIENCY — brute-forcing every section must not score the same as
-     examining the ones that mattered. Best possible is uncovering all the
-     findings in exactly the sections that hold them. */
-  var efficiency = 0;
-  if (withFindings > 0) {
-    var productive = 0;
-    for (var st in SIM.revealed) if ((SIM.theCase.byStep[st] || []).length) productive++;
-    var wasted = Math.max(0, examined - productive);
-    efficiency = (productive / withFindings) * (productive / Math.max(1, productive + wasted));
-  }
-  efficiency = Math.max(0, Math.min(1, efficiency));
+  /* EVIDENCE AT COMMIT — replaces the old "efficiency" score.
+     Efficiency measured productive sections against sections opened, which
+     gave a complete systematic examination 16% and knowing-where-to-look
+     100%. That rewards going straight to the answer and penalises ruling
+     things out — it scored anchoring and premature closure, the two commonest
+     serious diagnostic errors, as skill.
+     What is actually worth measuring is whether the student HAD the evidence
+     when they committed. Thoroughness is reported as a plain fact, not a
+     score, because examining a section that turns out to be normal is a
+     negative finding, not waste. */
+  var evidence = SIM.theCase.decisive.length
+    ? (decisiveFound.length / SIM.theCase.decisive.length)
+    : 1;
+  /* Right answer, incomplete evidence: a lucky guess, and worth naming. */
+  var prematureClosure = correct && evidence < 1;
 
   /* CALIBRATION — knowing how sure you are is a clinical skill in itself. */
   var calibration = "";
@@ -339,11 +369,18 @@ function simSubmit(guess, confidence) {
   SIM.score = {
     correct: correct,
     truth: truth,
+    accepted: accepted,
+    realism: SIM.theCase.realism || "textbook",
+    comorbid: SIM.theCase.comorbid || "",
+    misledBy: SIM.theCase.misledBy || "",
+    misleadingFindings: SIM.theCase.misleadingFindings || [],
+    discriminators: SIM.theCase.discriminators || [],
     guess: SIM.guess,
     tier: SIM.tier,
     confidence: SIM.confidence,
     calibration: calibration,
-    efficiency: efficiency,
+    evidence: evidence,
+    prematureClosure: prematureClosure,
     stepsExamined: examined,
     stepsWithFindings: withFindings,
     missedSteps: missed,
