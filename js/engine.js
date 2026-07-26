@@ -408,8 +408,12 @@ function collectTokens() {
     if (anyReduced) addToken("reduced_vergence_ranges");
   }
 
-  /* Refraction auto-derivation */
-  if (V.rx && V.rx.od_sph) {
+  /* Refraction auto-derivation.
+     Gated on ANY refraction value, not on od_sph alone: a pure astigmat
+     recorded as "plano / -2.50 x 90" leaves od_sph empty, and the old gate
+     threw away their whole refraction — no astigmatism token, no
+     anisometropia check. Thresholds below are unchanged. */
+  if (V.rx && (V.rx.od_sph || V.rx.os_sph || V.rx.od_cyl || V.rx.os_cyl)) {
     var sphOd = parseFloat(V.rx.od_sph) || 0;
     var sphOs = parseFloat(V.rx.os_sph) || 0;
     if (sphOd < -0.50 || sphOs < -0.50) addToken("myopia");

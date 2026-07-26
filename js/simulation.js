@@ -30,6 +30,14 @@ var SIM_REVIEW_STATUS = "NEEDS_CLINICAL_REVIEW";
    next-test routing so the mapping stays consistent with the live "check
    next" suggestions the student sees. */
 function simStepForToken(tok) {
+  /* A measured finding belongs where the measurement is taken, and the
+     presentation rule already knows: TBUT and Schirmer are slit-lamp tests, a
+     van Herick grade comes from gonioscopy. Without this they inherited the
+     next-test routing of the SYMPTOM they imply, which put "TBUT 6 s" under
+     Chief Complaint and made dry-eye cases answerable from one screen. */
+  if (typeof SIM_MEASURED !== "undefined" && SIM_MEASURED[tok] && SIM_MEASURED[tok].step) {
+    return SIM_MEASURED[tok].step;
+  }
   if (typeof NEXT_TEST_TOKEN_STEP !== "undefined" && NEXT_TEST_TOKEN_STEP[tok]) {
     return NEXT_TEST_TOKEN_STEP[tok];
   }
@@ -66,14 +74,44 @@ function simBuildCase(condName, opts) {
   var c = (typeof findCondition === "function") ? findCondition(condName) : null;
   if (!c) return null;
 
+  /* A case may only contain findings that can actually be put on a chart.
+     `req` is kept whole regardless — those define the condition and dropping
+     one would make the case unanswerable — but supporting findings and test
+     results are filtered, because the KB's `tests` arrays mix real results
+     (RNFL_thinning) with the NAME of a procedure (lid_position_exam,
+     clinical_exam). Revealing a procedure name as a finding taught nothing and
+     padded the case. */
+  var canShow = (typeof simIsPresentable === "function")
+    ? simIsPresentable
+    : function () { return true; };
+
   var present = [];
   (c.req || []).forEach(function (t) { if (present.indexOf(t) < 0) present.push(t); });
-  (c.sup || []).slice(0, opts.supCount || 4).forEach(function (t) { if (present.indexOf(t) < 0) present.push(t); });
+  (c.sup || []).filter(canShow).slice(0, opts.supCount || 4)
+    .forEach(function (t) { if (present.indexOf(t) < 0) present.push(t); });
   /* The condition's OBJECTIVE signs matter most for teaching: they are what
      spreads a case across the slit lamp, IOP, fundus and the rest, so the
      student has to actually work through the examination rather than read a
      symptom list and answer. */
-  (c.tests || []).forEach(function (t) { if (present.indexOf(t) < 0) present.push(t); });
+  (c.tests || []).filter(canShow)
+    .forEach(function (t) { if (present.indexOf(t) < 0) present.push(t); });
+
+  /* Where two findings come off ONE measurement, keep only the broader one.
+     A visual field with MD -9 dB satisfies both `visual_field_defect` and
+     `field_defect`; presenting both wrote the field twice, in two different
+     sections, with different numbers — the second silently invalidating what
+     the student had already been shown. */
+  if (typeof SIM_MEASURED !== "undefined") {
+    var subsumed = {};
+    present.forEach(function (t) {
+      var r = SIM_MEASURED[t];
+      if (r && r.subsumes) r.subsumes.forEach(function (s) { subsumed[s] = true; });
+    });
+    present = present.filter(function (t) {
+      /* never drop a defining finding, even if something else implies it */
+      return !subsumed[t] || (c.req || []).indexOf(t) >= 0;
+    });
+  }
 
   /* Group the ground truth by the step that would uncover it. */
   var byStep = {};
@@ -84,8 +122,14 @@ function simBuildCase(condName, opts) {
 
   /* Age hint from the condition's own demographic token, so the vignette is
      internally consistent with the KB rather than invented. */
+  /* ⚠ NEEDS_CLINICAL_REVIEW — the KB's `young_age` means "under 18" (the
+     engine's own rule), and several conditions use it where "young adult"
+     is arguably meant. Until the KB distinguishes the two, the simulator
+     draws from the UPPER part of the band so a case does not present, say,
+     optic neuritis in a five-year-old. This changes no clinical claim; it
+     only picks which age inside the KB's own bracket to show. */
   var age = "";
-  if (present.indexOf("young_age") >= 0) age = String(4 + Math.floor(Math.random() * 10));
+  if (present.indexOf("young_age") >= 0) age = String(12 + Math.floor(Math.random() * 6));
   else if (present.indexOf("older_age") >= 0) age = String(62 + Math.floor(Math.random() * 20));
   else age = String(24 + Math.floor(Math.random() * 35));
 
@@ -200,13 +244,36 @@ function simExamine(step) {
   if (SIM.revealed[step]) return;
   SIM.revealed[step] = true;
 
-  var toks = SIM.theCase.byStep[step] || [];
-  if (toks.length) {
+  /* Write what this patient would actually present with onto the chart —
+     a number, a recorded sign, or a volunteered symptom — and let the ENGINE
+     derive the tokens from it, exactly as in a live exam. The student reads
+     "IOP 41 / 16 mmHg" and decides for themselves that it is high; handing
+     over the token `high_iop` would be handing over the conclusion.
+     Anything with no faithful presentation route falls back to the token, so
+     a case is never silently incomplete. */
+  var toks = (SIM.theCase.byStep[step] || []).slice();
+  /* Apply the broader measurement first where one subsumes another — a C:D of
+     0.78 / 0.51 satisfies both `cd_asymmetry` and `increased_cd`, and writing
+     the narrower rule second would overwrite the numbers the student was just
+     shown. Ordering here means the second token simply finds itself already on
+     the chart and records nothing. */
+  toks.sort(function (a, b) {
+    var sa = (typeof SIM_MEASURED !== "undefined" && SIM_MEASURED[a] && SIM_MEASURED[a].subsumes) ? 0 : 1;
+    var sb = (typeof SIM_MEASURED !== "undefined" && SIM_MEASURED[b] && SIM_MEASURED[b].subsumes) ? 0 : 1;
+    return sa - sb;
+  });
+  var recorded = [];
+  toks.forEach(function (t) {
+    var desc = (typeof simPresentToken === "function") ? simPresentToken(t, step) : null;
+    /* "" means the chart already carries this finding — nothing new to show. */
+    if (desc === "") return;
+    if (desc) { if (recorded.indexOf(desc) < 0) recorded.push(desc); return; }
     if (!V.symptoms) V.symptoms = [];
-    toks.forEach(function (t) {
-      if (V.symptoms.indexOf(t) < 0) V.symptoms.push(t);
-    });
-  }
+    if (V.symptoms.indexOf(t) < 0) V.symptoms.push(t);
+    recorded.push(String(t).replace(/_/g, " "));
+  });
+  SIM.recorded = SIM.recorded || {};
+  SIM.recorded[step] = recorded;
 
   if (typeof runDiagnosticEngine === "function") runDiagnosticEngine();
   if (typeof renderMain === "function") renderMain();
@@ -214,7 +281,7 @@ function simExamine(step) {
   if (typeof renderSidebar === "function") renderSidebar();
 
   if (typeof toast === "function") {
-    toast(toks.length ? ("Found " + toks.length + " finding(s) here.") : "Nothing abnormal found here.");
+    toast(recorded.length ? recorded.slice(0, 2).join(" · ") : "Nothing abnormal found here.");
   }
 }
 

@@ -6,6 +6,97 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-07-26 — Session 11r: Stress test, integrity fixes, and the simulator starts showing values
+
+### Stress test — what an adversarial pass found
+Not a feature session. I attacked the teaching layer instead of describing it,
+and it did not survive contact.
+
+- **Domain was empty for 137 of 394 conditions.** The nine curated KB files
+  carry their domain as the loader's registry key, never as a property; only
+  the expansion batch carried `domain` inline. So everything reading
+  `cond.domain` bucketed 35% of the KB as "Other" — including dry eye, every
+  conjunctivitis, blepharitis, stye, chalazion, pterygium. That silently broke
+  domain-scoped assignments, the "your weakest area" recommendation, OSCE
+  station labels and analytics-by-domain. Picking "Surface & Lids" returned 42
+  of the 72 that belong to it. **Fixed in the loader**, so every reader — and
+  every future one — is corrected at once. The Other bucket is now empty.
+- **A "Glaucoma block, 20 cases" served 5 cases from other domains and marked
+  the student complete.** `assignNextCase()` fell through to a whole-KB random
+  pick once the domain ran dry, so the record asserted something untrue about
+  what was practised. It now repeats within the domain, and `assignPoolSize()`
+  clamps the target to what a scope can actually supply.
+- **The engine ignored a pure astigmat's refraction entirely.** The whole
+  refraction block was gated on `V.rx.od_sph`, so "plano / -2.50 x 90" produced
+  no astigmatism token and skipped the anisometropia check. Gate widened to any
+  refraction value; no threshold changed.
+
+### The simulator was handing students the answer
+Measured across all 394 conditions: with a case fully examined, **the truth
+ranked 1st or 2nd every single time — 132 of 132, never absent.** It cannot be
+otherwise, because cases were built from the same tokens the engine ranks with.
+A simulator whose engine is never wrong teaches automation bias, which is the
+opposite of what an advisory-only product exists to teach.
+
+Worse, `simExamine` pushed the TOKEN onto the record: a student clicked Examine
+on IOP and was told **"high IOP"** — the conclusion, not the measurement. The
+interpretive step is the skill, and it was being skipped.
+
+### First fix: simulated patients now present like patients
+New `js/simulation-presentation.js` runs the engine backwards. Given a finding
+a case carries, it writes onto the chart what a clinician would actually have
+recorded, and lets the **engine derive the token from it** exactly as in a live
+exam. Three routes, all of them already the app's own vocabulary:
+**symptom chip** (SYM_CATS) · **finding label** (FINDING_TOKEN_MAP) ·
+**measured value** (a number satisfying the engine's own published rule).
+
+A student now sees:
+
+> *Patient aged 42 — halos around lights · IOP 25 / 25 mmHg (GAT) ·
+> subjective +1.59 / +2.83 DS · van Herick grade 2 both eyes*
+
+instead of `high_iop, narrow_angle, halos, hyperopia`.
+
+**The anti-fabrication guarantee is a round-trip test.** Every measured rule
+cites the engine rule it inverts, and `tests/simulation-presentation.test.js`
+applies the rule to a blank visit, runs the **real engine**, and requires the
+token back — 25 draws per rule, since values come from a band rather than a
+fixed number (so nobody learns "34 mmHg means angle closure"). A rule that does
+not round-trip is a fabricated number and fails the build. Two did, and both
+turned out to be real bugs: the astigmatism gate above, and a contact-lens rule
+writing the wrong field.
+
+Also fixed while wiring it:
+- **Procedure names were being revealed as findings.** The KB's `tests` arrays
+  mix real results (`RNFL_thinning`) with the name of the procedure
+  (`lid_position_exam`, `blink_exam`, `clinical_exam`). Cases now only contain
+  findings that can actually be put on a chart; `req` is never filtered.
+- **Measured findings were routed by symptom, not by test.** TBUT and Schirmer
+  landed under Chief Complaint, making dry-eye cases answerable from one
+  screen. Each rule now declares its own step. Cases spanning 3+ sections rose
+  from 100 to 144; single-section cases fell from 92 to 66.
+- **One measurement, written twice.** Van Herick and C:D were each written by
+  two tokens, the second overwriting numbers the student had already been
+  shown. Rules now declare what they subsume.
+
+⚠ **For the founder:** the KB's `young_age` means *under 18* (the engine's
+rule), and several conditions use it where *young adult* looks intended — the
+simulator was generating optic neuritis in a five-year-old. It now draws from
+the upper part of the bracket as a stopgap, changing no clinical claim.
+**Whether `young_age` should be split into paediatric vs young-adult is a
+clinical decision and is yours.**
+
+**Still to come in the rebuild** (agreed, not yet built): incomplete and
+comorbid presentations, cases where the engine's top answer is deliberately
+wrong with a debrief explaining why it was misled, and replacing the
+efficiency score — which currently gives a full systematic examination 16% and
+knowing-where-to-look 100%, rewarding exactly the anchoring that causes
+diagnostic error.
+
+**Verification:** suite **318/318** (14 new).
+
+---
+
 ## 2026-07-26 — Session 11q: Laterality confirmed, modules interconnected, simulation → a real teaching system
 
 ### 1. Chart laterality — confirmed and documented
