@@ -1000,6 +1000,36 @@ var SCORE_WEIGHTS = {
   sparse_evidence: 0.5     /* fewer than 2 tokens in the whole encounter */
 };
 
+/* ═══════════════════════════════════════════════════════════════ */
+/* CONTEXT-ONLY TOKENS                                              */
+/*                                                                  */
+/* These describe WHO the patient is, or their background risk —    */
+/* not what is wrong with the eye. They legitimately sharpen a       */
+/* differential that real findings have already raised, but a        */
+/* condition must NEVER enter the differential on them alone.        */
+/* Typing an age, or ticking "diabetic", is not a clinical finding:  */
+/* before this rule, entering age 6 and nothing else put             */
+/* Retinoblastoma in the differential on `young_age` with its        */
+/* required `leukocoria` still missing.                              */
+/*                                                                  */
+/* Temporal descriptors (acute/chronic/…) are deliberately absent —  */
+/* they are handled separately and never count as evidence either.   */
+/* ═══════════════════════════════════════════════════════════════ */
+var CONTEXT_ONLY_TOKENS = {
+  /* demographics */
+  young_age: 1, older_age: 1, age_related: 1, age_over_40: 1,
+  /* background / risk history */
+  family_history: 1,
+  diabetes_history: 1, hypertension_history: 1, autoimmune_history: 1,
+  thyroid_history: 1, eczema_history: 1, ra_history: 1, sle_history: 1,
+  ms_history: 1, migraine_history: 1,
+  blepharitis_history: 1, contact_lens_history: 1, trauma_history: 1,
+  steroid_history: 1, stress_history: 1,
+  recent_viral_history: 1, history_trauma_or_infection: 1
+};
+
+function isContextOnlyToken(t) { return !!CONTEXT_ONLY_TOKENS[t]; }
+
 function scoreCondition(condition, tokens, tokenSet) {
 
   /* O(1) membership when the caller passes a shared Set (the hot loop
@@ -1014,16 +1044,23 @@ function scoreCondition(condition, tokens, tokenSet) {
   var conMatched = 0;
   var testsMatched = 0;
   var tempMatch = false;
+  /* Matches that are actual clinical findings (see CONTEXT_ONLY_TOKENS). */
+  var substantiveMatched = 0;
 
   /* Required tokens */
   for (var ri = 0; ri < condition.req.length; ri++) {
-    if (has(condition.req[ri])) reqMatched++;
-    else reqMissing++;
+    if (has(condition.req[ri])) {
+      reqMatched++;
+      if (!isContextOnlyToken(condition.req[ri])) substantiveMatched++;
+    } else reqMissing++;
   }
 
   /* Supportive tokens */
   for (var si = 0; si < condition.sup.length; si++) {
-    if (has(condition.sup[si])) supMatched++;
+    if (has(condition.sup[si])) {
+      supMatched++;
+      if (!isContextOnlyToken(condition.sup[si])) substantiveMatched++;
+    }
   }
 
   /* Contradicting tokens */
@@ -1037,7 +1074,10 @@ function scoreCondition(condition, tokens, tokenSet) {
      from symptoms to objective findings. */
   var testList = condition.tests || [];
   for (var xi = 0; xi < testList.length; xi++) {
-    if (has(testList[xi])) testsMatched++;
+    if (has(testList[xi])) {
+      testsMatched++;
+      if (!isContextOnlyToken(testList[xi])) substantiveMatched++;
+    }
   }
 
   /* Temporal matching (same detection as before, applied multiplicatively) */
@@ -1095,12 +1135,19 @@ function scoreCondition(condition, tokens, tokenSet) {
   /* All required tokens missing = zero (hard rule, unchanged) */
   if (reqMatched === 0 && condition.req.length > 0) base = 0;
 
+  /* A condition needs at least one REAL clinical finding. Age, family history
+     and background risk factors modify a differential — they never create
+     one. Without this, entering only a patient's age surfaced conditions
+     whose required findings were entirely absent. */
+  if (substantiveMatched === 0) base = 0;
+
   base = Math.max(0, Math.min(1, base));
 
   return {
     score: base,
     reqMatched: reqMatched,
     reqMissing: reqMissing,
+    substantiveMatched: substantiveMatched,
     supMatched: supMatched,
     conMatched: conMatched,
     testsMatched: testsMatched,
@@ -1340,6 +1387,28 @@ function computeNudges(results, tokens) {
     if (!added[target]) {
       nudges.push({ m: msg, t: target });
       added[target] = true;
+    }
+  }
+
+  /* ── Age-appropriate DOCUMENTATION prompts ──────────────────────
+     Demographics no longer produce a differential (see
+     CONTEXT_ONLY_TOKENS). What an age SHOULD do is prompt the right
+     paperwork: for a child, the birth / developmental history and the
+     paediatric section that a paediatric assessment is incomplete
+     without. These are documentation suggestions, never diagnoses. */
+  var _age = parseInt((typeof P !== "undefined" && P) ? P.age : "", 10);
+  if (!isNaN(_age)) {
+    if (_age <= 16) {
+      var paedOn = !!(V.modules && V.modules.paediatric);
+      if (!paedOn) {
+        addNudge("Paediatric patient — add the Paediatric section (birth history, fixation, squint, amblyopia)", "demographics");
+      } else if (!done.has("paediatric")) {
+        addNudge("Complete the paediatric assessment (birth history, fixation, red reflex)", "paediatric");
+      }
+      if (!done.has("bv")) addNudge("Assess binocular status (cover test, stereo)", "bv");
+    }
+    if (_age <= 8 && !done.has("refraction")) {
+      addNudge("Consider cycloplegic refraction at this age", "refraction");
     }
   }
 
