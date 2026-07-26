@@ -433,6 +433,8 @@ function homeSecStudy() {
 
   return '<div class="home-hd"><h1>Study</h1></div>' +
     '<div class="study-hero">Learn by reasoning. The full diagnostic engine, glass-box "why", knowledge base and casebook are open and free — no restrictions on learning.</div>' +
+    /* Simulation: work a virtual patient with findings hidden until examined. */
+    ((typeof simLauncherCard === "function") ? simLauncherCard() : "") +
     '<div class="home-settings" style="margin-top:8px">' +
       '<div class="home-settings-title">🧠 Quiz — guess the diagnosis</div>' +
       '<div class="home-settings-desc">' + escH(quizLine) + ' A continuous session — answer with 1–4, Enter for the next.</div>' +

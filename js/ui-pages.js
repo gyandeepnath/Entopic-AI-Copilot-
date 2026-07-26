@@ -46,14 +46,18 @@ function renderMain() {
   /* Specialty-clinic sections are rendered generically from their data
      definition (js/clinics.js), so a new clinic needs no new page code. */
   if (!fn && typeof clinicStepDef === "function" && clinicStepDef(V.step)) {
-    el.innerHTML = pgClinicStep(V.step);
+    el.innerHTML = ((typeof simBanner === "function") ? simBanner() : "") + pgClinicStep(V.step);
     return;
   }
 
+  /* In a simulation, findings stay hidden until the student examines the
+     section — the banner is prepended to whatever page is showing. */
+  var simTop = (typeof simBanner === "function") ? simBanner() : "";
+
   if (fn) {
-    el.innerHTML = fn();
+    el.innerHTML = simTop + fn();
   } else {
-    el.innerHTML = '<div class="card"><div class="card-t">Section</div>' +
+    el.innerHTML = simTop + '<div class="card"><div class="card-t">Section</div>' +
       '<p style="color:var(--sv);margin-top:8px">This section is under development.</p></div>';
   }
 }

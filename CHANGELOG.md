@@ -6,6 +6,84 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-07-25 — Session 11p: Evidence gate, sourced colour guide, clinic packs, simulation
+
+### 1. Engine — context can no longer create a differential ⚠ safety
+Founder: *"just entering age should not relate to a disease being fired."*
+**Reproduced:** age 6 and nothing else put **Retinoblastoma** in the
+differential — matched on `young_age`, with its required `leukocoria` still
+**missing**. The existing hard rule only demanded ≥1 `req` token match, and
+`young_age` satisfied it.
+**Fixed** with `CONTEXT_ONLY_TOKENS` — demographics and background risk
+(family history, diabetes/hypertension/thyroid/autoimmune/RA/SLE/MS/migraine/
+eczema, blepharitis, contact-lens wear, trauma, steroid, stress, recent viral).
+A condition now needs ≥1 **substantive** match across req+sup+tests, or it
+scores 0. Context still *sharpens* a differential real findings raised; it can
+no longer create one.
+**And what an age SHOULD do** — a child now prompts *documentation*: add the
+Paediatric section (birth history, fixation, squint, amblyopia), assess
+binocular status, consider cycloplegic refraction ≤8. Suggestions, never a
+diagnosis. `tests/evidence-gate.test.js` locks all of it; red flags unaffected.
+
+### 2. Drawing — colour guide compiled from sources, and a toggleable guide
+The colour code is now compiled and cross-checked from **six published teaching
+sources** (linked in-app) in `js/drawing-guide.js`, each entry marked
+**agreed** or **varies** so firm convention is distinguishable from local
+practice. It covers both charts plus the composite rules the sources teach:
+a retinal break is **outlined blue, filled red**; detachment shaded blue
+against red attached retina; **all** pre-retinal/media lesions green; cornea
+drawn **frontal + cross-section**; record lesion size in mm; scar (black
+outline) drawn differently from active infiltrate (yellow).
+Toggled by a **Guide** button in the drawing toolbar. The palette *is* the
+guide, so swatches and documentation can never drift apart.
+
+### 3. Anterior segment documentation templates (were missing)
+A template selector now offers: anterior segment frontal · **cornea frontal +
+cross-section** (epithelium/stroma/endothelium guides, size prompt) ·
+**corneal ulcer / infiltrate chart** (measurement grid + prompts for infiltrate
+and defect size, depth, hypopyon, vessels, thinning, perforation) · **lids &
+adnexa** (MRD1/MRD2, aperture, levator function, lid position, lagophthalmos) ·
+**gonioscopy** in four quadrants.
+
+### 4. Specialty clinic packs (8) + the missing test areas
+Clinic packs cluster extra sections for a kind of session — **Dry Eye,
+Refractive Surgery, Myopia, Oculoplasty, Ocular Prosthesis, Sports Vision,
+Operation Theatre, Screening/Camp** (community, school, workplace, diabetic,
+quick triage) — **185 fields**. The core 22-step flow is untouched (22 default,
+sections appear/disappear with the pack).
+This closes the called-out gaps: **keratometry** now appears where it is used
+(refractive surgery, myopia, contact lens), and **LASIK / PRK / SMILE /
+enhancement** get a full pre-op→post-op record (stability, CL holiday,
+topography + ectasia indices, pachymetry, scotopic pupil, WTW, ACD,
+endothelium, flap/ablation, residual stromal bed, haze, counselling).
+Packs are pure **data** rendered by one generic renderer — a new clinic is a
+data edit, not new UI code.
+Also: role renamed **"Technician / Investigations" → "Investigation unit"**.
+
+### 5. Clinical simulation for students (new)
+The quiz asks *"what is this?"*. Simulation asks **"how would you find out?"** —
+the student works a virtual patient through the real 22-step interface with
+every finding **hidden until they examine that section**. The live engine sees
+only what has been revealed, so the differential visibly narrows as they work.
+- Cases are **derived from the knowledge base**, never invented — ground truth
+  is the condition's own req/sup/**tests** tokens, so a case can contain no
+  clinical claim the KB does not already make, and inherits its review status.
+- Objective signs spread a case across the exam (angle closure → chief
+  complaint, IOP, gonioscopy, slit lamp), so the student must actually work
+  the examination rather than read a symptom list.
+- Debrief reports: sections examined, **defining findings uncovered vs missed**,
+  sections with findings never examined, what the engine had on their evidence,
+  time taken, and the About note.
+- Simulated patients are flagged and excluded from real records, analytics and
+  export, exactly like practice records.
+- Launcher on the student's Study tab: common / any / urgent-red-flag scope.
+
+**Verification:** suite **281/281**; browser-verified throughout (age-gate
+behaviour, guide + all five anterior templates, all clinic packs toggling and
+persisting, and a full simulation run from launch to debrief). No console errors.
+
+---
+
 ## 2026-07-25 — Session 11o: Drawing upgrade, full BV evaluation, three new sections
 
 ### Drawing — colour-coded charts and real tools
