@@ -21,11 +21,21 @@
 "use strict";
 
 /* Which side of the chart the optic disc sits on for a RIGHT eye.
-   Exposed as a single constant because chart laterality convention is
-   exactly the sort of thing that differs between teaching hospitals —
-   flip this one value to change every template at once.
-   ⚠ Founder: please confirm against the charts you actually use. */
-var DRAW_DISC_SIDE_OD = "left";   /* "left" | "right" */
+   ── CONFIRMED "right", reasoned from anatomy + viewing geometry ──
+     1. The optic disc lies NASAL to the fovea (~15°). Not in dispute.
+     2. A fundus view/photograph looks INTO the eye from in front of the
+        patient. It is a direct view of a concave surface, not a mirrored
+        one, so left/right are preserved as the examiner sees them.
+     3. Facing a patient, their RIGHT eye is on the examiner's LEFT, so the
+        patient's nose sits to the examiner's RIGHT of that eye.
+     4. Nasal retina therefore appears on the examiner's RIGHT →
+        for OD the disc is on the RIGHT of the image, macula to its left.
+        (Cross-check: the macula is temporal, i.e. toward that ear — the
+        right ear is on the examiner's left. Same answer.)
+   Sanity check in five seconds: open any labelled right-eye fundus photo;
+   the disc should sit right-of-centre. Flip this one value if your local
+   charts are drawn the other way — it re-orients every template at once. */
+var DRAW_DISC_SIDE_OD = "right";   /* "left" | "right" */
 
 var DRAW_W = 760, DRAW_H = 560;
 

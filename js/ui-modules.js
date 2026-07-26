@@ -80,6 +80,7 @@ function pgPaed() {
   return '<div class="card">' +
     '<div class="card-t">Paediatric Assessment</div>' +
     '<div class="card-s">Age-appropriate acuity, fixation behaviour, squint and amblyopia work-up</div>' +
+    ((typeof mlCarryInFor === "function") ? mlCarryInFor("paediatric") : "") +
 
     '<div class="dv"><span>Birth &amp; developmental history</span></div>' +
     '<div class="fg">' +
@@ -157,6 +158,7 @@ function pgLowVision() {
   return '<div class="card">' +
     '<div class="card-t">Low Vision Assessment</div>' +
     '<div class="card-s">Function, magnification, aids and support — driven by what the patient wants to do</div>' +
+    ((typeof mlCarryInFor === "function") ? mlCarryInFor("low_vision") : "") +
 
     '<div class="dv"><span>Goals &amp; background</span></div>' +
     '<div class="fg">' +
@@ -242,6 +244,8 @@ function pgContactLens() {
   return '<div class="card">' +
     '<div class="card-t">Contact Lens</div>' +
     '<div class="card-s">Fitting, assessment and aftercare</div>' +
+    ((typeof mlCarryInFor === "function") ? mlCarryInFor("contact_lens") : "") +
+    ((typeof mlClPullButton === "function") ? mlClPullButton() : "") +
 
     '<div class="dv"><span>Indication &amp; wearing history</span></div>' +
     '<div class="fg">' +

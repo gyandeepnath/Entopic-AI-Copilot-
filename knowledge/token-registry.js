@@ -1252,9 +1252,10 @@ var TOKEN_REGISTRY = {
     "reachable": true
   },
   "contact_lens_intolerance": {
-    "type_hint": "symptom",
+    "type_hint": "derived_measurement_or_history",
     "sources": [
       "dictionary",
+      "engine_derived",
       "symptom_chip"
     ],
     "usage": {
@@ -4027,9 +4028,10 @@ var TOKEN_REGISTRY = {
     "reachable": true
   },
   "leukocoria": {
-    "type_hint": "sign",
+    "type_hint": "derived_measurement_or_history",
     "sources": [
       "dictionary",
+      "engine_derived",
       "finding_map"
     ],
     "usage": {
@@ -4454,8 +4456,9 @@ var TOKEN_REGISTRY = {
     "reachable": true
   },
   "manifest_squint": {
-    "type_hint": "symptom",
+    "type_hint": "derived_measurement_or_history",
     "sources": [
+      "engine_derived",
       "symptom_chip"
     ],
     "usage": {

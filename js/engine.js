@@ -578,6 +578,21 @@ function collectTokens() {
     if (V.neuro.amsler === "Scotoma") addToken("central_scotoma");
   }
 
+  /* ── SOURCE 11: Optional modules ─────────────────────────────────
+     Modules are mostly documentation, but a few of their fields ARE
+     clinical findings and must reach the engine like any other — most
+     importantly a white red reflex, which is the paediatric red flag.
+     Only unambiguous, structured selections are wired; free text is not. */
+  if (V.paed) {
+    if (V.paed.red_reflex_od === "White (leukocoria)" ||
+        V.paed.red_reflex_os === "White (leukocoria)") {
+      addToken("leukocoria");
+    }
+    if (V.paed.squint_present === "Yes") addToken("manifest_squint");
+    if (V.paed.amblyopia_suspected === "Present") addToken("reduced_vision");
+  }
+  if (V.cl && V.cl.comfort === "Poor") addToken("contact_lens_intolerance");
+
   /* Investigation fields */
   if (V.inv) {
     /* OCT RNFL */

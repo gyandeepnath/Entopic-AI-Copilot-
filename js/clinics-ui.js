@@ -64,7 +64,9 @@ function pgClinicStep(stepId) {
 
   var h = '<div class="card">' +
     '<div class="card-t">' + (pack ? pack.icon + " " : "") + esc(def.label) + '</div>' +
-    '<div class="card-s">' + esc(pack ? pack.blurb : "") + '</div>';
+    '<div class="card-s">' + esc(pack ? pack.blurb : "") + '</div>' +
+    /* What the core exam already holds — shown, not re-asked. */
+    ((typeof mlCarryInFor === "function") ? mlCarryInFor(stepId) : "");
 
   (def.groups || []).forEach(function (g, gi) {
     var gid = "clg_" + stepId + "_" + gi;
