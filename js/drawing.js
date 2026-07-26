@@ -40,31 +40,28 @@ var DRAW_STATE = {
   lastX: 0, lastY: 0,
   startX: 0, startY: 0,
   snapshot: null,      /* for live shape preview */
-  undo: [], redo: []
+  undo: [], redo: [],
+  guideOpen: false,    /* colour-code guide panel */
+  variant: ""          /* which template variant (anterior only) */
 };
 
-/* Conventional colour code. `use` is what the colour conventionally marks. */
-var DRAW_PALETTE_FUNDUS = [
-  { label: "Red",    value: "#cc0000", use: "Attached retina · arterioles · haemorrhage · new vessels" },
-  { label: "Blue",   value: "#0044cc", use: "Detached retina · veins · lattice · outline of breaks · folds" },
-  { label: "Green",  value: "#007700", use: "Vitreous opacity / haemorrhage · media opacity · foreign body" },
-  { label: "Brown",  value: "#8B4513", use: "Choroidal lesion · choroidal detachment · RPE hypertrophy" },
-  { label: "Yellow", value: "#d4a017", use: "Exudate · drusen · subretinal fluid" },
-  { label: "Black",  value: "#000000", use: "Pigment · laser / cryo scars · pigmented lesions" }
+/* Anterior-segment documentation templates. Sources teach documenting corneal
+   pathology as a FRONTAL view plus a CROSS-SECTION, so both are offered, along
+   with the layouts used for the commonest anterior-segment charting tasks. */
+var DRAW_ANTERIOR_TEMPLATES = [
+  { id: "anterior_full", label: "Anterior segment (frontal)" },
+  { id: "cornea_section", label: "Cornea — frontal + cross-section" },
+  { id: "cornea_ulcer",   label: "Corneal ulcer / infiltrate chart" },
+  { id: "lids",           label: "Lids & adnexa" },
+  { id: "gonio",          label: "Gonioscopy (4 quadrants)" }
 ];
 
-var DRAW_PALETTE_ANTERIOR = [
-  { label: "Green",  value: "#007700", use: "Fluorescein staining · epithelial defect" },
-  { label: "Grey",   value: "#666666", use: "Corneal opacity / scar · infiltrate outline" },
-  { label: "Blue",   value: "#0044cc", use: "Corneal / stromal oedema · striae" },
-  { label: "Red",    value: "#cc0000", use: "Vessels · neovascularisation · injection · hyphaema" },
-  { label: "Yellow", value: "#d4a017", use: "Hypopyon · infiltrate · discharge" },
-  { label: "Brown",  value: "#8B4513", use: "Iris detail · synechiae · pigment on lens / endothelium" },
-  { label: "Black",  value: "#000000", use: "Outline · sutures · foreign body" }
-];
-
+/* The palette IS the sourced colour-code guide (js/drawing-guide.js), so the
+   swatches a clinician clicks and the guide they read can never drift apart. */
 function drawPalette() {
-  return DRAW_STATE.type === "fundus" ? DRAW_PALETTE_FUNDUS : DRAW_PALETTE_ANTERIOR;
+  if (typeof drawGuideFor === "function") return drawGuideFor(DRAW_STATE.type).colours;
+  /* Fallback if the guide module failed to load — keeps drawing usable. */
+  return [{ label: "Black", value: "#000000", use: "" }];
 }
 
 function drawCanvasEl() { return document.getElementById("drawCanvas"); }
@@ -122,6 +119,8 @@ function openDrawing(type, eye) {
   DRAW_STATE.color = drawPalette()[0].value;
   DRAW_STATE.undo = [];
   DRAW_STATE.redo = [];
+  DRAW_STATE.variant = (type === "slit_lamp") ? "anterior_full" : "";
+  DRAW_STATE.guideOpen = false;
 
   var overlay = document.getElementById("canvasOverlay");
   if (overlay) overlay.style.display = "flex";
@@ -173,7 +172,7 @@ function drawResetTemplate() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.fillStyle = "#ffffff";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
-  if (DRAW_STATE.type === "slit_lamp") drawAnteriorTemplate(ctx, canvas);
+  if (DRAW_STATE.type === "slit_lamp") drawAnteriorVariant(ctx, canvas, DRAW_STATE.variant || "anterior_full");
   else drawFundusTemplate(ctx, canvas);
 }
 
@@ -246,6 +245,14 @@ function renderCanvasToolbar() {
   });
   h += '<span style="width:1px;height:20px;background:var(--ms);margin:0 5px"></span>';
 
+  /* Anterior-segment template variants */
+  if (!isFundus) {
+    h += '<select onchange="setDrawVariant(this.value)" style="font-size:.58rem;padding:2px 4px;margin-right:5px">' +
+      DRAW_ANTERIOR_TEMPLATES.map(function (t) {
+        return '<option value="' + t.id + '"' + (DRAW_STATE.variant === t.id ? " selected" : "") + '>' + t.label + '</option>';
+      }).join("") + '</select>';
+  }
+
   [["pen", "✏ Pen"], ["line", "／ Line"], ["ellipse", "◯ Shape"], ["hatch", "▨ Hatch"], ["eraser", "◻ Eraser"]].forEach(function (t) {
     h += '<span class="canvas-tool' + (DRAW_STATE.tool === t[0] ? " active" : "") + '" onclick="setDrawTool(\'' + t[0] + '\')">' + t[1] + '</span>';
   });
@@ -267,6 +274,10 @@ function renderCanvasToolbar() {
     h += '<span class="canvas-tool' + (DRAW_STATE.lineWidth === w[0] ? " active" : "") + '" onclick="setDrawWidth(' + w[0] + ')">' + w[1] + '</span>';
   });
 
+  h += '<span style="width:1px;height:20px;background:var(--ms);margin:0 5px"></span>';
+  h += '<span class="canvas-tool' + (DRAW_STATE.guideOpen ? " active" : "") + '" onclick="toggleDrawGuide()" title="Colour-code guide">' +
+    (DRAW_STATE.guideOpen ? "▾ Guide" : "▸ Guide") + '</span>';
+
   var cur = null;
   drawPalette().forEach(function (c) { if (c.value === DRAW_STATE.color) cur = c; });
   if (cur && DRAW_STATE.tool !== "eraser") {
@@ -274,6 +285,7 @@ function renderCanvasToolbar() {
       '<b style="color:' + cur.value + '">' + cur.label + '</b> — ' + cur.use +
       '<span style="color:var(--sv)"> · conventional colour code — adjust to your local practice</span></div>';
   }
+  if (DRAW_STATE.guideOpen) h += drawGuideHtml();
   tb.innerHTML = h;
 }
 
@@ -372,6 +384,56 @@ function endDraw() {
 }
 
 
+function setDrawVariant(v) {
+  if (DRAW_STATE.variant === v) return;
+  if (DRAW_STATE.undo.length && !window.confirm("Switch template? The current drawing will be cleared.")) return;
+  DRAW_STATE.variant = v;
+  DRAW_STATE.undo = []; DRAW_STATE.redo = [];
+  drawResetTemplate();
+  renderCanvasToolbar();
+}
+
+function toggleDrawGuide() {
+  DRAW_STATE.guideOpen = !DRAW_STATE.guideOpen;
+  renderCanvasToolbar();
+}
+
+/* The sourced colour-code guide, rendered inside the drawing tool. */
+function drawGuideHtml() {
+  if (typeof drawGuideFor !== "function") return "";
+  var g = drawGuideFor(DRAW_STATE.type);
+  var h = '<div style="flex-basis:100%;width:100%;margin-top:6px;border:1px solid var(--fg);border-radius:var(--r);padding:10px;background:var(--sn);max-height:260px;overflow:auto">' +
+    '<div style="font-weight:600;font-size:.7rem;margin-bottom:2px">' + g.title + ' — colour code</div>' +
+    '<div style="font-size:.54rem;color:var(--sv);margin-bottom:8px">Compiled and cross-checked from published teaching sources (listed below). ' +
+      'Entries marked <b>varies</b> differ between schools — confirm against local practice.</div>';
+
+  g.colours.forEach(function (c) {
+    h += '<div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:6px">' +
+      '<span style="flex:0 0 14px;width:14px;height:14px;border-radius:50%;background:' + c.value + ';border:1px solid #0002;margin-top:2px"></span>' +
+      '<div style="flex:1">' +
+        '<div style="font-size:.62rem"><b>' + c.label + '</b> — ' + c.use +
+          (c.status === "varies" ? ' <span style="color:#b8860b;font-size:.52rem">(varies)</span>' : '') + '</div>' +
+        (c.detail ? '<div style="font-size:.54rem;color:var(--sl)">' + c.detail + '</div>' : '') +
+      '</div></div>';
+  });
+
+  h += '<div style="font-weight:600;font-size:.62rem;margin:8px 0 4px">How specific lesions are drawn</div>';
+  g.rules.forEach(function (r) {
+    h += '<div style="font-size:.56rem;margin-bottom:4px"><b>' + r.rule + '</b>' +
+      (r.status === "varies" ? ' <span style="color:#b8860b">(varies)</span>' : '') +
+      ' — ' + r.how + '</div>';
+  });
+
+  h += '<div style="font-size:.52rem;color:var(--sv);margin-top:8px;border-top:1px solid var(--fg);padding-top:5px">Sources: ' +
+    DRAW_GUIDE_SOURCES.map(function (s2) {
+      return '<a href="' + s2.url + '" target="_blank" rel="noopener" style="color:var(--md)">' + esc(s2.label) + '</a>';
+    }).join(" · ") +
+    '<br>Documentation convention only — not clinical decision support, and never read by the diagnostic engine.</div>';
+
+  return h + '</div>';
+}
+
+
 /* ── Templates ───────────────────────────────────────────────────── */
 
 /* Clock hours around a circle, 12 at the top. */
@@ -391,6 +453,196 @@ function drawClockHours(ctx, cx, cy, r) {
     ctx.stroke();
   }
   ctx.textBaseline = "alphabetic";
+}
+
+/* Dispatch to the selected anterior-segment documentation template. */
+function drawAnteriorVariant(ctx, canvas, variant) {
+  if (variant === "cornea_section") return drawCorneaSectionTemplate(ctx, canvas);
+  if (variant === "cornea_ulcer")   return drawCorneaUlcerTemplate(ctx, canvas);
+  if (variant === "lids")           return drawLidsTemplate(ctx, canvas);
+  if (variant === "gonio")          return drawGonioTemplate(ctx, canvas);
+  return drawAnteriorTemplate(ctx, canvas);
+}
+
+function drawTitle(ctx, canvas, text) {
+  ctx.fillStyle = "#bbbbbb";
+  ctx.font = "11px 'DM Sans', sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText(DRAW_STATE.eye + " — " + text, canvas.width / 2, 20);
+}
+
+/* Cornea documented the conventional way: a frontal view AND a cross-section,
+   so depth (epithelial / stromal / endothelial) is recorded as well as the
+   position and size of the lesion. */
+function drawCorneaSectionTemplate(ctx, canvas) {
+  drawTitle(ctx, canvas, "cornea — frontal + cross-section");
+
+  /* Frontal, left half */
+  var cx = 210, cy = 300, limbus = 150, pupil = 42;
+  ctx.strokeStyle = "#f2f2f2";
+  ctx.lineWidth = 1;
+  for (var g = -limbus; g <= limbus; g += 30) {
+    ctx.beginPath(); ctx.moveTo(cx + g, cy - limbus); ctx.lineTo(cx + g, cy + limbus); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx - limbus, cy + g); ctx.lineTo(cx + limbus, cy + g); ctx.stroke();
+  }
+  ctx.strokeStyle = "#cccccc";
+  [limbus, pupil].forEach(function (r) {
+    ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke();
+  });
+  drawClockHours(ctx, cx, cy, limbus);
+  ctx.fillStyle = "#aaaaaa";
+  ctx.font = "9px 'DM Sans', sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText("frontal view", cx, cy + limbus + 44);
+
+  /* Cross-section, right half — corneal layers */
+  var sx = 470, sw = 240, sy = 250, th = 74;
+  ctx.strokeStyle = "#cccccc";
+  ctx.lineWidth = 1;
+  /* anterior and posterior curves */
+  ctx.beginPath(); ctx.moveTo(sx, sy); ctx.quadraticCurveTo(sx + sw / 2, sy - 54, sx + sw, sy); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(sx, sy + th); ctx.quadraticCurveTo(sx + sw / 2, sy + th - 54, sx + sw, sy + th); ctx.stroke();
+  /* internal layer guides */
+  ctx.strokeStyle = "#eeeeee";
+  [0.18, 0.5, 0.82].forEach(function (f) {
+    ctx.beginPath();
+    ctx.moveTo(sx, sy + th * f);
+    ctx.quadraticCurveTo(sx + sw / 2, sy + th * f - 54, sx + sw, sy + th * f);
+    ctx.stroke();
+  });
+  ctx.fillStyle = "#aaaaaa";
+  ctx.font = "8px 'DM Sans', sans-serif";
+  ctx.textAlign = "left";
+  ctx.fillText("epithelium", sx + sw + 6, sy - 6);
+  ctx.fillText("stroma", sx + sw + 6, sy + th * 0.5 - 20);
+  ctx.fillText("endothelium", sx + sw + 6, sy + th - 2);
+  ctx.textAlign = "center";
+  ctx.font = "9px 'DM Sans', sans-serif";
+  ctx.fillText("cross-section (depth)", sx + sw / 2, sy + th + 40);
+
+  /* Measurement prompt — sources stress recording size for comparability */
+  ctx.fillStyle = "#cccccc";
+  ctx.font = "9px 'DM Sans', sans-serif";
+  ctx.textAlign = "left";
+  ctx.fillText("Size  H ____ mm  ×  V ____ mm", 60, canvas.height - 30);
+  ctx.fillText("Depth: epi / ant stroma / mid / deep / endo", 380, canvas.height - 30);
+}
+
+/* Ulcer / infiltrate charting: frontal cornea with a measurement grid and the
+   conventional layer prompts (yellow infiltrate, green defect, depth). */
+function drawCorneaUlcerTemplate(ctx, canvas) {
+  drawTitle(ctx, canvas, "corneal ulcer / infiltrate");
+  var cx = canvas.width / 2 - 60, cy = 290, limbus = 175;
+
+  ctx.strokeStyle = "#f0f0f0";
+  ctx.lineWidth = 1;
+  for (var g = -limbus; g <= limbus; g += 25) {
+    ctx.beginPath(); ctx.moveTo(cx + g, cy - limbus); ctx.lineTo(cx + g, cy + limbus); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx - limbus, cy + g); ctx.lineTo(cx + limbus, cy + g); ctx.stroke();
+  }
+  ctx.strokeStyle = "#cccccc";
+  ctx.beginPath(); ctx.arc(cx, cy, limbus, 0, Math.PI * 2); ctx.stroke();
+  ctx.beginPath(); ctx.arc(cx, cy, 44, 0, Math.PI * 2); ctx.stroke();
+  drawClockHours(ctx, cx, cy, limbus);
+
+  /* Prompts down the right, so the chart records what follow-up needs */
+  ctx.fillStyle = "#aaaaaa";
+  ctx.font = "10px 'DM Sans', sans-serif";
+  ctx.textAlign = "left";
+  var px = cx + limbus + 60, py = 120;
+  ["Infiltrate  ____ × ____ mm",
+   "Epithelial defect  ____ × ____ mm",
+   "Depth:  epi / ant / mid / deep",
+   "Hypopyon  ____ mm",
+   "Vessels:  none / superficial / deep",
+   "Thinning:  none / ____ %",
+   "Perforation:  no / impending / yes"].forEach(function (t) {
+    ctx.fillText(t, px, py); py += 26;
+  });
+  ctx.font = "8px 'DM Sans', sans-serif";
+  ctx.fillStyle = "#c8c8c8";
+  ctx.fillText("yellow = infiltrate · green = epithelial defect · red = vessels", px, py + 8);
+  ctx.fillText("black = scar / outline · blue = oedema", px, py + 22);
+}
+
+/* Lids & adnexa — for chalazia, lid lesions, ptosis measurements, entropion. */
+function drawLidsTemplate(ctx, canvas) {
+  drawTitle(ctx, canvas, "lids & adnexa");
+  var cx = canvas.width / 2, cy = 260;
+
+  ctx.strokeStyle = "#cccccc";
+  ctx.lineWidth = 1;
+  /* palpebral aperture — almond outline */
+  ctx.beginPath();
+  ctx.moveTo(cx - 210, cy);
+  ctx.quadraticCurveTo(cx, cy - 110, cx + 210, cy);
+  ctx.quadraticCurveTo(cx, cy + 110, cx - 210, cy);
+  ctx.stroke();
+  /* limbus + pupil */
+  ctx.beginPath(); ctx.arc(cx, cy, 62, 0, Math.PI * 2); ctx.stroke();
+  ctx.beginPath(); ctx.arc(cx, cy, 20, 0, Math.PI * 2); ctx.stroke();
+  /* lid margins / lash lines */
+  ctx.strokeStyle = "#e8e8e8";
+  ctx.beginPath();
+  ctx.moveTo(cx - 210, cy); ctx.quadraticCurveTo(cx, cy - 128, cx + 210, cy); ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(cx - 210, cy); ctx.quadraticCurveTo(cx, cy + 128, cx + 210, cy); ctx.stroke();
+  /* brow */
+  ctx.beginPath();
+  ctx.moveTo(cx - 190, cy - 150); ctx.quadraticCurveTo(cx, cy - 190, cx + 190, cy - 150); ctx.stroke();
+
+  ctx.fillStyle = "#aaaaaa";
+  ctx.font = "9px 'DM Sans', sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText("upper lid", cx, cy - 96);
+  ctx.fillText("lower lid", cx, cy + 104);
+  ctx.fillText("brow", cx, cy - 158);
+
+  ctx.textAlign = "left";
+  ctx.font = "10px 'DM Sans', sans-serif";
+  var py = canvas.height - 150;
+  ["MRD1 ____ mm      MRD2 ____ mm",
+   "Palpebral aperture ____ mm",
+   "Levator function ____ mm",
+   "Lid position:  normal / ptosis / retraction / ectropion / entropion",
+   "Lagophthalmos ____ mm      Bell's:  good / poor"].forEach(function (t) {
+    ctx.fillText(t, 70, py); py += 24;
+  });
+}
+
+/* Gonioscopy — four quadrants for angle grading and findings. */
+function drawGonioTemplate(ctx, canvas) {
+  drawTitle(ctx, canvas, "gonioscopy");
+  var cx = canvas.width / 2, cy = 300, outer = 190, inner = 92;
+
+  ctx.strokeStyle = "#cccccc";
+  ctx.lineWidth = 1;
+  [outer, inner].forEach(function (r) {
+    ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke();
+  });
+  /* quadrant dividers on the diagonals */
+  ctx.strokeStyle = "#e6e6e6";
+  [45, 135, 225, 315].forEach(function (deg) {
+    var a = deg * Math.PI / 180;
+    ctx.beginPath();
+    ctx.moveTo(cx + Math.cos(a) * inner, cy + Math.sin(a) * inner);
+    ctx.lineTo(cx + Math.cos(a) * outer, cy + Math.sin(a) * outer);
+    ctx.stroke();
+  });
+  drawClockHours(ctx, cx, cy, outer);
+
+  ctx.fillStyle = "#aaaaaa";
+  ctx.font = "10px 'DM Sans', sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText("SUPERIOR", cx, cy - (outer + inner) / 2 + 4);
+  ctx.fillText("INFERIOR", cx, cy + (outer + inner) / 2 + 4);
+  ctx.fillText("NASAL", cx - (outer + inner) / 2, cy + 4);
+  ctx.fillText("TEMPORAL", cx + (outer + inner) / 2, cy + 4);
+
+  ctx.textAlign = "left";
+  ctx.font = "9px 'DM Sans', sans-serif";
+  ctx.fillStyle = "#c0c0c0";
+  ctx.fillText("Record per quadrant: structures seen · Shaffer grade · pigment · PAS · NVA", 60, canvas.height - 28);
 }
 
 /* Anterior segment: cornea / limbus / iris / pupil with clock hours. */
