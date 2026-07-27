@@ -36,6 +36,9 @@ const LOAD_ORDER = [
   "token-registry.js", /* generated — see tools/gen-token-registry.js */
   "icd-map.js",
   "expansion.js",      /* provisional expansion batch (folded in by loader.js) */
+  "verified.js",       /* founder sign-offs, applied by loader.js */
+  "common-conditions.js",  /* the "common in practice" scope set */
+  "age-classification.js", /* age-bracket reclassification, applied by loader.js */
   "loader.js"
 ];
 

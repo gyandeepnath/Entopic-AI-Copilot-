@@ -6,6 +6,101 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-07-26 — Session 11s: Age brackets split, sidebar organised, whole-build audit
+
+### 1. `young_age` split into paediatric and young adult ⚠ clinical
+The KB had one token for "young" and the engine defined it as **under 18**. A
+lot of conditions used it where a young ADULT is meant — which is why a
+simulated optic-neuritis patient could be five years old.
+
+| token | rule |
+|---|---|
+| `paediatric_age` | under 18 |
+| `young_adult_age` | 18 – 39 |
+| `young_age` | under 18 — **deprecated, rule unchanged** |
+
+`young_age` keeps its exact old rule, so **not one differential moves** for a
+condition that has not been reclassified. Only **15** conditions are pre-set:
+the ones whose *name* literally states infancy or childhood (congenital,
+infantile, neonatorum, of prematurity, juvenile, amblyopia). Even those carry
+`NEEDS_CLINICAL_REVIEW`.
+
+**83 conditions still need the founder's judgement** — Keratoconus, Optic
+Neuritis, IIH and the rest are epidemiological calls, not text-matching, so
+they are not mine to make. A new **Age brackets review screen** in the Admin
+panel classifies each in one click and exports the decisions as a source file
+to bake into the build.
+
+Traps recorded rather than papered over: my first pass classified on a regex
+and matched `ROP` inside "dyst**rop**hy", "hyd**rop**s", "at**rop**hy",
+"exot**rop**ia" and "hype**rop**ia. And *Congenital* Hypertrophy of the RPE is
+congenital by name but found at any age, so it is deliberately **not**
+auto-classified.
+
+### 2. The step list reads as stages, not one long list
+Each stage of the exam (Registration, History, Examination, Investigations,
+Assessment, Management, Documentation, plus any modules and clinics) is now its
+own band: a clickable header that folds the group away, a **done/total count**,
+and a hairline accent colour so the eye finds "Examination" without reading.
+Folded state is remembered per user across visits — a clinician who never runs
+Investigations should not have to fold it every exam. A group holding the step
+being worked on always opens regardless, and a folded group with unexamined
+sections shows a dot so nothing hides silently. The accents are a thin left
+rule only: the panel stays monochrome, and no colour carries clinical meaning.
+
+### 3. Whole-build audit — `node tools/audit.js`
+One command that inspects the real build rather than the documentation: load
+order, syntax and hygiene, handler wiring, KB structure, token registry, red
+flags, the evidence gate, determinism, the offline invariant, engine speed,
+security, privacy, escaping, backup/restore, test coverage and doc accuracy.
+Non-zero exit on any FAIL, so it can gate a release. Full write-up in
+`docs/AUDIT_2026-07-26.md`.
+
+**Result: 0 FAIL · 1 WARN · 19 info.** What it caught:
+
+- ⚠ **Passwords were stored in plaintext.** `doSetup()` wrote `password: pw`
+  into local storage; `doLogin()` compared with `===`. A copied device, an
+  exported backup or a synced file handed over every user's actual password —
+  which matters well beyond Entopic, because people reuse passwords.
+  **Fixed** (`js/auth-crypto.js`): random 16-byte salt, **PBKDF2-SHA-256 at
+  120,000 iterations** via Web Crypto (which works on `file://`, so it stays
+  fully offline), constant-time comparison, and username-only lookup so a wrong
+  username and a wrong password fail identically. Legacy accounts upgrade
+  automatically on next sign-in — verified in a browser: plaintext count went
+  1 → 0 and the old password no longer appears in the store.
+  **Still honest:** this is not authentication. Anyone with the device can
+  bypass the sign-in screen. What it buys is that a leaked store no longer
+  reveals a password. The Admin panel now shows the plaintext count.
+- **Signing out landed you on the wrong form.** After creating an account, the
+  sign-in fields stayed hidden and logout dropped you on "Create new account".
+  `doLogout()` now restores the sign-in view and clears the fields.
+- **Two KB loaders had drifted.** `tools/lib/load-kb.js` was missing three
+  knowledge files that `load-engine.js` loads, so half the suite reasoned about
+  a differently-assembled knowledge base. Aligned, with a test that fails if
+  they diverge again.
+- **A NUL byte in `js/auth-crypto.js`** made grep treat it as binary. Fixed,
+  and the audit now fails on any NUL byte in source.
+- **`ARCHITECTURE.md` claimed 130 conditions; the build has 394** — every count
+  was ~3× stale, and it still listed "ICD codes never populated" as open when
+  all 394 now carry one. Corrected, and the audit fails if it drifts again.
+
+The audit also had to be made honest about itself: its first run produced 12
+false wiring failures by matching `.replace(`, `JSON.stringify(` and `if (`,
+and flagged `js/claude.js` for privacy because of a **comment** saying PII must
+never be sent. Both fixed — an audit that cries wolf teaches people to ignore it.
+
+### Packaging
+`START-HERE.md` plus a zip of the whole build. Verified by unpacking it
+somewhere else and running `npm test` (343/343) and the audit (0 FAIL) from
+the extracted copy.
+
+**Verification:** suite **343/343** (12 new). Browser-verified: signup stores no
+plaintext, wrong passwords rejected, legacy migration works, sidebar groups fold
+and persist, active step forces its group open, and age tokens fire correctly at
+8 / 25 / 55. No console errors.
+
+---
+
 ## 2026-07-26 — Session 11r: Stress test, integrity fixes, and the simulator starts showing values
 
 ### Stress test — what an adversarial pass found

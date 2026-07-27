@@ -93,7 +93,13 @@ test("no expansion entry duplicates a curated condition name", () => {
 test("the REAL engine surfaces each expansion condition from its own evidence", () => {
   const eng = createEngine();
   const misses = [];
-  for (const c of expansionList) {
+  for (const raw of expansionList) {
+    /* Build the vignette from the ASSEMBLED condition, not the raw source file.
+       The loader may rewrite tokens after loading — the age-bracket
+       reclassification replaces the deprecated `young_age`, and the founder's
+       own overrides replay on top — so "its own evidence" means the evidence
+       the engine actually holds, which is what this test is about. */
+    const c = ALL.find((x) => x.name === raw.name) || raw;
     const symptoms = (c.req || []).concat((c.sup || []).slice(0, 3));
     const out = eng.runCase({ symptoms, temporal: { course: (c.temporal || [])[0] || "" } });
     if (!out.dxList.some((d) => d.n === c.name)) misses.push(c.name);

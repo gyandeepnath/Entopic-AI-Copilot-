@@ -221,13 +221,81 @@ input, select, textarea, button {
   padding: 6px 0;
 }
 
+/* ── Step groups ──────────────────────────────────────────────────
+   The 22 steps used to read as one undifferentiated list. Each stage of
+   the exam is now its own band: a clickable header that collapses the
+   group, a hairline accent colour so the eye can find "Examination"
+   without reading, and a per-group progress count. The accent is a thin
+   left rule only — the panel stays monochrome, nothing is colour-coded
+   in a way a colour-blind user would depend on, and the colours carry
+   no clinical meaning. */
 .sb-cat {
-  padding: 10px 12px 2px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 12px 3px;
+  margin-top: 2px;
   font-size: .48rem;
   font-weight: 600;
   letter-spacing: 1.5px;
   text-transform: uppercase;
   color: var(--sl);
+  cursor: pointer;
+  user-select: none;
+  transition: var(--tr);
+}
+
+.sb-cat:hover { color: var(--as); }
+
+.sb-cat-arrow {
+  font-size: .5rem;
+  transition: transform .18s ease;
+  opacity: .55;
+}
+
+.sb-cat.collapsed .sb-cat-arrow { transform: rotate(-90deg); }
+
+.sb-cat-count {
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: .46rem;
+  letter-spacing: 0;
+  opacity: .6;
+}
+
+/* The group body, so a whole stage folds away. */
+.sb-group { overflow: hidden; }
+.sb-group.collapsed { display: none; }
+
+/* A hairline accent per stage — orientation only, never meaning. */
+.sb-group .sb-item { border-left: 2px solid transparent; }
+.sb-group[data-g="Registration"]      .sb-item { border-left-color: rgba(148,163,184,.30); }
+.sb-group[data-g="History"]           .sb-item { border-left-color: rgba(125,180,200,.30); }
+.sb-group[data-g="Examination"]       .sb-item { border-left-color: rgba(140,190,150,.32); }
+.sb-group[data-g="Investigations"]    .sb-item { border-left-color: rgba(190,175,120,.32); }
+.sb-group[data-g="Assessment"]        .sb-item { border-left-color: rgba(196,150,120,.32); }
+.sb-group[data-g="Management"]        .sb-item { border-left-color: rgba(170,145,190,.32); }
+.sb-group[data-g="Documentation"]     .sb-item { border-left-color: rgba(148,163,184,.22); }
+.sb-group[data-g="Optional modules"]  .sb-item { border-left-color: rgba(120,170,200,.28); }
+.sb-group[data-g="Specialty clinic"]  .sb-item { border-left-color: rgba(200,160,150,.30); }
+
+/* The same accent on the group header, as a short leading rule. */
+.sb-cat::before {
+  content: '';
+  width: 8px;
+  height: 2px;
+  border-radius: 1px;
+  background: currentColor;
+  opacity: .45;
+}
+
+/* A collapsed group that still holds unexamined findings must not hide
+   silently — the dot says "there is something in here". */
+.sb-cat-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--md, #b8860b);
 }
 
 .sb-item {

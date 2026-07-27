@@ -261,7 +261,14 @@ function collectTokens() {
   /* Age-based tokens */
   var age = parseInt(P.age) || 0;
   if (age > 0) {
-    if (age < 18)  addToken("young_age");
+    /* Three brackets. `young_age` is DEPRECATED and keeps its original rule
+       (under 18) so that conditions not yet reclassified behave exactly as
+       before — see knowledge/age-classification.js. `paediatric_age` is its
+       replacement with the same meaning; `young_adult_age` is the bracket that
+       was missing, and whose absence had the KB tagging young-adult
+       presentations as paediatric. */
+    if (age < 18)               { addToken("young_age"); addToken("paediatric_age"); }
+    if (age >= 18 && age < 40)  addToken("young_adult_age");
     if (age >= 40) addToken("age_over_40");
     if (age >= 60) addToken("older_age");
     if (age >= 40) addToken("age_related");

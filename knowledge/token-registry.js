@@ -5102,6 +5102,20 @@ var TOKEN_REGISTRY = {
     },
     "reachable": true
   },
+  "paediatric_age": {
+    "type_hint": "derived_measurement_or_history",
+    "sources": [
+      "engine_derived"
+    ],
+    "usage": {
+      "req": 9,
+      "sup": 6,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
   "pain": {
     "type_hint": "sign",
     "sources": [
@@ -7910,6 +7924,20 @@ var TOKEN_REGISTRY = {
     },
     "reachable": true
   },
+  "young_adult_age": {
+    "type_hint": "derived_measurement_or_history",
+    "sources": [
+      "engine_derived"
+    ],
+    "usage": {
+      "req": 0,
+      "sup": 0,
+      "con": 0,
+      "temporal": 0,
+      "tests": 0
+    },
+    "reachable": true
+  },
   "young_age": {
     "type_hint": "derived_measurement_or_history",
     "sources": [
@@ -7917,8 +7945,8 @@ var TOKEN_REGISTRY = {
       "engine_derived"
     ],
     "usage": {
-      "req": 26,
-      "sup": 72,
+      "req": 17,
+      "sup": 66,
       "con": 21,
       "temporal": 0,
       "tests": 0
@@ -7940,12 +7968,12 @@ var TOKEN_REGISTRY = {
 };
 
 var TOKEN_REGISTRY_STATS = {
-  "total": 559,
-  "reachable": 459,
+  "total": 561,
+  "reachable": 461,
   "unreachable_required": [],
   "unreachable_supportive": [
     "keratic_precipitates"
   ],
   "test_label_only": 95,
-  "produced_never_consumed": 79
+  "produced_never_consumed": 80
 };

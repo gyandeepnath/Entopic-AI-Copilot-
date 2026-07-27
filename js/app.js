@@ -110,27 +110,41 @@ function doLogin() {
     return;
   }
 
+  /* Credential check is asynchronous now — passwords are salted and stretched
+     with PBKDF2 rather than compared as plaintext (js/auth-crypto.js). The
+     account is looked up by username ONLY; the password never takes part in
+     finding the record, so a wrong username and a wrong password fail the same
+     way and at the same speed. */
   var users = loadUsers();
-  var found = null;
+  var candidate = null;
   for (var i = 0; i < users.length; i++) {
-    if (users[i].username === u && users[i].password === p) {
-      found = users[i];
-      break;
-    }
+    if (users[i].username === u) { candidate = users[i]; break; }
   }
 
-  if (!found) {
+  var fail = function () {
     errEl.textContent = "Invalid credentials";
     errEl.style.display = "block";
-    return;
-  }
+  };
 
-  CU = found;
-  errEl.style.display = "none";
-  /* Fresh role state per sign-in: this account's own saved role (CU.role)
-     drives the workspace, never a leftover from another account. */
-  if (typeof roleSessionReset === "function") roleSessionReset();
-  showHomePage();
+  if (!candidate || typeof authVerifyUser !== "function") { fail(); return; }
+
+  authVerifyUser(candidate, p).then(function (res) {
+    if (!res.ok) { fail(); return; }
+    /* A legacy plaintext record was just upgraded in place — persist it so the
+       password is erased from storage for good. */
+    if (res.migrated) {
+      saveUsers(users);
+      if (typeof logAudit === "function") {
+        logAudit("credential_upgraded", candidate.username + " — plaintext password replaced with a salted hash", {});
+      }
+    }
+    CU = candidate;
+    errEl.style.display = "none";
+    /* Fresh role state per sign-in: this account's own saved role (CU.role)
+       drives the workspace, never a leftover from another account. */
+    if (typeof roleSessionReset === "function") roleSessionReset();
+    showHomePage();
+  }).catch(function () { fail(); });
 }
 
 function doSetup() {
@@ -157,10 +171,14 @@ function doSetup() {
   var roleSel = document.getElementById("inp_sr");
   var role = roleSel ? roleSel.value : "clinician";
 
+  if (String(pw).length < 6) {
+    alert("Please choose a password of at least 6 characters.");
+    return;
+  }
+
   var user = {
     id: "u" + Date.now().toString(36),
     username: uname,
-    password: pw,
     name: name,
     cred: cred,
     clinic: clinic,
@@ -168,12 +186,20 @@ function doSetup() {
     created: new Date().toISOString()
   };
 
-  users.push(user);
-  saveUsers(users);
-  CU = user;
-  if (typeof roleSessionReset === "function") roleSessionReset();
-  if (typeof setActiveRole === "function") setActiveRole(role);
-  showHomePage();
+  /* The password is never stored — only a salted PBKDF2 hash of it. */
+  authMakeCredentials(pw).then(function (credFields) {
+    user.pw_salt = credFields.pw_salt;
+    user.pw_hash = credFields.pw_hash;
+    user.pw_algo = credFields.pw_algo;
+    users.push(user);
+    saveUsers(users);
+    CU = user;
+    if (typeof roleSessionReset === "function") roleSessionReset();
+    if (typeof setActiveRole === "function") setActiveRole(role);
+    showHomePage();
+  }).catch(function () {
+    alert("Could not create the account on this browser.");
+  });
 }
 
 function doLogout() {
@@ -183,6 +209,18 @@ function doLogout() {
   P = {};
   V = {};
   if (typeof roleSessionReset === "function") roleSessionReset();
+  /* Show the SIGN-IN form, not whichever view happened to be open. After
+     creating an account the setup form is the visible one, so signing out
+     used to drop the user back onto "Create new account" with the sign-in
+     fields hidden. */
+  if (typeof showView === "function") showView("loginView", "setupView");
+  /* Never leave the previous person's credentials in the fields. */
+  ["inp_lu", "inp_lp"].forEach(function (id) {
+    var el = document.getElementById(id);
+    if (el) el.value = "";
+  });
+  var err = document.getElementById("loginErr");
+  if (err) { err.textContent = ""; err.style.display = "none"; }
   showPage("pgLogin");
 }
 
@@ -582,6 +620,22 @@ function homeSecAdmin() {
     (typeof adminAnalyticsCard === "function" ? adminAnalyticsCard() : "") +
 
     '<div class="home-settings" style="margin-top:8px">' +
+      /* Credential state, shown rather than assumed. */
+      ((typeof authPlaintextCount === "function") ? (function () {
+        var n = authPlaintextCount();
+        return '<div class="home-settings" style="margin-top:8px">' +
+          '<div class="home-settings-title">🔑 Stored credentials</div>' +
+          '<div class="home-settings-desc">' +
+            'Passwords are salted and stretched with PBKDF2-SHA-256 before they are stored — ' +
+            'a copied store or backup no longer reveals anyone\'s actual password. ' +
+            (n ? '<b>' + n + ' account(s) created before this change still hold a plaintext password;</b> ' +
+                 'each is upgraded automatically the next time that person signs in.'
+               : 'No account is holding a plaintext password.') +
+            '<br><span style="color:var(--sv)">This is a local app: someone with the device and the source ' +
+            'can still bypass the sign-in screen. Real authentication arrives with the cloud backend.</span>' +
+          '</div></div>';
+      })() : "") +
+      ((typeof ageBracketScreen === "function") ? ageBracketScreen() : "") +
       '<div class="home-settings-title">🔐 Change admin password</div>' +
       '<div class="home-settings-desc">Stored locally as a hash (never plaintext). Minimum 8 characters.</div>' +
       '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">' +

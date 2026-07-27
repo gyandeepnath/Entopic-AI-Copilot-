@@ -1,7 +1,8 @@
 # Entopic — System Architecture & Scaling Blueprint
 
 **Document version:** 1.0
-**Covers build:** Entopic v1.0.0 (33 files, ~12,290 lines, 130 conditions across 9 domains)
+**Covers build:** Entopic v1.1 (72 js/knowledge files, 394 conditions across 9 domains)
+**Counts last verified:** 2026-07-26 by `node tools/audit.js`, which fails the build if this drifts again.
 **Purpose:** A ground-truth teardown of everything in the current system, followed by a target architecture that keeps the same UI and concept but rebuilds the foundations for scale, onboarding, a stable backend, an independent continuously-looping diagnostic engine, and a trustworthy evidence-based knowledge base.
 **Standing constraint:** Entopic is advisory decision-support. Every diagnostic output requires clinical correlation. Nothing here changes that contract.
 
@@ -134,7 +135,7 @@ Every condition is a plain object. Example (POAG, from `glaucoma.js`):
 
 The **`req`/`sup`/`con`** triad — required / supportive / contradicting tokens, updated continuously with a visible evidence trail — is the genuine novelty and the heart of the patent. It stays. Everything in Part II is about making it rigorous, coded, and evidence-graded.
 
-**Domain counts (verified):** Surface & Lids 29, Cornea 25, Retina 22, Neuro-Ophthalmic 13, Binocular Vision 10, Refractive 5, Glaucoma 8, Anterior/Uveitis 10, Lens 8 — **130 conditions**, of which 17 are flagged `urgent`.
+**Domain counts (verified 2026-07-26):** Retina 93, Surface & Lids 72, Cornea 61, Neuro-Ophthalmic 55, Anterior/Uveitis 29, Binocular Vision 26, Lens 24, Glaucoma 23, Refractive 11 — **394 conditions**, of which **63** are flagged `urgent`, and **394/394** carry an ICD-10 code.
 
 ### 5.2 The three token layers
 
@@ -173,7 +174,7 @@ This is a clean, sensible assembly step. It is the natural place to later insert
 
 **Stage 5 — Decision-tree gating (`applyDecisionTree`).** Hard clinical override rules that surface specific conditions regardless of scoring: flashes+floaters → retinal tear/detachment/PVD; field loss → RD; pain+photophobia → anterior inflammation; sudden vision loss → CRAO/AION; severe pain+halos → acute angle closure; bilateral disc swelling → papilledema; ptosis+diplopia → CN3 palsy. This is the safety net and it is correctly independent of the probabilistic layer.
 
-**Stage 6 — Route selection (`selectRoutes`).** Decides which domains to evaluate at all, so the engine doesn't score all 130 conditions blindly. Routes: urgent, neuro, retina, anterior, surface, binocular, refractive, glaucoma, lens, or `general` fallback.
+**Stage 6 — Route selection (`selectRoutes`).** Decides which domains to evaluate at all, so the engine doesn't score all 394 conditions blindly. Routes: urgent, neuro, retina, anterior, surface, binocular, refractive, glaucoma, lens, or `general` fallback.
 
 **Stage 7 — Scoring (`scoreCondition`).** For each condition on an active route (or gated): +3 per matched required token, +1 per supportive, −3 per contradicting, ±0.5 temporal. Normalizes against max-possible, then applies multiplicative penalties (missing required ×0.7 then ×0.5; any contradiction ×0.6; <2 total tokens ×0.5), caps to [0,1], and **forces 0 if no required token matched**. Gated conditions get a ×1.3 boost.
 
@@ -360,7 +361,7 @@ shaped 1:1 onto a future table, so multi-device cohorts port without a rewrite.
 
 1. **No canonical token registry (root cause).** Five token producers (dictionary, finding-map, KB conditions, free-text regex, measurement auto-derivation) with nothing reconciling spelling, existence, type, or reachability. **Audit: the KB references 512 distinct tokens; only 183 are defined in the dictionary** (Appendix B). Some undefined tokens are legitimately non-lexical (measurement/test tokens), but nothing distinguishes those from typos or dead tokens. This is the direct cause of token collision, undeclared tokens, and unreachable required tokens.
 2. **Exclusions silently no-op (verifiable bug).** `applyExclusions` compares snake_case exclusion strings (`"acute_angle_closure"`) by substring against display names (`"Acute Angle Closure Crisis"` → `"acute angle closure crisis"`). Underscores never match spaces, so exclusion rules essentially never fire. Comorbidity suppression is not actually running today.
-3. **ICD codes referenced but never populated.** The engine reads `cond.icd`, dxList carries it, there is an ICD coding step — but 0/130 conditions carry a code. The coding page has nothing to render.
+3. ~~**ICD codes referenced but never populated.**~~ **RESOLVED** — all 394 conditions now carry an ICD-10 code (`knowledge/icd-map.js`, provisional until clinician sign-off).
 4. **Single-list competition.** One ranked differential forces independent, co-existing problems (dry eye + cataract + glaucoma-suspect + convergence insufficiency) to compete for one top slot. This under-serves the common real patient and is the central conceptual limitation.
 5. **Universal scoring constants.** Flat +3/+1/−3 across all domains and all tokens — no notion that a given sign is highly specific for one condition but weakly supportive for another. (Your own noted weakness.)
 6. **Free-text parsing is brittle.** Regex with no negation handling ("denies pain" still emits `pain`), no guaranteed synonym coverage, English-only.

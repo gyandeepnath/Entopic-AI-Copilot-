@@ -108,6 +108,11 @@ if (typeof KB_EXPANSION !== "undefined") {
         cond.review_verified_by = KB_VERIFIED[cond.name].by || "";
       }
 
+      /* Age bracket: replace the deprecated `young_age` where the condition
+         has been classified (knowledge/age-classification.js). Conditions not
+         yet classified are untouched and behave exactly as before. */
+      if (typeof applyAgeBracket === "function") applyAgeBracket(cond);
+
       /* Tag with domain for traceability */
       cond._domain = domain;
       cond._index = totalConditions;

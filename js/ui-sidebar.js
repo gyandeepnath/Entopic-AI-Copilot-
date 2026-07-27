@@ -6,27 +6,74 @@
 "use strict";
 
 
+/* ── Collapsed stages ─────────────────────────────────────────────
+   Remembered per user across visits, because a clinician who never runs
+   Investigations should not have to fold it away every single exam.
+   Nothing is hidden from the engine — collapsing is purely visual, and a
+   group containing the step being worked on always opens. */
+var SB_COLLAPSE_KEY = "entopic_sidebar_collapsed";
+var _sbCollapsed = null;
+
+function sbCollapsedMap() {
+  if (_sbCollapsed) return _sbCollapsed;
+  try { _sbCollapsed = JSON.parse(localStorage.getItem(SB_COLLAPSE_KEY) || "{}"); }
+  catch (e) { _sbCollapsed = {}; }
+  return _sbCollapsed;
+}
+
+function sbGroupCollapsed(cat) { return !!sbCollapsedMap()[cat]; }
+
+function sbToggleGroup(cat) {
+  var m = sbCollapsedMap();
+  if (m[cat]) delete m[cat]; else m[cat] = true;
+  try { localStorage.setItem(SB_COLLAPSE_KEY, JSON.stringify(m)); } catch (e) {}
+  renderSidebar();
+}
+
 function renderSidebar() {
   var el = document.getElementById("sidebarEl");
   if (!el) return;
 
+  /* ── Which steps are actually showing, grouped by stage ──
+     Built first so a group header can report its own progress and know
+     whether it contains the active step (a collapsed group is force-opened
+     when the step inside it is the one being worked on). */
+  var groups = [];
+  var byCat = {};
+  for (var gi = 0; gi < STEPS.length; gi++) {
+    var gs = STEPS[gi];
+    if (gs.opt && !(typeof moduleOn === "function" && moduleOn(gs.opt))) continue;
+    if (gs.clinic && !(typeof clinicStepOn === "function" && clinicStepOn(gs.id))) continue;
+    if (!byCat[gs.c]) { byCat[gs.c] = { cat: gs.c, steps: [] }; groups.push(byCat[gs.c]); }
+    byCat[gs.c].steps.push(gs);
+  }
+
   var h = "";
-  var lastCat = "";
 
-  /* ── Step list ── */
-  for (var i = 0; i < STEPS.length; i++) {
-    var s = STEPS[i];
+  /* ── Step list, one collapsible band per stage ── */
+  for (var gj = 0; gj < groups.length; gj++) {
+    var grp = groups[gj];
+    var doneN = 0, hasActive = false;
+    grp.steps.forEach(function (st) {
+      if (V.completed && V.completed.indexOf(st.id) >= 0) doneN++;
+      if (V.step === st.id) hasActive = true;
+    });
+    /* A group holding the current step is always open, whatever was toggled. */
+    var collapsed = sbGroupCollapsed(grp.cat) && !hasActive;
+    var gid = "sbg_" + grp.cat.replace(/[^a-z0-9]+/gi, "_");
 
-    /* Optional modules only appear once switched on for this visit. */
-    if (s.opt && !(typeof moduleOn === "function" && moduleOn(s.opt))) continue;
-    /* Specialty-clinic sections likewise. */
-    if (s.clinic && !(typeof clinicStepOn === "function" && clinicStepOn(s.id))) continue;
+    h += '<div class="sb-cat' + (collapsed ? " collapsed" : "") + '"' +
+        ' onclick="sbToggleGroup(' + JSON.stringify(grp.cat).replace(/"/g, "&quot;") + ')">' +
+      '<span class="sb-cat-arrow">▾</span>' + grp.cat +
+      (collapsed && doneN < grp.steps.length ? '<span class="sb-cat-dot"></span>' : '') +
+      '<span class="sb-cat-count">' + doneN + '/' + grp.steps.length + '</span>' +
+    '</div>';
 
-    /* Category header */
-    if (s.c !== lastCat) {
-      h += '<div class="sb-cat">' + s.c + '</div>';
-      lastCat = s.c;
-    }
+    h += '<div class="sb-group' + (collapsed ? " collapsed" : "") + '"' +
+      ' id="' + gid + '" data-g="' + grp.cat + '">';
+
+  for (var i = 0; i < grp.steps.length; i++) {
+    var s = grp.steps[i];
 
     /* Active state */
     var isActive = V.step === s.id;
@@ -56,6 +103,8 @@ function renderSidebar() {
       h += '<span style="margin-left:auto;color:var(--md);font-size:.5rem;font-weight:700">!</span>';
     }
     h += '</div>';
+  }
+    h += '</div>';   /* .sb-group */
   }
 
   /* ── Nudge section ── */
