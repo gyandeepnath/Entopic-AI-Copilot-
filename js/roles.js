@@ -189,17 +189,57 @@ function adminPassHash() {
   return ADMIN_PASS_HASH_DEFAULT;
 }
 
-function adminCheckCredentials(username, password) {
-  return username === ADMIN_USERNAME && adminHash(password) === adminPassHash();
+/* ── PBKDF2 admin credential (DD finding H-5) ─────────────────────
+   The admin gate used djb2 — a non-cryptographic 32-bit hash, unsalted, with
+   the default baked into source. It is now on the SAME PBKDF2-SHA-256 path as
+   user passwords (js/auth-crypto.js). The legacy djb2 hash is honoured once,
+   at the next admin sign-in, then upgraded and erased — exactly like the user
+   migration. `adminHash`/`adminPassHash` are kept ONLY for that one-time
+   legacy check. */
+var ADMIN_CRED_KEY = "entopic_admin_cred";   /* { salt, hash, algo } */
+
+function adminStoredCred() {
+  if (typeof localStorage === "undefined") return null;
+  try { return JSON.parse(localStorage.getItem(ADMIN_CRED_KEY) || "null"); } catch (e) { return null; }
 }
 
-/* Change the admin password (Admin panel). Stored locally as a hash. */
-function adminSetPassword(newPass) {
-  if (!newPass || String(newPass).length < 8) return false;
-  if (typeof localStorage !== "undefined") {
-    try { localStorage.setItem("entopic_adminhash", adminHash(newPass)); return true; } catch (e) {}
+/* Async: resolves true iff the credentials are the admin's. */
+function adminVerify(username, password) {
+  if (username !== ADMIN_USERNAME) return Promise.resolve(false);
+  var cred = adminStoredCred();
+  if (cred && cred.hash && cred.salt && typeof authHashPassword === "function") {
+    return authHashPassword(password, cred.salt)
+      .then(function (r) { return authSafeEqual(r.hash, cred.hash); });
   }
-  return false;
+  /* No modern credential yet → verify against the legacy djb2, then upgrade. */
+  if (adminHash(password) === adminPassHash()) {
+    return adminSetPassword(password).then(function () { return true; }).catch(function () { return true; });
+  }
+  return Promise.resolve(false);
+}
+
+/* Set/replace the admin password as a salted PBKDF2 hash. Returns a Promise. */
+function adminSetPassword(newPass) {
+  if (!newPass || String(newPass).length < 8) return Promise.reject(new Error("Password must be at least 8 characters."));
+  if (typeof authMakeCredentials !== "function") return Promise.reject(new Error("Crypto unavailable."));
+  return authMakeCredentials(newPass).then(function (cred) {
+    try {
+      localStorage.setItem(ADMIN_CRED_KEY, JSON.stringify({ salt: cred.pw_salt, hash: cred.pw_hash, algo: cred.pw_algo }));
+      localStorage.removeItem("entopic_adminhash");   /* erase any legacy djb2 hash */
+    } catch (e) { throw e; }
+    if (typeof logAudit === "function") logAudit("admin_password_changed", "Admin password updated (PBKDF2)", {});
+    return true;
+  });
+}
+
+/* Deprecated synchronous check — kept so any old caller degrades safely to a
+   denial rather than throwing. Real checks go through adminVerify (async). */
+function adminCheckCredentials() { return false; }
+
+/* Whether the admin credential is still the weak legacy default (surfaced in
+   the Admin panel so the founder is nudged to change it). */
+function adminUsingLegacyCredential() {
+  return !adminStoredCred();
 }
 
 function isAdmin() {
@@ -320,6 +360,8 @@ if (typeof module !== "undefined" && module.exports) {
     getTier: getTier, tierLabel: tierLabel, canSave: canSave, saveCap: saveCap,
     can: can, roleShowsCap: roleShowsCap, tierUnlocksCap: tierUnlocksCap,
     adminHash: adminHash, adminCheckCredentials: adminCheckCredentials,
+    adminVerify: adminVerify, adminSetPassword: adminSetPassword,
+    adminUsingLegacyCredential: adminUsingLegacyCredential,
     adminSessionUser: adminSessionUser, isAdmin: isAdmin,
     ADMIN_USERNAME: ADMIN_USERNAME,
     _reset: function () { _roleState = { active: null, tier: null }; }

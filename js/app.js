@@ -99,14 +99,18 @@ function doLogin() {
     return;
   }
 
-  /* Super-admin sign-in: pre-set id + password (hash-checked), everything
-     unlocked at full limits. The admin session is ephemeral — never stored
-     in the users list. */
-  if (typeof adminCheckCredentials === "function" && adminCheckCredentials(u, p)) {
-    CU = adminSessionUser();
-    errEl.style.display = "none";
-    if (typeof roleSessionReset === "function") roleSessionReset();
-    showHomePage();
+  /* Super-admin sign-in: verified against a salted PBKDF2 hash (H-5), async.
+     The admin session is ephemeral — never stored in the users list. If the
+     username is the admin username, this path owns the outcome (success or
+     failure) and never falls through to the user lookup. */
+  if (typeof adminVerify === "function" && u === (typeof ADMIN_USERNAME !== "undefined" ? ADMIN_USERNAME : "entopic-admin")) {
+    adminVerify(u, p).then(function (ok) {
+      if (!ok) { errEl.textContent = "Invalid credentials"; errEl.style.display = "block"; return; }
+      CU = adminSessionUser();
+      errEl.style.display = "none";
+      if (typeof roleSessionReset === "function") roleSessionReset();
+      showHomePage();
+    }).catch(function () { errEl.textContent = "Invalid credentials"; errEl.style.display = "block"; });
     return;
   }
 
@@ -635,9 +639,25 @@ function homeSecAdmin() {
             'can still bypass the sign-in screen. Real authentication arrives with the cloud backend.</span>' +
           '</div></div>';
       })() : "") +
+      /* App health — recent caught faults, so a broken render is visible to the
+         founder instead of lost to the console (DD H-4). */
+      ((typeof errRecent === "function") ? (function () {
+        var recent = errRecent();
+        return '<div class="home-settings" style="margin-top:8px">' +
+          '<div class="home-settings-title">🩹 App health</div>' +
+          '<div class="home-settings-desc">' +
+            (recent.length
+              ? '<b>' + recent.length + ' recent screen fault(s) caught.</b> The app recovered rather than crashing. ' +
+                'Most recent: <span style="color:var(--sv)">' + escH(recent[0].where + " — " + recent[0].message) + '</span>'
+              : 'No screen faults recorded this session. Errors are caught and shown with a recovery prompt rather than crashing the page.') +
+          '</div></div>';
+      })() : "") +
       ((typeof ageBracketScreen === "function") ? ageBracketScreen() : "") +
       '<div class="home-settings-title">🔐 Change admin password</div>' +
-      '<div class="home-settings-desc">Stored locally as a hash (never plaintext). Minimum 8 characters.</div>' +
+      '<div class="home-settings-desc">Salted PBKDF2-SHA-256 (never plaintext, no longer the old lightweight hash). Minimum 8 characters.' +
+        ((typeof adminUsingLegacyCredential === "function" && adminUsingLegacyCredential())
+          ? ' <b style="color:#c0392b">The admin password is still the built-in default — change it now.</b>' : '') +
+      '</div>' +
       '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">' +
         '<input id="admNewPass" type="password" placeholder="new password" style="font-size:.62rem;padding:3px 6px;border:1px solid var(--fg);border-radius:2px">' +
         '<input id="admNewPass2" type="password" placeholder="repeat" style="font-size:.62rem;padding:3px 6px;border:1px solid var(--fg);border-radius:2px">' +
@@ -749,11 +769,14 @@ function adminChangePassword() {
   var b = (document.getElementById("admNewPass2") || {}).value || "";
   var msg = document.getElementById("admPassMsg");
   if (a !== b) { if (msg) msg.textContent = "Passwords don't match."; return; }
-  if (typeof adminSetPassword !== "function" || !adminSetPassword(a)) {
-    if (msg) msg.textContent = "Too short (min 8 characters).";
-    return;
-  }
-  if (msg) msg.textContent = "✓ Updated — use it from the next sign-in.";
+  if (typeof adminSetPassword !== "function") { if (msg) msg.textContent = "Unavailable."; return; }
+  if (msg) msg.textContent = "Updating…";
+  /* Now async (PBKDF2). */
+  adminSetPassword(a).then(function () {
+    if (msg) msg.textContent = "✓ Updated (salted PBKDF2) — use it from the next sign-in.";
+  }).catch(function (e) {
+    if (msg) msg.textContent = (e && e.message) || "Too short (min 8 characters).";
+  });
 }
 
 

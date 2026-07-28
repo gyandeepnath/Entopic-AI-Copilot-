@@ -111,16 +111,20 @@ test("practice records (student mock exams) are NEVER capped — learning is unr
 
 /* ── Super admin ── */
 
-test("adminHash is deterministic and the password is never stored in plaintext", () => {
+test("legacy adminHash stays deterministic (kept only for one-time migration)", () => {
+  /* djb2 is retained solely to verify a pre-existing admin password once, then
+     upgrade it to PBKDF2 (DD H-5). It is no longer the live credential check. */
   assert.strictEqual(roles.adminHash("abc"), "h3772q3", "stable hash");
-  assert.strictEqual(roles.adminHash("abc"), roles.adminHash("abc"));
   assert.notStrictEqual(roles.adminHash("abc"), roles.adminHash("abd"));
 });
 
-test("adminCheckCredentials rejects wrong username or password", () => {
-  assert.strictEqual(roles.adminCheckCredentials("entopic-admin", "wrongpass"), false);
-  assert.strictEqual(roles.adminCheckCredentials("someone-else", "anything"), false);
-  assert.strictEqual(roles.adminCheckCredentials("", ""), false);
+test("the deprecated sync adminCheckCredentials can never authorise anyone", () => {
+  /* The real check is adminVerify (async, PBKDF2). The old sync entry point is
+     now a hard denial so no caller can accidentally gate on the weak path. */
+  assert.strictEqual(roles.adminCheckCredentials("entopic-admin", "anything"), false);
+  assert.strictEqual(roles.adminCheckCredentials("entopic-admin", ""), false);
+  assert.strictEqual(typeof roles.adminVerify, "function", "async PBKDF2 verify is the live path");
+  assert.strictEqual(roles.adminUsingLegacyCredential(), true, "flags the default until changed");
 });
 
 test("admin session user is institutional, flagged admin, and never in the users store shape", () => {
