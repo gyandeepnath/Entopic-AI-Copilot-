@@ -754,10 +754,12 @@ function reviewQueueAdminCard() {
     : n + " of " + total + " conditions are provisional (AI-drafted ICD codes, summaries or urgency flags) awaiting YOUR clinical verification.";
   var verified = (typeof kbBuildVerifiedExport === "function") ? kbBuildVerifiedExport().count : 0;
   return '<div class="home-settings" style="margin-top:8px">' +
-    '<div class="home-settings-title">🩺 Clinical review queue</div>' +
-    '<div class="home-settings-desc">' + escH(desc) + '</div>' +
-    (n > 0 ? '<button class="btn btn-p" onclick="showReviewQueue()" style="font-size:.62rem">Review &amp; verify</button>'
-           : '<button class="btn btn-s" onclick="showReviewQueue()" style="font-size:.62rem">Open queue</button>') +
+    '<div class="home-settings-title">🩺 Clinical validation</div>' +
+    '<div class="home-settings-desc">' + escH(desc) +
+      ' Open the validation workspace to see the engine logic behind each condition in plain language, verify it, or edit its tokens.</div>' +
+    '<button class="btn btn-p" onclick="openValidation()" style="font-size:.62rem">Open validation workspace</button>' +
+    (n > 0 ? ' <button class="btn btn-s" onclick="showReviewQueue()" style="font-size:.62rem">Rapid verify queue</button>'
+           : ' <button class="btn btn-s" onclick="showReviewQueue()" style="font-size:.62rem">Rapid queue</button>') +
     (verified > 0 ? ' <button class="btn btn-s" onclick="exportSignoffs()" style="font-size:.62rem">Export ' + verified + ' sign-off' + (verified === 1 ? '' : 's') + ' (bake into source)</button>' : '') +
   '</div>';
 }

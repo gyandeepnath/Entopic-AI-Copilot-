@@ -152,6 +152,23 @@
 
 
 <!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- PAGE 2b2: CLINICAL VALIDATION WORKSPACE                        -->
+<!-- Open a condition, see the engine logic wired behind it in plain -->
+<!-- language, verify it, or jump to editing its tokens/logic.       -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="page" id="pgValidation">
+  <div class="home-bar">
+    <span class="home-bar-logo">Entopic</span>
+    <span class="home-bar-clinic">Clinical Validation</span>
+    <span class="home-bar-spacer"></span>
+    <span class="hdr-badge">Advisory content — clinician sign-off</span>
+    <span class="hdr-home" onclick="closeValidation()">← Home</span>
+  </div>
+  <div class="val-wrap" id="valContent"></div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
 <!-- PAGE 2c: PATIENT CHART (visit timeline + prior visits + audit) -->
 <!-- ═══════════════════════════════════════════════════════════════ -->
 <div class="page" id="pgChart">
@@ -424,6 +441,7 @@
 <script src="js/ui-flowmap.js"></script>
 <script src="js/ui-age-brackets.js"></script>
 <script src="js/ui-kb-editor.js"></script>
+<script src="js/ui-validation.js"></script>
 <script src="js/ui-chart.js"></script>
 <script src="js/file-store.js"></script>
 <script src="js/ui-attach.js"></script>

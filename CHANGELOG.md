@@ -6,6 +6,61 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-07-28 — Session 11w: Clinical Validation workspace (one discoverable place to verify the engine's logic)
+
+**Why.** The founder (clinical authority) asked for a single, easy-to-follow
+page where he can open any condition, *see the engine logic wired behind it*,
+verify it, and edit/alter its tokens — the front door for the coming KB
+expansion and the online push of verified updates. Two pieces already existed
+but were **buried and shallow**: a rapid verify queue (`js/kb-review.js`, which
+showed only required tokens + ICD + a Verify button) and the full token editor
+(`js/ui-kb-editor.js`, reachable only via small buttons deep in the Admin tab).
+Neither showed *what a token means in plain words* or *which exam input actually
+produces it* — the exact "connected logic" the founder couldn't find before.
+
+**What.** New bounded module `js/ui-validation.js` + page `pgValidation`
+(consolidation, not a parallel system):
+
+- **Master–detail workspace.** Left: all 394 conditions, searchable, filterable
+  by status (Needs review / Verified / Curated) and by domain, each with a
+  status badge and urgent flag; **provisional sorts first**. A progress header
+  reads "*N of 394 clinically verified (%)*".
+- **The missing wiring view.** Selecting a condition shows its plain-English
+  summary, urgency, ICD — then every token grouped (Required / Supportive /
+  Contradicting / Temporal / Tests) with, for each: the human name, its meaning
+  in plain words (first alias from `TOKEN_DICTIONARY`), and **"Comes from:"** the
+  exact exam input that produces it (mapped from `TOKEN_REGISTRY.sources`).
+  A **required token that nothing produces** is flagged in red and summarised as
+  a top-of-panel warning ("*this condition can never surface until wired*") —
+  turning a silent dead-end into something the clinician can see and fix.
+- **Verify + edit in one place.** "Verify ✓" reuses the *exact same*
+  attestation path as the rapid queue (`kbRapidVerify`), so it feeds the
+  existing sign-off → export (`knowledge/verified.js`) → publish pipeline
+  unchanged. "Edit logic / tokens…" hands off to the existing KB editor for
+  add/delete/modify (which re-stamps entries provisional, as it must).
+- **Discoverable.** The Admin "Clinical validation" card now leads with **Open
+  validation workspace** (rapid queue kept as a secondary quick-pass).
+
+**Deliberately NOT done (flagged for the founder).** "Alternative / substitute
+tokens" in the sense of true **OR-groups** ("any *one* of these findings
+satisfies the requirement") is an **engine-semantics change** — today `req` is
+AND (all required tokens must be present). That is architecture-committing, so
+it is *not* bundled here; the panel says so plainly and points to the two safe
+options that exist now (add a synonym in the token dictionary, or split the
+condition). Recommend scoping OR-groups as its own phase-2 with a dedicated
+design + tests before touching the engine. **No engine/scoring/alert logic was
+changed in this session; offline path and red-flag firing untouched.**
+
+**Verification.** 6 new pure-core tests (`tests/validation-workspace.test.js`):
+plain-English meaning fallback, the producer/reachability lookup, the
+unfireable-required-token detection, status bucketing, and the verified-first
+sort — full suite **376/376 green** (was 371). Browser-verified on `file://`:
+workspace opens, all 394 conditions list with correct counts (0 verified / 257
+provisional / 137 curated), a selected condition renders its token wiring rows
+and Verify + Edit actions, no feature console errors.
+
+---
+
 ## 2026-07-26 — Session 11v: Fix the due-diligence Medium findings
 
 Worked the remaining DD register. Where the correct fix needs the backend or a

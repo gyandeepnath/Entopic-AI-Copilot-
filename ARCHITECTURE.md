@@ -276,6 +276,23 @@ Admin-gated UI (`#modalReview`, Admin-tab card); a sign-off clears the
 provisional chips in the KB browser and swaps the About panel's warning for a
 dated attestation line (`kbConditionVerified`).
 
+**Clinical Validation workspace** (session 11w, `js/ui-validation.js`, page
+`pgValidation`): the discoverable front door that *consolidates* the rapid queue
+and the KB editor rather than duplicating them. A master–detail page (all 394
+conditions, filterable by status/domain, provisional-first, with a verified-%
+progress header) whose detail panel adds the piece the other two lacked — a
+**plain-English wiring view**: each token shown with its meaning (first
+`TOKEN_DICTIONARY` alias) and **"Comes from:"** the exam input that produces it
+(mapped from `TOKEN_REGISTRY.sources` via `VAL_PRODUCER_LABELS`), plus a red flag
+on any **required token nothing produces** (an unfireable condition made
+visible). Verify reuses `kbRapidVerify` (so it feeds the same sign-off → export →
+publish pipeline); "Edit logic / tokens" hands off to `openKbEditor`. Pure core
+(`valConditionDetail`, `valConditionList`, `valTokenWiring`, `valStatusOf`)
+Node-tested in `tests/validation-workspace.test.js`. **OR-group / true
+substitute-token semantics deliberately excluded** — `req` is AND today; making
+"any one of these" satisfy a requirement is an engine change flagged for a
+scoped phase-2, not done here.
+
 **Super admin** (session 11e): `adminCheckCredentials` (hash-checked pre-set
 id/password; changeable via the Admin panel, stored locally as a hash) creates
 an ephemeral `adminSessionUser` (never persisted to the users store).
