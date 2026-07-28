@@ -6,6 +6,79 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-07-26 — Session 11u: Fix the due-diligence Critical + High findings
+
+Worked the DD report's blockers in priority order. All fixes verified by running
+the code (browser + Node + a throwaway Postgres), not by trusting the change.
+
+### C-1 / C-2 — patient PII no longer leaves the device in the clear
+New `js/cloud-crypto.js`. Records are encrypted with **AES-GCM-256** before sync;
+the key is derived from a **clinic passphrase via PBKDF2** and never leaves the
+device — the cloud is zero-knowledge with respect to PHI. An explicit **consent
+gate** (default OFF) means no patient/visit row is pushed until the clinic turns
+encrypted sync on *and* sets the passphrase. A consent + passphrase panel is in
+the Cloud card; status shows `phi_off` / `phi_nokey` rather than looking synced
+while withholding. **Browser-verified:** the pushed row contains no plaintext
+name/MRN/DOB — ciphertext only — and round-trips back; a peer device with the
+same passphrase decrypts; a wrong passphrase cannot. `tests/cloud-phi.test.js`.
+
+### H-1 — live sync repaints again
+`cloudRerender` targeted `page-home` (never existed); the element is `pgHome`.
+Merged remote changes were invisible until manual navigation. Fixed.
+
+### H-2 — no more silent clinical data loss
+The merge compares timestamps as **epoch ms** (not lexicographically, which
+broke on millis-vs-no-millis) and **never overwrites a locally-edited unpushed
+record** — when both sides changed it records a surfaced conflict and keeps the
+local edit. Locked by tests.
+
+### H-3 — the LLM key need not be in the browser
+`js/claude.js` now prefers a **server proxy** (`entopic_llm_proxy`) that holds
+the key server-side; the browser calls it with no key at all. Direct-from-
+browser is a fallback that warns loudly. Model is no longer hard-coded.
+`server/llm-proxy.example.js` is a drop-in Cloudflare Worker / Vercel function
+(with a PII tripwire as defence in depth).
+
+### H-4 — global error boundary
+`js/error-boundary.js` installs `error`/`unhandledrejection` handlers and wraps
+the top-level renderers, so one thrown render is caught, logged, and shown as a
+non-blocking recovery banner instead of a blank panel. `V`/`P` are never
+discarded. Recent faults surface in the Admin panel. Browser-verified: a
+throwing `renderAdvisory` no longer escapes.
+
+### H-5 — admin gate off djb2
+The super-admin credential moved to the same salted **PBKDF2-SHA-256** path as
+user passwords, migrating the legacy djb2 default on next sign-in and erasing
+it. The old synchronous check is now a hard denial. The Admin panel warns while
+the built-in default is still in place. Browser-verified end to end.
+
+### H-6 — referential integrity, offline-safe
+`db/migrations/003`: a trigger **cascades a patient's soft-delete to its
+visits** and an `orphan_visits` view surfaces any stragglers. A hard FK was
+**deliberately not** added — offline records sync as independent rows and a FK
+would reject a visit that races ahead of its patient; the trigger + view give
+integrity without breaking sync. Client-side, deletes now propagate as
+**tombstones** (a delete used to resurrect on the next pull) and the pull
+honours them, sparing locally-edited rows.
+
+### H-7 — immutable server audit trail
+`db/migrations/003`: an **append-only `audit_log`** — insert + admin-select
+policies only, no update/delete policy, so rows cannot be altered through the
+API (verified: 0 update/delete policies on a live Postgres). `logAudit` now
+also appends to it when signed in, best-effort and de-identified (action +
+opaque ids, never a name/MRN/DOB).
+
+**Verification:** all three migrations applied cleanly and idempotently on a
+throwaway PostgreSQL 16, audit-log immutability and the cascade trigger + orphan
+view confirmed. Suite **355/355** (16 new). Audit **0 FAIL**. No console errors.
+
+**Remaining from the DD (Medium and below):** tokens-in-localStorage (needs the
+backend session model), full-collection push instead of per-record delta,
+localStorage as system-of-record, clinical numeric range validation, and the 29
+untested UI modules. These are the next tranche, none of them a launch blocker.
+
+---
+
 ## 2026-07-26 — Session 11s: Age brackets split, sidebar organised, whole-build audit
 
 ### 1. `young_age` split into paediatric and young adult ⚠ clinical

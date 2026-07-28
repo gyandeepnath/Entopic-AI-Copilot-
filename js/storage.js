@@ -137,6 +137,13 @@ function logAudit(action, details, ids) {
   /* keep only the most recent 2000 events */
   if (entries.length > 2000) entries = entries.slice(entries.length - 2000);
   saveAudit(entries);
+
+  /* Also append to the SERVER audit log when signed in (DD H-7). Best-effort:
+     async, never blocks, and carries only de-identified fields (action, detail,
+     opaque record ids) — never a name/MRN/DOB. */
+  if (typeof cloudAuditPush === "function") {
+    try { cloudAuditPush(action, details || "", ids.patient_id, ids.visit_id); } catch (e) {}
+  }
 }
 
 function getPatientAudit(patientId) {

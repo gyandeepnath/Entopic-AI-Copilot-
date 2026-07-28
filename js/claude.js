@@ -21,16 +21,27 @@
 /* Generic wrapper for all Claude API requests                     */
 /* ═══════════════════════════════════════════════════════════════ */
 
+/* Preferred transport: a server proxy that holds the key (DD finding H-3).
+   When a proxy URL is configured, calls go through it and NO key is present in
+   the browser. See server/llm-proxy.example.js for a drop-in Cloudflare Worker
+   / Vercel function. Direct-from-browser mode is a fallback only. */
+function llmProxyUrl() {
+  try { return (typeof localStorage !== "undefined" && localStorage.getItem("entopic_llm_proxy")) || ""; }
+  catch (e) { return ""; }
+}
+function llmModel() {
+  try { return (typeof localStorage !== "undefined" && localStorage.getItem("entopic_llm_model")) || "claude-sonnet-5"; }
+  catch (e) { return "claude-sonnet-5"; }
+}
+
+var _llmDirectWarned = false;
+
 function callClaudeAPI(systemPrompt, userPrompt, maxTokens, onSuccess, onError) {
 
-  /* Check for API key */
-  if (!API_KEY) {
-    if (onError) onError("No API key configured");
-    return;
-  }
+  var proxy = llmProxyUrl();
 
   var body = {
-    model: "claude-sonnet-5",
+    model: llmModel(),
     max_tokens: maxTokens || 800,
     system: systemPrompt,
     messages: [
@@ -38,16 +49,31 @@ function callClaudeAPI(systemPrompt, userPrompt, maxTokens, onSuccess, onError) 
     ]
   };
 
-  fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
+  var url, headers;
+  if (proxy) {
+    /* Key-free path: the proxy injects the key server-side. */
+    url = proxy;
+    headers = { "Content-Type": "application/json" };
+  } else {
+    /* Fallback: direct from the browser. This EXPOSES the key to anyone using
+       the app — acceptable only for a single-operator local install, never for
+       a multi-user or hosted deployment. Warned once, loudly. */
+    if (!API_KEY) { if (onError) onError("No API key or proxy configured"); return; }
+    if (!_llmDirectWarned) {
+      _llmDirectWarned = true;
+      console.warn("Entopic: calling Claude directly from the browser — the API key is exposed to this page. " +
+        "Configure a server proxy (entopic_llm_proxy) before any multi-user or hosted deployment. See server/llm-proxy.example.js.");
+    }
+    url = "https://api.anthropic.com/v1/messages";
+    headers = {
       "Content-Type": "application/json",
       "x-api-key": API_KEY,
       "anthropic-version": "2023-06-01",
       "anthropic-dangerous-direct-browser-access": "true"
-    },
-    body: JSON.stringify(body)
-  })
+    };
+  }
+
+  fetch(url, { method: "POST", headers: headers, body: JSON.stringify(body) })
   .then(function(response) {
     return response.json();
   })

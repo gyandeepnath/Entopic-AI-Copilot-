@@ -507,6 +507,27 @@ function cloudKbPublishVersion(version, notes, bundle, cb) {
   }, function (err) { cb && cb(err || null); });
 }
 
+/* ── append to the server audit log (DD H-7) ──────────────────────
+   Immutable, append-only on the server (see 003_integrity_and_audit.sql).
+   De-identified by contract: action + detail + opaque record ids only, never
+   a name/MRN/DOB. Best-effort and fire-and-forget — a failed audit push must
+   never block or break the app, and the local audit trail is kept regardless. */
+function cloudAuditPush(action, detail, patientId, visitId) {
+  if (!cloudSignedIn()) return;
+  cloudApi("/rest/v1/audit_log", {
+    method: "POST",
+    body: [{
+      clinic_id: CLOUD.clinicId,
+      user_id: CLOUD.session.user_id || null,
+      action: String(action || "").slice(0, 120),
+      detail: String(detail || "").slice(0, 500),
+      patient_id: patientId || null,
+      visit_id: visitId || null
+    }],
+    prefer: "return=minimal"
+  }, function () { /* best-effort; ignore result */ });
+}
+
 /* ── status for the UI ── */
 function cloudStatus() {
   if (!cloudEnabled()) return { state: "disabled", label: "Cloud sync off — local only" };
