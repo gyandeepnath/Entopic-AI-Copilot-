@@ -165,6 +165,31 @@ test("drain pushes each record's OWN stamp — never 'now' for untouched records
   assert.strictEqual(vis[1].updated_at, "2026-07-03T10:00:00.000Z", "visit falls back to date");
 });
 
+test("delta push: only records changed since their last push are sent (M-3)", async () => {
+  const calls = [];
+  const sb = makeSandbox({
+    patients: [
+      { id: "p1", first_name: "A", updated: "2026-07-01T08:00:00.000Z", _cloud_updated: "2026-07-01T08:00:00.000Z" }, /* synced, clean */
+      { id: "p2", first_name: "B", updated: "2026-07-02T09:00:00.000Z", _cloud_updated: "2026-07-01T00:00:00.000Z" }, /* edited since push */
+      { id: "p3", first_name: "C", updated: "2026-07-03T10:00:00.000Z" }                                             /* never pushed */
+    ]
+  });
+  sb.fetch = function (url, opts) { calls.push({ url, body: JSON.parse(opts.body) }); return Promise.resolve({ ok: true, status: 200, headers: { get: () => "application/json" }, json: () => Promise.resolve([]) }); };
+  sb.CLOUD.session = { access_token: "t", user_id: "u", email: "e" };
+  sb.CLOUD.clinicId = "c1";
+  sb.CLOUD.dirty = { patients: true, visits: false };
+  sb.cloudDrain();
+  await new Promise((r) => setImmediate(r));
+  await new Promise((r) => setImmediate(r));
+  const push = calls.find((c) => c.url.indexOf("/patients") >= 0);
+  const ids = push.body.map((r) => r.id).sort();
+  assert.deepStrictEqual(ids, ["p2", "p3"], "the clean, already-synced record (p1) is NOT re-sent");
+  /* after a successful push the touched records are marked synced */
+  await new Promise((r) => setImmediate(r));
+  const marked = sb._patients.filter((p) => p._cloud_updated === p.updated).map((p) => p.id).sort();
+  assert.ok(marked.includes("p2") && marked.includes("p3"), "pushed records are stamped as synced");
+});
+
 test("drain pushes NOTHING when PHI is not armed (consent gate, C-2)", async () => {
   const calls = [];
   const sb = makeSandbox({ patients: [{ id: "p1", first_name: "A", updated: "2026-07-01T08:00:00.000Z" }] });

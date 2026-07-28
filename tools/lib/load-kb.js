@@ -20,27 +20,7 @@ const KNOWLEDGE_DIR = path.join(REPO_ROOT, "knowledge");
 /* Load order mirrors the <script> ordering in index.html:            */
 /* domain files first, then the token layers, then loader.js which    */
 /* assembles KNOWLEDGE_ALL and the derived indexes.                   */
-const LOAD_ORDER = [
-  "surface.js",
-  "corneal.js",
-  "retina.js",
-  "neuro.js",
-  "binocular.js",
-  "refractive.js",
-  "glaucoma.js",
-  "anterior.js",
-  "lens.js",
-  "token-dictionary.js",
-  "finding-token-map.js",
-  "medications.js",
-  "token-registry.js", /* generated — see tools/gen-token-registry.js */
-  "icd-map.js",
-  "expansion.js",      /* provisional expansion batch (folded in by loader.js) */
-  "verified.js",       /* founder sign-offs, applied by loader.js */
-  "common-conditions.js",  /* the "common in practice" scope set */
-  "age-classification.js", /* age-bracket reclassification, applied by loader.js */
-  "loader.js"
-];
+const LOAD_ORDER = require("./kb-load-order").kbBaseNames();
 
 function loadKnowledgeBase(options) {
   options = options || {};

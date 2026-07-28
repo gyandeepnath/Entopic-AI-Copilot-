@@ -6,6 +6,64 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-07-26 — Session 11v: Fix the due-diligence Medium findings
+
+Worked the remaining DD register. Where the correct fix needs the backend or a
+large async rewrite, I did the real bounded mitigation and named what's left —
+not a fake "done".
+
+**M-5 — clinical numeric plausibility validation** (highest clinical value).
+New `js/clinical-validators.js`: a fat-fingered IOP of 444, a cup:disc of 8, an
+axis of 900 used to flow silently into the differential and the record. Now a
+"Data check" section in the advisory panel flags physically impossible values
+(error) and unusual-but-possible ones (soft warning) — **advisory, never
+blocking**, so a real IOP of 58 is untouched. Bounds are physical/definitional,
+not diagnostic thresholds, but still flagged `NEEDS_CLINICAL_REVIEW`. 9 tests.
+
+**M-3 — delta push, not full-collection.** The old drain re-serialised and
+re-POSTed *every* patient/visit on every save — a multi-MB body per
+keystroke-save at a few thousand records. Now only records changed since their
+last successful push are sent (tracked by `_cloud_updated` vs `updated`), and
+pushed records are marked synced so the next drain skips them. Test-locked.
+
+**M-2 — one KB load order.** The two Node loaders (`load-kb.js`,
+`load-engine.js`) each carried their own file list and had drifted once. Both
+now derive from a single `tools/lib/kb-load-order.js`; they can no longer
+diverge (the existing guard test still holds).
+
+**M-1 — Content-Security-Policy (defence in depth).** The full fix for tokens-
+in-localStorage is httpOnly cookies via the backend; until then a CSP restricts
+where anything can be exfiltrated to — `connect-src` limits network egress to
+the app, the clinic's own Supabase, and Anthropic, and `object-src 'none'` /
+`base-uri 'self'` close two more vectors. `script-src` keeps `'unsafe-inline'`
+because the UI is built on inline handlers (the verified escaping discipline
+guards that gap). **Verified the CSP does not break the offline `file://` app:**
+engine runs, no violations, no console errors.
+
+**M-4 — storage headroom, gracefully.** localStorage is a hard ceiling and the
+old code hit it with a bare `alert()` at 100%. Now a proactive check warns at
+80%, a storage meter shows headroom in the Admin panel, and the quota-exceeded
+message is honest that records are safe in the IndexedDB mirror / cloud. The
+full fix (async IndexedDB as the record store) is a larger migration, flagged.
+
+**M-6 — contract tests for untested modules.** New `tests/module-contracts.test.js`
+structurally pins `clinics.js` (every pack/step/field well-formed),
+`certificates.js` (templates startable), `drawing-guide.js` (legend + rules),
+`cloud-config.js` (the connect validator rejects junk) and `auth-crypto.js`
+(salted, deterministic-per-salt, length-safe compare). Untested-file count
+29 → 24 (the rest are pure-render UI, covered by browser E2E).
+
+**M-7 — sync re-entrancy guard.** A save-drain and a poll-drain firing together
+could both push the same dirty set; a per-kind in-flight flag serialises them.
+The broader shared-global-state class of risk needs a proper state-store
+refactor — named, not pretended-fixed.
+
+**Verification:** suite **371/371** (25 new across M-3/M-5/M-6). Audit **0 FAIL**.
+Browser-verified together: CSP clean on `file://`, data-check flags an impossible
+IOP, the Admin storage meter + app-health render, no console errors.
+
+---
+
 ## 2026-07-26 — Session 11u: Fix the due-diligence Critical + High findings
 
 Worked the DD report's blockers in priority order. All fixes verified by running

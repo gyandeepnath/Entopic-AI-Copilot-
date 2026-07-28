@@ -246,28 +246,63 @@ function cloudDrain() {
   if (typeof phiArmed !== "function" || !phiArmed()) return; /* PHI not armed → hold */
 
   if (CLOUD.dirty.patients) {
-    cloudEncryptRows(loadPatients(), function (p) {
+    cloudDrainKind("patients", loadPatients, savePatients, function (p) {
       return { id: p.id, clinic_id: CLOUD.clinicId,
                updated_at: p.updated || p.created || new Date(0).toISOString(), deleted: !!p.deleted };
-    }).then(function (rows) {
-      if (!rows.length) { CLOUD.dirty.patients = false; return; }
-      cloudApi("/rest/v1/patients?on_conflict=id", {
-        method: "POST", body: rows, prefer: "resolution=merge-duplicates"
-      }, function (err) { if (!err) { CLOUD.dirty.patients = false; CLOUD.lastSync = new Date().toISOString(); } });
-    }).catch(function () { /* encryption failed → leave dirty, retry later */ });
+    });
   }
   if (CLOUD.dirty.visits) {
-    cloudEncryptRows(loadVisits(), function (v) {
+    cloudDrainKind("visits", loadVisits, saveVisits, function (v) {
       return { id: v.id, clinic_id: CLOUD.clinicId, patient_id: v.patient_id,
                updated_at: v.updated || v.date || new Date(0).toISOString(), deleted: !!v.deleted };
-    }).then(function (rows) {
-      if (!rows.length) { CLOUD.dirty.visits = false; return; }
-      cloudApi("/rest/v1/visits?on_conflict=id", {
-        method: "POST", body: rows, prefer: "resolution=merge-duplicates"
-      }, function (err) { if (!err) { CLOUD.dirty.visits = false; CLOUD.lastSync = new Date().toISOString(); } });
-    }).catch(function () {});
+    });
   }
   cloudDrainTombstones();
+}
+
+/* A record is DIRTY (needs pushing) if it has never been pushed, or has been
+   edited since its last successful push. This is what makes the push a DELTA
+   (DD finding M-3): the old drain re-serialised and re-POSTed EVERY record on
+   every save — a multi-MB body per keystroke-save at a few thousand patients.
+   Now an untouched record (updated <= last synced stamp) is skipped entirely. */
+function cloudIsDirtyRecord(r) {
+  if (!r._cloud_updated) return true;
+  return cloudEpoch(r.updated || r.date || r.created) > cloudEpoch(r._cloud_updated);
+}
+
+/* Re-entrancy guard (DD M-7): a save-triggered drain and a poll-triggered drain
+   can fire close together; without this both would encrypt-and-push the same
+   dirty set (harmless under upsert, but wasteful and it can double-mark). A
+   per-kind in-flight flag serialises them — the second is a no-op and the next
+   scheduled drain picks up anything still dirty. This does not eliminate the
+   shared-global-state class of risk (that needs a proper state-store refactor,
+   tracked separately), but it removes the concrete overlap this layer can hit. */
+var _cloudDraining = {};
+
+function cloudDrainKind(kind, load, save, meta) {
+  if (_cloudDraining[kind]) return;
+  var dirty = load().filter(cloudIsDirtyRecord);
+  if (!dirty.length) { CLOUD.dirty[kind] = false; return; }
+  _cloudDraining[kind] = true;
+  cloudEncryptRows(dirty, meta).then(function (rows) {
+    if (!rows.length) { CLOUD.dirty[kind] = false; return; }
+    cloudApi("/rest/v1/" + kind + "?on_conflict=id", {
+      method: "POST", body: rows, prefer: "resolution=merge-duplicates"
+    }, function (err) {
+      _cloudDraining[kind] = false;
+      if (err) return;   /* leave the dirty flag set; retried on the next drain */
+      /* Mark exactly the records we pushed as synced, so the next drain skips
+         them. Suppressed save → no echo back into the outbox. */
+      var pushedStamp = {};
+      dirty.forEach(function (r) { pushedStamp[r.id] = r.updated || r.date || r.created || new Date(0).toISOString(); });
+      var cur = load();
+      for (var i = 0; i < cur.length; i++) if (pushedStamp[cur[i].id]) cur[i]._cloud_updated = pushedStamp[cur[i].id];
+      CLOUD._suppress = true;
+      try { save(cur); } finally { CLOUD._suppress = false; }
+      CLOUD.dirty[kind] = false;
+      CLOUD.lastSync = new Date().toISOString();
+    });
+  }).catch(function () { _cloudDraining[kind] = false; /* encryption failed → leave dirty, retry later */ });
 }
 
 /* Push pending deletes as soft-delete rows. Ciphertext is not needed for a

@@ -22,30 +22,7 @@ const REPO_ROOT = path.resolve(__dirname, "..", "..");
 /* path: knowledge → loader → data-model → engine. UI/storage/       */
 /* speech/claude files are deliberately NOT loaded — the diagnostic   */
 /* engine must be runnable without them (offline-first invariant).   */
-const LOAD_ORDER = [
-  "knowledge/surface.js",
-  "knowledge/corneal.js",
-  "knowledge/retina.js",
-  "knowledge/neuro.js",
-  "knowledge/binocular.js",
-  "knowledge/refractive.js",
-  "knowledge/glaucoma.js",
-  "knowledge/anterior.js",
-  "knowledge/lens.js",
-  "knowledge/token-dictionary.js",
-  "knowledge/finding-token-map.js",
-  "knowledge/medications.js",
-  "knowledge/token-registry.js",
-  "knowledge/icd-map.js",
-  "knowledge/expansion.js",
-  "knowledge/verified.js",
-  "knowledge/common-conditions.js",
-  "knowledge/age-classification.js",
-  "knowledge/loader.js",
-  "js/data-model.js",
-  "js/medication-checker.js", /* defines getMedicationTokens (engine source 10) */
-  "js/engine.js"
-];
+const LOAD_ORDER = require("./kb-load-order").engineOrder();
 
 function createEngine(options) {
   options = options || {};

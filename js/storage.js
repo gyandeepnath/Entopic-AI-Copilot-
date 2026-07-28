@@ -35,12 +35,56 @@ function saveStore(key, data) {
     /* Queue for cloud backup/sync when signed in (async, never blocks;
        see cloud-sync.js). No-op when offline/signed out/disabled. */
     if (typeof cloudEnqueue === "function") cloudEnqueue(key);
+    /* Proactive quota check (DD M-4): warn BEFORE the hard wall, once. */
+    storageQuotaWatch();
   } catch (e) {
     console.error("Storage write error [" + key + "]:", e);
-    /* If quota exceeded, warn user */
     if (e.name === "QuotaExceededError" || e.code === 22) {
-      alert("Storage is full. Consider exporting and clearing old patient data.");
+      /* The record is still safe in the IndexedDB mirror (storage-mirror.js) and,
+         if signed in and consented, encrypted in the cloud — so this is "cannot
+         add more here", not "data lost". Say so, and point to the fix. */
+      var mirrored = (typeof mirrorStore === "function");
+      alert("This device's local storage is full.\n\n" +
+        (mirrored ? "Your existing records are safe (mirrored on this device" +
+          (typeof cloudSignedIn === "function" && cloudSignedIn() ? " and backed up to your cloud" : "") + ").\n\n" : "") +
+        "To keep saving here: export and archive older patient records (Admin → Data), " +
+        "or connect cloud sync so records live in your project rather than this browser.");
+      _storageWarned = true;
     }
+  }
+}
+
+/* ── Local storage headroom (DD M-4) ──────────────────────────────
+   localStorage is a hard 5–10 MB ceiling and is the system of record today.
+   The correct long-term fix is an async IndexedDB record store (a larger
+   migration — the IndexedDB MIRROR already exists in storage-mirror.js, but
+   the hot read path is still synchronous localStorage). Until then this gives
+   the clinic a graceful early warning instead of a wall at 100%. */
+var STORAGE_BUDGET_BYTES = 5 * 1024 * 1024;   /* conservative floor across browsers */
+var _storageWarned = false;
+
+function storageUsage() {
+  var chars = 0;
+  try {
+    for (var i = 0; i < localStorage.length; i++) {
+      var k = localStorage.key(i);
+      chars += k.length + (localStorage.getItem(k) || "").length;
+    }
+  } catch (e) {}
+  var bytes = chars * 2;   /* localStorage stores UTF-16 */
+  return { bytes: bytes, budget: STORAGE_BUDGET_BYTES, pct: Math.min(100, Math.round(100 * bytes / STORAGE_BUDGET_BYTES)) };
+}
+
+function storageQuotaWatch() {
+  var u = storageUsage();
+  if (u.pct >= 80 && !_storageWarned) {
+    _storageWarned = true;
+    if (typeof toast === "function") {
+      toast("Local storage " + u.pct + "% full — export/archive old records or connect cloud sync soon.");
+    }
+    if (typeof logAudit === "function") { try { logAudit("storage_pressure", "localStorage " + u.pct + "% full", {}); } catch (e) {} }
+  } else if (u.pct < 70) {
+    _storageWarned = false;   /* reset after headroom is reclaimed */
   }
 }
 

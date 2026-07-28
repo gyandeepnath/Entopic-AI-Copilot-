@@ -1151,6 +1151,12 @@ input, select, textarea, button {
   font-weight: 600;
 }
 
+/* Data-plausibility notices (advisory, non-blocking) — softer than a warn. */
+.alert-box.info {
+  border-left-color: var(--sl);
+  color: var(--md);
+}
+
 /* Nudge suggestions */
 .nudge {
   padding: 3px 0;

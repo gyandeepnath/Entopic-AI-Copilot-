@@ -4,13 +4,19 @@
 **Date:** 2026-07-26 · **Build:** 72 JS/knowledge files, 394 conditions, 343 tests, ~43k LOC.
 **Rule applied:** implementation wins over documentation; nothing assumed; findings verified by running the code.
 
-> **UPDATE 2026-07-26 (post-remediation):** All Critical and High findings below
-> have since been fixed and verified — C-1, C-2 (encrypted PHI + consent gate),
-> H-1 (dead selector), H-2 (conflict-safe merge), H-3 (LLM proxy path), H-4
-> (error boundary), H-5 (admin PBKDF2), H-6 (soft-delete cascade + tombstones;
-> hard FK deliberately replaced with a trigger + orphan view for offline-sync
-> safety), H-7 (immutable server audit log). See CHANGELOG "Session 11u" and the
-> `✅ FIXED` tags added inline. The findings text is preserved as the record of
+> **UPDATE 2026-07-26 (post-remediation):** All Critical, High **and Medium**
+> findings below have since been fixed or meaningfully mitigated and verified.
+> Critical/High: C-1, C-2 (encrypted PHI + consent gate), H-1 (dead selector),
+> H-2 (conflict-safe merge), H-3 (LLM proxy path), H-4 (error boundary), H-5
+> (admin PBKDF2), H-6 (soft-delete cascade + tombstones), H-7 (immutable server
+> audit log). Medium: **M-1** (CSP restricting exfiltration — full httpOnly-
+> cookie fix still awaits the backend), **M-2** (single shared KB load order),
+> **M-3** (delta push, not full-collection), **M-4** (proactive quota warning +
+> meter — full async IndexedDB record store is the remaining larger migration),
+> **M-5** (clinical numeric plausibility validation), **M-6** (contract tests for
+> the untested data modules; 29→24), **M-7** (drain re-entrancy guard — full
+> state-store isolation is the remaining larger refactor). See CHANGELOG
+> sessions "11u" and "11v". The findings text is preserved as the record of
 > what was wrong.
 
 ---

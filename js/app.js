@@ -640,9 +640,17 @@ function homeSecAdmin() {
           '</div></div>';
       })() : "") +
       /* App health — recent caught faults, so a broken render is visible to the
-         founder instead of lost to the console (DD H-4). */
+         founder instead of lost to the console (DD H-4) — plus local-storage
+         headroom (DD M-4). */
       ((typeof errRecent === "function") ? (function () {
         var recent = errRecent();
+        var su = (typeof storageUsage === "function") ? storageUsage() : null;
+        var meter = su ? (
+          '<div style="margin-top:6px;font-size:.58rem;color:var(--sv)">Local storage: <b>' + su.pct + '%</b> of this browser\'s budget' +
+            (su.pct >= 80 ? ' — <span style="color:#c0392b">near the limit; export/archive old records or connect cloud sync</span>' : '') +
+          '<div style="height:5px;background:var(--gr);border-radius:3px;overflow:hidden;margin-top:3px">' +
+            '<div style="width:' + su.pct + '%;height:100%;background:' + (su.pct >= 80 ? "#c0392b" : (su.pct >= 60 ? "#b8860b" : "#2e7d32")) + '"></div></div></div>'
+        ) : "";
         return '<div class="home-settings" style="margin-top:8px">' +
           '<div class="home-settings-title">🩹 App health</div>' +
           '<div class="home-settings-desc">' +
@@ -650,7 +658,7 @@ function homeSecAdmin() {
               ? '<b>' + recent.length + ' recent screen fault(s) caught.</b> The app recovered rather than crashing. ' +
                 'Most recent: <span style="color:var(--sv)">' + escH(recent[0].where + " — " + recent[0].message) + '</span>'
               : 'No screen faults recorded this session. Errors are caught and shown with a recovery prompt rather than crashing the page.') +
-          '</div></div>';
+          '</div>' + meter + '</div>';
       })() : "") +
       ((typeof ageBracketScreen === "function") ? ageBracketScreen() : "") +
       '<div class="home-settings-title">🔐 Change admin password</div>' +

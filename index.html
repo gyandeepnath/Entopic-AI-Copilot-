@@ -3,6 +3,25 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- Content-Security-Policy (DD finding M-1): defence-in-depth against data
+     exfiltration. The load-bearing directive is connect-src — even if an
+     injection existed, session tokens or patient data could only be sent to
+     the app itself, the clinic's own Supabase project, or Anthropic; never to
+     an attacker's host. object-src 'none' and base-uri 'self' close two more
+     classic vectors. script-src keeps 'unsafe-inline' because the UI is built
+     on inline event handlers (rewriting all of them is a separate large change);
+     the escaping discipline (verified: no XSS fired) is what guards that gap
+     meanwhile. A custom LLM proxy on another host must be added to connect-src. -->
+<meta http-equiv="Content-Security-Policy" content="
+  default-src 'self';
+  script-src 'self' 'unsafe-inline';
+  style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+  font-src 'self' https://fonts.gstatic.com;
+  img-src 'self' data: blob:;
+  connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.anthropic.com;
+  object-src 'none';
+  base-uri 'self';
+  form-action 'self';">
 <title>Entopic — Clinical Vision Assessment</title>
 
 <!-- Fonts -->
@@ -376,6 +395,7 @@
 <script src="js/storage.js"></script>
 <script src="js/auth-crypto.js"></script>
 <script src="js/roles.js"></script>
+<script src="js/clinical-validators.js"></script>
 <script src="js/engine.js"></script>
 
 <!-- UI -->

@@ -74,6 +74,21 @@ function renderAdvisory() {
     }
   }
 
+  /* ═══ DATA CHECK (M-5) — plausibility of entered numerics, advisory ═══
+     Shown whether or not there is a differential yet, so a mistyped IOP or an
+     impossible axis is caught early. Never blocks entry. */
+  if (typeof clinValidateVisit === "function") {
+    var dataIssues = clinValidateVisit(V, typeof P !== "undefined" ? P : null);
+    if (dataIssues.length) {
+      h += '<div class="adv-sec">Data check</div>';
+      for (var di = 0; di < dataIssues.length; di++) {
+        var iss = dataIssues[di];
+        h += '<div class="alert-box ' + (iss.level === "error" ? "warn" : "info") + '" style="font-size:.58rem">' +
+          (iss.level === "error" ? "⚠ " : "") + escH(iss.message) + '</div>';
+      }
+    }
+  }
+
   if (!V.dxList || V.dxList.length === 0) {
     h += '<div style="color:var(--sv);font-size:.64rem;margin-top:12px;padding:10px;border:1px dashed var(--ms);border-radius:var(--r);text-align:center;line-height:1.5">' +
       'Enter symptoms and clinical data to generate diagnostic suggestions</div>';
