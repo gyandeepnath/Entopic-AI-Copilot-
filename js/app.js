@@ -801,7 +801,8 @@ function renderCloudCard() {
   if (typeof cloudStatus !== "function") return "";
   var s = cloudStatus();
   var dot = { live: "#2e7d32", polling: "#b8860b", signedout: "#888",
-              noclinic: "#b8860b", disabled: "#888" }[s.state] || "#888";
+              noclinic: "#b8860b", disabled: "#888",
+              phi_off: "#c0392b", phi_nokey: "#b8860b" }[s.state] || "#888";
   var body = "";
 
   if (s.state === "disabled") {
@@ -838,7 +839,8 @@ function renderCloudCard() {
   } else {
     body =
       '<div class="home-settings-status">Signed in as ' + escH(s.email || "") + ' · ' + escH(s.label) + '</div>' +
-      '<div style="display:flex;gap:6px;margin-top:4px">' +
+      cloudPhiPanel(s) +
+      '<div style="display:flex;gap:6px;margin-top:6px">' +
         '<button class="btn btn-s" style="font-size:.6rem" onclick="cloudUiSyncNow()">Sync now</button>' +
         '<button class="btn btn-s" style="font-size:.6rem" onclick="cloudUiSignOut()">Sign out</button>' +
       '</div>';
@@ -851,6 +853,76 @@ function renderCloudCard() {
     '<div class="home-settings-desc">Optional backup and live sync across devices/clinicians. Offline-first: the exam never waits on the network.</div>' +
     body +
   '</div>';
+}
+
+/* Patient-data (PHI) sync controls: an explicit consent gate + a clinic
+   passphrase that encrypts records before they leave the device. Until BOTH
+   are set, patient records stay local — the cloud only ever gets ciphertext. */
+function cloudPhiPanel(s) {
+  if (typeof phiConsentGiven !== "function") return "";
+  var consent = phiConsentGiven();
+  var keyReady = (typeof phiKeyReady === "function") && phiKeyReady();
+
+  var h = '<div style="margin-top:8px;padding:8px;border:1px solid var(--fg);border-radius:var(--r);background:var(--sn)">' +
+    '<div style="font-size:.62rem;font-weight:600">🔒 Patient-data sync</div>' +
+    '<div style="font-size:.56rem;color:var(--sv);margin:3px 0 6px">' +
+      'Patient records are <b>encrypted on this device</b> before they are sent — the cloud only ever ' +
+      'stores ciphertext, never a name, MRN or date of birth. Nothing patient-identifying leaves this ' +
+      'device until you turn this on.</div>';
+
+  if (!consent) {
+    h += '<div style="font-size:.56rem;color:var(--md);margin-bottom:5px">Patient sync is <b>OFF</b>. ' +
+      'Your exams still save locally; they are simply not backed up to the cloud yet.</div>' +
+      '<button class="btn btn-p" style="font-size:.58rem" onclick="cloudUiGrantConsent()">Turn on encrypted patient sync…</button>';
+    return h + '</div>';
+  }
+
+  /* consent granted */
+  h += '<div style="font-size:.56rem;color:#2e7d32;margin-bottom:5px">✓ Consent given — patient sync is ON, encrypted.</div>';
+  if (!keyReady) {
+    h += '<div style="font-size:.56rem;color:var(--md);margin-bottom:4px">Set the <b>clinic passphrase</b> to start syncing. ' +
+      'Every device in your clinic uses the same passphrase; it is never sent to the cloud, so keep it safe — ' +
+      'if it is lost, encrypted records cannot be recovered.</div>';
+  } else {
+    h += '<div style="font-size:.56rem;color:var(--sv);margin-bottom:4px">Encryption key is set on this device. ' +
+      'Re-enter the passphrase on any new device to sync there.</div>';
+  }
+  h += '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">' +
+      '<input id="cloudPhiPass" type="password" placeholder="clinic passphrase (≥8 chars)" style="font-size:.6rem;padding:3px 5px;border:1px solid var(--fg);border-radius:2px;min-width:200px">' +
+      '<button class="btn btn-p" style="font-size:.58rem" onclick="cloudUiSetPassphrase()">' + (keyReady ? "Update key" : "Set key") + '</button>' +
+      '<button class="btn btn-s" style="font-size:.58rem" onclick="cloudUiRevokeConsent()">Turn off</button>' +
+    '</div>' +
+    '<div id="cloudPhiMsg" style="font-size:.54rem;color:var(--sv);margin-top:4px"></div>';
+  return h + '</div>';
+}
+
+function cloudUiGrantConsent() {
+  if (!window.confirm(
+    "Turn on cloud sync of PATIENT data?\n\n" +
+    "Records will be ENCRYPTED on this device before being sent — the cloud never sees a name, MRN or " +
+    "date of birth in the clear. You will set a clinic passphrase next; it never leaves your devices.\n\n" +
+    "Only do this if you are authorised to store this clinic's patient data in your cloud project.")) return;
+  phiSetConsent(true);
+  renderHome();
+}
+function cloudUiRevokeConsent() {
+  if (!window.confirm("Turn OFF patient-data sync? Existing local records are untouched; new changes stop syncing.")) return;
+  phiSetConsent(false);
+  renderHome();
+}
+function cloudUiSetPassphrase() {
+  var el = document.getElementById("cloudPhiPass");
+  var pass = el ? el.value : "";
+  var msg = document.getElementById("cloudPhiMsg");
+  var clinicId = (typeof CLOUD !== "undefined" && CLOUD) ? CLOUD.clinicId : "";
+  if (msg) { msg.style.color = "var(--sv)"; msg.textContent = "Deriving key…"; }
+  phiSetPassphrase(pass, clinicId).then(function () {
+    if (msg) { msg.style.color = "#2e7d32"; msg.textContent = "Key set. Syncing encrypted patient data…"; }
+    if (typeof cloudStart === "function") cloudStart();
+    setTimeout(renderHome, 400);
+  }).catch(function (e) {
+    if (msg) { msg.style.color = "var(--md)"; msg.textContent = (e && e.message) || "Could not set the key on this browser."; }
+  });
 }
 
 function cloudUiMsg(text, ok) {

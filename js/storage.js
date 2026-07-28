@@ -281,15 +281,24 @@ function completeVisit() {
 function deletePatient(patientId) {
   if (!confirm("Delete this patient and all their visits? This cannot be undone.")) return;
 
+  /* Remove all visits for this patient (capture ids so peers can be told). */
+  var visits = loadVisits();
+  var goneVisits = visits.filter(function (v) { return v.patient_id === patientId; }).map(function (v) { return v.id; });
+  visits = visits.filter(function(v) { return v.patient_id !== patientId; });
+  saveVisits(visits);
+
   /* Remove patient */
   var patients = loadPatients();
   patients = patients.filter(function(p) { return p.id !== patientId; });
   savePatients(patients);
 
-  /* Remove all visits for this patient */
-  var visits = loadVisits();
-  visits = visits.filter(function(v) { return v.patient_id !== patientId; });
-  saveVisits(visits);
+  /* Propagate the deletes to peers as tombstones — without this the record
+     resurrects on the next cloud pull (DD finding H-6). No-op when offline. */
+  if (typeof cloudEnqueueDelete === "function") {
+    cloudEnqueueDelete("patients", patientId);
+    goneVisits.forEach(function (vid) { cloudEnqueueDelete("visits", vid); });
+  }
+  if (typeof logAudit === "function") logAudit("patient_deleted", "Patient and " + goneVisits.length + " visit(s) deleted", { patient_id: patientId });
 }
 
 

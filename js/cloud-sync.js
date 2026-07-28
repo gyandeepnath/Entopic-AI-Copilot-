@@ -32,6 +32,8 @@ var CLOUD = {
   pollTimer: null,
   drainTimer: null,
   dirty: {},          /* kind → true (patients/visits pending push) */
+  tombstones: [],     /* { kind, id } deletes waiting to propagate to peers */
+  conflicts: [],      /* "kind:id" strings surfaced for the user, never swallowed */
   lastSync: null,
   lastError: null,
   _suppress: false    /* true while applying remote changes locally */
@@ -223,36 +225,97 @@ function cloudEnqueue(key) {
   CLOUD.drainTimer = setTimeout(cloudDrain, 800);
 }
 
-function cloudDrain() {
-  if (!cloudSignedIn()) return; /* dirty flags stay set; retried on next start */
-  if (CLOUD.dirty.patients) {
-    /* Per-record stamps: a record that wasn't touched keeps its old
-       updated_at, so peers' LWW merge won't see it as "newer" and
-       overwrite their own unpushed edits. Never stamp "now" here. */
-    var patients = loadPatients().map(function (p) {
-      return { id: p.id, clinic_id: CLOUD.clinicId, data: p,
-               updated_at: p.updated || p.created || new Date(0).toISOString() };
-    });
-    if (patients.length) {
-      cloudApi("/rest/v1/patients?on_conflict=id", {
-        method: "POST", body: patients, prefer: "resolution=merge-duplicates"
-      }, function (err) { if (!err) { CLOUD.dirty.patients = false; CLOUD.lastSync = new Date().toISOString(); } });
-    } else { CLOUD.dirty.patients = false; }
-  }
-  if (CLOUD.dirty.visits) {
-    var visits = loadVisits().map(function (v) {
-      return { id: v.id, clinic_id: CLOUD.clinicId, patient_id: v.patient_id, data: v,
-               updated_at: v.updated || v.date || new Date(0).toISOString() };
-    });
-    if (visits.length) {
-      cloudApi("/rest/v1/visits?on_conflict=id", {
-        method: "POST", body: visits, prefer: "resolution=merge-duplicates"
-      }, function (err) { if (!err) { CLOUD.dirty.visits = false; CLOUD.lastSync = new Date().toISOString(); } });
-    } else { CLOUD.dirty.visits = false; }
-  }
+/* A local delete must reach peers, or the record resurrects on their next
+   pull. The record is already gone locally, so we carry a tombstone and push
+   it as a soft-delete row (deleted=true). Storage's deletePatient calls this. */
+function cloudEnqueueDelete(kind, id) {
+  if (!cloudEnabled() || (kind !== "patients" && kind !== "visits") || !id) return;
+  CLOUD.tombstones.push({ kind: kind, id: id });
+  if (CLOUD.drainTimer) clearTimeout(CLOUD.drainTimer);
+  CLOUD.drainTimer = setTimeout(cloudDrain, 800);
 }
 
-/* ── pull: cloud → local (merge, LWW, never clobber the open visit) ── */
+/* HARD PHI GATE (C-1 / C-2): a patient or visit record leaves the device only
+   when the clinic has consented AND a device encryption key is present, and
+   even then only as CIPHERTEXT. If sync is on but PHI is not armed, the dirty
+   flags stay set and nothing is pushed — turning consent on and entering the
+   passphrase later flushes everything. This is the single chokepoint; there is
+   no other path that POSTs patients/visits. */
+function cloudDrain() {
+  if (!cloudSignedIn()) return; /* dirty flags stay set; retried on next start */
+  if (typeof phiArmed !== "function" || !phiArmed()) return; /* PHI not armed → hold */
+
+  if (CLOUD.dirty.patients) {
+    cloudEncryptRows(loadPatients(), function (p) {
+      return { id: p.id, clinic_id: CLOUD.clinicId,
+               updated_at: p.updated || p.created || new Date(0).toISOString(), deleted: !!p.deleted };
+    }).then(function (rows) {
+      if (!rows.length) { CLOUD.dirty.patients = false; return; }
+      cloudApi("/rest/v1/patients?on_conflict=id", {
+        method: "POST", body: rows, prefer: "resolution=merge-duplicates"
+      }, function (err) { if (!err) { CLOUD.dirty.patients = false; CLOUD.lastSync = new Date().toISOString(); } });
+    }).catch(function () { /* encryption failed → leave dirty, retry later */ });
+  }
+  if (CLOUD.dirty.visits) {
+    cloudEncryptRows(loadVisits(), function (v) {
+      return { id: v.id, clinic_id: CLOUD.clinicId, patient_id: v.patient_id,
+               updated_at: v.updated || v.date || new Date(0).toISOString(), deleted: !!v.deleted };
+    }).then(function (rows) {
+      if (!rows.length) { CLOUD.dirty.visits = false; return; }
+      cloudApi("/rest/v1/visits?on_conflict=id", {
+        method: "POST", body: rows, prefer: "resolution=merge-duplicates"
+      }, function (err) { if (!err) { CLOUD.dirty.visits = false; CLOUD.lastSync = new Date().toISOString(); } });
+    }).catch(function () {});
+  }
+  cloudDrainTombstones();
+}
+
+/* Push pending deletes as soft-delete rows. Ciphertext is not needed for a
+   tombstone (there is nothing to protect), but the row must carry a valid
+   clinic_id / patient_id to satisfy the schema and RLS. */
+function cloudDrainTombstones() {
+  if (!CLOUD.tombstones.length) return;
+  var batch = CLOUD.tombstones.slice();
+  var stamp = new Date().toISOString();
+  var byKind = { patients: [], visits: [] };
+  batch.forEach(function (t) {
+    if (t.kind === "patients") byKind.patients.push({ id: t.id, clinic_id: CLOUD.clinicId, data: { id: t.id, deleted: true }, updated_at: stamp, deleted: true });
+    else byKind.visits.push({ id: t.id, clinic_id: CLOUD.clinicId, patient_id: "", data: { id: t.id, deleted: true }, updated_at: stamp, deleted: true });
+  });
+  ["patients", "visits"].forEach(function (kind) {
+    if (!byKind[kind].length) return;
+    cloudApi("/rest/v1/" + kind + "?on_conflict=id", {
+      method: "POST", body: byKind[kind], prefer: "resolution=merge-duplicates"
+    }, function (err) {
+      if (!err) CLOUD.tombstones = CLOUD.tombstones.filter(function (t) { return t.kind !== kind; });
+    });
+  });
+}
+
+/* Encrypt each record's payload into a ciphertext envelope, attaching the
+   clear sync-metadata built by `meta`. Resolves an array ready to POST. */
+function cloudEncryptRows(records, meta) {
+  return Promise.all(records.map(function (rec) {
+    return phiEncrypt(rec).then(function (envelope) {
+      var row = meta(rec);
+      row.data = envelope;   /* CIPHERTEXT — the server never sees plaintext PHI */
+      return row;
+    });
+  }));
+}
+
+/* ── pull: cloud → local ──────────────────────────────────────────
+   Conflict resolution that does NOT silently lose a clinician's edit (H-2):
+     • timestamps are compared as EPOCH MS (Date.parse), not as raw strings —
+       a lexicographic compare assumed byte-identical ISO formatting and broke
+       on millis-vs-no-millis or offset-vs-Z.
+     • a local record with UNPUSHED edits (updated > last known cloud stamp) is
+       never overwritten by a remote write. When both sides changed it is a
+       genuine conflict: local is kept and the conflict is recorded for the UI,
+       rather than one side vanishing.
+   `rows` here already carry DECRYPTED `data` (see cloudDecryptRows). */
+function cloudEpoch(s) { var t = Date.parse(s); return isNaN(t) ? 0 : t; }
+
 function cloudMergeRows(kind, rows) {
   if (!rows || !rows.length) return 0;
   var load = kind === "patients" ? loadPatients : loadVisits;
@@ -263,16 +326,36 @@ function cloudMergeRows(kind, rows) {
   var changed = 0;
   for (var r = 0; r < rows.length; r++) {
     var row = rows[r];
-    var rec = row.data || {};
+    if (!row || !row.id) continue;
+    var rec = row.data || null;
+    if (rec === null) continue;   /* undecryptable / empty — never store ciphertext as a record */
     rec._cloud_updated = row.updated_at;
     /* never clobber the visit that is open in this exam right now */
     if (kind === "visits" && typeof CV !== "undefined" && CV && rec.id === CV) continue;
+
     var idx = byId[row.id];
-    if (idx === undefined) { local.push(rec); changed++; continue; }
+    if (idx === undefined) {
+      if (row.deleted) continue;  /* a tombstone for a record we never had — ignore */
+      local.push(rec); changed++; continue;
+    }
     var prev = local[idx];
-    var prevStamp = prev._cloud_updated || prev.updated || "";
-    if (String(row.updated_at) > String(prevStamp)) { local[idx] = rec; changed++; }
+    var remoteMs = cloudEpoch(row.updated_at);
+    var baseMs   = cloudEpoch(prev._cloud_updated);           /* last stamp we synced */
+    var localMs  = cloudEpoch(prev.updated || prev.date || prev.created);
+    var localModified = localMs > baseMs;                     /* unpushed local edits */
+    var remoteNewer   = remoteMs > Math.max(baseMs, localModified ? 0 : localMs);
+
+    if (row.deleted) {
+      /* honour a remote delete only if we have no unpushed local edits */
+      if (!localModified) { local.splice(idx, 1); rebuildIndex(); changed++; }
+      else cloudRecordConflict(kind, row.id);
+      continue;
+    }
+    if (remoteNewer && !localModified) { local[idx] = rec; changed++; }
+    else if (remoteNewer && localModified) { cloudRecordConflict(kind, row.id); }
+    /* else: local is newer or unchanged — keep it */
   }
+  function rebuildIndex() { byId = {}; for (var k = 0; k < local.length; k++) byId[local[k].id] = k; }
   if (changed > 0) {
     CLOUD._suppress = true;
     try { save(local); } finally { CLOUD._suppress = false; }
@@ -280,10 +363,37 @@ function cloudMergeRows(kind, rows) {
   return changed;
 }
 
+/* Conflicts are surfaced, not swallowed. */
+function cloudRecordConflict(kind, id) {
+  CLOUD.conflicts = CLOUD.conflicts || [];
+  var key = kind + ":" + id;
+  if (CLOUD.conflicts.indexOf(key) < 0) CLOUD.conflicts.push(key);
+}
+function cloudConflicts() { return (CLOUD.conflicts || []).slice(); }
+
+/* Decrypt any ciphertext envelopes before merging. A row we cannot decrypt
+   (no key on this device) is dropped from the batch with data=null so it is
+   skipped rather than stored as ciphertext. */
+function cloudDecryptRows(rows, cb) {
+  if (!rows || !rows.length) { cb([]); return; }
+  Promise.all(rows.map(function (row) {
+    var payload = row.data;
+    if (typeof phiIsEnvelope === "function" && phiIsEnvelope(payload)) {
+      return phiDecrypt(payload)
+        .then(function (obj) { return { id: row.id, data: obj, updated_at: row.updated_at, deleted: row.deleted }; })
+        .catch(function () { return { id: row.id, data: null, updated_at: row.updated_at, deleted: row.deleted }; });
+    }
+    return Promise.resolve({ id: row.id, data: payload, updated_at: row.updated_at, deleted: row.deleted });
+  })).then(cb).catch(function () { cb([]); });
+}
+
+/* H-1: the home page element is `pgHome` (the old `page-home` never existed,
+   so live changes merged but never repainted). Repaint only when Home is the
+   active page. */
 function cloudRerender() {
   try {
-    var home = document.getElementById("page-home");
-    if (home && home.style.display !== "none" && typeof renderHome === "function") renderHome();
+    var home = document.getElementById("pgHome");
+    if (home && home.classList.contains("active") && typeof renderHome === "function") renderHome();
   } catch (e) { /* rendering must never break sync */ }
 }
 
@@ -291,8 +401,16 @@ function cloudPull(cb) {
   if (!cloudSignedIn()) { cb && cb(); return; }
   var pending = 2, changed = 0;
   function done(n) { changed += n; if (--pending === 0) { if (changed) cloudRerender(); CLOUD.lastSync = new Date().toISOString(); cb && cb(changed); } }
-  cloudApi("/rest/v1/patients?select=id,data,updated_at", {}, function (err, rows) { done(err ? 0 : cloudMergeRows("patients", rows)); });
-  cloudApi("/rest/v1/visits?select=id,data,updated_at", {}, function (err, rows) { done(err ? 0 : cloudMergeRows("visits", rows)); });
+  function pull(kind) {
+    /* H-6: only live rows; a soft-deleted row is handled by its tombstone, not
+       resurrected. */
+    cloudApi("/rest/v1/" + kind + "?select=id,data,updated_at,deleted", {}, function (err, rows) {
+      if (err) { done(0); return; }
+      cloudDecryptRows(rows, function (dec) { done(cloudMergeRows(kind, dec)); });
+    });
+  }
+  pull("patients");
+  pull("visits");
 }
 
 /* ── realtime: minimal Phoenix-protocol client ── */
@@ -329,9 +447,10 @@ function cloudConnectRealtime() {
       var table = data.table;
       var record = data.record || data.new;
       if (!table || !record) return;
-      var changed = cloudMergeRows(table === "patients" ? "patients" : "visits",
-        [{ id: record.id, data: record.data, updated_at: record.updated_at }]);
-      if (changed) cloudRerender();
+      var kind = table === "patients" ? "patients" : "visits";
+      /* decrypt the pushed row before merging (it arrives as ciphertext) */
+      cloudDecryptRows([{ id: record.id, data: record.data, updated_at: record.updated_at, deleted: record.deleted }],
+        function (dec) { if (cloudMergeRows(kind, dec)) cloudRerender(); });
     }
   };
 
@@ -393,11 +512,22 @@ function cloudStatus() {
   if (!cloudEnabled()) return { state: "disabled", label: "Cloud sync off — local only" };
   if (!CLOUD.session) return { state: "signedout", label: "Local only — not signed in" };
   if (!CLOUD.clinicId) return { state: "noclinic", label: "Signed in — no clinic yet" };
+  /* PHI gate state — the app must never look "synced" while patient records
+     are actually being withheld for lack of consent or a key. */
+  if (typeof phiConsentGiven === "function" && !phiConsentGiven()) {
+    return { state: "phi_off", label: "Signed in — patient sync OFF (no consent)", email: CLOUD.session.email };
+  }
+  if (typeof phiKeyReady === "function" && !phiKeyReady()) {
+    return { state: "phi_nokey", label: "Signed in — enter clinic passphrase to sync patient data", email: CLOUD.session.email };
+  }
+  var conflicts = (CLOUD.conflicts || []).length;
   return {
     state: CLOUD.wsOk ? "live" : "polling",
-    label: (CLOUD.wsOk ? "Live sync" : "Sync (polling)") +
-      (CLOUD.lastSync ? " · last " + CLOUD.lastSync.slice(11, 19) : ""),
-    email: CLOUD.session.email
+    label: (CLOUD.wsOk ? "Live sync (encrypted)" : "Sync (polling, encrypted)") +
+      (CLOUD.lastSync ? " · last " + CLOUD.lastSync.slice(11, 19) : "") +
+      (conflicts ? " · ⚠ " + conflicts + " conflict(s)" : ""),
+    email: CLOUD.session.email,
+    conflicts: conflicts
   };
 }
 

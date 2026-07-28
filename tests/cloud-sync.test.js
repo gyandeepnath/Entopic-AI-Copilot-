@@ -28,8 +28,16 @@ function makeSandbox(opts) {
   const visits = opts.visits || [];
   const sandbox = {
     console: { log() {}, warn() {}, error() {} },
-    setTimeout: () => 0, clearTimeout: () => {}, setInterval: () => 0, clearInterval: () => {},
-    Date, JSON, Set, Math, String, Number, encodeURIComponent,
+    setTimeout: (f)=>{ if(typeof f==="function") setImmediate(f); return 0; }, clearTimeout: () => {}, setInterval: () => 0, clearInterval: () => {}, setImmediate: (f)=>setImmediate(f),
+    Date, JSON, Set, Math, String, Number, encodeURIComponent, Promise, Array, Object, isNaN, parseInt,
+    /* PHI gate stubs: armed + a passthrough "encrypt" so drain proceeds and the
+       stamp/metadata under test is still inspectable. Real encryption is
+       covered by tests/cloud-phi.test.js. */
+    phiArmed: () => true,
+    phiEncrypt: (o) => Promise.resolve({ __phi: "entopic-phi-aesgcm256-v1", iv: "00", ct: "stub" }),
+    phiIsEnvelope: (x) => !!(x && x.__phi),
+    phiDecrypt: (x) => Promise.resolve(x),
+    phiConsentGiven: () => true, phiKeyReady: () => true,
     localStorage: {
       getItem: (k) => (store.has(k) ? store.get(k) : null),
       setItem: (k, v) => store.set(k, String(v)),
@@ -116,10 +124,12 @@ test("disabled config → sync fully dormant", () => {
   assert.ok(!sb.CLOUD.dirty.patients, "disabled → nothing queued");
 });
 
-test("drain pushes each record's OWN stamp — never 'now' for untouched records", () => {
+test("drain pushes each record's OWN stamp — never 'now' for untouched records", async () => {
   /* If drain stamped every record with the current time, any save on one
      device would make ALL its records look "newest" and silently overwrite
-     other devices' unpushed edits (LWW data loss). */
+     other devices' unpushed edits (LWW data loss). Drain is now async
+     (records are encrypted before send), so we await a couple of microtasks
+     for the encrypt→POST chain to run. */
   const calls = [];
   const sb = makeSandbox({
     patients: [
@@ -134,20 +144,39 @@ test("drain pushes each record's OWN stamp — never 'now' for untouched records
   });
   sb.fetch = function (url, opts) {
     calls.push({ url, body: JSON.parse(opts.body) });
-    return { then: function () { return { catch: function () {} }; } };
+    return Promise.resolve({ ok: true, status: 200, headers: { get: () => "application/json" }, json: () => Promise.resolve([]) });
   };
   sb.CLOUD.session = { access_token: "t", refresh_token: "r", user_id: "u", email: "e" };
   sb.CLOUD.clinicId = "c1";
   sb.CLOUD.dirty = { patients: true, visits: true };
   sb.cloudDrain();
+  await new Promise((r) => setImmediate(r));
+  await new Promise((r) => setImmediate(r));
 
   const pats = calls.find((c) => c.url.indexOf("/patients") >= 0).body;
   assert.strictEqual(pats[0].updated_at, "2026-07-01T08:00:00.000Z", "uses record.updated");
   assert.strictEqual(pats[1].updated_at, "2026-06-01T08:00:00.000Z", "falls back to created");
   assert.strictEqual(pats[2].updated_at, new Date(0).toISOString(), "stampless legacy record gets epoch (never claims to be newest)");
+  /* and the payload is CIPHERTEXT, never the plaintext patient (C-1) */
+  assert.ok(pats[0].data && pats[0].data.__phi, "record data is an encryption envelope, not plaintext");
+  assert.strictEqual(pats[0].first_name, undefined, "no plaintext PII field on the pushed row");
   const vis = calls.find((c) => c.url.indexOf("/visits") >= 0).body;
   assert.strictEqual(vis[0].updated_at, "2026-07-02T09:00:00.000Z", "visit uses updated");
   assert.strictEqual(vis[1].updated_at, "2026-07-03T10:00:00.000Z", "visit falls back to date");
+});
+
+test("drain pushes NOTHING when PHI is not armed (consent gate, C-2)", async () => {
+  const calls = [];
+  const sb = makeSandbox({ patients: [{ id: "p1", first_name: "A", updated: "2026-07-01T08:00:00.000Z" }] });
+  sb.phiArmed = () => false;               /* no consent / no key */
+  sb.fetch = function (url, opts) { calls.push({ url }); return Promise.resolve({ ok: true, status: 200, headers: { get: () => "" }, json: () => Promise.resolve([]) }); };
+  sb.CLOUD.session = { access_token: "t", user_id: "u", email: "e" };
+  sb.CLOUD.clinicId = "c1";
+  sb.CLOUD.dirty = { patients: true, visits: true };
+  sb.cloudDrain();
+  await new Promise((r) => setImmediate(r));
+  assert.strictEqual(calls.length, 0, "no patient/visit POST while PHI sync is off");
+  assert.strictEqual(sb.CLOUD.dirty.patients, true, "dirty flag held so it flushes once armed");
 });
 
 test("status reflects signed-out and no-clinic states", () => {
