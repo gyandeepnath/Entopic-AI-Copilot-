@@ -63,9 +63,26 @@ function cloudSignedIn() {
   return cloudEnabled() && CLOUD.session && CLOUD.session.access_token && CLOUD.clinicId;
 }
 
+/* ── throttling / transient-failure policy (production-readiness audit H-2) ──
+   Supabase answers 429 when a project exceeds its rate limit, and 5xx during a
+   restart or a brief outage. The old client treated both as a hard failure, so
+   a busy clinic (or a free-tier limit hit mid-morning) would drop writes and
+   keep hammering. Retry a bounded number of times with exponential backoff,
+   honouring Retry-After when the server sends it. Pure so the policy is
+   testable without a network. */
+var CLOUD_MAX_RETRIES = 3;
+function cloudRetryDelayMs(status, attempt, retryAfterHeader) {
+  if (status !== 429 && !(status >= 500 && status <= 599) && status !== 0) return -1;  /* not retryable */
+  if (attempt >= CLOUD_MAX_RETRIES) return -1;                                          /* give up */
+  var ra = parseInt(retryAfterHeader, 10);
+  if (!isNaN(ra) && ra > 0) return Math.min(ra * 1000, 60000);
+  return Math.min(1000 * Math.pow(2, attempt), 30000);   /* 1s, 2s, 4s… capped */
+}
+
 /* ── low-level API helpers ── */
 function cloudApi(path, opts, cb) {
   opts = opts || {};
+  opts._attempt = opts._attempt || 0;
   var headers = {
     "apikey": CLOUD_CONFIG.anonKey,
     "Content-Type": "application/json"
@@ -73,6 +90,14 @@ function cloudApi(path, opts, cb) {
   headers["Authorization"] = "Bearer " +
     (CLOUD.session && CLOUD.session.access_token ? CLOUD.session.access_token : CLOUD_CONFIG.anonKey);
   if (opts.prefer) headers["Prefer"] = opts.prefer;
+
+  /* Retry the same call after a delay, preserving the caller's callback. */
+  function scheduleRetry(delay) {
+    CLOUD.lastError = "busy — retrying in " + Math.round(delay / 1000) + "s";
+    opts._attempt++;
+    setTimeout(function () { cloudApi(path, opts, cb); }, delay);
+  }
+
   fetch(CLOUD_CONFIG.url + path, {
     method: opts.method || "GET",
     headers: headers,
@@ -86,6 +111,12 @@ function cloudApi(path, opts, cb) {
       });
       return;
     }
+    /* Rate-limited or a transient server fault → back off rather than fail.
+       The record stays queued locally, so nothing is lost while we wait. */
+    var wait = cloudRetryDelayMs(res.status, opts._attempt,
+      (res.headers && res.headers.get) ? res.headers.get("Retry-After") : null);
+    if (wait >= 0) { scheduleRetry(wait); return; }
+
     var ct = res.headers.get("content-type") || "";
     (ct.indexOf("json") >= 0 ? res.json() : res.text()).then(function (data) {
       if (!res.ok) {
@@ -96,6 +127,10 @@ function cloudApi(path, opts, cb) {
       }
     });
   }).catch(function (err) {
+    /* Network-level failure (offline, DNS, TLS). Same bounded backoff — a
+       clinic's wifi dropping for 10s should not lose a queued write. */
+    var wait = cloudRetryDelayMs(0, opts._attempt, null);
+    if (wait >= 0) { scheduleRetry(wait); return; }
     CLOUD.lastError = String(err && err.message || err);
     cb && cb(err, null, 0);
   });

@@ -1,0 +1,215 @@
+/* ═══════════════════════════════════════════════════════════════ */
+/* PRODUCTION HARDENING — audit fixes, pinned                       */
+/*                                                                  */
+/* Covers the safe fixes made after the production-readiness audit   */
+/* of 2026-07-30:                                                    */
+/*   • clinic deployment mode: signup gate + login throttling        */
+/*   • deployment readiness checks                                   */
+/*   • backup validation (a truncated/wrong file must NOT be able to */
+/*     silently replace a clinic's records)                          */
+/*   • cloud retry/backoff policy for 429 + 5xx + offline            */
+/* ═══════════════════════════════════════════════════════════════ */
+"use strict";
+
+const test = require("node:test");
+const assert = require("node:assert");
+const fs = require("node:fs");
+const path = require("node:path");
+const vm = require("node:vm");
+
+function load(file, stubs) {
+  const store = {};
+  const ctx = Object.assign({
+    console: { log() {}, warn() {}, error() {} },
+    localStorage: {
+      getItem: (k) => (Object.prototype.hasOwnProperty.call(store, k) ? store[k] : null),
+      setItem: (k, v) => { store[k] = String(v); },
+      removeItem: (k) => { delete store[k]; }
+    },
+    JSON, Math, Date, String, Number, Array, Object, RegExp, parseInt, parseFloat,
+    isNaN, setTimeout, module: { exports: {} }
+  }, stubs || {});
+  ctx.window = ctx;
+  vm.createContext(ctx);
+  vm.runInContext(fs.readFileSync(path.resolve(__dirname, "..", file), "utf8"), ctx, { filename: file });
+  return ctx;
+}
+
+
+/* ── clinic-mode: signup gate ─────────────────────────────────────── */
+
+test("self-signup is open normally, and closed in clinic mode once an account exists", () => {
+  const ctx = load("js/clinic-mode.js");
+  const m = ctx.module.exports;
+
+  assert.strictEqual(m.signupAllowed(5), true, "teaching/demo install: signup stays open");
+
+  m.clinicModeSet(true);
+  assert.strictEqual(m.signupAllowed(0), true, "first account must always be creatable, or the device is unusable");
+  assert.strictEqual(m.signupAllowed(1), false, "clinic mode closes signup once staff accounts exist");
+  assert.strictEqual(m.signupAllowed(50), false);
+
+  m.clinicModeSet(false);
+  assert.strictEqual(m.signupAllowed(5), true, "turning it off restores open signup");
+});
+
+test("idle lock minutes are bounded and default sensibly", () => {
+  const ctx = load("js/clinic-mode.js");
+  const m = ctx.module.exports;
+  assert.strictEqual(m.clinicLockMinutes(), 15, "default");
+  assert.strictEqual(m.clinicLockMinutesSet(0), false, "zero rejected");
+  assert.strictEqual(m.clinicLockMinutesSet(-5), false, "negative rejected");
+  assert.strictEqual(m.clinicLockMinutesSet(999), false, "absurd value rejected");
+  assert.strictEqual(m.clinicLockMinutesSet(5), true);
+  assert.strictEqual(m.clinicLockMinutes(), 5);
+});
+
+
+/* ── clinic-mode: login throttling ────────────────────────────────── */
+
+test("login throttling only bites after repeated failures, then backs off", () => {
+  const ctx = load("js/clinic-mode.js");
+  const m = ctx.module.exports;
+
+  assert.strictEqual(m.throttleDelayMs(0), 0, "a first attempt is never delayed");
+  assert.strictEqual(m.throttleDelayMs(4), 0, "a typo or two costs nothing");
+  assert.ok(m.throttleDelayMs(5) > 0, "sustained guessing starts costing time");
+  assert.ok(m.throttleDelayMs(8) > m.throttleDelayMs(6), "delay grows");
+  assert.ok(m.throttleDelayMs(100) <= 15 * 60 * 1000, "delay is capped, never permanent lockout");
+});
+
+test("failures are counted per username and cleared on success", () => {
+  const ctx = load("js/clinic-mode.js");
+  const m = ctx.module.exports;
+  const t0 = 1000000;
+
+  for (let i = 0; i < m.CLINIC_LOCKOUT_AFTER; i++) m.loginRecordFailure("drsmith", t0);
+  assert.ok(m.loginBlockedFor("drsmith", t0) > 0, "guessed account is now delayed");
+  assert.strictEqual(m.loginBlockedFor("drjones", t0), 0, "a different account is unaffected");
+
+  assert.strictEqual(m.loginBlockedFor("drsmith", t0 + 60 * 60 * 1000), 0, "the delay expires with time");
+
+  m.loginClearFailures("drsmith");
+  assert.strictEqual(m.loginBlockedFor("drsmith", t0), 0, "a correct password clears the counter");
+});
+
+test("throttling is case-insensitive so DrSmith cannot dodge it", () => {
+  const ctx = load("js/clinic-mode.js");
+  const m = ctx.module.exports;
+  const t0 = 2000000;
+  for (let i = 0; i < m.CLINIC_LOCKOUT_AFTER; i++) m.loginRecordFailure("DrSmith", t0);
+  assert.ok(m.loginBlockedFor("drsmith", t0) > 0);
+});
+
+
+/* ── deployment readiness ─────────────────────────────────────────── */
+
+test("deployChecks flags an un-hardened terminal as blocked, a hardened one as ready", () => {
+  const ctx = load("js/ui-deployment.js");
+  const m = ctx.module.exports;
+
+  const bad = m.deployChecks({ clinicMode: false, adminLegacy: true, plaintextCount: 2, cloudConfigured: false, phiArmed: false });
+  const badState = m.deployReadyState(bad);
+  assert.strictEqual(badState.ready, false);
+  assert.ok(badState.blocked >= 2, "clinic mode off + default admin password are both blockers");
+
+  const good = m.deployChecks({ clinicMode: true, adminLegacy: false, plaintextCount: 0, cloudConfigured: true, phiArmed: true });
+  const goodState = m.deployReadyState(good);
+  assert.strictEqual(goodState.ready, true, "a hardened, connected terminal has no blockers");
+});
+
+test("the at-rest warning is always present and never reports as ok", () => {
+  const ctx = load("js/ui-deployment.js");
+  const m = ctx.module.exports;
+  const checks = m.deployChecks({ clinicMode: true, adminLegacy: false, plaintextCount: 0, cloudConfigured: true, phiArmed: true });
+  const atRest = checks.find((c) => c.id === "at_rest");
+  assert.ok(atRest, "local-storage-at-rest risk must always be stated");
+  assert.notStrictEqual(atRest.state, "ok", "Entopic does not encrypt local records — never claim it does");
+});
+
+
+/* ── backup validation ────────────────────────────────────────────── */
+
+function loadStorage() {
+  return load("js/storage.js", {
+    STORE_VERSION: "1.0.0",
+    alert: () => {}, confirm: () => true,
+    document: { createElement: () => ({ click() {}, style: {} }), body: { appendChild() {}, removeChild() {} } },
+    Blob: function () {}, URL: { createObjectURL: () => "blob:", revokeObjectURL() {} },
+    mirrorStore: () => {}, mirrorRemove: () => {}
+  });
+}
+
+test("validateBackup rejects files that are not Entopic backups", () => {
+  const s = loadStorage();
+  assert.strictEqual(s.validateBackup(null).ok, false);
+  assert.strictEqual(s.validateBackup("nope").ok, false);
+  assert.strictEqual(s.validateBackup({}).ok, false, "no patient/visit lists");
+  assert.strictEqual(s.validateBackup({ patients: [], visits: "x" }).ok, false, "visits must be a list");
+});
+
+test("validateBackup rejects a backup written by a NEWER Entopic", () => {
+  const s = loadStorage();
+  const res = s.validateBackup({ version: "2.0.0", patients: [], visits: [] });
+  assert.strictEqual(res.ok, false);
+  assert.ok(res.errors.join(" ").includes("NEWER"), "must say why, in words the founder can act on");
+});
+
+test("validateBackup rejects records missing ids (corrupt file)", () => {
+  const s = loadStorage();
+  const res = s.validateBackup({ version: "1.0.0", patients: [{ name: "x" }], visits: [] });
+  assert.strictEqual(res.ok, false);
+});
+
+test("validateBackup accepts a good backup but warns about an empty one", () => {
+  const s = loadStorage();
+  const ok = s.validateBackup({ version: "1.0.0", patients: [{ id: "p1" }], visits: [{ id: "v1" }], audit: [] });
+  assert.strictEqual(ok.ok, true);
+  assert.strictEqual(ok.counts.patients, 1);
+
+  const empty = s.validateBackup({ version: "1.0.0", patients: [], visits: [], audit: [] });
+  assert.strictEqual(empty.ok, true, "an empty backup is legal…");
+  assert.ok(empty.warnings.join(" ").includes("NO patients"), "…but the clinic must be told before it replaces live data");
+});
+
+test("validateBackup warns when the audit trail is absent", () => {
+  const s = loadStorage();
+  const res = s.validateBackup({ version: "1.0.0", patients: [{ id: "p1" }], visits: [{ id: "v1" }] });
+  assert.ok(res.warnings.join(" ").toLowerCase().includes("audit"));
+});
+
+
+/* ── cloud retry policy ───────────────────────────────────────────── */
+
+function loadCloud() {
+  return load("js/cloud-sync.js", {
+    CLOUD_CONFIG: { enabled: false, url: "", anonKey: "" },
+    fetch: () => new Promise(() => {}),
+    setInterval: () => 0, clearInterval: () => {},
+    navigator: { onLine: true },
+    addEventListener: () => {}
+  });
+}
+
+test("429 and 5xx are retried with growing backoff; 4xx is not", () => {
+  const c = loadCloud();
+  assert.ok(c.cloudRetryDelayMs(429, 0, null) > 0, "rate limit is retryable");
+  assert.ok(c.cloudRetryDelayMs(503, 0, null) > 0, "server fault is retryable");
+  assert.ok(c.cloudRetryDelayMs(0, 0, null) > 0, "network failure is retryable");
+  assert.strictEqual(c.cloudRetryDelayMs(400, 0, null), -1, "a bad request must NOT be retried");
+  assert.strictEqual(c.cloudRetryDelayMs(404, 0, null), -1);
+  assert.ok(c.cloudRetryDelayMs(429, 2, null) > c.cloudRetryDelayMs(429, 0, null), "backoff grows");
+});
+
+test("retries are bounded, so a down backend cannot loop forever", () => {
+  const c = loadCloud();
+  assert.strictEqual(c.cloudRetryDelayMs(429, c.CLOUD_MAX_RETRIES, null), -1);
+  assert.strictEqual(c.cloudRetryDelayMs(500, 99, null), -1);
+});
+
+test("Retry-After from the server is honoured and capped", () => {
+  const c = loadCloud();
+  assert.strictEqual(c.cloudRetryDelayMs(429, 0, "5"), 5000, "server's wait is respected");
+  assert.strictEqual(c.cloudRetryDelayMs(429, 0, "9999"), 60000, "but capped so the app is not stuck for hours");
+  assert.ok(c.cloudRetryDelayMs(429, 0, "garbage") > 0, "an unparseable header falls back to backoff");
+});

@@ -99,18 +99,47 @@ function doLogin() {
     return;
   }
 
+  /* Repeated wrong passwords are slowed down (js/clinic-mode.js). Applies to
+     the admin account too — that is the one worth guessing. */
+  if (typeof loginBlockedFor === "function") {
+    var waitMs = loginBlockedFor(u);
+    if (waitMs > 0) {
+      var secs = Math.ceil(waitMs / 1000);
+      errEl.textContent = "Too many failed attempts — wait " +
+        (secs >= 60 ? Math.ceil(secs / 60) + " min" : secs + "s") + " before trying again.";
+      errEl.style.display = "block";
+      return;
+    }
+  }
+
+  /* Shared by both sign-in paths so a failure is counted exactly once. */
+  var noteFailure = function () {
+    if (typeof loginRecordFailure === "function") loginRecordFailure(u);
+  };
+  var noteSuccess = function () {
+    if (typeof loginClearFailures === "function") loginClearFailures(u);
+  };
+
   /* Super-admin sign-in: verified against a salted PBKDF2 hash (H-5), async.
      The admin session is ephemeral — never stored in the users list. If the
      username is the admin username, this path owns the outcome (success or
      failure) and never falls through to the user lookup. */
   if (typeof adminVerify === "function" && u === (typeof ADMIN_USERNAME !== "undefined" ? ADMIN_USERNAME : "entopic-admin")) {
     adminVerify(u, p).then(function (ok) {
-      if (!ok) { errEl.textContent = "Invalid credentials"; errEl.style.display = "block"; return; }
+      if (!ok) {
+        noteFailure();
+        errEl.textContent = "Invalid credentials"; errEl.style.display = "block"; return;
+      }
+      noteSuccess();
       CU = adminSessionUser();
       errEl.style.display = "none";
       if (typeof roleSessionReset === "function") roleSessionReset();
+      if (typeof clinicIdleReset === "function") clinicIdleReset();
       showHomePage();
-    }).catch(function () { errEl.textContent = "Invalid credentials"; errEl.style.display = "block"; });
+    }).catch(function () {
+      noteFailure();
+      errEl.textContent = "Invalid credentials"; errEl.style.display = "block";
+    });
     return;
   }
 
@@ -126,6 +155,7 @@ function doLogin() {
   }
 
   var fail = function () {
+    noteFailure();
     errEl.textContent = "Invalid credentials";
     errEl.style.display = "block";
   };
@@ -142,11 +172,13 @@ function doLogin() {
         logAudit("credential_upgraded", candidate.username + " — plaintext password replaced with a salted hash", {});
       }
     }
+    noteSuccess();
     CU = candidate;
     errEl.style.display = "none";
     /* Fresh role state per sign-in: this account's own saved role (CU.role)
        drives the workspace, never a leftover from another account. */
     if (typeof roleSessionReset === "function") roleSessionReset();
+    if (typeof clinicIdleReset === "function") clinicIdleReset();
     showHomePage();
   }).catch(function () { fail(); });
 }
@@ -164,6 +196,18 @@ function doSetup() {
   }
 
   var users = loadUsers();
+
+  /* Clinic deployment mode closes open self-signup: on a shared consulting-room
+     terminal, "anyone may create an account" is a route to every patient record.
+     The admin creates staff accounts instead (Admin → Staff accounts). The very
+     first account is always allowed, or a fresh install would lock everyone out. */
+  if (typeof signupAllowed === "function" && !signupAllowed(users.length)) {
+    alert("New accounts are closed on this device.\n\n" +
+          "This terminal is in clinic deployment mode. Ask the practice administrator " +
+          "to create an account for you (Admin → Staff accounts).");
+    return;
+  }
+
   for (var i = 0; i < users.length; i++) {
     if (users[i].username === uname) {
       alert("Username already taken.");
@@ -593,11 +637,10 @@ function homeSecAccount() {
       apiStatus +
     '</div>' +
     (typeof dataExportCard === "function" ? dataExportCard() : "") +
-    '<div class="home-settings" style="margin-top:8px">' +
-      '<div class="home-settings-title">📁 Data Management</div>' +
-      '<div class="home-settings-desc">Import a previous Entopic backup file</div>' +
-      '<input type="file" accept=".json" onchange="if(this.files[0])importData(this.files[0])" style="font-size:.62rem">' +
-    '</div>' +
+    /* Restoring a backup REPLACES every patient record, and the Supabase
+       credentials decide where this clinic's data goes. Both are practice-wide,
+       destructive-if-wrong actions, so they live in the Admin panel now
+       (production-readiness audit B-2). Everyone still sees sync STATUS here. */
     renderCloudCard();
 }
 
@@ -618,6 +661,11 @@ function homeSecAdmin() {
       '<div class="stat"><div class="v">' + practicePatients().length + '</div><div class="l">Practice Exams</div></div>' +
       '<div class="stat"><div class="v">' + cases.length + '</div><div class="l">Teaching Cases</div></div>' +
     '</div>' +
+
+    /* Deployment readiness + backend credentials + clinic mode + restore.
+       Placed first: it is what an administrator putting this terminal into
+       service needs to see before anything else (audit B-2/B-3). */
+    (typeof deploymentCard === "function" ? deploymentCard() : "") +
 
     adminUsersByRoleHtml(users) +
 
@@ -839,15 +887,20 @@ function renderCloudCard() {
   var body = "";
 
   if (s.state === "disabled") {
-    /* Not connected to any backend → offer to connect the user's OWN project. */
+    /* Not connected to any backend → offer to connect the practice's OWN project.
+       Entering the project URL + key decides where every patient record is sent,
+       so it is an ADMIN action (audit B-2). Non-admins see the status only. */
+    var mayConfigure = (typeof isAdmin === "function" && isAdmin());
     body =
-      '<div class="home-settings-status">Not connected. Entopic runs fully offline; nothing syncs anywhere until you connect <b>your own</b> Supabase project.</div>' +
-      '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:6px">' +
-        '<input id="cloudCfgUrl" placeholder="https://YOUR-PROJECT.supabase.co" style="font-size:.6rem;padding:3px 5px;border:1px solid var(--fg);border-radius:2px;min-width:220px">' +
-        '<input id="cloudCfgKey" placeholder="anon public key" style="font-size:.6rem;padding:3px 5px;border:1px solid var(--fg);border-radius:2px;min-width:180px">' +
-        '<button class="btn btn-p" style="font-size:.6rem" onclick="cloudUiConnect()">Connect</button>' +
-      '</div>' +
-      '<div id="cloudMsg" class="home-settings-status" style="color:var(--md)">Free to set up (~10 min) — see docs/BACKEND_OWNERSHIP.md. Your patient data lives in an account you control.</div>';
+      '<div class="home-settings-status">Not connected. Entopic runs fully offline; nothing syncs anywhere until the practice connects <b>its own</b> Supabase project.</div>' +
+      (mayConfigure
+        ? '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:6px">' +
+            '<input id="cloudCfgUrl" placeholder="https://YOUR-PROJECT.supabase.co" style="font-size:.6rem;padding:3px 5px;border:1px solid var(--fg);border-radius:2px;min-width:220px">' +
+            '<input id="cloudCfgKey" placeholder="anon public key" style="font-size:.6rem;padding:3px 5px;border:1px solid var(--fg);border-radius:2px;min-width:180px">' +
+            '<button class="btn btn-p" style="font-size:.6rem" onclick="cloudUiConnect()">Connect</button>' +
+          '</div>' +
+          '<div id="cloudMsg" class="home-settings-status" style="color:var(--md)">Free to set up (~10 min) — see docs/BACKEND_OWNERSHIP.md. Your patient data lives in an account you control.</div>'
+        : '<div class="home-settings-status" style="color:var(--md)">Only the practice administrator can connect a backend project.</div>');
   } else if (s.state === "signedout") {
     body =
       '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">' +
