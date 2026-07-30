@@ -201,8 +201,34 @@ function saveSettings(settings) {
 /* capped so localStorage stays bounded.                            */
 /* ═══════════════════════════════════════════════════════════════ */
 
+var AUDIT_MAX_LOCAL = 2000;
+
 function loadAudit() { return loadStore("audit", []); }
 function saveAudit(entries) { saveStore("audit", entries); }
+
+/* Describe a truncation in words a reader of the trail can act on. Pure. */
+function auditNoteTruncation(dropped) {
+  var n = dropped.length;
+  var first = (dropped[0] && dropped[0].ts) || "";
+  var last = (dropped[n - 1] && dropped[n - 1].ts) || "";
+  return n + " earlier audit event(s) were removed to stay within this device's " +
+    "storage limit" +
+    (first ? ", covering " + String(first).slice(0, 10) + " to " + String(last).slice(0, 10) : "") +
+    ". History before this point is NOT available locally. The server audit log " +
+    "(when the backend is connected) is append-only and keeps the full record.";
+}
+
+/* Has the local trail lost history? Surfaced in the Admin health card so the
+   gap is visible rather than discovered later. */
+function auditTruncationNotice() {
+  var entries = loadAudit();
+  for (var i = 0; i < entries.length; i++) {
+    if (entries[i].action === "audit_truncated") {
+      return { truncated: true, at: entries[i].ts, details: entries[i].details };
+    }
+  }
+  return { truncated: false };
+}
 
 /* Record one event. `ids` may override the current patient/visit context. */
 function logAudit(action, details, ids) {
@@ -218,8 +244,31 @@ function logAudit(action, details, ids) {
     visit_id: ids.visit_id !== undefined ? ids.visit_id : (typeof CV !== "undefined" ? CV : null),
     details: details || ""
   });
-  /* keep only the most recent 2000 events */
-  if (entries.length > 2000) entries = entries.slice(entries.length - 2000);
+  /* Cap the local trail so localStorage stays bounded — but NEVER silently.
+     For a records system the access log can be the evidence, and quietly
+     discarding the oldest entries leaves an invisible hole in it (audit H-7).
+     When we drop events we (a) record how many and which period were lost,
+     (b) leave a marker IN the trail itself so the gap is self-evident to
+     anyone reading it, and (c) surface it to the admin. The server-side
+     audit log is append-only and immutable, so a connected clinic keeps the
+     full history regardless — which is the real fix, and what the marker
+     tells the reader to do. */
+  if (entries.length > AUDIT_MAX_LOCAL) {
+    var dropCount = entries.length - AUDIT_MAX_LOCAL;
+    var dropped = entries.slice(0, dropCount);
+    entries = entries.slice(dropCount);
+    var note = auditNoteTruncation(dropped);
+    entries.unshift({
+      ts: new Date().toISOString(),
+      user: "system", user_name: "",
+      action: "audit_truncated",
+      patient_id: null, visit_id: null,
+      details: note
+    });
+    if (typeof toast === "function") {
+      try { toast("Local audit trail reached its limit — " + dropCount + " oldest events archived out. Connect the backend to keep full history."); } catch (e) {}
+    }
+  }
   saveAudit(entries);
 
   /* Also append to the SERVER audit log when signed in (DD H-7). Best-effort:

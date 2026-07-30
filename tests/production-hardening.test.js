@@ -219,3 +219,55 @@ test("Retry-After from the server is honoured and capped", () => {
   assert.strictEqual(c.cloudRetryDelayMs(429, 0, "9999"), 60000, "but capped so the app is not stuck for hours");
   assert.ok(c.cloudRetryDelayMs(429, 0, "garbage") > 0, "an unparseable header falls back to backoff");
 });
+
+
+/* ── audit trail truncation must never be silent (audit H-7) ──────── */
+
+test("the audit trail marks its own gap instead of silently dropping history", () => {
+  const s = loadStorage();
+  /* fill past the cap */
+  const many = [];
+  for (let i = 0; i < s.AUDIT_MAX_LOCAL + 25; i++) {
+    many.push({ ts: "2026-01-" + String((i % 28) + 1).padStart(2, "0") + "T00:00:00Z",
+                user: "drsmith", action: "patient_opened", details: "e" + i });
+  }
+  s.saveAudit(many);
+  s.logAudit("patient_opened", "one more", {});
+
+  const after = s.loadAudit();
+  assert.ok(after.length <= s.AUDIT_MAX_LOCAL + 1, "the trail stays bounded");
+
+  const marker = after.find((e) => e.action === "audit_truncated");
+  assert.ok(marker, "a truncation MARKER is written into the trail itself");
+  assert.ok(/not available locally/i.test(marker.details), "the gap is stated in plain words");
+  assert.ok(/append-only/.test(marker.details), "and points at the fix");
+
+  const notice = s.auditTruncationNotice();
+  assert.strictEqual(notice.truncated, true, "and it is reportable to the admin");
+});
+
+test("a trail under the cap reports no gap", () => {
+  const s = loadStorage();
+  s.saveAudit([{ ts: "2026-01-01T00:00:00Z", user: "drsmith", action: "patient_opened" }]);
+  assert.strictEqual(s.auditTruncationNotice().truncated, false);
+});
+
+test("the truncation note names how many events were lost and when", () => {
+  const s = loadStorage();
+  const dropped = [
+    { ts: "2026-01-02T00:00:00Z", action: "a" },
+    { ts: "2026-03-09T00:00:00Z", action: "b" }
+  ];
+  const note = s.auditNoteTruncation(dropped);
+  assert.ok(note.includes("2"), "count stated");
+  assert.ok(note.includes("2026-01-02") && note.includes("2026-03-09"), "period stated");
+});
+
+test("the readiness panel surfaces a truncated trail", () => {
+  const ctx = load("js/ui-deployment.js");
+  const m = ctx.module.exports;
+  const gap = m.deployChecks({ auditTruncated: true, vaultState: "unlocked", clinicMode: true, adminLegacy: false, plaintextCount: 0, cloudConfigured: true, phiArmed: true });
+  assert.strictEqual(gap.find((c) => c.id === "audit_trail").state, "warn");
+  const whole = m.deployChecks({ auditTruncated: false, vaultState: "unlocked", clinicMode: true, adminLegacy: false, plaintextCount: 0, cloudConfigured: true, phiArmed: true });
+  assert.strictEqual(whole.find((c) => c.id === "audit_trail").state, "ok");
+});

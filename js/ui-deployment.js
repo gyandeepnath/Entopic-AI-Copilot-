@@ -94,6 +94,18 @@ function deployChecks(env) {
     });
   }
 
+  /* The access log is potentially evidence, so a hole in it must be visible. */
+  var trunc = pick("auditTruncated",
+    (typeof auditTruncationNotice === "function") ? auditTruncationNotice().truncated : false);
+  out.push({
+    id: "audit_trail",
+    label: "Access / audit trail",
+    state: trunc ? "warn" : "ok",
+    detail: trunc
+      ? "This device's local trail has reached its limit and older events have been dropped — there is a marked gap in the history. Connect the backend: the server audit log is append-only and keeps everything."
+      : "Complete on this device. Connect the backend for an append-only copy that cannot be edited or deleted, even by an administrator."
+  });
+
   /* Encryption at rest. Entopic can now do this itself (js/local-vault.js),
      but it is OFF until an admin turns it on — so report what is actually
      true on THIS device, never what is merely possible. */

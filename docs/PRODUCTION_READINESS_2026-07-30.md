@@ -16,11 +16,11 @@ After the fixes in this session: **every deployment blocker is cleared and verif
 | | Count | Status |
 |---|---|---|
 | **1. Deployment blockers** | 5 | **all 5 fixed in code** |
-| **2. High risk** | 7 | 3 fixed · 4 scoped |
+| **2. High risk** | 7 | 4 fixed · 3 scoped |
 | **3. Medium risk** | 7 | scoped |
 | **4. Low risk** | 4 | noted |
 
-Test suite: **426 passing, 0 failing** (was 376 — 50 new tests cover these fixes, 30 of them exercising real encryption). Build audit: **0 FAIL**.
+Test suite: **430 passing, 0 failing** (was 376 — 54 new tests cover these fixes, 30 of them exercising real encryption). Build audit: **0 FAIL**.
 
 ---
 
@@ -141,8 +141,10 @@ Errors go to a **local in-memory ring buffer** shown in the Admin panel. If the 
 ### H-6 — No migration runner or applied-version tracking
 Migrations are `.sql` files pasted into the Supabase console by hand. Nothing records **which have been applied** to a given project. With four files this is manageable; it will cause a mistake as the count grows. *Scoped:* a `schema_migrations` table and a documented apply order. **Good news:** all four files are genuinely idempotent — I verified by applying each **twice** to a real database with zero errors.
 
-### H-7 — The local audit trail silently drops history
-`logAudit` keeps only the **most recent 2000 events**, then discards the oldest with no warning. For a records system where the access log may be the evidence, silent truncation is the wrong default. The *server* audit log is append-only and immutable (verified: `audit_log` has INSERT and SELECT policies only — no UPDATE, no DELETE), so connecting the backend mitigates this. Un-connected, history is lost.
+### H-7 — The local audit trail silently dropped history ✅ FIXED
+`logAudit` kept only the **most recent 2000 events** and discarded the oldest with no warning. For a records system where the access log may be the evidence, an invisible hole in it is the wrong default.
+
+**Fix.** Truncation is now self-evident rather than silent: a marker entry is written **into the trail itself** naming how many events were removed and the period they covered, the admin is told at the moment it happens, and the readiness panel reports the gap. The *server* audit log is append-only and immutable (verified: `audit_log` has INSERT and SELECT policies only — no UPDATE, no DELETE), so a connected clinic keeps the full history regardless — which the marker says explicitly.
 
 ---
 
