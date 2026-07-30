@@ -476,3 +476,20 @@ test("a key cached before the vault existed is upgraded in place", async () => {
   assert.ok(stored.charAt(0) === "{", "the stale plaintext key was wrapped once the vault opened");
   assert.ok(!stored.includes(legacyHex), "the clear copy is gone");
 });
+
+test("a locked vault cannot arm cloud sync, so it can never push emptied records", async () => {
+  const ctx = makeCloudEnv({ entopic_patients: PATIENTS });
+  await ctx.vaultEnable(PASS);
+  ctx.phiSetConsent(true);
+  await ctx.phiSetPassphrase("a clinic phi passphrase", "clinic-123");
+  assert.strictEqual(ctx.phiArmed(), true, "armed while unlocked and consented");
+
+  ctx.vaultLock();
+  vm.runInContext("_phiKey = null;", ctx);
+
+  /* This is the property that matters: cloudDrain() is gated on phiArmed(), and
+     a locked vault makes loadPatients() return []. If phiArmed() stayed true,
+     sync could push that emptiness and wipe the clinic's CLOUD copy too. */
+  assert.strictEqual(ctx.loadStore("patients", []).length, 0, "locked reads yield nothing");
+  assert.strictEqual(ctx.phiArmed(), false, "so sync must be disarmed — it is");
+});

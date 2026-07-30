@@ -6,6 +6,45 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-07-30 — Session 11z: Refinement rounds across the storage/security layers
+
+Five focused passes over the layers touched by the vault work, each verified
+before moving on. The most important finding was a bug I had introduced:
+
+**V-1 (critical, silent data loss).** The IndexedDB safety mirror backed up the
+encrypted records but NOT the vault key wrapper. If localStorage were cleared —
+exactly what the mirror exists to survive — recovery would restore ciphertext
+while the wrapped data key stayed lost, making every patient record permanently
+unreadable *even with the correct passphrase and the recovery code*. The wrapper
+is now mirrored (wrapped key material only, so no new exposure). The regression
+test reads the real `MIRROR_KEYS` out of `storage-mirror.js` instead of copying
+it, so it genuinely fails if the wrapper is dropped again — confirmed by
+removing it and watching the test go red.
+
+**H-4 — encrypted backups.** Backup files were plaintext PHI: the weakest link
+once the device itself was encrypted, and the copy most likely to travel. Admin
+now offers an encrypted backup (AES-GCM-256, PBKDF2 from a backup passphrase),
+deliberately **self-contained** rather than tied to the device vault — a backup
+must restore onto a replacement machine that has no vault, which is the disaster
+it exists for. The restore safety snapshot no longer writes plaintext PHI either.
+
+**Cloud key gap closed.** With records encrypted locally, a stolen device gave up
+nothing on disk — but the cached cloud-sync key sat beside them in the clear, so
+the cloud copy was still decryptable. That key is now wrapped by the vault, and a
+key cached before the vault existed is re-wrapped the first time the vault opens
+(awaited, so the key is never reported ready while a plaintext copy remains).
+
+**H-7 — audit truncation made visible.** The trail dropped its oldest 2000+
+events silently. It now writes a marker into itself naming how many events went
+and the period covered, warns the admin, and shows in the readiness panel.
+
+**Safety property pinned:** a locked vault disarms cloud sync, so a locked device
+can never push its (empty) reads over the clinic's cloud copy.
+
+**Stability sweep:** every home tab × every role × encryption ON and OFF renders
+clean with no page or console errors. 430 tests passing (was 376), build audit
+0 FAIL. No engine, scoring, red-flag or offline-path change in any of it.
+
 ## 2026-07-30 — Session 11y: Encryption at rest, and the production-readiness fixes
 
 Audited the build against "this must run in a real clinic tomorrow" across 18
