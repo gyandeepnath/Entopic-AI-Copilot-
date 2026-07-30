@@ -28,7 +28,19 @@ var MIRROR_DB_NAME = "entopic_mirror";
 var MIRROR_DB_VERSION = 1;
 var MIRROR_STORE_NAME = "kv";
 /* Keys (without the "entopic_" prefix) that constitute clinic data. */
-var MIRROR_KEYS = ["users", "patients", "visits", "settings", "registry_queue"];
+/* `vault_meta` is here for a reason that is easy to miss and catastrophic to
+   get wrong. With the record vault on, the mirrored copies of users/patients/
+   visits are CIPHERTEXT, and the only thing that can decrypt them is the
+   wrapped data key inside `entopic_vault_meta`. If localStorage were cleared —
+   precisely the situation this mirror exists to survive — recovery would
+   restore the ciphertext while the key wrapper stayed lost, and every patient
+   record would be permanently unreadable even with the correct passphrase AND
+   the recovery code. Mirroring the wrapper closes that hole.
+
+   Storing it here is safe: the meta contains only the data key WRAPPED by the
+   passphrase- and recovery-derived keys, never the key itself, so a stolen
+   IndexedDB is no more useful than stolen localStorage. */
+var MIRROR_KEYS = ["users", "patients", "visits", "settings", "registry_queue", "vault_meta"];
 var MIRROR_BOOT_FLAG = "entopic_mirror_recovered";
 
 function mirrorSupported() {

@@ -213,10 +213,49 @@ if (typeof document !== "undefined") {
       '</div>' +
 
       '<div class="home-settings" style="margin-top:8px">' +
+        '<div class="home-settings-title">💾 Backup</div>' +
+        '<div class="home-settings-desc">A backup file travels — USB stick, Downloads folder, email — so it is the copy of your records most likely to go astray. <b>Encrypt it.</b> ' +
+          'The file is self-contained: it can be restored onto a brand-new machine with just the backup passphrase.</div>' +
+        '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">' +
+          '<input id="deployBackupPass" type="password" placeholder="backup passphrase (10+ chars)" style="font-size:.62rem;padding:3px 6px;border:1px solid var(--fg);border-radius:2px;min-width:200px">' +
+          '<button class="btn btn-p" style="font-size:.6rem" onclick="deployExportEncrypted()">Download encrypted backup</button>' +
+          '<button class="btn btn-s" style="font-size:.6rem" onclick="deployExportPlain()">Unencrypted…</button>' +
+        '</div>' +
+        '<div id="deployBackupMsg" class="home-settings-status"></div>' +
+      '</div>' +
+
+      '<div class="home-settings" style="margin-top:8px">' +
         '<div class="home-settings-title">📁 Restore from backup</div>' +
-        '<div class="home-settings-desc"><b>Replaces every patient record on this device.</b> A safety snapshot of the current data is downloaded first, so a wrong file can be undone.</div>' +
+        '<div class="home-settings-desc"><b>Replaces every patient record on this device.</b> A safety snapshot of the current data is downloaded first, so a wrong file can be undone. Encrypted backups will ask for their passphrase.</div>' +
         '<input type="file" accept=".json" onchange="if(this.files[0])importData(this.files[0])" style="font-size:.62rem">' +
       '</div>';
+  };
+
+  window.deployExportEncrypted = function () {
+    if (typeof isAdmin !== "function" || !isAdmin()) return;
+    var el = document.getElementById("deployBackupPass");
+    var msg = document.getElementById("deployBackupMsg");
+    var pass = el ? el.value : "";
+    if (msg) { msg.style.color = "var(--sl)"; msg.textContent = "Encrypting…"; }
+    exportEncryptedBackup(pass, function (err) {
+      if (!msg) return;
+      if (err) { msg.style.color = "#c0392b"; msg.textContent = (err && err.message) || "Could not create the backup."; return; }
+      if (el) el.value = "";
+      msg.style.color = "#2e7d46";
+      msg.textContent = "Encrypted backup downloaded. Keep the passphrase safe — without it the file cannot be opened, by anyone.";
+    });
+  };
+
+  window.deployExportPlain = function () {
+    if (typeof isAdmin !== "function" || !isAdmin()) return;
+    if (!window.confirm(
+      "Download an UNENCRYPTED backup?\n\n" +
+      "The file will contain every patient's name, date of birth and record in plain text. " +
+      "Anyone who finds it can read it.\n\n" +
+      "Only do this if you are writing it straight to encrypted storage.")) return;
+    exportAllData();
+    var msg = document.getElementById("deployBackupMsg");
+    if (msg) { msg.style.color = "#b9770e"; msg.textContent = "Unencrypted backup downloaded — store it on encrypted media."; }
   };
 
   window.deployToggleClinicMode = function () {

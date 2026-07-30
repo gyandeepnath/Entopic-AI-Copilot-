@@ -97,8 +97,16 @@ function vaultMeta() {
   try { return JSON.parse(localStorage.getItem(VAULT_META_KEY) || "null"); }
   catch (e) { return null; }
 }
+/* Persist the key wrapper — and mirror it. The mirror copy is what makes the
+   records survivable if localStorage is ever cleared: without the wrapper the
+   mirrored ciphertext could never be decrypted again, by anyone, ever. Only
+   WRAPPED key material is written, so this adds no exposure. */
 function vaultSaveMeta(meta) {
-  localStorage.setItem(VAULT_META_KEY, JSON.stringify(meta));
+  var json = JSON.stringify(meta);
+  localStorage.setItem(VAULT_META_KEY, json);
+  if (typeof mirrorPutRaw === "function") {
+    try { mirrorPutRaw("vault_meta", json); } catch (e) {}
+  }
 }
 
 function vaultEnabled() { return !!vaultMeta(); }
@@ -522,6 +530,62 @@ function vaultDisable(passphrase) {
 }
 
 
+/* ═══════════════════════════════════════════════════════════════ */
+/* ENCRYPTED BACKUP FILES (audit H-4)                              */
+/*                                                                  */
+/* Records are encrypted on the device, but the exported backup was */
+/* plaintext JSON holding every name, DOB and MRN — so the weekly   */
+/* backup routine was quietly the weakest link. A backup file       */
+/* travels (USB stick, Downloads folder, email), which is exactly   */
+/* where it needs protection most.                                  */
+/*                                                                  */
+/* These files are SELF-CONTAINED: the salt travels with the file   */
+/* and the key comes from a passphrase, not from this device's      */
+/* vault. That matters for disaster recovery — a backup must be     */
+/* restorable onto a NEW machine that has no vault at all.          */
+/* ═══════════════════════════════════════════════════════════════ */
+var BACKUP_TAG = "entopic-backup-aesgcm256-v1";
+
+function backupIsEncrypted(x) {
+  return !!(x && typeof x === "object" && x.__backup === BACKUP_TAG && x.iv && x.ct && x.kdf);
+}
+
+function backupEncrypt(dataObj, passphrase) {
+  if (!vaultHasCrypto()) return Promise.reject(new Error("This browser cannot encrypt (no Web Crypto)."));
+  if (!passphrase || String(passphrase).length < 10) {
+    return Promise.reject(new Error("Choose a backup passphrase of at least 10 characters."));
+  }
+  var salt = vaultRandomHex(16);
+  return vaultDeriveKek(passphrase, salt).then(function (key) {
+    var iv = new Uint8Array(12);
+    crypto.getRandomValues(iv);
+    var pt = new TextEncoder().encode(JSON.stringify(dataObj));
+    return crypto.subtle.encrypt({ name: "AES-GCM", iv: iv }, key, pt).then(function (ct) {
+      return {
+        __backup: BACKUP_TAG,
+        exported: new Date().toISOString(),
+        note: "Entopic encrypted backup. Restore it from Admin → Restore from backup; you will need the backup passphrase.",
+        kdf: { alg: "PBKDF2-SHA-256", iters: VAULT_PBKDF2_ITERS, salt: salt },
+        iv: vaultToHex(iv),
+        ct: vaultB64(new Uint8Array(ct))
+      };
+    });
+  });
+}
+
+function backupDecrypt(envelope, passphrase) {
+  if (!backupIsEncrypted(envelope)) return Promise.resolve(envelope);
+  if (!vaultHasCrypto()) return Promise.reject(new Error("This browser cannot decrypt (no Web Crypto)."));
+  return vaultDeriveKek(passphrase, envelope.kdf.salt)
+    .then(function (key) {
+      return crypto.subtle.decrypt(
+        { name: "AES-GCM", iv: vaultFromHex(envelope.iv) }, key, vaultUnB64(envelope.ct));
+    })
+    .then(function (pt) { return JSON.parse(new TextDecoder().decode(pt)); })
+    .catch(function () { throw new Error("That passphrase did not open this backup file."); });
+}
+
+
 /* ── Page teardown: never let a pending write die with the tab ───── */
 if (typeof window !== "undefined" && typeof window.addEventListener === "function") {
   window.addEventListener("beforeunload", function () { try { vaultFlush(); } catch (e) {} });
@@ -546,6 +610,8 @@ if (typeof module !== "undefined" && module.exports) {
     vaultDisable: vaultDisable,
     vaultEncryptValue: vaultEncryptValue, vaultDecryptValue: vaultDecryptValue,
     vaultIsEnvelope: vaultIsEnvelope,
+    backupEncrypt: backupEncrypt, backupDecrypt: backupDecrypt,
+    backupIsEncrypted: backupIsEncrypted,
     vaultHydrate: vaultHydrate, vaultFlush: vaultFlush,
     vaultCacheGet: vaultCacheGet, vaultCacheSet: vaultCacheSet
   };

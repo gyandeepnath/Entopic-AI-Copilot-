@@ -398,8 +398,10 @@ function deletePatient(patientId) {
 /* Exports all data as a downloadable JSON file                    */
 /* ═══════════════════════════════════════════════════════════════ */
 
-function exportAllData() {
-  var data = {
+/* Gather everything a backup contains. Separated so it can be encrypted
+   before it is written, rather than after it has already hit the disk. */
+function buildBackupPayload() {
+  return {
     version: STORE_VERSION,
     exported: new Date().toISOString(),
     users: loadUsers(),
@@ -408,17 +410,44 @@ function exportAllData() {
     settings: loadSettings(),
     audit: loadAudit()
   };
-  if (typeof logAudit === "function") logAudit("data_exported", "Exported all data (JSON backup)", { patient_id: null, visit_id: null });
+}
 
-  var blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+function downloadBackupFile(obj, suffix) {
+  var blob = new Blob([JSON.stringify(obj, null, 2)], { type: "application/json" });
   var url = URL.createObjectURL(blob);
   var a = document.createElement("a");
   a.href = url;
-  a.download = "entopic-backup-" + new Date().toISOString().slice(0, 10) + ".json";
+  a.download = "entopic-backup-" + new Date().toISOString().slice(0, 10) + (suffix || "") + ".json";
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
+}
+
+function exportAllData() {
+  var data = buildBackupPayload();
+  if (typeof logAudit === "function") logAudit("data_exported", "Exported all data (plain JSON backup)", { patient_id: null, visit_id: null });
+  downloadBackupFile(data, "");
+}
+
+/* Encrypted backup (audit H-4). A backup file travels — USB stick, Downloads
+   folder, email — so it is the copy of the records MOST likely to be lost, and
+   it was the only one still in plaintext once the device vault landed.
+
+   The file is self-contained: its salt travels with it and the key comes from
+   a passphrase, NOT from this device's vault. A backup has to be restorable
+   onto a replacement machine that has no vault at all — tying it to the device
+   key would make it useless in the exact disaster it exists for. */
+function exportEncryptedBackup(passphrase, cb) {
+  cb = cb || function () {};
+  if (typeof backupEncrypt !== "function") { cb(new Error("Encryption is unavailable in this browser.")); return; }
+  backupEncrypt(buildBackupPayload(), passphrase).then(function (env) {
+    if (typeof logAudit === "function") {
+      logAudit("data_exported_encrypted", "Exported an ENCRYPTED backup", { patient_id: null, visit_id: null });
+    }
+    downloadBackupFile(env, "-encrypted");
+    cb(null);
+  }).catch(function (e) { cb(e); });
 }
 
 
@@ -516,6 +545,24 @@ function importData(file) {
       return;
     }
 
+    /* An encrypted backup has to be opened before it can be validated. */
+    if (typeof backupIsEncrypted === "function" && backupIsEncrypted(data)) {
+      var pass = window.prompt(
+        "This backup is encrypted.\n\nEnter the backup passphrase to open it:", "");
+      if (!pass) return;
+      backupDecrypt(data, pass).then(function (plain) {
+        _importDecoded(plain);
+      }).catch(function (err) {
+        alert((err && err.message) || "Could not open this backup file.\n\nYour current records are untouched.");
+      });
+      return;
+    }
+    _importDecoded(data);
+  };
+  reader.readAsText(file);
+}
+
+function _importDecoded(data) {
     var check = validateBackup(data);
     if (!check.ok) {
       alert("This file was NOT restored:\n\n• " + check.errors.join("\n• ") +
@@ -532,17 +579,36 @@ function importData(file) {
       "\nA safety copy of the CURRENT data will be downloaded first so this can be undone.\n\nContinue?";
     if (!confirm(msg)) return;
 
-    /* Safety snapshot before anything is overwritten (audit H-1). If the
-       snapshot cannot be produced, stop — an un-undoable replace is exactly
-       the failure this guards against. */
-    try {
-      if (typeof exportAllData === "function") exportAllData();
-    } catch (err2) {
-      alert("Could not download a safety copy of the current data, so nothing was replaced.\n\n(" +
-            (err2 && err2.message) + ")");
-      return;
-    }
+  /* Safety snapshot before anything is overwritten (audit H-1). If the snapshot
+     cannot be produced, stop — an un-undoable replace is exactly the failure
+     this guards against.
 
+     When the record vault is on, this snapshot must NOT be written in the
+     clear: it holds the same patient data the vault exists to protect, and it
+     lands in the Downloads folder. It is encrypted with the device's own vault
+     key, so the clinic can open it with the vault passphrase or the recovery
+     code — the file is an undo for THIS device, which is exactly its purpose. */
+  function takeSafetySnapshot() {
+    var vaultOn = (typeof vaultEnabled === "function" && vaultEnabled() &&
+                   typeof vaultUnlocked === "function" && vaultUnlocked() &&
+                   typeof vaultEncryptValue === "function");
+    if (!vaultOn) {
+      exportAllData();
+      return Promise.resolve("plain");
+    }
+    return vaultEncryptValue(buildBackupPayload()).then(function (env) {
+      downloadBackupFile({
+        __backup_vault: true,
+        note: "Entopic safety snapshot, encrypted with this device's vault key. " +
+              "Open it on this device (or one restored from it) with the clinic passphrase or the recovery code.",
+        exported: new Date().toISOString(),
+        payload: env
+      }, "-safety-encrypted");
+      return "encrypted";
+    });
+  }
+
+  takeSafetySnapshot().then(function (mode) {
     if (data.users) saveUsers(data.users);
     savePatients(data.patients);
     saveVisits(data.visits);
@@ -560,10 +626,14 @@ function importData(file) {
     }
 
     alert("Restored " + check.counts.patients + " patients and " + check.counts.visits + " visits.\n\n" +
-          "The safety copy of your previous data was downloaded to this device.");
+          "A safety copy of your previous data was downloaded" +
+          (mode === "encrypted" ? " (encrypted with this device's vault key)." : " (unencrypted — store it carefully).") +
+          "\n\nThe page will now reload.");
     location.reload();
-  };
-  reader.readAsText(file);
+  }).catch(function (err2) {
+    alert("Could not save a safety copy of the current data, so NOTHING was replaced.\n\n(" +
+          ((err2 && err2.message) || "unknown error") + ")\n\nYour records are untouched.");
+  });
 }
 
 

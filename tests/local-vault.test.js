@@ -61,6 +61,22 @@ const VISITS = [{ id: "v1", patient_id: "p1", data: { iop: { od: "18", os: "17" 
 
 const PASS = "correct horse battery staple";
 
+/* The genuine MIRROR_KEYS whitelist from js/storage-mirror.js, loaded rather
+   than copied, so the survivability test below fails if the vault key wrapper
+   is ever dropped from the mirror. */
+function realMirrorKeys() {
+  const ctx = {
+    console: { log() {}, warn() {}, error() {} },
+    JSON, Date, String, Array, Object,
+    indexedDB: undefined, localStorage: undefined
+  };
+  ctx.window = ctx;
+  vm.createContext(ctx);
+  vm.runInContext(fs.readFileSync(path.resolve(__dirname, "..", "js/storage-mirror.js"), "utf8"),
+    ctx, { filename: "storage-mirror.js" });
+  return ctx.MIRROR_KEYS || [];
+}
+
 
 test("vault is off by default and records are readable as before", () => {
   const ctx = makeEnv({ entopic_patients: PATIENTS });
@@ -289,6 +305,108 @@ test("the audit trail and accounts are protected too", async () => {
   await ctx.vaultFlush();
   assert.ok(!/Meera Nair/.test(ctx.__raw["entopic_audit"]), "audit details are encrypted");
   assert.ok(!/drsmith/.test(ctx.__raw["entopic_users"]), "account records are encrypted");
+});
+
+/* ── survivability: the mirror must carry the key wrapper ────────────
+   The IndexedDB mirror exists to survive localStorage being cleared. With
+   the vault on it holds CIPHERTEXT, so if the key wrapper is not mirrored
+   too, "recovery" restores unreadable rubbish and the records are gone for
+   good — passphrase and recovery code both useless. This test replays that
+   exact sequence. */
+test("RECORDS SURVIVE localStorage BEING WIPED AND RESTORED FROM THE MIRROR", async () => {
+  const ctx = makeEnv({ entopic_patients: PATIENTS, entopic_visits: VISITS });
+  const { recoveryCode } = await ctx.vaultEnable(PASS);
+  await ctx.vaultFlush();
+
+  /* What the IndexedDB mirror holds: read the REAL whitelist out of
+     storage-mirror.js. Hard-coding it here would make this test pass even if
+     `vault_meta` were dropped from the mirror — i.e. it would not catch the
+     very bug it exists for. */
+  const MIRRORED = realMirrorKeys();
+  assert.ok(MIRRORED.length, "the mirror whitelist was located in the source");
+  const mirror = {};
+  for (const k of MIRRORED) {
+    const v = ctx.__raw["entopic_" + k];
+    if (v !== undefined) mirror["entopic_" + k] = v;
+  }
+
+  /* Disaster: the browser clears site storage. */
+  for (const k of Object.keys(ctx.__raw)) delete ctx.__raw[k];
+  ctx.vaultLock();
+  assert.strictEqual(ctx.vaultEnabled(), false, "everything really is gone");
+
+  /* Mirror recovery writes its copies back. */
+  for (const k of Object.keys(mirror)) ctx.__raw[k] = mirror[k];
+
+  assert.strictEqual(ctx.vaultEnabled(), true, "the key wrapper came back with the data");
+  await ctx.vaultUnlock(PASS);
+  assert.strictEqual(JSON.stringify(ctx.loadStore("patients", [])), JSON.stringify(PATIENTS),
+    "records are readable again — the clinic is not wiped out");
+
+  /* and the recovery code still works on the restored wrapper */
+  ctx.vaultLock();
+  await ctx.vaultUnlockWithRecovery(recoveryCode);
+  assert.strictEqual(ctx.loadStore("patients", []).length, 2);
+});
+
+test("the mirrored key wrapper contains no usable key material", async () => {
+  const ctx = makeEnv({ entopic_patients: PATIENTS });
+  await ctx.vaultEnable(PASS);
+  const meta = JSON.parse(ctx.__raw["entopic_vault_meta"]);
+  const flat = JSON.stringify(meta);
+  assert.ok(!/Meera/.test(flat), "no patient data in the wrapper");
+  assert.ok(meta.wrapped.pass.ct && meta.wrapped.recovery.ct, "only wrapped copies");
+  assert.ok(!meta.dek && !meta.key && !meta.raw, "no raw key field of any name");
+  /* A stolen mirror is exactly as useless as stolen localStorage: without the
+     passphrase or the recovery code the wrapper cannot be opened. */
+  ctx.vaultLock();
+  await assert.rejects(() => ctx.vaultUnlock("guess"), /did not open/);
+});
+
+/* ── encrypted backup files (audit H-4) ───────────────────────────── */
+
+test("an encrypted backup round-trips and hides everything identifiable", async () => {
+  const ctx = makeEnv();
+  const payload = { version: "1.0.0", patients: PATIENTS, visits: VISITS, users: [], audit: [] };
+  const env = await ctx.backupEncrypt(payload, "a strong backup passphrase");
+
+  const asFile = JSON.stringify(env);
+  assert.ok(!/Meera/.test(asFile), "no name in the file");
+  assert.ok(!/MRN-4471/.test(asFile), "no MRN in the file");
+  assert.ok(!/1978-04-02/.test(asFile), "no date of birth in the file");
+  assert.strictEqual(ctx.backupIsEncrypted(env), true);
+
+  const back = await ctx.backupDecrypt(env, "a strong backup passphrase");
+  assert.strictEqual(JSON.stringify(back), JSON.stringify(payload), "restores byte-for-byte");
+});
+
+test("a backup file is self-contained — restorable on a machine with no vault", async () => {
+  const source = makeEnv({ entopic_patients: PATIENTS });
+  await source.vaultEnable(PASS);
+  const env = await source.backupEncrypt(source.buildBackupPayload(), "a strong backup passphrase");
+
+  /* A brand-new machine: no vault, no meta, nothing. This is the disaster case
+     a backup exists for, so it must not depend on the old device's key. */
+  const fresh = makeEnv();
+  assert.strictEqual(fresh.vaultEnabled(), false, "the replacement machine has no vault");
+  const back = await fresh.backupDecrypt(env, "a strong backup passphrase");
+  assert.strictEqual(back.patients.length, 2, "records recovered onto a clean machine");
+  assert.strictEqual(back.patients[0].first_name, "Meera");
+});
+
+test("a wrong backup passphrase is refused, and weak ones are rejected up front", async () => {
+  const ctx = makeEnv();
+  const env = await ctx.backupEncrypt({ patients: [], visits: [] }, "a strong backup passphrase");
+  await assert.rejects(() => ctx.backupDecrypt(env, "wrong passphrase here"), /did not open this backup/);
+  await assert.rejects(() => ctx.backupEncrypt({}, "short"), /at least 10 characters/);
+});
+
+test("plain backups are still recognised, so old files keep restoring", async () => {
+  const ctx = makeEnv();
+  const plain = { version: "1.0.0", patients: [{ id: "p1" }], visits: [] };
+  assert.strictEqual(ctx.backupIsEncrypted(plain), false);
+  const passthrough = await ctx.backupDecrypt(plain, "irrelevant");
+  assert.strictEqual(JSON.stringify(passthrough), JSON.stringify(plain));
 });
 
 test("the knowledge base is deliberately NOT encrypted (no benefit, real cost)", () => {
