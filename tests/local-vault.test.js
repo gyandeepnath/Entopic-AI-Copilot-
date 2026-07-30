@@ -416,3 +416,63 @@ test("the knowledge base is deliberately NOT encrypted (no benefit, real cost)",
   assert.strictEqual(ctx.vaultIsProtected("kb_local_edits"), false);
   assert.strictEqual(ctx.vaultIsProtected("settings"), false);
 });
+
+
+/* ── the cached cloud key must not sit in the clear beside a vault ──
+   Closes the residual gap noted in the readiness report: with records
+   encrypted locally, a stolen device gives up nothing on disk — but a
+   plaintext cloud key beside it would still let a thief decrypt the CLOUD
+   copy. These load cloud-crypto.js on top of the vault, as the browser does. */
+function makeCloudEnv(seed) {
+  const ctx = makeEnv(seed);
+  vm.runInContext(fs.readFileSync(path.resolve(__dirname, "..", "js/cloud-crypto.js"), "utf8"),
+    ctx, { filename: "cloud-crypto.js" });
+  return ctx;
+}
+
+test("with the vault open, the cached cloud key is stored wrapped, not in the clear", async () => {
+  const ctx = makeCloudEnv({ entopic_patients: PATIENTS });
+  await ctx.vaultEnable(PASS);
+  await ctx.phiSetPassphrase("a clinic phi passphrase", "clinic-123");
+
+  const stored = ctx.__raw["entopic_cloud_phi_keyhex"];
+  assert.ok(stored, "a key is cached");
+  assert.ok(stored.charAt(0) === "{", "stored as an envelope, not raw hex");
+  assert.ok(!/^[0-9a-f]{64}$/.test(stored), "no bare 32-byte key on disk");
+  assert.strictEqual(ctx.vaultIsEnvelope(JSON.parse(stored)), true);
+});
+
+test("a locked device reports the cloud key as unavailable rather than pushing", async () => {
+  const ctx = makeCloudEnv({ entopic_patients: PATIENTS });
+  await ctx.vaultEnable(PASS);
+  await ctx.phiSetPassphrase("a clinic phi passphrase", "clinic-123");
+  ctx.phiClearKeyMemoryOnly ? ctx.phiClearKeyMemoryOnly() : null;
+
+  ctx.vaultLock();
+  /* drop the in-memory copy the way a page reload would */
+  vm.runInContext("_phiKey = null;", ctx);
+
+  assert.strictEqual(ctx.phiKeyReady(), false, "locked: not ready, so sync waits instead of failing");
+  const key = await ctx.phiLoadKey();
+  assert.strictEqual(key, null, "the wrapped key cannot be opened while the vault is locked");
+
+  await ctx.vaultUnlock(PASS);
+  assert.strictEqual(ctx.phiKeyReady(), true, "available again once unlocked");
+  assert.ok(await ctx.phiLoadKey(), "and the key really loads");
+});
+
+test("a key cached before the vault existed is upgraded in place", async () => {
+  const ctx = makeCloudEnv({ entopic_patients: PATIENTS });
+  /* legacy state: plain hex key, no vault */
+  const legacyHex = "ab".repeat(32);
+  ctx.localStorage.setItem("entopic_cloud_phi_keyhex", legacyHex);
+  assert.strictEqual(ctx.phiKeyReady(), true, "legacy key still works with the vault off");
+
+  await ctx.vaultEnable(PASS);
+  vm.runInContext("_phiKey = null;", ctx);
+  await ctx.phiLoadKey();          /* triggers the opportunistic re-wrap */
+
+  const stored = ctx.__raw["entopic_cloud_phi_keyhex"];
+  assert.ok(stored.charAt(0) === "{", "the stale plaintext key was wrapped once the vault opened");
+  assert.ok(!stored.includes(legacyHex), "the clear copy is gone");
+});

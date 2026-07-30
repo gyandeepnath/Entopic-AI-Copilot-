@@ -116,6 +116,50 @@ function phiDeriveKey(passphrase, clinicId) {
     });
 }
 
+/* ── Protecting the cached key itself ─────────────────────────────
+   The derived key is cached on the device so an all-day clinical tool does
+   not demand the passphrase on every reload. Before the record vault existed
+   that cost nothing: the local records were plaintext anyway, so the key was
+   no weaker than what it protected.
+
+   That is no longer true. With the vault on, a stolen device gives up NOTHING
+   locally — but a key sitting beside it in the clear would still let the thief
+   decrypt the CLOUD copy. So when the vault is available the cached key is
+   itself stored wrapped by the vault, closing that gap. Falls back to the plain
+   hex cache when the vault is off, which is exactly the old behaviour. */
+function phiVaultReady() {
+  return typeof vaultEnabled === "function" && vaultEnabled() &&
+         typeof vaultUnlocked === "function" && vaultUnlocked() &&
+         typeof vaultEncryptValue === "function";
+}
+
+function phiStoreKeyHex(hex) {
+  if (!phiVaultReady()) {
+    try { localStorage.setItem(PHI_KEY_CACHE, hex); } catch (e) {}
+    return Promise.resolve(true);
+  }
+  return vaultEncryptValue(hex).then(function (env) {
+    try { localStorage.setItem(PHI_KEY_CACHE, JSON.stringify(env)); } catch (e) {}
+    return true;
+  }).catch(function () {
+    try { localStorage.setItem(PHI_KEY_CACHE, hex); } catch (e) {}
+    return true;
+  });
+}
+
+/* Read the cached key back, transparently handling both shapes. */
+function phiReadKeyHex() {
+  var raw = "";
+  try { raw = localStorage.getItem(PHI_KEY_CACHE) || ""; } catch (e) {}
+  if (!raw) return Promise.resolve("");
+  if (raw.charAt(0) !== "{") return Promise.resolve(raw);        /* legacy plain hex */
+  var env;
+  try { env = JSON.parse(raw); } catch (e) { return Promise.resolve(""); }
+  if (typeof vaultDecryptValue !== "function" || !phiVaultReady()) return Promise.resolve("");
+  return vaultDecryptValue(env).then(function (hex) { return String(hex || ""); })
+                               .catch(function () { return ""; });
+}
+
 /* Set the clinic passphrase: derive, cache on device, hold in memory. */
 function phiSetPassphrase(passphrase, clinicId) {
   if (!passphrase || String(passphrase).length < 8) {
@@ -124,9 +168,10 @@ function phiSetPassphrase(passphrase, clinicId) {
   return phiDeriveKey(passphrase, clinicId).then(function (key) {
     _phiKey = key;
     return crypto.subtle.exportKey("raw", key).then(function (raw) {
-      try { localStorage.setItem(PHI_KEY_CACHE, phiBytesToHex(new Uint8Array(raw))); } catch (e) {}
-      if (typeof logAudit === "function") logAudit("phi_key_set", "Clinic encryption passphrase set on this device", {});
-      return true;
+      return phiStoreKeyHex(phiBytesToHex(new Uint8Array(raw))).then(function () {
+        if (typeof logAudit === "function") logAudit("phi_key_set", "Clinic encryption passphrase set on this device", {});
+        return true;
+      });
     });
   });
 }
@@ -135,18 +180,37 @@ function phiSetPassphrase(passphrase, clinicId) {
 function phiLoadKey() {
   if (_phiKey) return Promise.resolve(_phiKey);
   if (!phiHasWebCrypto()) return Promise.resolve(null);
-  var hex = "";
-  try { hex = localStorage.getItem(PHI_KEY_CACHE) || ""; } catch (e) {}
-  if (!hex) return Promise.resolve(null);
-  return crypto.subtle
-    .importKey("raw", phiHexToBytes(hex), { name: "AES-GCM" }, false, ["encrypt", "decrypt"])
-    .then(function (key) { _phiKey = key; return key; })
-    .catch(function () { return null; });
+  return phiReadKeyHex().then(function (hex) {
+    if (!hex) return null;
+    return crypto.subtle
+      .importKey("raw", phiHexToBytes(hex), { name: "AES-GCM" }, false, ["encrypt", "decrypt"])
+      .then(function (key) {
+        _phiKey = key;
+        /* Opportunistic upgrade: a key cached before the vault was turned on is
+           still lying in the clear. Now that the vault is open, wrap it — and
+           WAIT for that write, so we never report the key as ready while a
+           plaintext copy is still sitting on disk. */
+        var raw = "";
+        try { raw = localStorage.getItem(PHI_KEY_CACHE) || ""; } catch (e) {}
+        if (raw && raw.charAt(0) !== "{" && phiVaultReady()) {
+          return phiStoreKeyHex(hex).then(function () { return key; });
+        }
+        return key;
+      })
+      .catch(function () { return null; });
+  });
 }
 
 function phiKeyReady() {
   if (_phiKey) return true;
-  try { return !!localStorage.getItem(PHI_KEY_CACHE); } catch (e) { return false; }
+  var raw = "";
+  try { raw = localStorage.getItem(PHI_KEY_CACHE) || ""; } catch (e) { return false; }
+  if (!raw) return false;
+  /* A vault-wrapped key is only usable while the vault is open. Reporting
+     "ready" on a locked device would let cloud-sync believe it can push and
+     then fail mid-drain; saying not-ready makes it wait quietly instead. */
+  if (raw.charAt(0) === "{" && !phiVaultReady()) return false;
+  return true;
 }
 
 function phiClearKey() {

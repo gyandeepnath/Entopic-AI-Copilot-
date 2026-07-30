@@ -16,11 +16,11 @@ After the fixes in this session: **every deployment blocker is cleared and verif
 | | Count | Status |
 |---|---|---|
 | **1. Deployment blockers** | 5 | **all 5 fixed in code** |
-| **2. High risk** | 7 | 2 fixed · 5 scoped |
+| **2. High risk** | 7 | 3 fixed · 4 scoped |
 | **3. Medium risk** | 7 | scoped |
 | **4. Low risk** | 4 | noted |
 
-Test suite: **417 passing, 0 failing** (was 376 — 41 new tests cover these fixes, 21 of them exercising real encryption). Build audit: **0 FAIL**.
+Test suite: **426 passing, 0 failing** (was 376 — 50 new tests cover these fixes, 30 of them exercising real encryption). Build audit: **0 FAIL**.
 
 ---
 
@@ -128,8 +128,12 @@ Backup is a **manual button someone has to remember to press**. That is not a ba
 
 **Do before go-live:** connect the Supabase project (continuous encrypted backup), *and* set a weekly calendar reminder to export a local backup to separate storage. **Then actually restore one onto a spare machine and confirm the records come back.** An untested backup is a hope, not a plan.
 
-### H-4 — Backups are unencrypted plaintext PHI
-`entopic-backup-YYYY-MM-DD.json` contains every patient name, DOB and record **in the clear**, plus the user accounts. On a USB stick or in a Downloads folder it is a breach waiting to happen. *Scoped, not fixed:* an encrypted-export option reusing the existing PBKDF2/AES-GCM primitives — a contained next change. Until then: store backups only on encrypted media.
+### H-4 — Backups were unencrypted plaintext PHI ✅ FIXED
+`entopic-backup-YYYY-MM-DD.json` contained every patient name, DOB and record **in the clear**, plus the user accounts — the copy of the records most likely to travel on a USB stick, and the weakest link once the device itself was encrypted.
+
+**Fix.** Admin → Backup now produces an **encrypted** backup (AES-GCM-256, key derived from a backup passphrase via PBKDF2). The file is deliberately **self-contained** — its salt travels with it and it does *not* depend on this device's vault, because a backup has to restore onto a replacement machine that has no vault; that is the disaster it exists for. Unencrypted export is still available behind an explicit warning. Restore detects an encrypted file and asks for its passphrase.
+
+The restore **safety snapshot** no longer drops plaintext PHI into Downloads either: with the vault on it is encrypted with the device vault key, so it stays openable with the clinic passphrase or the recovery code.
 
 ### H-5 — No monitoring; failures are invisible off-device
 Errors go to a **local in-memory ring buffer** shown in the Admin panel. If the terminal starts failing, nobody finds out unless someone looks. There is no alerting and no remote error reporting. *Scoped:* push caught errors (de-identified — no PHI) to the existing `audit_log` table so failures are visible centrally.
@@ -207,11 +211,10 @@ Stating these matters as much as the failures — several are things that are co
 11. **Rehearse the recovery code once**, on a spare device, so you know it works before you ever need it.
 
 ### Next engineering block (in value order)
-1. **H-4 — encrypted backup export** (contained; reuses existing crypto).
-2. **M-7 + H-5 — "N records not yet backed up" indicator, and push caught errors to the server audit log.** Together these end the "silent failure" class of problem.
-3. **H-6 — `schema_migrations` tracking.**
-4. **M-4 — move the record store to IndexedDB.** The largest item; do it before any clinic accumulates a year of records.
-5. **Vault follow-ups:** per-user unlock (today one clinic passphrase unlocks the device) and moving the cached cloud-PHI key inside the vault — see "Known limits" below.
+1. **M-7 + H-5 — "N records not yet backed up" indicator, and push caught errors to the server audit log.** Together these end the "silent failure" class of problem.
+2. **H-6 — `schema_migrations` tracking.**
+3. **M-4 — move the record store to IndexedDB.** The largest item; do it before any clinic accumulates a year of records.
+4. **Vault follow-up:** per-user unlock — today one clinic passphrase unlocks the device.
 
 ---
 
@@ -220,7 +223,7 @@ Stating these matters as much as the failures — several are things that are co
 These are real and worth knowing before you rely on it:
 
 1. **One clinic passphrase unlocks the device, not one per person.** Everyone using that terminal shares it. That suits a small practice; it means you cannot tell *who* unlocked the device from the passphrase alone (the audit trail still records who signed in afterwards). Per-user unlock is a sensible later step.
-2. **The cached cloud-sync key is still stored outside the vault.** If you use cloud sync, the key that decrypts the *cloud* copy sits in local storage in the clear. Someone who steals the device therefore still can't read the local records (those are encrypted) but could decrypt the cloud copy. Moving that key inside the vault is a contained follow-up — listed in the plan.
+2. ~~The cached cloud-sync key is stored outside the vault.~~ **Closed.** With the vault on, the cached cloud key is itself stored wrapped by the vault, and a key cached before the vault existed is re-wrapped the first time the vault opens. A locked device now reports the cloud key as unavailable (so sync waits quietly instead of failing mid-push) and `phiLoadKey()` returns nothing — verified in a browser after a reload.
 3. **An unlocked, unattended machine is readable.** By design: while you are working, the records are decrypted in memory. That is what the idle auto-lock is for, and it now closes the vault as well as the session.
 4. **Encryption is off until you turn it on.** The readiness panel reports the truth for *that* device and marks unencrypted records as a blocker — it never claims protection you have not enabled.
 5. **A browser without Web Crypto cannot encrypt.** Old browsers are reported as blocked rather than silently storing records in the clear.
