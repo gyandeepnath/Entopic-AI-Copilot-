@@ -1,4 +1,4 @@
-# Entopic — package for exploring, 26 July 2026
+# Entopic — package for exploring, 30 July 2026
 
 ## Just want to look at it?
 
@@ -10,53 +10,90 @@ Student, Faculty, Researcher, Investigation unit) — the workspace changes to
 match. Founder/admin sign-in is `entopic-admin`; the password is the one you
 set, or the built-in default if you have not changed it.
 
+## New in this package
+
+**The Clinical Validation workspace** — the answer to "I could never find how to
+actually verify these things."
+
+> Admin panel → **Clinical validation** → **Open validation workspace**
+
+One page listing all 394 conditions. Click any one and the right-hand panel
+shows **the engine logic wired behind it, in plain language**: every finding the
+engine looks for, grouped by what it does (Required / Supportive /
+Contradicting / Temporal / Tests), each with its meaning in plain words and
+**"Comes from:"** — the exact exam input that produces it. If a *required*
+finding has nothing in the exam that can produce it, it is flagged in red,
+because that condition can never surface until it is wired.
+
+From the same panel you can **Verify ✓** (records your clinical sign-off, which
+feeds the export-and-publish pipeline) or **Edit logic / tokens…** to add,
+change or remove findings. This is the front door for the coming knowledge-base
+expansion and for pushing verified updates out to users.
+
+See `screenshots/40-clinical-validation-workspace.png`.
+
 ## What to try
 
 | To see | Do this |
 |---|---|
+| **The validation workspace** | Admin panel → Clinical validation → Open validation workspace. Click a condition; read its wiring. |
 | The exam + live engine | New patient → work down the left sidebar. The right panel reasons as you type. |
-| **The new sidebar grouping** | Click any stage header (Registration, History, Examination…) to fold it. Each stage has its own hairline colour and a done/total count. It remembers what you folded. |
+| The sidebar grouping | Click any stage header (Registration, History, Examination…) to fold it. Each stage has its own hairline colour and a done/total count. It remembers what you folded. |
 | The simulator | Sign in as a Student → Study → Clinical simulation. Try **Challenge** — the copilot goes dark. |
-| **The engine being wrong on purpose** | Challenge tier, a few cases. When it happens the debrief names what misled it and what should have held you. |
+| The engine being wrong on purpose | Challenge tier, a few cases. When it happens the debrief names what misled it and what should have held you. |
 | Real values, not conclusions | Examine IOP in a simulation — you get "IOP 28 / 25 mmHg", not "high IOP". You decide. |
 | OSCE | Study → OSCE circuit. Timed, engine hidden, marks withheld to the end. |
 | Assignments | Sign in as Faculty → Teaching → Assignments. |
-| **Age brackets to classify** | Admin panel → "Age brackets — clinical review". **83 conditions need your call.** |
+| Age brackets to classify | Admin panel → "Age brackets — clinical review". **83 conditions need your call.** |
 | Credential status | Admin panel → "Stored credentials". |
 
 ## Checking it yourself
 
 ```
-npm test              # 343 tests
+npm test              # 376 tests
 node tools/audit.js   # whole-build audit; non-zero exit if anything fails
 ```
+
+Current state of both: **376 passing, 0 failing**; audit **0 FAIL, 1 WARN**
+(the warning is that 24 UI files are covered only by browser checks, not unit
+tests — noted honestly rather than hidden).
 
 ## Where things live
 
 ```
-index.html                  the app — open this
-js/                         application code (engine, UI, teaching layer, auth)
-knowledge/                  the knowledge base — 394 conditions across 9 domains
-tests/                      343 automated tests
-tools/audit.js              the build audit
-docs/AUDIT_2026-07-26.md    what the audit found and what was fixed
-ARCHITECTURE.md             how the system is put together
-CHANGELOG.md                what changed and why, newest first
-screenshots/                the app, captured from a real browser
+index.html                        the app — open this
+js/                               application code (engine, UI, teaching layer, auth)
+js/ui-validation.js               the new Clinical Validation workspace
+knowledge/                        the knowledge base — 394 conditions across 9 domains
+tests/                            376 automated tests
+tools/audit.js                    the build audit
+docs/AUDIT_2026-07-26.md          what the build audit found and what was fixed
+docs/DUE_DILIGENCE_2026-07-26.md  the independent engineering review + every fix
+ARCHITECTURE.md                   how the system is put together
+CHANGELOG.md                      what changed and why, newest first
+screenshots/                      the app, captured from a real browser
 ```
 
-## Two things that need you
+## Three things that need you
 
-1. **83 conditions need an age bracket** (Admin → Age brackets). Keratoconus,
+1. **257 conditions are still flagged provisional.** The new validation
+   workspace is where you sign them off, and it exports your sign-offs into the
+   build. This is the single highest-value thing you can spend time on — the
+   engine's trustworthiness rests on it.
+2. **83 conditions need an age bracket** (Admin → Age brackets). Keratoconus,
    Optic Neuritis and the rest are epidemiological calls, so they are yours,
    not mine. Nothing has changed for them in the meantime — they behave exactly
    as they did before.
-2. **257 conditions are still flagged provisional.** The Review Queue is where
-   you sign them off, and it exports your sign-offs into the build.
+3. **One decision waiting on you:** true "any *one* of these findings"
+   requirements (OR-groups). Today a condition's required findings are all-or-
+   nothing (AND). Making "any one of" satisfy a requirement changes how the
+   engine reasons, so I did not slip it in — say the word and I will scope it
+   properly with its own tests.
 
 ## What this is not
 
 The sign-in screen is a convenience lock, not access control — anyone with this
-folder can read the data. Passwords are now properly hashed so a copied backup
-does not reveal them, but real authentication needs the cloud backend. And every
-clinical output is advisory: it requires your correlation, always.
+folder can read the data. Passwords are hashed (PBKDF2-SHA-256) so a copied
+backup does not reveal them, and patient identifiers are encrypted before they
+ever leave the device, but real authentication needs the cloud backend. And
+every clinical output is advisory: it requires your correlation, always.
