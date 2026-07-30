@@ -101,10 +101,21 @@ screenshots/                      the app, captured from a real browser
    engine reasons, so I did not slip it in — say the word and I will scope it
    properly with its own tests.
 
-## What this is not
+## What this is and is not
 
-The sign-in screen is a convenience lock, not access control — anyone with this
-folder can read the data. Passwords are hashed (PBKDF2-SHA-256) so a copied
-backup does not reveal them, and patient identifiers are encrypted before they
-ever leave the device, but real authentication needs the cloud backend. And
-every clinical output is advisory: it requires your correlation, always.
+**With record encryption ON** (Admin → Record encryption), patient records on
+this device are genuinely unreadable without the clinic passphrase or the
+recovery code — a copied folder or a stolen laptop gives up nothing. Passwords
+are hashed (PBKDF2-SHA-256), and patient identifiers are encrypted again before
+they ever leave the device.
+
+**With it OFF** — which is the default until you turn it on — the sign-in screen
+is a convenience lock, not access control: anyone with this folder can read the
+records. The Admin readiness panel tells you which of the two you are actually
+in, and marks the unencrypted state as a blocker.
+
+Even with encryption on, it cannot protect a machine left switched on, unlocked
+and unattended; that is what clinic mode's idle auto-lock is for. Keep full-disk
+encryption on as a second layer.
+
+And every clinical output is advisory: it requires your correlation, always.

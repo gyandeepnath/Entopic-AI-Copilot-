@@ -276,6 +276,31 @@ Admin-gated UI (`#modalReview`, Admin-tab card); a sign-off clears the
 provisional chips in the KB browser and swaps the About panel's warning for a
 dated attestation line (`kbConditionVerified`).
 
+**Local record vault** (session 11y, `js/local-vault.js`, UI `js/ui-vault.js`):
+encryption at rest for the device. Protected stores (`patients`, `visits`,
+`audit`, `users`) are AES-GCM-256 ciphertext in localStorage; the KB and UI
+preferences deliberately are not. The design constraint is that `loadStore()` is
+synchronous and used everywhere while Web Crypto is async — so the vault decrypts
+once on unlock into an in-memory cache (`vaultCacheGet`/`vaultCacheSet`), keeping
+the read path synchronous, and encrypts asynchronously on a 250 ms debounce,
+flushed on `beforeunload`/`visibilitychange`. Key layout is an envelope: a random
+DEK wrapped by BOTH a passphrase-derived KEK and a 125-bit recovery-code KEK
+(PBKDF2-SHA-256, 210k iters), so a forgotten passphrase never destroys records and
+a passphrase change is a re-wrap, not a re-encrypt. `storage.js` bridges via
+`_vaultOnFor()`: a locked vault refuses reads AND writes on protected stores —
+refusing the write is what stops an empty fallback from overwriting real records.
+Boot is gated by `vaultUiBootGate()` because the account list is itself encrypted.
+Pinned by `tests/local-vault.test.js` (21 tests, real Web Crypto).
+
+**Deployment panel** (session 11y, `js/ui-deployment.js`): admin-only readiness
+checklist (`deployChecks`/`deployReadyState`, pure + tested) plus the Supabase
+credentials with a live reachability probe, clinic-mode switch, and restore.
+Credentials and restore moved here from the user-facing Account tab.
+
+**Clinic deployment mode** (session 11y, `js/clinic-mode.js`): one switch closing
+self-signup and enabling the idle auto-lock (which saves via `doSave()` and closes
+the vault before locking). Login throttling is always on.
+
 **Clinical Validation workspace** (session 11w, `js/ui-validation.js`, page
 `pgValidation`): the discoverable front door that *consolidates* the rapid queue
 and the KB editor rather than duplicating them. A master–detail page (all 394

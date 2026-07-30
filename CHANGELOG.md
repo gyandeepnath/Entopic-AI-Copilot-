@@ -6,6 +6,59 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-07-30 — Session 11y: Encryption at rest, and the production-readiness fixes
+
+Audited the build against "this must run in a real clinic tomorrow" across 18
+areas, then fixed what blocked it. Full report: `docs/PRODUCTION_READINESS_2026-07-30.md`.
+
+**The backend was dead on arrival (B-1).** A Supabase project built from
+001–003 rejected *every* request from a signed-in clinician: the RLS helper
+functions were revoked from PUBLIC (where `authenticated` inherited EXECUTE) and
+never granted back, so every policy evaluation failed with "permission denied for
+function is_clinic_member". Reproduced on real PostgreSQL 16, fixed in `004`, and
+re-verified on a database built from scratch — clinic B now sees only clinic B's
+patients, cannot write into clinic A, and `anon` is denied. `tests/db-grants.test.js`
+guards it (confirmed the test fails without 004).
+
+**Records are now encrypted at rest (B-4)** — `js/local-vault.js` + `js/ui-vault.js`.
+Patients, visits, the audit trail and accounts are AES-GCM-256 ciphertext on disk.
+Two design constraints drove it:
+
+- *Sync reads vs async crypto.* The app reads records synchronously in hundreds of
+  places. Rather than rewrite every call site, the vault decrypts once on unlock
+  into an in-memory cache; reads stay synchronous, writes encrypt asynchronously
+  and flush before the page can close.
+- *A forgotten passphrase must not destroy records.* A random data key is wrapped
+  twice — by the passphrase and by a 125-bit recovery code — so there are two
+  independent ways back to the same data. Changing the passphrase re-wraps the key
+  and never touches the records.
+
+Migration verifies each store by decrypting it back before continuing, and rolls
+back to plaintext if anything fails. A locked vault refuses reads *and* writes, so
+it can never overwrite real records with an empty list. Disabling writes records
+back in the clear — nothing here is a one-way door. 21 tests, real Web Crypto.
+
+**Two real bugs surfaced while building it:** `vaultLock()` cleared the cache while
+an encrypt-and-write was still in flight (losing the pending write), and — with
+accounts encrypted — a locked device read zero users and would have offered
+"create the first account" on a clinic terminal. Both fixed and pinned.
+
+**Also fixed:** Supabase credentials and restore-from-backup were reachable by any
+signed-in user (now admin-only, in a new Deployment panel with a live connection
+test); open self-signup and no idle lock (one "clinic deployment mode" switch, plus
+always-on login throttling); restore could silently wipe a clinic (now validated,
+with before/after counts and an automatic safety snapshot); and the cloud client
+dropped writes on 429/5xx instead of backing off.
+
+**Divergence from the earlier audit:** I had recorded B-4 as "cannot be fixed in
+the app — use full-disk encryption". That was too pessimistic; the envelope-key
+design makes it safe to do properly. Disk encryption is still recommended as a
+second layer, and the known limits (one shared clinic passphrase, the cached
+cloud key still outside the vault) are documented rather than glossed.
+
+No engine, scoring, red-flag or offline-path change — verified all red flags still
+fire and scoring is byte-identical with encryption on. 417 tests passing (was 376).
+
 ## 2026-07-28 — Session 11w: Clinical Validation workspace (one discoverable place to verify the engine's logic)
 
 **Why.** The founder (clinical authority) asked for a single, easy-to-follow
