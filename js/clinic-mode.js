@@ -75,6 +75,13 @@ function clinicLockMinutesSet(n) {
    created, otherwise a fresh install in clinic mode would be unusable
    (no way in at all). */
 function signupAllowed(userCount) {
+  /* Defence in depth: with the record vault on but LOCKED, the account list is
+     unreadable and reads as zero — which must never be mistaken for "fresh
+     install, let them create the first account". A locked device creates
+     nothing. */
+  if (typeof vaultEnabled === "function" && vaultEnabled() &&
+      typeof vaultUnlocked === "function" && !vaultUnlocked()) return false;
+
   if (!clinicModeOn()) return true;
   var n = userCount;
   if (typeof n !== "number") {
@@ -160,6 +167,16 @@ if (typeof document !== "undefined") {
       try { logAudit("session_auto_locked", "Idle for " + clinicLockMinutes() + " min — session locked", {}); } catch (e) {}
     }
     if (typeof doLogout === "function") doLogout();
+
+    /* If records are encrypted, an idle lock must also close the VAULT —
+       otherwise the plaintext stays in memory and an unattended machine is
+       still readable by anyone who signs in. vaultLock() flushes pending
+       writes first, so nothing in progress is lost. */
+    if (typeof vaultEnabled === "function" && vaultEnabled() && typeof vaultLock === "function") {
+      try { vaultLock(); } catch (e) {}
+      if (typeof vaultUiShowLock === "function") { try { vaultUiShowLock(); } catch (e) {} }
+    }
+
     if (typeof toast === "function") {
       toast("Locked after " + clinicLockMinutes() + " min idle. Your work was saved — sign in to continue.");
     }

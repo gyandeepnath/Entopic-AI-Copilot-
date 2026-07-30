@@ -113,18 +113,24 @@ test("deployChecks flags an un-hardened terminal as blocked, a hardened one as r
   assert.strictEqual(badState.ready, false);
   assert.ok(badState.blocked >= 2, "clinic mode off + default admin password are both blockers");
 
-  const good = m.deployChecks({ clinicMode: true, adminLegacy: false, plaintextCount: 0, cloudConfigured: true, phiArmed: true });
+  const good = m.deployChecks({ clinicMode: true, adminLegacy: false, plaintextCount: 0, cloudConfigured: true, phiArmed: true, vaultState: "unlocked" });
   const goodState = m.deployReadyState(good);
   assert.strictEqual(goodState.ready, true, "a hardened, connected terminal has no blockers");
 });
 
-test("the at-rest warning is always present and never reports as ok", () => {
+test("at-rest encryption is reported truthfully for this device", () => {
   const ctx = load("js/ui-deployment.js");
   const m = ctx.module.exports;
-  const checks = m.deployChecks({ clinicMode: true, adminLegacy: false, plaintextCount: 0, cloudConfigured: true, phiArmed: true });
-  const atRest = checks.find((c) => c.id === "at_rest");
-  assert.ok(atRest, "local-storage-at-rest risk must always be stated");
-  assert.notStrictEqual(atRest.state, "ok", "Entopic does not encrypt local records — never claim it does");
+  const off = m.deployChecks({ clinicMode: true, adminLegacy: false, plaintextCount: 0, cloudConfigured: true, phiArmed: true, vaultState: "off" });
+  const atRestOff = off.find((c) => c.id === "at_rest");
+  assert.ok(atRestOff, "local-storage-at-rest state must always be stated");
+  assert.strictEqual(atRestOff.state, "blocked", "unencrypted records are a deployment blocker, never a soft warning");
+
+  const on = m.deployChecks({ clinicMode: true, adminLegacy: false, plaintextCount: 0, cloudConfigured: true, phiArmed: true, vaultState: "unlocked" });
+  assert.strictEqual(on.find((c) => c.id === "at_rest").state, "ok", "with the vault on it is genuinely encrypted");
+
+  const noCrypto = m.deployChecks({ clinicMode: true, adminLegacy: false, plaintextCount: 0, cloudConfigured: true, phiArmed: true, vaultState: "unavailable" });
+  assert.strictEqual(noCrypto.find((c) => c.id === "at_rest").state, "blocked", "a browser that cannot encrypt must never look ready");
 });
 
 

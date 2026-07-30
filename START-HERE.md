@@ -12,6 +12,17 @@ set, or the built-in default if you have not changed it.
 
 ## New in this package
 
+**Patient records on this device are now encrypted.** Admin → Record encryption
+turns it on. Patients, visits, the audit trail and accounts become unreadable
+without the clinic passphrase — a lost or stolen laptop is no longer a records
+breach. You are given a **recovery code**: write it down and keep it somewhere
+safe and separate. It is the only way back in if the passphrase is forgotten,
+and it means a forgotten passphrase can never destroy your records.
+
+**A deployment readiness panel** (Admin) tells you plainly what is and is not
+ready on that device, in red/amber/green, before you see a patient.
+
+
 **The Clinical Validation workspace** — the answer to "I could never find how to
 actually verify these things."
 
@@ -50,11 +61,11 @@ See `screenshots/40-clinical-validation-workspace.png`.
 ## Checking it yourself
 
 ```
-npm test              # 376 tests
+npm test              # 417 tests
 node tools/audit.js   # whole-build audit; non-zero exit if anything fails
 ```
 
-Current state of both: **376 passing, 0 failing**; audit **0 FAIL, 1 WARN**
+Current state of both: **417 passing, 0 failing**; audit **0 FAIL, 1 WARN**
 (the warning is that 24 UI files are covered only by browser checks, not unit
 tests — noted honestly rather than hidden).
 
@@ -65,7 +76,7 @@ index.html                        the app — open this
 js/                               application code (engine, UI, teaching layer, auth)
 js/ui-validation.js               the new Clinical Validation workspace
 knowledge/                        the knowledge base — 394 conditions across 9 domains
-tests/                            376 automated tests
+tests/                            417 automated tests
 tools/audit.js                    the build audit
 docs/AUDIT_2026-07-26.md          what the build audit found and what was fixed
 docs/DUE_DILIGENCE_2026-07-26.md  the independent engineering review + every fix

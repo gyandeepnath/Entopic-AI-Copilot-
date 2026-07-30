@@ -94,13 +94,21 @@ function deployChecks(env) {
     });
   }
 
-  /* Honest, unfixable-here item. Deliberately always present. */
+  /* Encryption at rest. Entopic can now do this itself (js/local-vault.js),
+     but it is OFF until an admin turns it on — so report what is actually
+     true on THIS device, never what is merely possible. */
+  var vault = pick("vaultState", (typeof vaultState === "function") ? vaultState() : "off");
   out.push({
     id: "at_rest",
     label: "Records at rest on this device",
-    state: "warn",
-    detail: "NOT encrypted by Entopic. Anyone with the device's file system (or a copied browser profile) can read patient records. " +
-            "Mitigate with full-disk encryption (BitLocker / FileVault) and a device password — this is an operating-system control, not something the app can do for you."
+    state: (vault === "off" || vault === "unavailable") ? "blocked" : "ok",
+    detail: vault === "unlocked" || vault === "locked"
+      ? "Encrypted (AES-GCM-256). Patients, visits, the audit trail and accounts are unreadable without the clinic passphrase or the recovery code. " +
+        "Keep full-disk encryption on as well — this cannot protect a machine left switched on and unlocked."
+      : vault === "unavailable"
+        ? "This browser cannot encrypt (no Web Crypto) — records are stored in the clear. Use a current Chrome or Edge."
+        : "NOT encrypted — records are stored in the clear, so anyone with the device or a copied browser profile can read them. " +
+          "Turn on Record encryption below, and turn on full-disk encryption (BitLocker / FileVault) too."
   });
 
   return out;
@@ -194,6 +202,8 @@ if (typeof document !== "undefined") {
         '</div>' +
         '<div id="deployCmMsg" class="home-settings-status"></div>' +
       '</div>' +
+
+      (typeof vaultAdminCard === "function" ? vaultAdminCard() : "") +
 
       '<div class="home-settings" style="margin-top:8px">' +
         '<div class="home-settings-title">☁ Backend connection (Supabase)</div>' +

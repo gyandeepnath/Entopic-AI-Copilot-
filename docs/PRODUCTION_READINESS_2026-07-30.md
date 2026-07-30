@@ -11,16 +11,16 @@ Everything below was **verified against the running code or a real database**, n
 
 **Do not put this in front of patients tomorrow morning as it stood at the start of this audit.** The backend was non-functional on a fresh project (blocker B-1 — proven, not suspected), and the terminal itself had no clinic-grade access control.
 
-After the fixes in this session: **the software blockers are cleared and verified.** What remains is **one operational blocker the app cannot fix for you (B-4, disk encryption)** and a **backup routine that has to be a human habit (H-3)**. Both need a decision from you, not code.
+After the fixes in this session: **every deployment blocker is cleared and verified, including encryption at rest** — patient records on the device are now AES-GCM-256 ciphertext with a recovery code so a forgotten passphrase can never destroy them. What remains is a **backup routine that has to be a human habit (H-3)** and keeping **full-disk encryption on** as a second layer. Those are operational, not code.
 
 | | Count | Status |
 |---|---|---|
-| **1. Deployment blockers** | 5 | 4 fixed in code · 1 needs your operational action |
+| **1. Deployment blockers** | 5 | **all 5 fixed in code** |
 | **2. High risk** | 7 | 2 fixed · 5 scoped |
 | **3. Medium risk** | 7 | scoped |
 | **4. Low risk** | 4 | noted |
 
-Test suite: **396 passing, 0 failing** (was 376 — 20 new tests cover these fixes). Build audit: **0 FAIL**.
+Test suite: **417 passing, 0 failing** (was 376 — 41 new tests cover these fixes, 21 of them exercising real encryption). Build audit: **0 FAIL**.
 
 ---
 
@@ -62,17 +62,47 @@ On a shared consulting-room terminal, the sign-in screen offered **"Create new a
 
 **Fix.** One switch — **Clinic deployment mode** — that closes self-signup (the administrator creates staff accounts) and auto-locks the screen after an idle period, *saving any exam in progress first* so nothing is lost. Login throttling is always on, independent of the switch, because slowing repeated wrong passwords has no downside anywhere. Default idle lock 15 min, configurable 1–240.
 
-### B-4 — Patient records are not encrypted at rest ⚠️ NEEDS YOUR ACTION — cannot be fixed in the app alone
-Every patient record lives in browser `localStorage` **in the clear**. Data leaving for the cloud *is* encrypted (that was fixed earlier), but on the device itself, **anyone with the machine — or a copied browser profile — can read every record.** A stolen laptop is a full records breach.
+### B-4 — Patient records were not encrypted at rest ✅ FIXED (record vault)
+Every patient record lived in browser `localStorage` **in the clear**. Data leaving for the cloud *was* encrypted, but on the device itself, **anyone with the machine — or a copied browser profile — could read every record.** A stolen laptop was a full records breach.
 
-**This is not something I can responsibly "fix" with a code change today.** Encrypting the local store properly means a passphrase-gated key on every read/write and a migration of the record store — a real project, and a half-done version would be worse than none (records unreadable after a forgotten passphrase = permanent clinical data loss).
+**Now fixed properly**, in `js/local-vault.js` + `js/ui-vault.js`. Admin → **Record encryption** turns it on; patients, visits, the audit trail and user accounts become AES-GCM-256 ciphertext on disk.
 
-**The correct control tomorrow is operational:**
-1. **Turn on full-disk encryption** — BitLocker (Windows) or FileVault (Mac). Non-negotiable.
-2. **A device password / auto-lock at the OS level**, in addition to Entopic's.
-3. **Do not use a shared or personal browser profile** for the clinic terminal.
+**The two hard problems, and how each is solved:**
 
-The Deployment panel now states this permanently and **never reports it as "ok"** — pinned by a test, so no future change can quietly make Entopic look like it encrypts local data when it does not.
+**1. "The app reads records synchronously everywhere; Web Crypto is async."**
+Rewriting every call site to async would have touched the whole codebase and put the clinical path at risk. Instead the vault decrypts **once on unlock** into an in-memory cache: reads stay synchronous and untouched, writes update the cache immediately and encrypt to disk asynchronously, flushed before the page can close.
+
+**2. "A forgotten passphrase must not destroy a clinic's records."**
+This is why encrypting clinical data badly is worse than not encrypting it. The layout is a standard envelope:
+
+```
+random data key ──wrapped by──> passphrase-derived key   (daily use)
+                └─wrapped by──> recovery-code key        (the way back)
+```
+
+Two independent routes to the same key. The recovery code is 25 symbols (~125 bits) from an alphabet with no ambiguous glyphs, shown once, and the UI **refuses to move on until you confirm you have written it down**. Changing the passphrase re-wraps the key — records are never re-encrypted, so it is instant and cannot half-fail.
+
+**Safety properties, each pinned by a test (21 tests, real Web Crypto — no mocks):**
+
+| Property | Verified |
+|---|---|
+| Records survive the round trip byte-for-byte | ✅ |
+| Nothing readable on disk — no name, MRN or DOB | ✅ |
+| The raw key is never written to disk (only wrapped copies) | ✅ |
+| A forgotten passphrase is recoverable via the code | ✅ |
+| A failed migration rolls back — records exactly as they were | ✅ |
+| **A locked vault cannot overwrite real records with an empty list** | ✅ |
+| Ciphertext is never handed to the app as if it were records | ✅ |
+| Wrong passphrase / wrong recovery code refused cleanly | ✅ |
+| Turning it off writes records back in the clear (no one-way door) | ✅ |
+
+**Two real bugs this work surfaced and fixed:**
+- `vaultLock()` cleared the in-memory cache while an encrypt-and-write was still in flight, so **a pending write was lost on lock**. Fixed by capturing the key and cache synchronously so a started flush always completes.
+- With accounts encrypted, a locked device read **zero users** and would have shown the "create the first account" screen — i.e. a stranger could have made themselves an account on a locked clinic terminal. Boot now hands the screen to the vault unlock before any account logic runs, and `signupAllowed()` refuses outright while locked.
+
+**Verified end-to-end in a real browser**, including the case that actually matters — reload the page (the "next morning / stolen laptop" test): the device comes up **locked**, sign-in and sign-up are both hidden, records and accounts read as nothing, a destructive write is refused, and both the passphrase and the recovery code bring everything back intact.
+
+**Still keep full-disk encryption on** (BitLocker / FileVault). The vault protects a powered-off, locked or stolen device; it cannot protect a machine left switched on, unlocked and unattended. That is what the idle auto-lock is for — and the idle lock now closes the vault too, not just the session.
 
 ### B-5 — The default administrator password ✅ NOW SURFACED AS A BLOCKER
 The admin account could still be on its built-in default. It is now the second item in the readiness checklist, shown in red as a blocker until changed.
@@ -171,15 +201,29 @@ Stating these matters as much as the failures — several are things that are co
 5. **Connect the backend** — paste the project URL and the **anon** key (never the `service_role` key), press *Connect & test*, and confirm it answers green.
 6. **Give consent and set the clinic passphrase** so patient records actually sync encrypted.
 7. **Create staff accounts** for each person who will use the terminal.
-8. **Turn on BitLocker / FileVault** on the device. This is the control for B-4 — do not skip it.
-9. **Do a restore drill:** export a backup, restore it on a spare machine, confirm the records appear. Only then is the backup real.
+8. **Turn on record encryption** (Admin → Record encryption). **Write the recovery code down and store it off the device** — it is the only way back if the passphrase is forgotten.
+9. **Turn on BitLocker / FileVault** too. The vault protects a locked or stolen device; disk encryption is the second layer.
+10. **Do a restore drill:** export a backup, restore it on a spare machine, confirm the records appear. Only then is the backup real.
+11. **Rehearse the recovery code once**, on a spare device, so you know it works before you ever need it.
 
 ### Next engineering block (in value order)
 1. **H-4 — encrypted backup export** (contained; reuses existing crypto).
 2. **M-7 + H-5 — "N records not yet backed up" indicator, and push caught errors to the server audit log.** Together these end the "silent failure" class of problem.
 3. **H-6 — `schema_migrations` tracking.**
 4. **M-4 — move the record store to IndexedDB.** The largest item; do it before any clinic accumulates a year of records.
-5. **B-4 — real at-rest encryption.** Needs a careful key-recovery design first: a forgotten passphrase must not mean permanently unreadable patient records.
+5. **Vault follow-ups:** per-user unlock (today one clinic passphrase unlocks the device) and moving the cached cloud-PHI key inside the vault — see "Known limits" below.
+
+---
+
+## Known limits of the record vault (stated, not glossed)
+
+These are real and worth knowing before you rely on it:
+
+1. **One clinic passphrase unlocks the device, not one per person.** Everyone using that terminal shares it. That suits a small practice; it means you cannot tell *who* unlocked the device from the passphrase alone (the audit trail still records who signed in afterwards). Per-user unlock is a sensible later step.
+2. **The cached cloud-sync key is still stored outside the vault.** If you use cloud sync, the key that decrypts the *cloud* copy sits in local storage in the clear. Someone who steals the device therefore still can't read the local records (those are encrypted) but could decrypt the cloud copy. Moving that key inside the vault is a contained follow-up — listed in the plan.
+3. **An unlocked, unattended machine is readable.** By design: while you are working, the records are decrypted in memory. That is what the idle auto-lock is for, and it now closes the vault as well as the session.
+4. **Encryption is off until you turn it on.** The readiness panel reports the truth for *that* device and marks unencrypted records as a blocker — it never claims protection you have not enabled.
+5. **A browser without Web Crypto cannot encrypt.** Old browsers are reported as blocked rather than silently storing records in the clear.
 
 ---
 

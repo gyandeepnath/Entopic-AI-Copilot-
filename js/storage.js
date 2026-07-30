@@ -15,11 +15,39 @@ var STORE_VERSION = "1.0.0";
 /* CORE READ / WRITE                                               */
 /* ═══════════════════════════════════════════════════════════════ */
 
+/* ── Local vault bridge (js/local-vault.js) ───────────────────────
+   When the record vault is ON, the protected stores are CIPHERTEXT on
+   disk. Reads here must stay synchronous (the whole app depends on it),
+   so an unlocked vault serves them from its in-memory plaintext cache.
+
+   The dangerous case is "vault on but LOCKED". Returning the fallback
+   (an empty array) would let a later save write that empty array over a
+   clinic's real records. So a locked vault refuses reads AND writes on
+   protected stores rather than pretending the store is empty. */
+function _vaultOnFor(key) {
+  return typeof vaultEnabled === "function" && vaultEnabled() &&
+         typeof vaultIsProtected === "function" && vaultIsProtected(key);
+}
+
 function loadStore(key, fallback) {
+  if (_vaultOnFor(key)) {
+    if (!vaultUnlocked()) {
+      /* Locked: say "nothing available" rather than "empty". Callers get the
+         fallback, but saveStore below will refuse to persist over the real
+         data, so nothing can be lost. */
+      return fallback;
+    }
+    var cached = vaultCacheGet(key);
+    return (cached === undefined) ? fallback : cached;
+  }
   try {
     var raw = localStorage.getItem(STORE_PREFIX + key);
     if (raw === null) return fallback;
-    return JSON.parse(raw);
+    var parsed = JSON.parse(raw);
+    /* Ciphertext found while the vault is off/unavailable — do NOT hand back
+       an envelope object as if it were records. */
+    if (typeof vaultIsEnvelope === "function" && vaultIsEnvelope(parsed)) return fallback;
+    return parsed;
   } catch (e) {
     console.error("Storage read error [" + key + "]:", e);
     return fallback;
@@ -27,6 +55,18 @@ function loadStore(key, fallback) {
 }
 
 function saveStore(key, data) {
+  if (_vaultOnFor(key)) {
+    if (!vaultUnlocked()) {
+      /* Refusing is the safe answer: writing plaintext would defeat the vault,
+         and writing a fallback-derived value would destroy real records. */
+      console.error("Storage write refused [" + key + "]: the record vault is locked.");
+      return;
+    }
+    vaultCacheSet(key, data);                       /* memory now, ciphertext shortly */
+    if (typeof cloudEnqueue === "function") cloudEnqueue(key);
+    storageQuotaWatch();
+    return;
+  }
   try {
     localStorage.setItem(STORE_PREFIX + key, JSON.stringify(data));
     /* Redundant copy into the IndexedDB safety mirror (async, never blocks;

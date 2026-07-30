@@ -1845,10 +1845,16 @@ function esc(s) {
      before any sidebar render. */
   if (typeof registerClinicSteps === "function") registerClinicSteps();
 
-  /* If no users exist, show setup form */
-  var users = loadUsers();
-  if (users.length === 0) {
-    showView("setupView", "loginView");
+  /* If the record vault is on and this device is locked, the unlock screen
+     owns the start-up path. Critically, we must NOT fall through to the
+     "do any users exist?" check below — with a locked vault the account list
+     is unreadable, so it would read zero accounts and offer to create one. */
+  if (typeof vaultUiBootGate !== "function" || !vaultUiBootGate()) {
+    /* If no users exist, show setup form */
+    var users = loadUsers();
+    if (users.length === 0) {
+      showView("setupView", "loginView");
+    }
   }
 
   /* Log knowledge base status */

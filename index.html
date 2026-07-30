@@ -50,6 +50,30 @@
       <div class="login-logo">Entopic</div>
       <div class="login-tag">Clinical Vision Assessment</div>
 
+      <!-- Vault unlock (shown instead of sign-in when records are encrypted
+           and the device is locked — records, INCLUDING the account list,
+           are unreadable until the clinic passphrase is entered) -->
+      <div id="vaultView" style="display:none">
+        <div class="fi" style="margin-bottom:10px">
+          <label>Clinic passphrase</label>
+          <input type="password" id="inp_vp" placeholder="Unlock this device's records" autocomplete="current-password">
+        </div>
+        <div class="login-err" id="vaultErr"></div>
+        <button class="btn btn-p" style="width:100%;justify-content:center;margin-top:6px" onclick="vaultUiUnlock()">
+          Unlock
+        </button>
+        <div class="alt-link" onclick="vaultUiShowRecovery()">Forgotten the passphrase? Use the recovery code</div>
+        <div id="vaultRecoveryBox" style="display:none;margin-top:10px">
+          <div class="fi" style="margin-bottom:8px">
+            <label>Recovery code</label>
+            <input id="inp_vrc" placeholder="XXXXX-XXXXX-XXXXX-XXXXX-XXXXX" autocomplete="off">
+          </div>
+          <button class="btn btn-s" style="width:100%;justify-content:center" onclick="vaultUiRecover()">
+            Unlock with recovery code
+          </button>
+        </div>
+      </div>
+
       <!-- Login Form -->
       <div id="loginView">
         <div class="fi" style="margin-bottom:10px">
@@ -410,6 +434,7 @@
 <script src="js/cloud-crypto.js"></script>
 <script src="js/cloud-sync.js"></script>
 <script src="js/storage.js"></script>
+<script src="js/local-vault.js"></script>
 <script src="js/auth-crypto.js"></script>
 <script src="js/clinic-mode.js"></script>
 <script src="js/roles.js"></script>
@@ -444,6 +469,7 @@
 <script src="js/ui-kb-editor.js"></script>
 <script src="js/ui-validation.js"></script>
 <script src="js/ui-deployment.js"></script>
+<script src="js/ui-vault.js"></script>
 <script src="js/ui-chart.js"></script>
 <script src="js/file-store.js"></script>
 <script src="js/ui-attach.js"></script>
