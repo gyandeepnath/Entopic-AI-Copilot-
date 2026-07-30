@@ -25,9 +25,16 @@ function extractFn(name) {
   }
   return appSrc.slice(start, i + 1);
 }
-const sandbox = {};
+/* esc()/escH() now delegate to the single canonical implementation in
+   js/dom-escape.js (see that file for the load-order bug that made seven
+   modules silently use a weaker copy). The assertions below are unchanged —
+   only where the code lives has moved, so they still pin the same guarantees
+   through the public names the app calls. */
+const escapeSrc = fs.readFileSync(path.resolve(__dirname, "..", "js", "dom-escape.js"), "utf8");
+const sandbox = { module: { exports: {} } };
 vm.createContext(sandbox);
-vm.runInContext(extractFn("esc") + "\n" + extractFn("escH") + "\nthis.esc=esc;this.escH=escH;", sandbox);
+vm.runInContext(escapeSrc + "\n" + extractFn("esc") + "\n" + extractFn("escH") +
+  "\nthis.esc=esc;this.escH=escH;", sandbox);
 const { esc, escH } = sandbox;
 
 test("esc neutralises the </textarea> breakout payload", () => {

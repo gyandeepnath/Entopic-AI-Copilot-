@@ -80,6 +80,13 @@ for (const f of jsFiles.concat(knowledgeFiles, testFiles)) {
 
 /* ── 3. WIRING: every inline handler resolves to a defined function ─ */
 const allSrc = jsFiles.concat(knowledgeFiles).map(read).join("\n") + "\n" + html;
+
+/* Source with comments removed, for the wiring scan below. A comment that
+   DOCUMENTS the `onclick="fn(…)"` convention is prose, not a dead button —
+   scanning it reported a phantom handler and failed the build the first time a
+   module explained the pattern it exists to guard. Documentation must not be
+   punished by the linter that reads it. */
+const allSrcNoComments = allSrc.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/[^\n]*/g, "$1");
 const defined = new Set();
 for (const m of allSrc.matchAll(/function\s+([A-Za-z_$][\w$]*)\s*\(/g)) defined.add(m[1]);
 for (const m of allSrc.matchAll(/(?:var|let|const)\s+([A-Za-z_$][\w$]*)\s*=\s*function/g)) defined.add(m[1]);
@@ -89,7 +96,7 @@ const BUILTINS = new Set(["alert","confirm","prompt","parseInt","parseFloat","JS
   "URL","Blob","encodeURIComponent","decodeURIComponent","isNaN","event","this","return","true","false"]);
 const KEYWORDS = new Set(["if","for","while","switch","catch","return","typeof","new","function","do","else"]);
 const called = new Map();
-for (const m of allSrc.matchAll(/on(?:click|input|change|submit|keyup|keydown|blur|focus)\s*=\s*"([^"]*)"/g)) {
+for (const m of allSrcNoComments.matchAll(/on(?:click|input|change|submit|keyup|keydown|blur|focus)\s*=\s*"([^"]*)"/g)) {
   /* A handler built by string concatenation cannot be resolved from source —
      `onclick="f(\'' + esc(x) + '\')"` puts esc() OUTSIDE the attribute, and a
      regex cannot tell. Those are checked against the real DOM instead, in

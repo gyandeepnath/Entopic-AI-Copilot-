@@ -141,9 +141,10 @@ function deployReadyState(checks) {
 /* ═══════════════════════════════════════════════════════════════ */
 if (typeof document !== "undefined") {
 
-  var _de = (typeof escH === "function") ? escH : function (s) {
-    return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-  };
+  /* Canonical escaper (js/dom-escape.js), loaded before this module.
+     Previously this captured a weaker inline fallback because escH is
+     defined in app.js, which loads LAST — see dom-escape.js. */
+  var _de = escHtml;
 
   /* Mask a key so the panel confirms WHICH credential is in use without
      printing it in full on a screen a patient might see. */

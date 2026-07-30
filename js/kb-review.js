@@ -115,9 +115,10 @@ function kbBuildVerifiedExport() {
 /* ═══════════════════════════════════════════════════════════════ */
 if (typeof document !== "undefined") {
 
-  var _kre = (typeof escH === "function") ? escH : function (s) {
-    return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-  };
+  /* Canonical escaper (js/dom-escape.js), loaded before this module.
+     Previously this captured a weaker inline fallback because escH is
+     defined in app.js, which loads LAST — see dom-escape.js. */
+  var _kre = escHtml;
   var _krFilter = { search: "", domain: "" };
 
   window.showReviewQueue = function () {

@@ -22,9 +22,10 @@
 
 if (typeof document !== "undefined") {
 
-  var _vue = (typeof escH === "function") ? escH : function (s) {
-    return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-  };
+  /* Canonical escaper (js/dom-escape.js), loaded before this module.
+     Previously this captured a weaker inline fallback because escH is
+     defined in app.js, which loads LAST — see dom-escape.js. */
+  var _vue = escHtml;
 
   /* ── Boot gate ─────────────────────────────────────────────────
      Called from init(). Returns true if the vault took over the screen,

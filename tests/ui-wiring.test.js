@@ -53,11 +53,20 @@ for (const f of files) {
 const NOT_FUNCTIONS = new Set(["if", "for", "while", "function", "return", "var", "let",
   "const", "event", "this", "alert", "confirm", "prompt", "void", "window", "document", "true", "false"]);
 
+/* Strip comments before scanning for handlers. A comment that DOCUMENTS the
+   `onclick="fn('…')"` pattern is prose, not a dead button — without this,
+   writing documentation about the UI's own conventions fails the build (which
+   is exactly what happened when dom-escape.js explained the pattern it guards).
+   Deliberately conservative: only strips /* … *​/ and // … to end of line. */
+function stripComments(t) {
+  return t.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/[^\n]*/g, "$1");
+}
+
 test("every inline event handler calls a DEFINED function (no dead buttons)", () => {
   const handlerRe = /on(?:click|change|input|keydown|keyup|keypress|submit|focus|blur|mousedown|mouseup|dblclick)\s*=\s*\\?["']?\s*([A-Za-z_$][\w$]*)\s*\(/g;
   const missing = {};
   for (const f of files) {
-    const t = fs.readFileSync(f, "utf8");
+    const t = stripComments(fs.readFileSync(f, "utf8"));
     let m;
     handlerRe.lastIndex = 0;
     while ((m = handlerRe.exec(t))) {

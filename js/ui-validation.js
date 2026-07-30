@@ -157,9 +157,10 @@ function valConditionList() {
 /* ═══════════════════════════════════════════════════════════════ */
 if (typeof document !== "undefined") {
 
-  var _ve = (typeof escH === "function") ? escH : function (s) {
-    return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-  };
+  /* Canonical escaper (js/dom-escape.js), loaded before this module.
+     Previously this captured a weaker inline fallback because escH is
+     defined in app.js, which loads LAST — see dom-escape.js. */
+  var _ve = escHtml;
   var VALWORK = { selected: null, search: "", domain: "", status: "" };
   window.VALWORK = VALWORK;
 

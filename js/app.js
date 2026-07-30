@@ -1781,10 +1781,16 @@ function filterFinds(query, prefix) {
 /* HTML ESCAPE HELPER                                              */
 /* ═══════════════════════════════════════════════════════════════ */
 
-function escH(s) {
-  if (!s) return "";
-  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-}
+/* Both names now delegate to the ONE implementation in js/dom-escape.js.
+   They are kept as-is so no call site changes (hundreds of them), but there
+   is no longer a second copy of the rules that can drift — which is exactly
+   how the weaker fallback in seven UI modules went unnoticed. See the header
+   of dom-escape.js for that bug.
+
+   Behaviour is unchanged for esc(); escH() previously returned "" for any
+   falsy input (including the number 0 and false), which silently dropped
+   legitimate values — it now escapes them like esc() does. */
+function escH(s) { return escHtml(s); }
 
 /* Escape user text for BOTH attribute values and element bodies.
    Must escape < and > too: many call sites drop esc() output inside a
@@ -1792,13 +1798,7 @@ function escH(s) {
    "</textarea><img onerror=…>" break out (stored XSS — and remote
    free-text from another clinician now renders here via cloud sync).
    Full escaping is safe in every context these strings appear in. */
-function esc(s) {
-  return String(s == null ? "" : s)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
+function esc(s) { return escHtml(s); }
 
 
 /* ═══════════════════════════════════════════════════════════════ */
