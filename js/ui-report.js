@@ -196,12 +196,82 @@ function pgRpt() {
 /* PAGE 22: SPECTACLE PRESCRIPTION                                 */
 /* ═══════════════════════════════════════════════════════════════ */
 
+/* Render one prescription cell.
+
+   PATIENT SAFETY (clinical review RX-1): an empty field must NEVER print as
+   "plano". "Plano" is a positive clinical assertion — "no refractive
+   correction needed" — and a dispensing optician acts on it by making
+   zero-power lenses. An unmeasured eye printing plano therefore turns MISSING
+   DATA into a clinical instruction, on a legal document carrying the patient's
+   name. If that eye actually needed -3.00 the patient receives useless glasses.
+
+   A genuine plano IS valid, so an explicitly entered 0 / 0.00 / "plano" still
+   prints plano. Only ABSENCE prints as absence. */
+function rxCell(value) {
+  var v = String(value == null ? "" : value).trim();
+  if (v === "") return '<span style="color:#8a2318">not recorded</span>';
+  if (/^(plano|pl|0|0\.00|\+0\.00|-0\.00)$/i.test(v)) return "plano";
+  return escH(v);
+}
+
+/* Has any refraction at all been recorded? */
+function rxHasAnyRefraction(rx) {
+  if (!rx) return false;
+  var keys = ["od_sph","od_cyl","od_ax","od_add","os_sph","os_cyl","os_ax","os_add"];
+  for (var i = 0; i < keys.length; i++) {
+    if (String(rx[keys[i]] == null ? "" : rx[keys[i]]).trim() !== "") return true;
+  }
+  return false;
+}
+
+/* Which eyes are unfillable as written? A sphere is the minimum a lens can be
+   made from; a cylinder without an axis (or an axis without a cylinder) cannot
+   be ground either. */
+function rxIncompleteEyes(rx) {
+  var out = [];
+  ["od","os"].forEach(function (e) {
+    var sph = String((rx && rx[e + "_sph"]) || "").trim();
+    var cyl = String((rx && rx[e + "_cyl"]) || "").trim();
+    var ax  = String((rx && rx[e + "_ax"])  || "").trim();
+    var problems = [];
+    if (sph === "") problems.push("no sphere recorded");
+    if (cyl !== "" && ax === "") problems.push("cylinder without an axis");
+    if (ax !== "" && cyl === "") problems.push("axis without a cylinder");
+    if (problems.length) out.push({ eye: e.toUpperCase(), problems: problems });
+  });
+  return out;
+}
+
 function pgRxP() {
   var nm = (P.first_name || "") + " " + (P.last_name || "");
+  var incomplete = rxIncompleteEyes(V.rx);
 
   var h = '<div class="card">' +
     '<div class="card-t">Prescription</div>' +
     '<div class="card-s">Spectacle prescription — print-ready</div>';
+
+  /* No refraction at all: there is nothing to prescribe. Refuse to produce a
+     print-ready document rather than emit an official-looking blank one. */
+  if (!rxHasAnyRefraction(V.rx)) {
+    h += '<div style="background:#fdecea;border:1px solid #e6a49c;color:#8a2318;padding:10px 12px;border-radius:var(--r);font-size:.74rem;margin:10px 0">' +
+      '<b>No refraction has been recorded for this visit.</b><br>' +
+      'There is nothing to prescribe, so no prescription is produced. Record the refraction first, ' +
+      'or if this visit genuinely needs no spectacle Rx, simply do not issue one.' +
+      '</div>' +
+      '<div class="btn-g no-print">' +
+      '<button class="btn btn-p" onclick="nav(\'refraction\')">Go to Refraction</button>' +
+      '<button class="btn btn-s" onclick="nav(\'report\')">← Back</button>' +
+      '</div></div>';
+    return h;
+  }
+
+  if (incomplete.length) {
+    h += '<div class="no-print" style="background:#fff4e5;border:1px solid #f0c58a;color:#8a5200;padding:8px 10px;border-radius:var(--r);font-size:.7rem;margin:8px 0">' +
+      '<b>⚠ This prescription is incomplete and cannot be dispensed as it stands:</b><br>' +
+      incomplete.map(function (x) { return escH(x.eye) + " — " + escH(x.problems.join("; ")); }).join("<br>") +
+      '<br>Missing values print as <b>“not recorded”</b>, never as plano, so absence cannot be read as a zero-power lens.' +
+      '</div>';
+  }
 
   h += '<div id="rxPrint">';
 
@@ -218,7 +288,15 @@ function pgRxP() {
   h += '<table style="width:100%;margin-bottom:14px;font-size:.74rem"><tr>';
   h += '<td><b>Patient:</b> ' + escH(nm.trim()) + '</td>';
   h += '<td><b>Age/Sex:</b> ' + (P.age || "—") + '/' + (P.sex ? P.sex.charAt(0) : "—") + '</td>';
-  h += '<td><b>Date:</b> ' + new Date().toLocaleDateString() + '</td>';
+  /* The EXAM date, not the day this page happened to be rendered (RX-3).
+     Re-printing a year-old refraction must not stamp it with today's date. */
+  var _examDate = "";
+  try {
+    var _vs = (typeof loadVisits === "function") ? loadVisits() : [];
+    for (var _i = 0; _i < _vs.length; _i++) if (_vs[_i].id === CV) { _examDate = _vs[_i].date || ""; break; }
+  } catch (e) {}
+  var _dateStr = _examDate ? new Date(_examDate).toLocaleDateString() : new Date().toLocaleDateString();
+  h += '<td><b>Examined:</b> ' + escH(_dateStr) + '</td>';
   h += '<td><b>MRN:</b> ' + escH(P.mrn) + '</td>';
   h += '</tr></table>';
 
@@ -232,8 +310,8 @@ function pgRxP() {
   /* OD */
   h += '<tr>';
   h += '<td style="font-weight:700;text-align:left">OD</td>';
-  h += '<td>' + (V.rx.od_sph || "plano") + '</td>';
-  h += '<td>' + (V.rx.od_cyl || "—") + '</td>';
+  h += '<td>' + rxCell(V.rx.od_sph) + '</td>';
+  h += '<td>' + (String(V.rx.od_cyl||"").trim() ? escH(V.rx.od_cyl) : "—") + '</td>';
   h += '<td>' + (V.rx.od_ax ? V.rx.od_ax + "°" : "—") + '</td>';
   h += '<td>' + (V.rx.od_add || "—") + '</td>';
   h += '<td>' + (V.rx.od_prism || "—") + '</td>';
@@ -243,8 +321,8 @@ function pgRxP() {
   /* OS */
   h += '<tr>';
   h += '<td style="font-weight:700;text-align:left">OS</td>';
-  h += '<td>' + (V.rx.os_sph || "plano") + '</td>';
-  h += '<td>' + (V.rx.os_cyl || "—") + '</td>';
+  h += '<td>' + rxCell(V.rx.os_sph) + '</td>';
+  h += '<td>' + (String(V.rx.os_cyl||"").trim() ? escH(V.rx.os_cyl) : "—") + '</td>';
   h += '<td>' + (V.rx.os_ax ? V.rx.os_ax + "°" : "—") + '</td>';
   h += '<td>' + (V.rx.os_add || "—") + '</td>';
   h += '<td>' + (V.rx.os_prism || "—") + '</td>';
