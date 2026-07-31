@@ -146,6 +146,9 @@ function renderChart() {
     (typeof attachBlock === "function" ? attachBlock("patient") : "") +
     '</div>';
 
+  /* — CONTINUOUS CLINICAL RECORD (clinical review CL-3) — */
+  h += renderContinuousRecord();
+
   /* — AUDIT / ACCESS LOG — */
   h += renderPatientAudit();
 
@@ -153,6 +156,19 @@ function renderChart() {
 }
 
 /* Access + change log for this patient (who did what, when). */
+/* The continuous clinical record: one scrollable chronological narrative of
+   every visit — normal AND abnormal findings — with the clinician, timestamp
+   and interval between consecutive visits. This is what someone continuing a
+   patient needs to read, rather than a set of separate visit cards. */
+function renderContinuousRecord() {
+  if (typeof recContinuousHtml !== "function" || !CP) return '';
+  return '<div class="home-settings" style="margin-top:10px">' +
+    '<div class="home-settings-title">📋 Continuous clinical record</div>' +
+    '<div class="home-settings-desc">Every visit in order, as recorded. Entries amended after the day they were written are marked.</div>' +
+    '<div style="max-height:60vh;overflow-y:auto;margin-top:6px">' + recContinuousHtml(CP) + '</div>' +
+  '</div>';
+}
+
 function renderPatientAudit() {
   var events = (typeof getPatientAudit === "function") ? getPatientAudit(CP) : [];
   var h = '<details style="margin-bottom:20px"><summary style="cursor:pointer;font-size:.62rem;color:var(--sv);text-transform:uppercase;letter-spacing:.6px">Access &amp; change log (' + events.length + ')</summary>';

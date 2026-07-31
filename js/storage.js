@@ -412,7 +412,14 @@ function doSave() {
   for (var i = 0; i < visits.length; i++) {
     if (visits[i].id === CV) {
       visits[i].data = V;
-      visits[i].updated = new Date().toISOString();
+      /* Attribution + amendment trail (clinical review CL-3): stamp WHO saved
+         this and WHEN. A save by another clinician, or on a later day, is
+         recorded as an amendment rather than silently replacing the original. */
+      if (typeof recStampVisit === "function") {
+        recStampVisit(visits[i], (typeof CU !== "undefined" ? CU : null));
+      } else {
+        visits[i].updated = new Date().toISOString();
+      }
       break;
     }
   }
@@ -490,8 +497,63 @@ function completeVisit() {
 /* DELETE PATIENT (with confirmation)                              */
 /* ═══════════════════════════════════════════════════════════════ */
 
+/* Delete a patient and their whole clinical history.
+
+   CLINICAL RECORD SAFETY (review CL-6): this destroys a medical record
+   irreversibly, and the only thing standing between a mis-click and permanent
+   loss of a patient's entire history was a single OK button. Two guards now:
+
+     1. A snapshot of the patient AND every visit is downloaded FIRST, so the
+        record can be reconstructed if the deletion was a mistake. If the
+        snapshot cannot be produced, the deletion does not proceed.
+     2. The clinician must type the patient's name. "Are you sure?" is answered
+        reflexively; typing a name is not.
+
+   Retention rules for clinical records vary by jurisdiction and may forbid
+   deletion outright — that is a policy question for the practice, and the
+   snapshot at least means the data still exists to comply with. */
 function deletePatient(patientId) {
-  if (!confirm("Delete this patient and all their visits? This cannot be undone.")) return;
+  var pts = loadPatients();
+  var pt = null;
+  for (var pi = 0; pi < pts.length; pi++) if (pts[pi].id === patientId) { pt = pts[pi]; break; }
+  if (!pt) return;
+
+  var allVisits = loadVisits();
+  var theirs = allVisits.filter(function (v) { return v.patient_id === patientId; });
+  var label = ((pt.first_name || "") + " " + (pt.last_name || "")).trim() || pt.mrn || "this patient";
+
+  var typed = (typeof prompt === "function") ? prompt(
+    "PERMANENTLY DELETE a patient record\n\n" +
+    label + (pt.mrn ? "  [" + pt.mrn + "]" : "") + "\n" +
+    theirs.length + " visit(s) will be destroyed. This CANNOT be undone.\n\n" +
+    "A snapshot of this record will be downloaded first so it can be restored if this is a mistake.\n\n" +
+    "Type the patient's name exactly to confirm:", "") : null;
+
+  if (typed === null) return;
+  if (String(typed).trim().toLowerCase() !== label.toLowerCase()) {
+    if (typeof alert === "function") alert("That did not match \"" + label + "\" — nothing was deleted.");
+    return;
+  }
+
+  /* Snapshot before destroying. If this fails, stop: an unrecoverable delete
+     is exactly what this guards against. */
+  try {
+    downloadBackupFile({
+      __entopic_deleted_record: true,
+      note: "Snapshot taken immediately before this patient record was deleted. " +
+            "Restore by re-importing, or reconcile manually.",
+      deleted_at: new Date().toISOString(),
+      deleted_by: (typeof CU !== "undefined" && CU) ? (CU.name || CU.username || "") : "",
+      patient: pt,
+      visits: theirs
+    }, "-deleted-" + String(patientId));
+  } catch (e) {
+    if (typeof alert === "function") {
+      alert("Could not save a snapshot of this record, so NOTHING was deleted.\n\n(" +
+            ((e && e.message) || "unknown error") + ")");
+    }
+    return;
+  }
 
   /* Remove all visits for this patient (capture ids so peers can be told). */
   var visits = loadVisits();
@@ -510,7 +572,7 @@ function deletePatient(patientId) {
     cloudEnqueueDelete("patients", patientId);
     goneVisits.forEach(function (vid) { cloudEnqueueDelete("visits", vid); });
   }
-  if (typeof logAudit === "function") logAudit("patient_deleted", "Patient and " + goneVisits.length + " visit(s) deleted", { patient_id: patientId });
+  if (typeof logAudit === "function") logAudit("patient_deleted", "Patient \"" + label + "\" and " + goneVisits.length + " visit(s) deleted (snapshot downloaded first)", { patient_id: patientId });
 }
 
 

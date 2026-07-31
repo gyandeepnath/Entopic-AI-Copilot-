@@ -1324,7 +1324,7 @@ function newPatient() {
 
   /* Save visit */
   var visits = loadVisits();
-  visits.push({
+  var nv = {
     id: vid,
     patient_id: pid,
     data: V,
@@ -1332,7 +1332,12 @@ function newPatient() {
     visit_type: "initial",
     date: new Date().toISOString(),
     updated: new Date().toISOString()
-  });
+  };
+  /* Attribute the visit at CREATION, not at first save. Otherwise a visit
+     opened and then abandoned (device locked, browser closed) exists in the
+     record with no author at all. */
+  if (typeof recStampVisit === "function") recStampVisit(nv, (typeof CU !== "undefined" ? CU : null));
+  visits.push(nv);
   saveVisits(visits);
 
   if (typeof logAudit === "function") {
@@ -1428,6 +1433,19 @@ function nav(stepId) {
   /* Close the engine drawer (narrow screens) so navigating to record a finding
      reveals the exam step; harmless when the drawer isn't open. */
   if (document.body) document.body.classList.remove("engine-open");
+
+  /* Duplicate-patient check (clinical review CL-4). Runs when the clinician
+     LEAVES demographics — the first moment identity is actually known, and
+     before any clinical data is attached to a possibly-duplicate record.
+     Once per visit: it must never nag mid-consultation. */
+  if (V.step === "demographics" && stepId !== "demographics" &&
+      !V._dupChecked && typeof recCheckDuplicates === "function" &&
+      P && (P.first_name || P.last_name)) {
+    V._dupChecked = true;
+    var _pending = stepId;
+    recCheckDuplicates(P, function () { nav(_pending); });
+    return;                       /* the callback continues, or we opened the other chart */
+  }
 
   /* Mark current step done if it has data */
   markDone(V.step);
