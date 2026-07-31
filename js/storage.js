@@ -42,25 +42,131 @@ function loadStore(key, fallback) {
   }
   try {
     var raw = localStorage.getItem(STORE_PREFIX + key);
-    if (raw === null) return fallback;
+    if (raw === null) { storageNoteReadOk(key); return fallback; }
     var parsed = JSON.parse(raw);
     /* Ciphertext found while the vault is off/unavailable — do NOT hand back
        an envelope object as if it were records. */
     if (typeof vaultIsEnvelope === "function" && vaultIsEnvelope(parsed)) return fallback;
+    /* A store that should be a list but isn't is corrupt, even though it
+       parsed. Handing back a string or an object would crash every caller
+       that iterates it. */
+    if (STORE_EXPECTED_ARRAY.indexOf(key) >= 0 && !Array.isArray(parsed)) {
+      storageNoteCorrupt(key, raw, "expected a list, found " + (parsed === null ? "null" : typeof parsed));
+      return fallback;
+    }
+    storageNoteReadOk(key);
     return parsed;
   } catch (e) {
-    console.error("Storage read error [" + key + "]:", e);
+    /* CORRUPT, not empty. This distinction is the whole point:
+       a truncated store (what a crash or a disk error mid-write produces)
+       used to read back as [] and the very next save wrote [] over it,
+       destroying every record with no warning and nothing to recover from.
+       Proven in a browser: 3 patients -> truncate -> reload -> 0 shown ->
+       one ordinary save -> 1 patient stored, the other 3 gone forever. */
+    storageNoteCorrupt(key, raw, (e && e.message) || "unreadable");
     return fallback;
   }
 }
 
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* CORRUPT-STORE PROTECTION                                        */
+/*                                                                  */
+/* Three rules, in order of importance:                            */
+/*                                                                  */
+/*   1. NEVER overwrite a store we could not read. An unreadable    */
+/*      store may still be recoverable — by hand, from the mirror,  */
+/*      or from a backup — but only while it still exists.          */
+/*   2. Keep a copy of the damaged bytes before doing anything.     */
+/*   3. Say so, loudly. Reading zero patients must never look like  */
+/*      a clinic with zero patients.                                */
+/* ═══════════════════════════════════════════════════════════════ */
+
+/* Stores whose contents must be a list. A parsed-but-wrong-shape value is
+   just as corrupt as unparseable bytes, and more dangerous because it
+   survives JSON.parse. */
+var STORE_EXPECTED_ARRAY = ["users", "patients", "visits", "audit"];
+
+var STORE_CORRUPT = {};   /* key -> {at, reason, bytes, quarantine} while unreadable */
+
+function storageNoteCorrupt(key, raw, reason) {
+  if (STORE_CORRUPT[key]) return STORE_CORRUPT[key];
+
+  /* Quarantine the damaged bytes under a separate key so that even a
+     later successful write cannot erase the only remaining copy. */
+  var qKey = STORE_PREFIX + "corrupt_" + key + "_" + Date.now();
+  var quarantined = false;
+  if (typeof raw === "string" && raw.length) {
+    quarantined = (typeof lsSet === "function") ? lsSet(qKey, raw) : false;
+  }
+
+  STORE_CORRUPT[key] = {
+    at: new Date().toISOString(),
+    reason: reason || "unreadable",
+    bytes: (typeof raw === "string") ? raw.length : 0,
+    quarantine: quarantined ? qKey : null
+  };
+
+  console.error("Entopic: the '" + key + "' store is damaged (" + STORE_CORRUPT[key].reason +
+    "). Writes to it are now BLOCKED so the damaged data cannot be overwritten." +
+    (quarantined ? " A copy was kept at " + qKey + "." : ""));
+
+  if (typeof logAudit === "function") {
+    try { logAudit("storage_corrupt", "The '" + key + "' store could not be read: " +
+      STORE_CORRUPT[key].reason, {}); } catch (e) {}
+  }
+  if (typeof storageShowCorrupt === "function") {
+    try { storageShowCorrupt(key, STORE_CORRUPT[key]); } catch (e) {}
+  }
+  return STORE_CORRUPT[key];
+}
+
+function storageNoteReadOk(key) {
+  if (STORE_CORRUPT[key]) delete STORE_CORRUPT[key];
+}
+
+/* Which stores are currently unreadable. Surfaced by the deployment
+   readiness panel and the banner. */
+function storageCorruptStores() {
+  return Object.keys(STORE_CORRUPT).map(function (k) {
+    return { key: k, at: STORE_CORRUPT[k].at, reason: STORE_CORRUPT[k].reason,
+             quarantine: STORE_CORRUPT[k].quarantine };
+  });
+}
+
+function storageIsCorrupt(key) { return !!STORE_CORRUPT[key]; }
+
+/* Deliberate operator action: accept that the damaged store is unrecoverable
+   and allow writes again. Requires the caller to have shown the user what is
+   being given up — nothing calls this automatically. */
+function storageAcceptCorruptLoss(key) {
+  if (!STORE_CORRUPT[key]) return false;
+  if (typeof logAudit === "function") {
+    try { logAudit("storage_corrupt_accepted",
+      "Operator accepted the loss of the damaged '" + key + "' store; writes re-enabled.", {}); } catch (e) {}
+  }
+  delete STORE_CORRUPT[key];
+  return true;
+}
+
 function saveStore(key, data) {
+  /* A store we could not READ must not be WRITTEN. Otherwise the app,
+     holding the empty fallback it was handed, cheerfully saves that empty
+     value over records that were merely damaged — turning a recoverable
+     problem into permanent loss. This is the same reasoning as the
+     vault-locked refusal below; it was simply never applied to corruption. */
+  if (storageIsCorrupt(key)) {
+    console.error("Storage write refused [" + key + "]: the stored data is damaged and " +
+      "would be overwritten. Restore from a backup, or accept the loss explicitly.");
+    return false;
+  }
+
   if (_vaultOnFor(key)) {
     if (!vaultUnlocked()) {
       /* Refusing is the safe answer: writing plaintext would defeat the vault,
          and writing a fallback-derived value would destroy real records. */
       console.error("Storage write refused [" + key + "]: the record vault is locked.");
-      return;
+      return false;
     }
     vaultCacheSet(key, data);                       /* memory now, ciphertext shortly */
     if (typeof cloudEnqueue === "function") cloudEnqueue(key);
@@ -958,5 +1064,33 @@ if (typeof document !== "undefined" && typeof window !== "undefined" && document
   window.storageClearWriteFailure = function () {
     var el = document.getElementById("storageFailBanner");
     if (el && el.parentNode) el.parentNode.removeChild(el);
+  };
+
+  /* Corrupt store: a different and worse failure than "cannot write".
+     Records already on this device are unreadable. Reading zero patients must
+     never be allowed to look like a clinic that has zero patients, so this is
+     sticky, red, and tells the clinician to stop rather than carry on. */
+  window.storageShowCorrupt = function (key, info) {
+    var el = document.getElementById("storageCorruptBanner");
+    if (!el) {
+      el = document.createElement("div");
+      el.id = "storageCorruptBanner";
+      el.setAttribute("role", "alert");
+      el.style.cssText = "position:fixed;left:0;right:0;top:0;z-index:10000;" +
+        "background:#6b0f0f;color:#fff;padding:10px 14px;font-size:.72rem;line-height:1.45;" +
+        "box-shadow:0 2px 10px rgba(0,0,0,.3)";
+      document.body.appendChild(el);
+    }
+    var friendly = { patients: "patient list", visits: "visit records",
+                     users: "user accounts", audit: "access log" }[key] || key;
+    el.innerHTML =
+      '<b>⚠ THIS DEVICE CANNOT READ ITS ' + escHtml(String(friendly).toUpperCase()) + '.</b> ' +
+      'The stored data is damaged (' + escHtml(info && info.reason) + '), so the app is showing ' +
+      'none of it. <b>What you see is not what is on this device.</b>' +
+      '<br>Writing to it has been blocked so the damaged data cannot be overwritten — ' +
+      'it may still be recoverable' +
+      (info && info.quarantine ? ' (a copy was kept)' : '') + '.' +
+      '<br><b>Do not see patients on this device.</b> Restore from your most recent backup, ' +
+      'or from another device, before continuing.';
   };
 }

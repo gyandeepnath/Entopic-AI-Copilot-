@@ -152,14 +152,48 @@ function mirrorReadAll(cb) {
 
 /* Seed/refresh the mirror from whatever is currently in localStorage
    (covers data written before this module existed). */
+/* Seed the mirror from localStorage — but ONLY from values that are actually
+   readable.
+
+   This used to copy the raw bytes unconditionally. So a localStorage store
+   damaged by a crash mid-write was faithfully mirrored over the last good
+   copy, destroying the safety net at the exact moment it was needed. The
+   mirror exists to survive corruption; it must never inherit it. */
 function mirrorSeedFromLocalStorage() {
   for (var i = 0; i < MIRROR_KEYS.length; i++) {
     var key = MIRROR_KEYS[i];
     try {
       var raw = localStorage.getItem("entopic_" + key);
-      if (raw !== null) mirrorPutRaw(key, raw);
+      if (raw === null) continue;
+      if (!mirrorRawLooksValid(key, raw)) {
+        console.error("Entopic: refusing to mirror the damaged '" + key + "' store — " +
+          "the existing mirror copy is kept so the data can still be recovered.");
+        continue;
+      }
+      mirrorPutRaw(key, raw);
     } catch (e) { /* ignore */ }
   }
+}
+
+/* Stores that must hold a list. A parsed-but-wrong-shape value is corrupt
+   too, and more dangerous than unparseable bytes because it survives
+   JSON.parse and reaches every caller that iterates it. */
+var MIRROR_ARRAY_KEYS = ["users", "patients", "visits", "audit"];
+
+/* Is this raw value safe to copy over the mirror's existing good copy?
+   Deliberately conservative: when in doubt, keep what the mirror already has. */
+function mirrorRawLooksValid(key, raw) {
+  var parsed;
+  try { parsed = JSON.parse(raw); } catch (e) { return false; }
+  if (parsed === null || typeof parsed !== "object") return false;
+
+  /* An encrypted envelope is opaque by design and always mirrorable — that
+     is exactly what the vault needs the mirror to hold. */
+  var isEnvelope = !!(parsed.ct && parsed.iv);
+  if (isEnvelope) return true;
+
+  if (MIRROR_ARRAY_KEYS.indexOf(key) >= 0) return Array.isArray(parsed);
+  return true;   /* settings / vault_meta / kb_signoffs are plain objects */
 }
 
 /* ── Boot-time recovery ──
