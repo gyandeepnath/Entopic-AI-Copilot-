@@ -548,3 +548,42 @@ test("an empty secret is removed rather than stored as an empty envelope", async
   await ctx.vaultSecretSet("entopic_apikey", "");
   assert.strictEqual(ctx.vaultSecretPresent("entopic_apikey"), false);
 });
+
+
+/* ── S-3: unlock throttling ───────────────────────────────────────
+   Not the primary defence (PBKDF2 at 210k iterations is, and an attacker with
+   the device can attack the ciphertext offline anyway) — this stops someone at
+   the keyboard of an unattended locked terminal. */
+test("vault unlock throttles after repeated wrong passphrases", async () => {
+  const ctx = makeEnv({ entopic_patients: PATIENTS });
+  await ctx.vaultEnable(PASS);
+  ctx.vaultLock();
+
+  for (let i = 0; i < ctx.VAULT_THROTTLE_AFTER; i++) {
+    await assert.rejects(() => ctx.vaultUnlock("wrong one"), /did not open the vault/);
+  }
+  await assert.rejects(() => ctx.vaultUnlock("wrong again"), /Too many attempts/,
+    "further guesses are made to wait");
+
+  /* the delay is bounded — a clinic must never be permanently locked out */
+  assert.ok(ctx.vaultUnlockDelayMs(100, 1000, 1000) <= 5 * 60 * 1000);
+  /* and it expires with time */
+  assert.strictEqual(ctx.vaultUnlockDelayMs(6, 10 * 60 * 1000, 0), 0);
+});
+
+test("a correct passphrase clears the throttle", async () => {
+  const ctx = makeEnv({ entopic_patients: PATIENTS });
+  await ctx.vaultEnable(PASS);
+  ctx.vaultLock();
+  for (let i = 0; i < 3; i++) await assert.rejects(() => ctx.vaultUnlock("nope"));
+  await ctx.vaultUnlock(PASS);
+  assert.strictEqual(ctx.vaultThrottleCheck(), 0, "counter reset on success");
+});
+
+test("throttle state is in memory only, so it cannot lock a clinic out of its records", () => {
+  const ctx = makeEnv();
+  ctx.vaultThrottleNoteFailure();
+  const persisted = Object.keys(ctx.__raw).some((k) => /fail|attempt|throttle/i.test(k));
+  assert.strictEqual(persisted, false,
+    "persisting attempts would let an attacker burn them and deny the clinic its own data");
+});

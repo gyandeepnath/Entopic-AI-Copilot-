@@ -242,18 +242,55 @@ function vaultRestoreSecretConsumers() {
   return Promise.resolve(true);
 }
 
+/* ── Unlock throttling (security review S-3) ────────────────────
+   PBKDF2 at 210k iterations already makes each guess expensive, and an
+   attacker holding the device can attack the stored ciphertext offline
+   regardless — so this is NOT the primary defence and is not presented as
+   one. What it does stop is the realistic opportunistic case: someone at
+   the keyboard of an unattended locked terminal trying likely passphrases.
+   In-memory only (a page reload clears it), because persisting it would
+   let an attacker lock the clinic out of its own records by burning
+   attempts — availability matters as much as confidentiality here. */
+var _vaultFails = 0;
+var _vaultLastFail = 0;
+var VAULT_THROTTLE_AFTER = 5;
+
+function vaultUnlockDelayMs(fails, nowMs, lastFailMs) {
+  if (fails < VAULT_THROTTLE_AFTER) return 0;
+  var wait = Math.min(2000 * Math.pow(2, Math.min(fails - VAULT_THROTTLE_AFTER, 8)), 5 * 60 * 1000);
+  var remain = (lastFailMs + wait) - nowMs;
+  return remain > 0 ? remain : 0;
+}
+
+function vaultThrottleCheck() {
+  return vaultUnlockDelayMs(_vaultFails, Date.now(), _vaultLastFail);
+}
+function vaultThrottleNoteFailure() { _vaultFails++; _vaultLastFail = Date.now(); }
+function vaultThrottleReset() { _vaultFails = 0; _vaultLastFail = 0; }
+
 function vaultUnlock(passphrase) {
   var meta = vaultMeta();
   if (!meta) return Promise.reject(new Error("The vault is not set up on this device."));
+  var wait = vaultThrottleCheck();
+  if (wait > 0) {
+    var secs = Math.ceil(wait / 1000);
+    return Promise.reject(new Error("Too many attempts — wait " +
+      (secs >= 60 ? Math.ceil(secs / 60) + " min" : secs + "s") + " before trying again."));
+  }
   if (!vaultHasCrypto()) return Promise.reject(new Error("This browser cannot open the vault (no Web Crypto)."));
   return vaultDeriveKek(passphrase, meta.kdf.salt)
     .then(function (kek) { return vaultUnwrapDek(meta.wrapped.pass, kek); })
     .then(function (dek) { return _vaultVerifyAndAdopt(dek, meta); })
     .then(function () {
+      vaultThrottleReset();
       if (typeof logAudit === "function") { try { logAudit("vault_unlocked", "Record vault opened on this device", {}); } catch (e) {} }
       return true;
     })
-    .catch(function () { throw new Error("That passphrase did not open the vault."); });
+    .catch(function (e) {
+      if (e && /Too many attempts/.test(e.message || "")) throw e;
+      vaultThrottleNoteFailure();
+      throw new Error("That passphrase did not open the vault.");
+    });
 }
 
 function vaultUnlockWithRecovery(code) {
@@ -264,6 +301,7 @@ function vaultUnlockWithRecovery(code) {
     .then(function (kek) { return vaultUnwrapDek(meta.wrapped.recovery, kek); })
     .then(function (dek) { return _vaultVerifyAndAdopt(dek, meta); })
     .then(function () {
+      vaultThrottleReset();
       if (typeof logAudit === "function") { try { logAudit("vault_recovery_used", "Vault opened with the RECOVERY CODE — set a new passphrase", {}); } catch (e) {} }
       return true;
     })
@@ -741,6 +779,9 @@ if (typeof module !== "undefined" && module.exports) {
     vaultIsEnvelope: vaultIsEnvelope,
     backupEncrypt: backupEncrypt, backupDecrypt: backupDecrypt,
     backupIsEncrypted: backupIsEncrypted,
+    vaultUnlockDelayMs: vaultUnlockDelayMs, vaultThrottleCheck: vaultThrottleCheck,
+    vaultThrottleNoteFailure: vaultThrottleNoteFailure, vaultThrottleReset: vaultThrottleReset,
+    VAULT_THROTTLE_AFTER: VAULT_THROTTLE_AFTER,
     vaultSecretSet: vaultSecretSet, vaultSecretGet: vaultSecretGet,
     vaultSecretPresent: vaultSecretPresent, vaultSecretAvailable: vaultSecretAvailable,
     vaultIsWrappedSecret: vaultIsWrappedSecret, vaultRewrapSecrets: vaultRewrapSecrets,

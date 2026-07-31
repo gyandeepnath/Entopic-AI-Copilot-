@@ -94,6 +94,20 @@ function deployChecks(env) {
     });
   }
 
+  /* Is the device persisting records AT ALL? Measured failure P-1: past the
+     storage ceiling, writes fail and the app used to carry on regardless. */
+  var wf = pick("writeFailure",
+    (typeof storageWriteFailure === "function") ? storageWriteFailure() : null);
+  out.push({
+    id: "persistence",
+    label: "Record saving",
+    state: wf ? "blocked" : "ok",
+    detail: wf
+      ? "THIS DEVICE IS FAILING TO SAVE RECORDS (" + (wf.reason === "quota" ? "local storage is full" : wf.reason) +
+        "). Work done now may not be kept. Back up immediately, then connect cloud sync or archive older records."
+      : "Records are saving normally on this device."
+  });
+
   /* The access log is potentially evidence, so a hole in it must be visible. */
   var trunc = pick("auditTruncated",
     (typeof auditTruncationNotice === "function") ? auditTruncationNotice().truncated : false);

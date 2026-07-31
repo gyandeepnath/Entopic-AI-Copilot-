@@ -67,32 +67,78 @@ function saveStore(key, data) {
     storageQuotaWatch();
     return;
   }
+  /* Mirror FIRST, deliberately.
+
+     MEASURED FAILURE (scalability review P-1): at ~3,000 patients / 9,000
+     visits this device's localStorage budget (~9 MB in Chromium) is exhausted.
+     The old code wrote localStorage, and only then the IndexedDB mirror — both
+     inside one try. So when the quota threw, the mirror write was SKIPPED, and
+     the alert nevertheless told the clinician "your existing records are safe
+     (mirrored on this device)". That reassurance was false for the very record
+     that had just failed to save.
+
+     IndexedDB has a far larger quota than localStorage, so writing it first
+     makes it a genuine safety net: even when the main write fails, the record
+     is captured and recoverable. */
+  if (typeof mirrorStore === "function") {
+    try { mirrorStore(key, data); } catch (e) { /* mirror is best-effort */ }
+  }
   try {
     localStorage.setItem(STORE_PREFIX + key, JSON.stringify(data));
-    /* Redundant copy into the IndexedDB safety mirror (async, never blocks;
-       see storage-mirror.js). Enables auto-recovery if localStorage is wiped. */
-    if (typeof mirrorStore === "function") mirrorStore(key, data);
     /* Queue for cloud backup/sync when signed in (async, never blocks;
        see cloud-sync.js). No-op when offline/signed out/disabled. */
     if (typeof cloudEnqueue === "function") cloudEnqueue(key);
     /* Proactive quota check (DD M-4): warn BEFORE the hard wall, once. */
     storageQuotaWatch();
+    storageNoteWriteOk(key);
+    return true;
   } catch (e) {
     console.error("Storage write error [" + key + "]:", e);
-    if (e.name === "QuotaExceededError" || e.code === 22) {
-      /* The record is still safe in the IndexedDB mirror (storage-mirror.js) and,
-         if signed in and consented, encrypted in the cloud — so this is "cannot
-         add more here", not "data lost". Say so, and point to the fix. */
-      var mirrored = (typeof mirrorStore === "function");
-      alert("This device's local storage is full.\n\n" +
-        (mirrored ? "Your existing records are safe (mirrored on this device" +
-          (typeof cloudSignedIn === "function" && cloudSignedIn() ? " and backed up to your cloud" : "") + ").\n\n" : "") +
-        "To keep saving here: export and archive older patient records (Admin → Data), " +
-        "or connect cloud sync so records live in your project rather than this browser.");
-      _storageWarned = true;
+    var quota = (e.name === "QuotaExceededError" || e.code === 22 ||
+                 e.name === "NS_ERROR_DOM_QUOTA_REACHED");
+    storageNoteWriteFailure(key, quota ? "quota" : (e.name || "error"));
+    return false;
+  }
+}
+
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* WRITE-FAILURE STATE (scalability review P-1)                    */
+/*                                                                  */
+/* A failed save used to be a dismissible alert and nothing else:   */
+/* saveStore returned undefined, so every caller carried on as if   */
+/* the record had persisted. A clinic crossing the storage ceiling  */
+/* mid-morning would keep working while visits silently stopped     */
+/* being saved — the worst possible failure for clinical records,   */
+/* because nothing in the data says anything is wrong.              */
+/*                                                                  */
+/* Now: saveStore returns a boolean, failures are recorded and stay */
+/* recorded until writes succeed again, and the state is surfaced   */
+/* in the UI rather than shown once and forgotten.                  */
+/* ═══════════════════════════════════════════════════════════════ */
+var STORAGE_FAILED = null;   /* {key, reason, at, count} while writes are failing */
+
+function storageNoteWriteFailure(key, reason) {
+  if (STORAGE_FAILED && STORAGE_FAILED.key === key) STORAGE_FAILED.count++;
+  else STORAGE_FAILED = { key: key, reason: reason, at: new Date().toISOString(), count: 1 };
+  _storageWarned = true;
+  if (typeof storageShowWriteFailure === "function") {
+    try { storageShowWriteFailure(STORAGE_FAILED); } catch (e) {}
+  }
+}
+
+function storageNoteWriteOk(key) {
+  if (STORAGE_FAILED && STORAGE_FAILED.key === key) {
+    STORAGE_FAILED = null;
+    if (typeof storageClearWriteFailure === "function") {
+      try { storageClearWriteFailure(); } catch (e) {}
     }
   }
 }
+
+/* Is this device currently failing to persist records? Surfaced by the
+   deployment readiness panel and the banner. */
+function storageWriteFailure() { return STORAGE_FAILED; }
 
 /* ── Local storage headroom (DD M-4) ──────────────────────────────
    localStorage is a hard 5–10 MB ceiling and is the system of record today.
@@ -796,5 +842,47 @@ function getStorageStats() {
     patients: loadPatients().length,
     visits: loadVisits().length,
     users: loadUsers().length
+  };
+}
+
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* WRITE-FAILURE BANNER (browser only)                             */
+/*                                                                  */
+/* Deliberately a STICKY banner, not an alert(). An alert is shown  */
+/* once, dismissed reflexively mid-consultation, and then the       */
+/* clinician works on believing records are saving. This stays on   */
+/* screen until writes succeed again.                               */
+/* ═══════════════════════════════════════════════════════════════ */
+/* Guarded on BOTH document and window: a test harness may stub one without the
+   other, and this block must never be the reason storage.js fails to load. */
+if (typeof document !== "undefined" && typeof window !== "undefined" && document.createElement) {
+
+  window.storageShowWriteFailure = function (state) {
+    var el = document.getElementById("storageFailBanner");
+    if (!el) {
+      el = document.createElement("div");
+      el.id = "storageFailBanner";
+      el.setAttribute("role", "alert");
+      el.style.cssText = "position:fixed;left:0;right:0;bottom:0;z-index:9999;" +
+        "background:#8a2318;color:#fff;padding:10px 14px;font-size:.72rem;line-height:1.45;" +
+        "box-shadow:0 -2px 10px rgba(0,0,0,.25)";
+      document.body.appendChild(el);
+    }
+    var full = state && state.reason === "quota";
+    el.innerHTML =
+      '<b>⚠ THIS DEVICE HAS STOPPED SAVING RECORDS.</b> ' +
+      (full
+        ? 'Its local storage is full. Work you do now may not be kept. '
+        : 'A save failed (' + escHtml(state && state.reason) + '). ') +
+      'Your existing records are intact, and this device keeps a second copy, but ' +
+      '<b>do not continue seeing patients on this device until it is resolved</b>.' +
+      '<br>Fix now: Admin → Backup (download a backup), then connect cloud sync or archive older records. ' +
+      'This message clears itself once saving works again.';
+  };
+
+  window.storageClearWriteFailure = function () {
+    var el = document.getElementById("storageFailBanner");
+    if (el && el.parentNode) el.parentNode.removeChild(el);
   };
 }

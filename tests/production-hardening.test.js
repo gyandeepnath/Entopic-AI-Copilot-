@@ -271,3 +271,66 @@ test("the readiness panel surfaces a truncated trail", () => {
   const whole = m.deployChecks({ auditTruncated: false, vaultState: "unlocked", clinicMode: true, adminLegacy: false, plaintextCount: 0, cloudConfigured: true, phiArmed: true });
   assert.strictEqual(whole.find((c) => c.id === "audit_trail").state, "ok");
 });
+
+
+/* ── P-1: a failed write must never look like a successful one ────
+   Measured in the scalability review: past ~3,000 patients / 9,000 visits the
+   localStorage budget (~9 MB) is exhausted, saveVisits threw, the error was
+   swallowed, and the app carried on — 30,000 visits "saved", 0 persisted. */
+
+test("saveStore reports success and failure to its caller", () => {
+  const s = loadStorage();
+  assert.strictEqual(s.saveStore("patients", [{ id: "p1" }]), true, "a normal write returns true");
+  assert.strictEqual(s.storageWriteFailure(), null, "and records no failure");
+});
+
+test("a quota failure is recorded, not swallowed", () => {
+  const s = loadStorage();
+  s.localStorage.setItem = () => { const e = new Error("full"); e.name = "QuotaExceededError"; throw e; };
+
+  assert.strictEqual(s.saveStore("visits", [{ id: "v1" }]), false,
+    "the caller is told the write FAILED — this is what was missing");
+  const f = s.storageWriteFailure();
+  assert.ok(f, "the failure is recorded");
+  assert.strictEqual(f.reason, "quota");
+  assert.strictEqual(f.key, "visits");
+});
+
+test("the failure state persists until writes work again, then clears itself", () => {
+  const s = loadStorage();
+  const realSet = s.localStorage.setItem;
+  s.localStorage.setItem = () => { const e = new Error("full"); e.name = "QuotaExceededError"; throw e; };
+  s.saveStore("visits", [{ id: "v1" }]);
+  s.saveStore("visits", [{ id: "v2" }]);
+  assert.strictEqual(s.storageWriteFailure().count, 2, "repeat failures are counted, not reset");
+
+  s.localStorage.setItem = realSet;
+  s.saveStore("visits", [{ id: "v3" }]);
+  assert.strictEqual(s.storageWriteFailure(), null, "a successful write clears the alarm");
+});
+
+test("the record is mirrored BEFORE localStorage, so a quota failure still captures it", () => {
+  const mirrored = [];
+  const s = load("js/storage.js", {
+    STORE_VERSION: "1.0.0", alert: () => {}, confirm: () => true,
+    document: { createElement: () => ({ click() {}, style: {} }), body: { appendChild() {}, removeChild() {} } },
+    Blob: function () {}, URL: { createObjectURL: () => "blob:", revokeObjectURL() {} },
+    mirrorStore: (k, d) => mirrored.push(k), mirrorRemove: () => {}
+  });
+  s.localStorage.setItem = () => { const e = new Error("full"); e.name = "QuotaExceededError"; throw e; };
+  s.saveStore("visits", [{ id: "v1" }]);
+  assert.deepStrictEqual(mirrored, ["visits"],
+    "the mirror ran even though localStorage failed — the old order skipped it, " +
+    "while the alert claimed the record was safely mirrored");
+});
+
+test("readiness reports a device that has stopped saving as BLOCKED", () => {
+  const ctx = load("js/ui-deployment.js");
+  const m = ctx.module.exports;
+  const bad = m.deployChecks({ writeFailure: { key: "visits", reason: "quota" },
+    clinicMode: true, adminLegacy: false, plaintextCount: 0, cloudConfigured: true, phiArmed: true, vaultState: "unlocked" });
+  const chk = bad.find((c) => c.id === "persistence");
+  assert.strictEqual(chk.state, "blocked");
+  assert.ok(/FAILING TO SAVE/.test(chk.detail));
+  assert.strictEqual(m.deployReadyState(bad).ready, false, "a device that cannot save is not deployable");
+});
