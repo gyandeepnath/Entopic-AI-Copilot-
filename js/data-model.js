@@ -879,6 +879,16 @@ function blankVisit() {
     rx: {
       method: "Subjective",
       pd_type: "binocular", pd_bi: "", pd_od: "", pd_os: "",
+      /* Dispensing specification (clinical review RX-2). These were UI-only
+         dropdowns bound to nothing: a clinician selecting polycarbonate for a
+         child recorded nothing and printed nothing. They are part of the
+         prescription — an optician needs them — so they live in the record. */
+      lens_type: "", lens_material: "", lens_coating: "", lens_tint: "",
+      /* Rx validity is a CLINICAL judgement, not a constant. Twelve months is
+         wrong for a child in a myopia-progression year, for keratoconus, and
+         after surgery. Blank means "use the clinic default"; the clinician can
+         shorten or lengthen it per prescription. */
+      validity_months: "",
 
       /* ① Habitual / current correction */
       hab_type: "None",              /* None | Spectacles | Contact lenses */

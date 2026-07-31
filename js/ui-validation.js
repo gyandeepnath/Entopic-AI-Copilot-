@@ -116,6 +116,24 @@ function valConditionDetail(name) {
   };
 }
 
+
+/* The next condition still awaiting sign-off, in the order the list shows.
+   Powers "Verify & next", which is what makes a 257-condition review a
+   realistic sitting instead of 257 separate hunts.
+
+   Deliberately NOT a "verify all" button. A bulk attestation would let someone
+   sign off content they have not read, which destroys exactly the thing the
+   sign-off is for. Fast per condition is the goal; unread is never the goal. */
+function valNextProvisional(afterName) {
+  var items = valConditionList().items.filter(function (i) { return i.status === "provisional"; });
+  if (!items.length) return null;
+  if (!afterName) return items[0].name;
+  for (var i = 0; i < items.length; i++) {
+    if (items[i].name === afterName) return (items[i + 1] || items[0]).name;
+  }
+  return items[0].name;
+}
+
 /* Status bucket for a live condition: verified | provisional | curated. */
 function valStatusOf(c) {
   if (c.review_status === "VERIFIED_BY_CLINICIAN") return "verified";
@@ -185,12 +203,30 @@ if (typeof document !== "undefined") {
   window.valFilterDomain = function (d) { VALWORK.domain = (VALWORK.domain === d ? "" : d); valRender(); };
 
   /* Clinical attestation — reuses the exact same path as the rapid queue. */
+  /* How many the reviewer has signed off in THIS sitting — visible progress is
+     what sustains a long review. */
+  var _valSessionCount = 0;
+  window.valSessionCount = function () { return _valSessionCount; };
+
+  /* Verify the open condition and move straight to the next one awaiting
+     review, so the reviewer never has to hunt for it. */
+  window.valVerifyAndNext = function (name) {
+    var next = valNextProvisional(name);
+    window.valVerify(name);
+    if (next && next !== name) { VALWORK.selected = next; }
+    valRender();
+    if (typeof toast === "function") {
+      var left = valConditionList().counts.provisional;
+      toast("Verified ✓ — " + _valSessionCount + " this session, " + left + " left.");
+    }
+  };
+
   window.valVerify = function (name) {
     var by = (typeof CU !== "undefined" && CU && CU.name) ? CU.name : "";
     var c = (typeof kbRapidVerify === "function") ? kbRapidVerify(name, by) : null;
     if (!c) return;
+    _valSessionCount++;
     valRender();
-    if (typeof toast === "function") toast("Verified ✓ — " + name);
   };
 
   /* Hand off to the existing full editor for add / delete / modify tokens. */
@@ -365,7 +401,9 @@ if (typeof document !== "undefined") {
       (det.exclusions.length ? '<div class="val-excl">Supersedes: ' + _ve(det.exclusions.join(", ")) + '</div>' : "") +
       '<div class="val-actions">' +
         (canVerify
-          ? '<button class="btn btn-p" onclick="valVerify(\'' + _ve(det.name).replace(/'/g, "\\'") + '\')">Verify ✓ (record my clinical sign-off)</button>'
+          ? '<button class="btn btn-p" onclick="valVerify(\'' + _ve(det.name).replace(/'/g, "\\'") + '\')">Verify ✓ (record my clinical sign-off)</button>' +
+            '<button class="btn btn-p" onclick="valVerifyAndNext(\'' + _ve(det.name).replace(/'/g, "\\'") + '\')" ' +
+            'title="Sign this off and open the next one awaiting review">Verify &amp; next →</button>'
           : '') +
         '<button class="btn btn-s" onclick="valEdit(\'' + _ve(det.name).replace(/'/g, "\\'") + '\')">Edit logic / tokens…</button>' +
       '</div>' +
@@ -386,6 +424,7 @@ if (typeof module !== "undefined" && module.exports) {
     valTokenRow: valTokenRow,
     valConditionDetail: valConditionDetail,
     valStatusOf: valStatusOf,
-    valConditionList: valConditionList
+    valConditionList: valConditionList,
+    valNextProvisional: valNextProvisional
   };
 }

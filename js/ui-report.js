@@ -196,6 +196,43 @@ function pgRpt() {
 /* PAGE 22: SPECTACLE PRESCRIPTION                                 */
 /* ═══════════════════════════════════════════════════════════════ */
 
+/* Dispensing options (RX-2). Each list begins with a blank so "not specified"
+   is a real, recordable state rather than an accidental default. */
+var RX_LENS_TYPES = ["", "Single Vision", "Bifocal — Flat Top D28", "Bifocal — Round Segment",
+  "Progressive — Standard", "Progressive — Digital/Freeform", "Occupational / Office"];
+var RX_LENS_MATERIALS = ["", "CR-39 (1.50)", "Polycarbonate (1.59)", "Trivex (1.53)",
+  "Hi-Index 1.60", "Hi-Index 1.67", "Hi-Index 1.74", "Glass"];
+var RX_LENS_COATINGS = ["", "Anti-reflective (MAR)", "Blue Light Filter", "Photochromic / Transitions",
+  "UV 400 Protection", "Scratch Resistant", "Hydrophobic + Oleophobic"];
+var RX_LENS_TINTS = ["", "None / Clear", "Polarized Grey", "Polarized Brown",
+  "Gradient Grey", "Fixed Grey 50%", "Fixed Brown 50%"];
+var RX_VALIDITY_OPTIONS = [
+  { v: "",   l: "— not specified —" },
+  { v: "6",  l: "6 months (children / rapid change)" },
+  { v: "12", l: "12 months (usual adult)" },
+  { v: "24", l: "24 months (stable adult)" },
+  { v: "3",  l: "3 months (post-op / unstable)" }
+];
+
+/* One bound dispensing dropdown. */
+function rxSpecSelect(label, field, options) {
+  var cur = String((V.rx && V.rx[field]) || "");
+  return '<div class="fi"><label>' + escH(label) + '</label>' +
+    '<select onchange="rxSetField(\'' + field + '\', this.value)">' +
+    options.map(function (o) {
+      return '<option value="' + escH(o) + '"' + (cur === o ? " selected" : "") + '>' +
+        escH(o === "" ? "— not specified —" : o) + '</option>';
+    }).join("") + '</select></div>';
+}
+
+/* Persist a dispensing choice onto the visit. */
+function rxSetField(field, value) {
+  if (!V.rx) V.rx = {};
+  V.rx[field] = value;
+  if (typeof doSave === "function") doSave();
+  if (typeof renderMain === "function") renderMain();
+}
+
 /* Render one prescription cell.
 
    PATIENT SAFETY (clinical review RX-1): an empty field must NEVER print as
@@ -335,26 +372,47 @@ function pgRxP() {
     : (V.rx.pd_od ? ("OD: " + V.rx.pd_od + " mm / OS: " + V.rx.pd_os + " mm") : "—");
   h += '<div style="font-size:.78rem;margin-bottom:14px"><b>Interpupillary Distance (PD):</b> ' + pdText + '</div>';
 
+  /* The dispensing specification must PRINT — recording it but leaving it off
+     the sheet means the optician never receives the clinical decision (RX-2).
+     Only what was actually specified is printed; nothing is invented. */
+  var _spec = [
+    { l: "Lens type", v: V.rx.lens_type },
+    { l: "Material",  v: V.rx.lens_material },
+    { l: "Coating",   v: V.rx.lens_coating },
+    { l: "Tint",      v: V.rx.lens_tint }
+  ].filter(function (x) { return String(x.v || "").trim() !== ""; });
+  if (_spec.length) {
+    h += '<div style="font-size:.78rem;margin-bottom:14px"><b>Dispensing specification:</b> ' +
+      _spec.map(function (x) { return escH(x.l) + " — " + escH(x.v); }).join(" · ") + '</div>';
+  } else {
+    h += '<div class="no-print" style="font-size:.68rem;color:var(--md);margin-bottom:14px">' +
+      'No dispensing specification recorded — the optician will choose lens type, material and coatings.</div>';
+  }
+
   /* Lens specifications (screen only) */
   h += '<div class="no-print">';
   h += '<div class="dv"><span>Lens Specifications</span></div>';
   h += '<div class="fg">';
 
-  h += '<div class="fi"><label>Lens Type</label>' +
-    '<select><option>Single Vision</option><option>Bifocal — Flat Top D28</option><option>Bifocal — Round Segment</option>' +
-    '<option>Progressive — Standard</option><option>Progressive — Digital/Freeform</option><option>Occupational / Office</option></select></div>';
+  /* RX-2: these are now BOUND to the record. Previously they were decorative —
+     no id, no handler, no value read — so a clinician choosing polycarbonate
+     for a child (impact safety) recorded nothing and printed nothing. A control
+     that silently discards a clinical decision is worse than no control.
+     Every option list starts with a blank "not specified", because leaving it
+     to the dispensing optician is a legitimate choice and must not be
+     misrepresented as a positive instruction. */
+  h += rxSpecSelect("Lens Type", "lens_type", RX_LENS_TYPES);
+  h += rxSpecSelect("Material", "lens_material", RX_LENS_MATERIALS);
+  h += rxSpecSelect("Coating", "lens_coating", RX_LENS_COATINGS);
+  h += rxSpecSelect("Tint", "lens_tint", RX_LENS_TINTS);
 
-  h += '<div class="fi"><label>Material</label>' +
-    '<select><option>CR-39 (1.50)</option><option>Polycarbonate (1.59)</option><option>Trivex (1.53)</option>' +
-    '<option>Hi-Index 1.60</option><option>Hi-Index 1.67</option><option>Hi-Index 1.74</option><option>Glass</option></select></div>';
-
-  h += '<div class="fi"><label>Coatings</label>' +
-    '<select><option>Anti-reflective (MAR)</option><option>Blue Light Filter</option><option>Photochromic / Transitions</option>' +
-    '<option>UV 400 Protection</option><option>Scratch Resistant</option><option>Hydrophobic + Oleophobic</option></select></div>';
-
-  h += '<div class="fi"><label>Tint</label>' +
-    '<select><option>None / Clear</option><option>Polarized Grey</option><option>Polarized Brown</option>' +
-    '<option>Gradient Grey</option><option>Fixed Grey 50%</option><option>Fixed Brown 50%</option></select></div>';
+  /* Validity is a clinical judgement (RX-4), not a constant. */
+  h += '<div class="fi"><label>Prescription valid for</label>' +
+    '<select onchange="rxSetField(\'validity_months\', this.value)">' +
+    RX_VALIDITY_OPTIONS.map(function (o) {
+      return '<option value="' + escH(o.v) + '"' +
+        (String(V.rx.validity_months || "") === o.v ? " selected" : "") + '>' + escH(o.l) + '</option>';
+    }).join("") + '</select></div>';
 
   h += '</div></div>'; /* close .fg + .no-print */
 
@@ -365,7 +423,13 @@ function pgRxP() {
   h += '<div style="text-align:center"><div style="border-top:1px solid #000;width:140px;padding-top:6px;font-size:9pt">Date</div></div>';
   h += '<div style="text-align:center"><div style="border-top:1px solid #000;width:120px;padding-top:6px;font-size:9pt">License / Reg. No.</div></div>';
   h += '</div>';
-  h += '<div style="text-align:center;margin-top:20px;font-size:8pt;color:#666">This prescription is valid for 12 months from date of issue unless otherwise specified.</div>';
+  /* Print the validity the CLINICIAN set. A hard-coded 12 months is wrong for a
+     child in a progression year, for keratoconus, and after surgery (RX-4). */
+  var _vm = String(V.rx.validity_months || "").trim();
+  var _validTxt = _vm
+    ? ("This prescription is valid for " + escH(_vm) + " month" + (_vm === "1" ? "" : "s") + " from the date of examination.")
+    : "Validity not specified by the prescriber — confirm before dispensing.";
+  h += '<div style="text-align:center;margin-top:20px;font-size:8pt;color:#666">' + _validTxt + '</div>';
   h += '</div>';
 
   h += '</div>'; /* close rxPrint */
