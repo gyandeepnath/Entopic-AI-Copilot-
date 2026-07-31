@@ -1,14 +1,21 @@
 name: CI
 
 # Runs the Entopic dev/test harness on every push and PR.
-# The app itself is browser-only and offline-first; this pipeline only
-# exercises the Node-based tooling and the deterministic engine tests.
-# No secrets, no network, no external services.
+#
+# The app is browser-only and offline-first: there is no server to deploy and
+# no build step. That makes CI the ONLY gate between a commit and every clinic
+# running Entopic, because a static file goes live exactly as written. So this
+# pipeline is a gate, not a report — every step that can fail the build, does.
+#
+# No secrets, no network calls to third parties, no external services.
 
 on:
   push:
     branches: ["**"]
   pull_request:
+
+permissions:
+  contents: read
 
 jobs:
   test:
@@ -32,8 +39,74 @@ jobs:
       - name: Token registry is in sync with sources
         run: npm run registry:check
 
-      - name: Golden clinical vignettes + KB/registry/ICD tests
+      - name: Golden clinical vignettes + full test suite
         run: npm test
+
+      # Wiring, escaping, dead handlers, credential and privacy checks.
+      # This was previously not run in CI at all — only the KB audit was, and
+      # only as a report, so a repository-level regression could ship.
+      - name: Repository audit (must be 0 FAIL)
+        run: |
+          set -e
+          node tools/audit.js | tee /tmp/audit.txt
+          if grep -qE "[1-9][0-9]* FAIL" /tmp/audit.txt; then
+            echo "::error::Repository audit reported failures"
+            exit 1
+          fi
 
       - name: KB audit (report)
         run: npm run audit
+
+  # ── Release gate ────────────────────────────────────────────────────
+  # A clinic cannot tell you which build it is running unless the version
+  # actually changes. Without that, no incident is diagnosable: you cannot
+  # know whether a clinic has the fix, or whether two clinics reporting
+  # different behaviour are even running the same logic.
+  release-gate:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Version must change when shipped code changes
+        run: |
+          set -e
+          BASE="origin/${{ github.base_ref }}"
+          git fetch origin "${{ github.base_ref }}" || true
+
+          app_changed=$(git diff --name-only "$BASE"...HEAD -- js/ index.html css/ | wc -l)
+          kb_changed=$(git diff --name-only "$BASE"...HEAD -- knowledge/ | wc -l)
+          ver_changed=$(git diff --name-only "$BASE"...HEAD -- js/build-info.js | wc -l)
+
+          if [ "$app_changed" -gt 0 ] || [ "$kb_changed" -gt 0 ]; then
+            if [ "$ver_changed" -eq 0 ]; then
+              echo "::error::js/build-info.js was not updated."
+              echo "Entopic ships as static files and runs offline for days. If the"
+              echo "version does not change, no clinic can tell you which build they"
+              echo "are on and no incident can be diagnosed."
+              echo "Bump APP_VERSION (js/, index.html, css/) and/or KB_VERSION (knowledge/)."
+              exit 1
+            fi
+          fi
+          echo "Version gate OK (app files changed: $app_changed, kb: $kb_changed)"
+
+      - name: Migrations carry no unguarded destructive statement
+        run: |
+          set -e
+          # Migrations are applied by hand to a clinic's own Supabase project,
+          # sometimes more than once. Re-applying must never destroy data.
+          fail=0
+          for f in db/migrations/*.sql; do
+            if grep -inE "^\s*(truncate|delete from)\b" "$f"; then
+              echo "::error file=$f::destructive statement in a migration"
+              fail=1
+            fi
+            if grep -inE "^\s*drop\b" "$f" | grep -viE "drop (policy|trigger|function|index|type|view) if exists"; then
+              echo "::error file=$f::unguarded DROP in a migration"
+              fail=1
+            fi
+          done
+          [ "$fail" -eq 0 ] && echo "Migrations clean"
+          exit $fail

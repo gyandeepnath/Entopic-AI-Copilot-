@@ -427,6 +427,10 @@
 <!-- Canonical HTML escaping. MUST load before any module that renders
      user or knowledge-base text, which is why it is first. -->
 <script src="js/dom-escape.js"></script>
+<!-- Build identity: which version a clinic is running. Immediately after the
+     escaper (which must stay first) so every later module, the deployment
+     panel and any error report can name the build. -->
+<script src="js/build-info.js"></script>
 <!-- Shared browser I/O: one file-download implementation and localStorage
      writes that report failure instead of swallowing it. Loaded early so
      every module below can use it. -->

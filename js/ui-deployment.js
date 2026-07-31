@@ -185,6 +185,24 @@ if (typeof document !== "undefined") {
       '</div>';
     }
 
+    /* Build identity, first thing on the panel. When a clinic calls, this is
+       the question that has to be answered before any other diagnosis is
+       possible — and it is safe to read aloud: no patient data, no device id. */
+    var build = (typeof buildInfo === "function") ? buildInfo() : null;
+    var buildRow = build
+      ? '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;' +
+          'padding:5px 8px;margin-bottom:6px;border:1px solid var(--ms);border-radius:var(--r);' +
+          'background:var(--sn);font-size:.6rem">' +
+          '<span><b>' + _de(buildLabel()) + '</b>' +
+            '<div style="color:var(--sl);font-size:.55rem">' +
+              _de(build.kb_conditions + " conditions loaded" +
+                  (build.released ? "" : " · UNRELEASED BUILD — not from a published release")) +
+            '</div></span>' +
+          '<button class="btn btn-s" style="font-size:.55rem;padding:2px 8px" ' +
+            'onclick="deployCopyBuild()">Copy for support</button>' +
+        '</div>'
+      : "";
+
     var banner = st.ready
       ? '<div style="background:#eef4ef;border:1px solid #a9cbb4;color:#1e5e33;padding:6px 8px;border-radius:var(--r);font-size:.62rem">' +
           '✓ No deployment blockers on this device' + (st.warn ? ' — ' + st.warn + ' item(s) still need attention below.' : '.') + '</div>'
@@ -214,7 +232,7 @@ if (typeof document !== "undefined") {
 
     return '<div class="home-settings" style="margin-top:8px">' +
         '<div class="home-settings-title">🚀 Deployment readiness</div>' +
-        banner + rows +
+        buildRow + banner + rows +
       '</div>' +
 
       '<div class="home-settings" style="margin-top:8px">' +
@@ -341,6 +359,24 @@ if (typeof document !== "undefined") {
      needs no table and no sign-in — a 200/401-class answer proves the project
      and key are real; a network error means the practice would be syncing
      into nothing. */
+  /* One click to hand support everything they need and nothing they should
+     not have: version, build, browser, KB size. No patient data, no ids. */
+  window.deployCopyBuild = function () {
+    if (typeof buildInfo !== "function") return;
+    var b = buildInfo();
+    var text = buildLabel() + "\n" +
+      "conditions: " + b.kb_conditions + "\n" +
+      "released: " + b.released + "\n" +
+      "browser: " + b.ua;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () {
+        if (typeof toast === "function") toast("Build details copied.");
+      }, function () { window.prompt("Copy this and send it to support:", text); });
+    } else {
+      window.prompt("Copy this and send it to support:", text);
+    }
+  };
+
   window.deployTestBackend = function () {
     if (typeof isAdmin !== "function" || !isAdmin()) return;
     var msg = document.getElementById("deployBackendMsg");
