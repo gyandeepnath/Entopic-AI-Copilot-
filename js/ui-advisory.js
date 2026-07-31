@@ -186,6 +186,14 @@ function renderAdvisory() {
     } else {
       h += '<div style="font-size:.6rem;color:var(--sv);padding:8px;text-align:center">Leading diagnosis is clear — no discriminating test needed right now.</div>';
     }
+    /* Published clinical scales that the recorded findings make relevant.
+       The scale asks the clinician for the few inputs it needs rather than
+       inferring them, and shows no risk figure until they are answered. */
+    if (typeof scalesRelevant === "function" && typeof scaleCardHtml === "function") {
+      var relScales = scalesRelevant(V);
+      for (var rs = 0; rs < relScales.length; rs++) h += scaleCardHtml(relScales[rs].id);
+    }
+
     if (V.nudges && V.nudges.length > 0) {
       h += '<div class="adv-sec">Improve Accuracy</div>';
       for (var ni = 0; ni < V.nudges.length; ni++) {

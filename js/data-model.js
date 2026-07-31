@@ -876,6 +876,14 @@ function blankVisit() {
        NOTE: od_sph/od_cyl/od_ax/od_add (and os_) remain the SUBJECTIVE /
        working refraction — the engine and the spectacle advisor read these,
        so the field names are deliberately unchanged. */
+    /* Published clinical scales (knowledge/clinical-scales.js). Answers are
+       the clinician's explicit yes/no per eye, e.g.
+         scales.areds_simplified = { od: { large_drusen: true, … }, os: {…} }
+       An absent key means "not answered" and must never be read as "absent" —
+       js/clinical-scales.js refuses to produce a risk figure until every
+       required input has a real answer. */
+    scales: {},
+
     rx: {
       method: "Subjective",
       pd_type: "binocular", pd_bi: "", pd_od: "", pd_os: "",
