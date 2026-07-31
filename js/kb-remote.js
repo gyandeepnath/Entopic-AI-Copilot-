@@ -268,9 +268,12 @@ function kbLocalEditsLoad() {
   try { return JSON.parse(localStorage.getItem(KB_LOCAL_EDITS_KEY) || "[]") || []; }
   catch (e) { return []; }
 }
+/* Returns whether the edits are actually persisted. This used to swallow the
+   failure, so a clinician's KB edit could vanish on the next reload while the
+   editor reported it saved — the same class of silent loss as P-1. */
 function kbLocalEditsSave(arr) {
-  if (typeof localStorage === "undefined") return;
-  try { localStorage.setItem(KB_LOCAL_EDITS_KEY, JSON.stringify(arr || [])); } catch (e) {}
+  if (typeof localStorage === "undefined") return false;
+  return lsSet(KB_LOCAL_EDITS_KEY, JSON.stringify(arr || []));
 }
 
 /* Upsert one condition into the live KB by name, rebuild all indexes, and

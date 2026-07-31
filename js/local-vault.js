@@ -620,24 +620,24 @@ function vaultSecretUsable() {
   return vaultEnabled() && vaultUnlocked();
 }
 
-/* Store a secret string. Returns a promise; wrapped when the vault is open. */
+/* Store a secret string. Returns a promise resolving to whether the value is
+   actually on disk — it used to resolve true unconditionally, so a full or
+   blocked localStorage lost the secret while reporting success. Writes go
+   through lsSet (js/browser-io.js), which surfaces the failure in the same
+   banner the record store uses. */
 function vaultSecretSet(storageKey, value) {
   if (value === null || value === undefined || value === "") {
-    try { localStorage.removeItem(storageKey); } catch (e) {}
+    lsRemove(storageKey);
     return Promise.resolve(true);
   }
   var str = String(value);
-  if (!vaultSecretUsable()) {
-    try { localStorage.setItem(storageKey, str); } catch (e) {}
-    return Promise.resolve(true);
-  }
+  if (!vaultSecretUsable()) return Promise.resolve(lsSet(storageKey, str));
+
   return vaultEncryptValue(str).then(function (env) {
-    try { localStorage.setItem(storageKey, JSON.stringify(env)); } catch (e) {}
-    return true;
+    return lsSet(storageKey, JSON.stringify(env));
   }).catch(function () {
-    /* Never silently drop a secret we were asked to keep. */
-    try { localStorage.setItem(storageKey, str); } catch (e) {}
-    return true;
+    /* Encryption failed — keep the secret rather than drop it. */
+    return lsSet(storageKey, str);
   });
 }
 

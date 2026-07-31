@@ -6,6 +6,73 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-07-31 — AI-generated-code review: a file of invented clinical numbers, removed
+
+A review of the repository specifically for the failure modes that AI-assisted
+programming produces. Full report: `docs/AI_CODE_REVIEW_2026-07-31.md`.
+
+**AI-1 (patient safety).** `risk-calc.js` (then in `js/`) — 369 lines, loaded on
+every page, **called by nothing** — contained a home-made points score presented as the OHTS
+glaucoma model and **nine invented risk percentages** (`~4%`, `~10%`, `~20%`,
+`>30%` for glaucoma conversion; `~45% fellow eye`, `~30-50%`, `~18-25%`, `~1-5%`,
+`<1%` for AMD progression). The real OHTS predictor is a Cox proportional-hazards
+model, not a points score; those weights and percentages came from nowhere. Its
+header read *"Simplified scoring based on published OHTS model"* — a sentence
+that reads like a citation and cites nothing.
+
+It never reached a clinician only because it was unreachable. Worse, a later
+session noticed it was unwired and wrote a **test comment excusing it** ("pending
+founder clinical verification"), turning a safety problem into a forgotten to-do.
+
+Moved to `quarantine/risk-calc.UNVERIFIED.js` with a header stating exactly what
+is wrong and what a clinician must supply to restore it; removed from the load
+path. `tests/unverified-clinical-content.test.js` now fails if the quarantine
+enters the load path, if the file returns to `js/`, if `index.html` points at a
+file that isn't on disk, or if **any loaded module assigns a hard-coded
+percentage to a risk/sensitivity/specificity-shaped field**. Verified red against
+the original (it caught all nine), green after. **Nothing is deleted** — the
+three calculators (OHTS, AREDS2, and a categorical ETDRS grading that contains no
+invented numbers) are parked pending the founder's decision.
+
+**AI-2 — one file-download, one localStorage write.** Four near-identical
+download helpers had drifted across four sessions: one revoked its object URL
+synchronously (can race the download), one never attached the anchor to the
+document (historically fails in Firefox), only one logged the audit entry. And 18
+of 31 `localStorage.setItem` calls swallowed their failure. Two of those were
+real silent-loss paths: a clinician's **KB edit** could vanish while the editor
+reported success, and `vaultSecretSet` resolved `true` unconditionally — directly
+beneath a comment reading *"Never silently drop a secret we were asked to keep."*
+
+New `js/browser-io.js` holds one `dlSaveAs()` and `lsSet/lsGet/lsRemove`. Reads
+still never throw; **writes now return a boolean and raise the same
+write-failure banner the patient-record store uses**. Browser-verified: a forced
+`QuotaExceededError` returns `false` and shows "This device's local storage is
+full."
+
+**AI-3 — the 450 defensive guards, made checkable.** `typeof X === "function"`
+appears 450 times over 186 names. Two proven defects came from guards that were
+silently false (R-1 stored XSS; S-2 session token read as ciphertext). Rather
+than delete 450 guards — a large, risky, low-value refactor —
+`tests/generated-patterns.test.js` now asserts every guarded name resolves to
+something real (global, `window.` export, injected parameter, or genuine host
+global), plus one escaper, one downloader, and a pinned load order. All four
+assertions were verified to go red against their specific defect and green after
+restore.
+
+**Divergence from the review's own recommendations.** Three larger refactors were
+identified and deliberately **not** done: splitting `collectTokens()` (574 lines,
+whose "SOURCE" comments literally run 1–9, 9b, 11, 10 — pure session drift),
+breaking the `storage.js ↔ local-vault.js` cycle, and converging the three
+competing export conventions. Each is real; each touches either the diagnostic
+path or the record-encryption path; none has a behavioural benefit. They deserve
+dedicated sessions with before/after golden-output proofs, not a bolt-on at the
+end of a long one.
+
+499 tests passing (was 495), `tools/audit.js` 0 FAIL, app boots clean with all
+394 conditions loaded.
+
+---
+
 ## 2026-07-30 — Session 11z: Refinement rounds across the storage/security layers
 
 Five focused passes over the layers touched by the vault work, each verified

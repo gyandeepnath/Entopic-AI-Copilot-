@@ -137,14 +137,7 @@ if (typeof document !== "undefined") {
     if (typeof isAdmin !== "function" || !isAdmin()) return;
     var out = kbBuildVerifiedExport();
     if (!out.count) { if (typeof alert === "function") alert("No sign-offs yet — verify entries in the review queue first."); return; }
-    var blob = new Blob([out.source], { type: "text/javascript" });
-    var a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = "verified.js";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
+    dlSaveAs("verified.js", out.source, "text/javascript");
   };
 
   window.reviewVerify = function (name) {

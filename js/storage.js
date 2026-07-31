@@ -596,15 +596,8 @@ function buildBackupPayload() {
 }
 
 function downloadBackupFile(obj, suffix) {
-  var blob = new Blob([JSON.stringify(obj, null, 2)], { type: "application/json" });
-  var url = URL.createObjectURL(blob);
-  var a = document.createElement("a");
-  a.href = url;
-  a.download = "entopic-backup-" + new Date().toISOString().slice(0, 10) + (suffix || "") + ".json";
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  var name = "entopic-backup-" + new Date().toISOString().slice(0, 10) + (suffix || "") + ".json";
+  return dlSaveAs(name, JSON.stringify(obj, null, 2), "application/json");
 }
 
 function exportAllData() {

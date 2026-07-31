@@ -131,13 +131,11 @@ function exportResearchRows(d) {
 /* ═══════════════════════════════════════════════════════════════ */
 if (typeof document !== "undefined") {
 
+  /* Downloads go through the shared dlSaveAs (js/browser-io.js). The extra
+     thing this wrapper adds is the audit entry — an export of patient-derived
+     data is a disclosure event and must be recorded. */
   function _dlDownload(name, text, mime) {
-    var blob = new Blob([text], { type: (mime || "text/plain") + ";charset=utf-8" });
-    var a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = name;
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
+    if (!dlSaveAs(name, text, mime || "text/plain")) return;
     if (typeof logAudit === "function") { try { logAudit("data_exported", "Exported " + name, {}); } catch (e) {} }
   }
   function _stamp() { return new Date().toISOString().slice(0, 10); }

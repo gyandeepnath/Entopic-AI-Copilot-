@@ -82,8 +82,13 @@ test("every inline event handler calls a DEFINED function (no dead buttons)", ()
 test("previously-orphaned feature panels stay reachable (referenced in the UI)", () => {
   /* Each of these substantial panels must be CALLED from somewhere other than
      its own definition, or it becomes a built-but-unreachable feature again.
-     (renderRiskCalculators / renderMedicationReview are intentionally NOT here
-     yet — pending founder clinical verification — see CHANGELOG.) */
+
+     renderRiskCalculators used to be excused here as "pending founder clinical
+     verification". That excuse let 369 lines of fabricated risk percentages sit
+     in the load path for months. The file is now quarantined outside js/ (see
+     quarantine/risk-calc.UNVERIFIED.js) and unverified-clinical-content.test.js
+     asserts it stays out. renderMedicationReview is still unwired but is
+     qualitative only — no invented numbers — so it remains a product decision. */
   const mustBeWired = ["renderSpectacleAdvisor", "osdiTool", "renderOSDI"];
   const orphaned = mustBeWired.filter((fn) => {
     const refs = (allText.match(new RegExp("\\b" + fn + "\\b", "g")) || []).length;

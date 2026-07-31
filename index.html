@@ -426,6 +426,10 @@
 <!-- Canonical HTML escaping. MUST load before any module that renders
      user or knowledge-base text, which is why it is first. -->
 <script src="js/dom-escape.js"></script>
+<!-- Shared browser I/O: one file-download implementation and localStorage
+     writes that report failure instead of swallowing it. Loaded early so
+     every module below can use it. -->
+<script src="js/browser-io.js"></script>
 <script src="js/kb-authoring.js"></script>
 
 <!-- Core -->
@@ -485,7 +489,10 @@
 <script src="js/claude.js"></script>
 <script src="js/drawing-guide.js"></script>
 <script src="js/drawing.js"></script>
-<script src="js/risk-calc.js"></script>
+<!-- js/risk-calc.js was moved to quarantine/risk-calc.UNVERIFIED.js on 2026-07-31.
+     It contained unsourced OHTS/AREDS2 risk percentages and was never called.
+     Do not re-add it without clinician-supplied, sourced numbers — see the
+     header of that file. -->
 <script src="js/medication-checker.js"></script>
 <script src="js/smart-intake.js"></script>
 <script src="js/spectacle-advisor.js"></script>

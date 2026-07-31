@@ -46,7 +46,11 @@ function makeEnv(seed) {
   ctx.window = ctx;
   vm.createContext(ctx);
   const read = (f) => fs.readFileSync(path.resolve(__dirname, "..", f), "utf8");
-  /* storage.js first (defines STORE_PREFIX), then the vault, then re-export */
+  /* Same order as index.html: browser-io (lsSet/lsRemove) first, then
+     storage.js (defines STORE_PREFIX and the write-failure banner), then the
+     vault. The real browser-io is loaded rather than stubbed so the tests
+     exercise the actual write path. */
+  vm.runInContext(read("js/browser-io.js"), ctx, { filename: "browser-io.js" });
   vm.runInContext(read("js/storage.js"), ctx, { filename: "storage.js" });
   vm.runInContext(read("js/local-vault.js"), ctx, { filename: "local-vault.js" });
   ctx.__raw = store;

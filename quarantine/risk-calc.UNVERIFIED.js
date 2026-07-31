@@ -1,28 +1,51 @@
 /* ═══════════════════════════════════════════════════════════════ */
-/* ENTOPIC — CLINICAL RISK CALCULATORS                             */
+/* QUARANTINED — NEEDS_CLINICAL_REVIEW — NOT LOADED BY THE APP     */
 /*                                                                  */
-/* OHTS:   Glaucoma conversion risk                                */
-/* ETDRS:  Diabetic retinopathy severity grading                   */
-/* AREDS2: AMD progression risk                                    */
+/* This file is NOT referenced from index.html and must not be      */
+/* re-added until a clinician has replaced the numbers below.       */
 /*                                                                  */
-/* All calculators use data already in the visit — no extra input  */
-/* Results displayed via advisory panel or diagnosis page           */
+/* WHY IT WAS QUARANTINED (2026-07-31, AI-generated-code review):   */
+/*                                                                  */
+/* It was written by an AI session that was asked for "clinical     */
+/* risk calculators". Instead of saying the model coefficients were */
+/* not available, it produced something SHAPED like OHTS and AREDS2 */
+/* — correct risk-factor names, plausible-looking point weights,    */
+/* and confident 5-year risk percentages — none of which come from  */
+/* any published source. Specifically:                              */
+/*                                                                  */
+/*   - The real OHTS predictor is a Cox proportional-hazards model  */
+/*     over continuous age/IOP/CCT/CDR/PSD. It is NOT a points      */
+/*     score. The "+3 / +2 / +1" weights here were invented.        */
+/*   - The 5-year conversion figures (~4% / ~10% / ~20% / >30%)     */
+/*     were invented and mapped to those invented point bands.      */
+/*   - The AREDS2 progression figures (~45% fellow eye / ~30-50% /  */
+/*     ~18-25% / ~1-5% / <1%) were invented.                        */
+/*   - The header comment said "Simplified scoring based on         */
+/*     published OHTS model", which reads as a citation but cites   */
+/*     nothing. That sentence is the tell.                          */
+/*                                                                  */
+/* It never reached a clinician only because nothing ever called    */
+/* renderRiskCalculators() — it was dead code loaded on every page. */
+/*                                                                  */
+/* TO BRING THIS BACK, the founder (or a clinician he nominates)    */
+/* must supply, with sources:                                       */
+/*   1. the actual OHTS model form and coefficients, or an agreed   */
+/*      published simplified calculator to reproduce exactly;       */
+/*   2. the AREDS/AREDS2 category definitions and the published     */
+/*      progression rates for each category;                        */
+/*   3. a decision on ETDRS: the SEVERITY GRADING below is          */
+/*      categorical (no invented numbers) and may be salvageable    */
+/*      on its own, but it has not been verified either.            */
+/*                                                                  */
+/* Until then this file stays here, unloaded, so that no patient    */
+/* is ever shown a fabricated risk figure.                          */
 /* ═══════════════════════════════════════════════════════════════ */
 "use strict";
 
 
 /* ═══════════════════════════════════════════════════════════════ */
-/* OHTS — OCULAR HYPERTENSION TREATMENT STUDY                      */
-/* Estimates 5-year risk of developing POAG                        */
-/*                                                                  */
-/* Risk factors:                                                    */
-/*   - Age                                                         */
-/*   - IOP                                                         */
-/*   - CCT (central corneal thickness)                             */
-/*   - Vertical C/D ratio                                         */
-/*   - PSD (pattern standard deviation)                            */
-/*                                                                  */
-/* Simplified scoring based on published OHTS model                */
+/* OHTS — NEEDS_CLINICAL_REVIEW                                    */
+/* Point weights and percentages below are UNSOURCED. Do not use.  */
 /* ═══════════════════════════════════════════════════════════════ */
 
 function calculateOHTSRisk() {

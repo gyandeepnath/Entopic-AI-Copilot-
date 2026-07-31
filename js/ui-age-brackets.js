@@ -126,15 +126,9 @@ function ageBracketExport() {
     '   knowledge/age-classification.js -> KB_AGE_BRACKET. */\n' +
     'var KB_AGE_BRACKET_CONFIRMED = {\n' + body + '\n};\n';
 
-  try {
-    var blob = new Blob([src], { type: "text/javascript" });
-    var a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = "age-brackets-confirmed.js";
-    a.click();
-    setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+  if (dlSaveAs("age-brackets-confirmed.js", src, "text/javascript")) {
     if (typeof toast === "function") toast(names.length + " decisions exported.");
-  } catch (e) {
+  } else {
     if (typeof toast === "function") toast("Could not export on this browser.");
   }
 }

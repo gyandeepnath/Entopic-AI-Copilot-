@@ -198,10 +198,10 @@ A generic `callClaudeAPI` wrapper (direct browser call, debounced) plus `request
 
 ## 8. Clinical calculators, intake, medications, spectacles
 
-- **`risk-calc.js`** — three literature-based calculators that consume data already in `V`, so they add no extra input burden:
-  - **OHTS** — 5-year POAG conversion risk from age/IOP/CCT/vertical-C-D/PSD, additive points → Low/Moderate/High/Very-High bands with management text. (A simplified, points-based reimplementation of the published model.)
-  - **ETDRS** — diabetic-retinopathy severity from fundus findings (no-DR → mild/moderate/severe NPDR → PDR), with screening intervals and a macular-edema modifier. Currently grades both eyes together (a known simplification).
-  - **AREDS2** — AMD progression category from drusen/RPE/GA/CNV findings, with supplement indication.
+- ~~**`risk-calc.js`**~~ — **QUARANTINED 2026-07-31. Not loaded. Not literature-based.** This entry previously described "three literature-based calculators"; the AI-generated-code review (`docs/AI_CODE_REVIEW_2026-07-31.md`) found that the OHTS and AREDS2 numbers were invented — a home-made points score presented as the published OHTS Cox model, plus nine unsourced risk percentages. The file was loaded on every page and called by nothing. It now lives at `quarantine/risk-calc.UNVERIFIED.js`, out of the load path, and `tests/unverified-clinical-content.test.js` keeps it there.
+  - **OHTS** and **AREDS2** — fabricated weights and percentages. Cannot return without clinician-supplied, sourced model coefficients.
+  - **ETDRS** — severity grading only, categorical, contains no invented numbers; may be salvageable on its own but has not been verified either. Grades both eyes together (a known simplification).
+  - **Long-term shape:** clinical constants belong in the knowledge base under the same `review_status` / evidence grading every condition uses, rendered by a generic component — so a calculator is data a clinician signs off, not code.
 - **`smart-intake.js`** — plain-language pre-visit questionnaire plus **OSDI** (12 items, standard severity bands) and **SPEED** dry-eye instruments, auto-populating CC/FOLDARS/symptom tokens.
 - **`medication-checker.js`** + **`knowledge/medications.js`** — a systemic-drug → ocular-side-effect database (steroids → PSC/IOP/CSCR; hydroxychloroquine/chloroquine → maculopathy; alpha-blockers → IFIS; etc.) with alias matching, a review panel, and a `getMedicationTokens` bridge into the engine.
 - **`spectacle-advisor.js`** — lens index / design / coating recommendations from Rx and lifestyle.
@@ -599,7 +599,12 @@ Each phase is independently shippable and independently valuable; none requires 
 - `ui-sidebar.js` (90), `ui-advisory.js` (189), `ui-pages.js` (881), `ui-pages-2.js` (428), `ui-report.js` (385), `ui-flowmap.js` (485).
 
 **`/js`** (features)
-- `speech.js` (306), `claude.js` (292), `drawing.js` (381), `risk-calc.js` (369), `medication-checker.js` (162), `smart-intake.js` (406), `spectacle-advisor.js` (266).
+- `speech.js` (306), `claude.js` (292), `drawing.js` (381), `medication-checker.js` (162), `smart-intake.js` (406), `spectacle-advisor.js` (266).
+- `risk-calc.js` is **no longer here** — quarantined, see §8.
+
+**`/js`** (shared primitives, loaded first)
+- `dom-escape.js` — the one canonical `escHtml`/`escAttrJs`. Every other `esc*` delegates to it; `tests/generated-patterns.test.js` fails if a non-delegating escaper appears (this is how R-1, a stored-XSS hole, happened).
+- `browser-io.js` — the one `dlSaveAs()` (replaced four drifted copies) and `lsSet`/`lsGet`/`lsRemove`. Reads never throw; **writes return a boolean and raise the storage write-failure banner** rather than swallowing the error. Must load before any module that calls it (asserted).
 
 **`/js`** (init)
 - `app.js` (725) — auth, routing, patient/visit management, autosave, global state.
