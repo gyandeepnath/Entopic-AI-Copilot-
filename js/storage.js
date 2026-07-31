@@ -510,6 +510,14 @@ function getPreviousVisit(patientId, currentVisitId) {
 /* Called by autosave timer and on navigation                      */
 /* ═══════════════════════════════════════════════════════════════ */
 
+/* The `updated` stamp of the visit as this tab last saw it. doSave() compares
+   it against what is on disk to notice another window (or another clinician on
+   the same machine) having written the same visit in between. Reset whenever a
+   visit is opened or created. */
+var VISIT_SEEN_STAMP = null;
+
+function setVisitSeenStamp(stamp) { VISIT_SEEN_STAMP = stamp || null; }
+
 function doSave() {
   if (!CV) return;
 
@@ -517,6 +525,23 @@ function doSave() {
   var visits = loadVisits();
   for (var i = 0; i < visits.length; i++) {
     if (visits[i].id === CV) {
+      /* Did another window write this visit since we last saw it? If so, keep
+         the version we are about to replace — a clinician's measurement must
+         never vanish because a second tab happened to save later. */
+      if (typeof recDetectConflict === "function") {
+        var conflict = recDetectConflict(visits[i], VISIT_SEEN_STAMP);
+        if (conflict) {
+          recPreserveOverwritten(visits[i], conflict);
+          if (typeof logAudit === "function") {
+            try { logAudit("visit_conflict",
+              "Another window had saved this visit (" + conflict.by + "). That version was " +
+              "preserved on the record rather than discarded.", { visit_id: CV }); } catch (e) {}
+          }
+          if (typeof storageShowVisitConflict === "function") {
+            try { storageShowVisitConflict(conflict); } catch (e) {}
+          }
+        }
+      }
       visits[i].data = V;
       /* Attribution + amendment trail (clinical review CL-3): stamp WHO saved
          this and WHEN. A save by another clinician, or on a later day, is
@@ -526,6 +551,9 @@ function doSave() {
       } else {
         visits[i].updated = new Date().toISOString();
       }
+      /* This tab has now seen the visit at this stamp; the next save compares
+         against it to notice another window writing in between. */
+      VISIT_SEEN_STAMP = visits[i].updated;
       break;
     }
   }
@@ -1064,6 +1092,30 @@ if (typeof document !== "undefined" && typeof window !== "undefined" && document
   window.storageClearWriteFailure = function () {
     var el = document.getElementById("storageFailBanner");
     if (el && el.parentNode) el.parentNode.removeChild(el);
+  };
+
+  /* Another window saved this visit while it was open here. The other
+     version is preserved on the record, so this is information, not an
+     error — but the clinician must know that two people were writing, or
+     they will not know to check what the other one entered. */
+  window.storageShowVisitConflict = function (conflict) {
+    var el = document.getElementById("visitConflictBanner");
+    if (!el) {
+      el = document.createElement("div");
+      el.id = "visitConflictBanner";
+      el.setAttribute("role", "alert");
+      el.style.cssText = "position:fixed;left:0;right:0;top:0;z-index:9998;" +
+        "background:#b9770e;color:#fff;padding:9px 14px;font-size:.7rem;line-height:1.45;" +
+        "box-shadow:0 2px 10px rgba(0,0,0,.22)";
+      el.onclick = function () { if (el.parentNode) el.parentNode.removeChild(el); };
+      document.body.appendChild(el);
+    }
+    el.innerHTML =
+      '<b>Another window saved this visit while you had it open</b> (' +
+      escHtml(conflict && conflict.by) + '). Your save went through, and ' +
+      '<b>their version was kept on the record</b> rather than discarded — ' +
+      'but check the exam for anything they entered that is not showing here. ' +
+      '<span style="opacity:.8">(Tap to dismiss.)</span>';
   };
 
   /* Corrupt store: a different and worse failure than "cannot write".

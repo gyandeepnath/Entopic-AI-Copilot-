@@ -1362,7 +1362,10 @@ function openPatient(pid) {
   var visits = loadVisits();
   var last = visits.filter(function (v) { return v.patient_id === pid; })
     .sort(function (a, b) { return (b.date || "").localeCompare(a.date || ""); })[0];
-  if (last && last.status === "in_progress") { CV = last.id; V = last.data || blankVisit(); }
+  if (last && last.status === "in_progress") {
+    CV = last.id; V = last.data || blankVisit();
+    if (typeof setVisitSeenStamp === "function") setVisitSeenStamp(last.updated || last.date);
+  }
   else {
     CV = "v" + (Date.now() + 1).toString(36); V = blankVisit();
     visits.push({ id: CV, patient_id: pid, data: V, status: "in_progress", date: new Date().toISOString(), updated: new Date().toISOString() });

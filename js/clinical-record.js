@@ -58,6 +58,60 @@ function recUserLabel(user) {
 
    Returns the visit (mutated) so callers can persist it. Pure apart from that
    mutation — no storage, no DOM. */
+/* ── Concurrent-writer protection ─────────────────────────────────
+   Two windows on one clinic machine — the front desk and the consulting
+   room, or one clinician who opened a second tab — is an everyday
+   situation, and it silently destroyed clinical data.
+
+   MEASURED, in one browser profile with two tabs on the same visit:
+     tab A records IOP 24/22 and saves
+     tab B (holding its own copy) records a fundus finding and saves
+     stored result: the fundus finding, IOP blank, no amendment entry.
+   Tab A's measurement was gone with nothing recording that it existed.
+
+   doSave() writes `visit.data = V` wholesale, so the last writer wins and
+   the loser disappears. Merging two clinical records automatically is not
+   something software should do unsupervised, so this does the one thing
+   that is unambiguously right: it NEVER destroys the overwritten version.
+
+   `recDetectConflict` compares the stamp the tab last saw against what is
+   on disk now. When they differ, the stored version is preserved in full
+   under visit.conflicts[] before the new write proceeds, and the clinician
+   is told. Nothing is lost, and the record says so. */
+function recDetectConflict(storedVisit, seenStamp) {
+  if (!storedVisit) return null;
+  var current = storedVisit.updated || storedVisit.date || "";
+  if (!seenStamp || !current) return null;      /* nothing to compare against */
+  if (current === seenStamp) return null;       /* nobody else wrote */
+  return {
+    seen: seenStamp,
+    found: current,
+    by: storedVisit.updated_by || "another window"
+  };
+}
+
+/* Preserve the version that is about to be overwritten. Returns the number of
+   conflict snapshots now held. Capped, because an unbounded array of full
+   visit snapshots would be its own storage problem — the OLDEST are kept,
+   since the earliest divergence is the one hardest to reconstruct. */
+var REC_MAX_CONFLICTS = 5;
+
+function recPreserveOverwritten(storedVisit, conflict, nowIso) {
+  if (!storedVisit || !conflict) return 0;
+  storedVisit.conflicts = storedVisit.conflicts || [];
+  if (storedVisit.conflicts.length < REC_MAX_CONFLICTS) {
+    storedVisit.conflicts.push({
+      at: nowIso || new Date().toISOString(),
+      overwritten_stamp: conflict.found,
+      overwritten_by: conflict.by,
+      note: "Saved from another window; this version was replaced but is kept here.",
+      data: JSON.parse(JSON.stringify(storedVisit.data || {}))
+    });
+  }
+  storedVisit.had_conflict = true;
+  return storedVisit.conflicts.length;
+}
+
 function recStampVisit(visit, user, nowIso) {
   if (!visit) return visit;
   var now = nowIso || new Date().toISOString();

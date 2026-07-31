@@ -235,6 +235,9 @@ function continueInProgress() {
   var ip = _inProgressVisit();
   if (!ip) { startFollowUpVisit(); return; }
   CV = ip.id; V = ip.data || blankVisit();
+  /* Remember the stamp this tab opened the visit at, so a save can notice
+     another window having written it in between (see recDetectConflict). */
+  if (typeof setVisitSeenStamp === "function") setVisitSeenStamp(ip.updated || ip.date);
   if (typeof logAudit === "function") logAudit("visit_continued", "Resumed in-progress visit", { patient_id: CP, visit_id: ip.id });
   openExam();
 }
