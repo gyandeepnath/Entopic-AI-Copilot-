@@ -169,15 +169,41 @@ function saveVisits(visits) {
   saveStore("visits", visits);
 }
 
-/* API Key */
+/* API Key — a billable credential, so it is vault-wrapped like the cloud
+   session (security review S-1). The read stays SYNCHRONOUS because the whole
+   app calls loadApiKey() inline; when the key is wrapped it is served from a
+   memory cache that loadApiKeyAsync() fills after unlock. A locked device
+   returns "" — no key, so no spend on a thief's behalf. */
+var _apiKeyCache = null;
+
 function loadApiKey() {
-  var key = localStorage.getItem(STORE_PREFIX + "apikey") || "";
-  return key;
+  var raw = "";
+  try { raw = localStorage.getItem(STORE_PREFIX + "apikey") || ""; } catch (e) {}
+  if (!raw) return "";
+  if (typeof vaultIsWrappedSecret === "function" && vaultIsWrappedSecret(raw)) {
+    return _apiKeyCache || "";     /* available only once unlocked + hydrated */
+  }
+  return raw;
+}
+
+/* Fill the cache after the vault opens. Returns a promise for callers that
+   need to wait; safe to call when the vault is off (resolves immediately). */
+function loadApiKeyAsync() {
+  if (typeof vaultSecretGet !== "function") return Promise.resolve(loadApiKey());
+  return vaultSecretGet(STORE_PREFIX + "apikey").then(function (k) {
+    if (k) _apiKeyCache = k;
+    return k || "";
+  });
 }
 
 function saveApiKey(key) {
-  localStorage.setItem(STORE_PREFIX + "apikey", key);
+  _apiKeyCache = key || null;
+  if (typeof vaultSecretSet === "function") { vaultSecretSet(STORE_PREFIX + "apikey", key); return; }
+  try { localStorage.setItem(STORE_PREFIX + "apikey", key); } catch (e) {}
 }
+
+/* Clearing the in-memory copy is part of locking the device. */
+function clearApiKeyCache() { _apiKeyCache = null; }
 
 /* Settings */
 function loadSettings() {

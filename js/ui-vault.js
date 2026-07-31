@@ -62,6 +62,13 @@ if (typeof document !== "undefined") {
      no accounts (now that we can actually read them). */
   function vaultUiAfterUnlock() {
     vaultUiErr("");
+    /* Secrets wrapped by the vault (cloud session, API key) become readable
+       again only now — rehydrate them so sync and the LLM helper resume
+       (security review S-1). */
+    if (typeof loadApiKeyAsync === "function") {
+      loadApiKeyAsync().then(function (k) { if (k && typeof API_KEY !== "undefined") API_KEY = k; });
+    }
+    if (typeof cloudLoadState === "function") { try { cloudLoadState(); } catch (e) {} }
     var vv = document.getElementById("vaultView");
     if (vv) vv.style.display = "none";
     var users = (typeof loadUsers === "function") ? loadUsers() : [];

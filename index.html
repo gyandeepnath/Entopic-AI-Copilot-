@@ -431,13 +431,15 @@
 <!-- Core -->
 <script src="js/data-model.js"></script>
 <script src="js/storage-mirror.js"></script>
+<!-- local-vault defines the secret-wrapping helpers that cloud-sync and
+     storage consult at load time, so it must precede them. -->
+<script src="js/local-vault.js"></script>
 <script src="js/cloud-config.js"></script>
 <script src="js/kb-remote.js"></script>
 <script src="js/kb-review.js"></script>
 <script src="js/cloud-crypto.js"></script>
 <script src="js/cloud-sync.js"></script>
 <script src="js/storage.js"></script>
-<script src="js/local-vault.js"></script>
 <script src="js/auth-crypto.js"></script>
 <script src="js/clinic-mode.js"></script>
 <script src="js/roles.js"></script>

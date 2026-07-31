@@ -89,3 +89,26 @@ test("dom-escape.js is loaded before every module that renders text", () => {
     "it must be the FIRST js module — anything loaded earlier could capture it before it exists, " +
     "which is precisely the failure mode this replaced");
 });
+
+
+/* ── load-order invariants ────────────────────────────────────────
+   Two security bugs in this codebase had the SAME root cause: a module asked
+   "does helper X exist yet?" at load time, the answer was no because X loaded
+   later, and the guard silently fell through to a weaker path.
+     R-1  escaping fallback  → stored XSS
+     S-1  vault-wrapped check → the Supabase session envelope was parsed as a
+          live token, leaving the client "signed in" with ciphertext
+   These pin the orderings so a reshuffle of index.html fails CI instead of
+   failing quietly in a clinic. */
+test("modules that provide load-time guards are loaded before their consumers", () => {
+  const html = fs.readFileSync(path.resolve(__dirname, "..", "index.html"), "utf8");
+  const order = [...html.matchAll(/<script src="js\/([^"]+)"><\/script>/g)].map((m) => m[1]);
+  const at = (f) => order.indexOf(f);
+
+  assert.ok(at("local-vault.js") >= 0 && at("cloud-sync.js") >= 0, "both modules are loaded");
+  assert.ok(at("local-vault.js") < at("cloud-sync.js"),
+    "local-vault.js must precede cloud-sync.js — cloudLoadState() consults the vault helpers " +
+    "at module load, and got them wrong when the order was reversed (S-1)");
+  assert.ok(at("local-vault.js") < at("storage.js"),
+    "local-vault.js must precede storage.js, which bridges reads/writes through the vault");
+});

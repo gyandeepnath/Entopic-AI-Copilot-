@@ -493,3 +493,58 @@ test("a locked vault cannot arm cloud sync, so it can never push emptied records
   assert.strictEqual(ctx.loadStore("patients", []).length, 0, "locked reads yield nothing");
   assert.strictEqual(ctx.phiArmed(), false, "so sync must be disarmed — it is");
 });
+
+
+/* ── S-1: credentials that open the CLOUD copy ────────────────────
+   Encrypting records is not enough. The Supabase session (access + long-lived
+   refresh token) and the Claude API key let a thief reach the clinic's data on
+   the SERVER, no local decryption needed. They must be wrapped too. */
+
+test("the cloud session and API key are wrapped by the vault, not left in the clear", async () => {
+  const ctx = makeEnv({ entopic_patients: PATIENTS });
+  ctx.localStorage.setItem("entopic_cloud_session",
+    JSON.stringify({ access_token: "SECRET-ACCESS", refresh_token: "SECRET-REFRESH" }));
+  ctx.localStorage.setItem("entopic_apikey", "sk-ant-SECRETKEY");
+
+  await ctx.vaultEnable(PASS);          /* re-wraps existing plaintext secrets */
+  await ctx.vaultFlush();
+
+  const disk = Object.keys(ctx.__raw).map((k) => ctx.__raw[k]).join("|");
+  assert.ok(!/SECRET-ACCESS/.test(disk), "no access token on disk");
+  assert.ok(!/SECRET-REFRESH/.test(disk), "no refresh token on disk — it is long-lived");
+  assert.ok(!/sk-ant-SECRETKEY/.test(disk), "no API key on disk");
+});
+
+test("a locked device withholds the cloud token and the API key", async () => {
+  const ctx = makeEnv({ entopic_patients: PATIENTS });
+  await ctx.vaultEnable(PASS);
+  await ctx.vaultSecretSet("entopic_cloud_session", JSON.stringify({ access_token: "SECRET-ACCESS" }));
+  await ctx.vaultSecretSet("entopic_apikey", "sk-ant-SECRETKEY");
+
+  ctx.vaultLock();
+  assert.strictEqual(await ctx.vaultSecretGet("entopic_cloud_session"), "",
+    "locked: the token is withheld, so a stolen device cannot reach the cloud");
+  assert.strictEqual(await ctx.vaultSecretGet("entopic_apikey"), "");
+  assert.strictEqual(ctx.vaultSecretPresent("entopic_cloud_session"), true,
+    "…but we can still tell it EXISTS, so the app does not offer to create a new one");
+  assert.strictEqual(ctx.vaultSecretAvailable("entopic_cloud_session"), false);
+
+  await ctx.vaultUnlock(PASS);
+  assert.ok((await ctx.vaultSecretGet("entopic_cloud_session")).includes("SECRET-ACCESS"),
+    "unlocking restores it");
+});
+
+test("with the vault off, secrets behave exactly as before (no forced migration)", async () => {
+  const ctx = makeEnv();
+  await ctx.vaultSecretSet("entopic_apikey", "sk-plain");
+  assert.strictEqual(ctx.__raw["entopic_apikey"], "sk-plain", "stored plainly when encryption is off");
+  assert.strictEqual(await ctx.vaultSecretGet("entopic_apikey"), "sk-plain");
+});
+
+test("an empty secret is removed rather than stored as an empty envelope", async () => {
+  const ctx = makeEnv({ entopic_patients: PATIENTS });
+  await ctx.vaultEnable(PASS);
+  await ctx.vaultSecretSet("entopic_apikey", "sk-x");
+  await ctx.vaultSecretSet("entopic_apikey", "");
+  assert.strictEqual(ctx.vaultSecretPresent("entopic_apikey"), false);
+});

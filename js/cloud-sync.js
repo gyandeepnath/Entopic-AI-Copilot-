@@ -39,20 +39,86 @@ var CLOUD = {
   _suppress: false    /* true while applying remote changes locally */
 };
 
-/* ── persistence of session/clinic (survives reloads) ── */
+/* ── persistence of session/clinic (survives reloads) ──
+   SECURITY (review S-1): the session holds a Supabase access token AND a
+   long-lived refresh token. Anyone who reads them can sign in as this
+   clinician and pull the entire clinic's records from the SERVER — no local
+   decryption needed. Storing them in the clear therefore defeated the record
+   vault for any cloud-connected practice: a stolen laptop could not read the
+   disk but could still drain the cloud.
+
+   They are now wrapped by the vault when it is on. While the vault is LOCKED
+   the token is deliberately withheld, so a locked device cannot reach the
+   cloud on a thief's behalf; it is restored on unlock.
+
+   The clinic id stays in the clear: it is an opaque uuid, is not a credential,
+   and the UI needs it synchronously to render "which clinic am I in". */
 function cloudLoadState() {
   try {
-    CLOUD.session = JSON.parse(localStorage.getItem("entopic_cloud_session") || "null");
     CLOUD.clinicId = localStorage.getItem("entopic_cloud_clinic") || null;
+    var raw = localStorage.getItem("entopic_cloud_session") || "";
+    if (!raw) { CLOUD.session = null; return; }
+    /* Wrapped: needs the vault, so load it asynchronously. Until that
+       resolves the app behaves exactly as "signed out", which is the safe
+       default — it never silently proceeds with no token. */
+    if (cloudBlobIsWrapped(raw)) {
+      CLOUD.session = null;
+      cloudRestoreSession();
+      return;
+    }
+    CLOUD.session = JSON.parse(raw);
   } catch (e) { /* ignore */ }
 }
 function cloudSaveState() {
   try {
-    if (CLOUD.session) localStorage.setItem("entopic_cloud_session", JSON.stringify(CLOUD.session));
-    else localStorage.removeItem("entopic_cloud_session");
+    if (CLOUD.session) {
+      if (typeof vaultSecretSet === "function") vaultSecretSet("entopic_cloud_session", JSON.stringify(CLOUD.session));
+      else localStorage.setItem("entopic_cloud_session", JSON.stringify(CLOUD.session));
+    } else {
+      localStorage.removeItem("entopic_cloud_session");
+    }
     if (CLOUD.clinicId) localStorage.setItem("entopic_cloud_clinic", CLOUD.clinicId);
     else localStorage.removeItem("entopic_cloud_clinic");
   } catch (e) { /* ignore */ }
+}
+
+/* Is this stored blob a vault envelope rather than a raw session?
+
+   SELF-CONTAINED ON PURPOSE. The first version asked local-vault.js
+   (`typeof vaultIsWrappedSecret === "function"`), but cloudLoadState() runs at
+   MODULE LOAD and cloud-sync.js used to load before local-vault.js — so the
+   guard was always false and the envelope was JSON.parsed straight into
+   CLOUD.session, leaving the client "signed in" with ciphertext as its token.
+   That is the same failure mode as the escaping bug (R-1): a guard that
+   depends on load order is not a guard. The script order is now fixed AND this
+   check no longer depends on it. */
+function cloudBlobIsWrapped(raw) {
+  if (!raw || raw.charAt(0) !== "{") return false;
+  try {
+    var o = JSON.parse(raw);
+    return !!(o && typeof o === "object" && o.__vault && o.iv && o.ct);
+  } catch (e) { return false; }
+}
+
+/* Load the wrapped session once the vault is open. Called at boot and again
+   after every unlock, so sync resumes without the user signing in again. */
+function cloudRestoreSession() {
+  if (typeof vaultSecretGet !== "function") return;
+  var raw = "";
+  try { raw = localStorage.getItem("entopic_cloud_session") || ""; } catch (e) {}
+  if (!raw || !cloudBlobIsWrapped(raw)) return;
+  vaultSecretGet("entopic_cloud_session").then(function (json) {
+    if (!json) return;                          /* still locked → stay signed out */
+    try { CLOUD.session = JSON.parse(json); } catch (e) { return; }
+    if (typeof cloudStart === "function") cloudStart();
+    if (typeof cloudRerender === "function") cloudRerender();
+  }).catch(function () {});
+}
+
+/* Drop the session from MEMORY without touching the stored (wrapped) copy —
+   used when the vault locks. Signing out proper is cloudSignOut(). */
+function cloudForgetSessionInMemory() {
+  CLOUD.session = null;
 }
 
 function cloudEnabled() {

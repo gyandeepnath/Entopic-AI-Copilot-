@@ -218,8 +218,28 @@ function _vaultVerifyAndAdopt(dek, meta) {
   return vaultDecryptValue(meta.check, dek).then(function (v) {
     if (v !== VAULT_CHECK_TEXT) throw new Error("bad key");
     _vaultDek = dek;
-    return vaultHydrate();
+    /* Re-wrap any secret still lying in the clear (e.g. stored before the
+       vault was enabled). Security review S-1. */
+    return vaultHydrate()
+      .then(function () { return vaultRewrapSecrets(); })
+      .then(function () { return vaultRestoreSecretConsumers(); });
   });
+}
+
+/* Hand the now-readable secrets back to the modules that need them. Wired here
+   rather than in the unlock UI so EVERY unlock path restores them, not just the
+   one the founder happens to click (security review S-1). */
+function vaultRestoreSecretConsumers() {
+  if (typeof cloudRestoreSession === "function") { try { cloudRestoreSession(); } catch (e) {} }
+  if (typeof loadApiKeyAsync === "function") {
+    try {
+      return loadApiKeyAsync().then(function (k) {
+        if (k && typeof window !== "undefined" && typeof window.API_KEY !== "undefined") window.API_KEY = k;
+        return true;
+      }).catch(function () { return true; });
+    } catch (e) {}
+  }
+  return Promise.resolve(true);
 }
 
 function vaultUnlock(passphrase) {
@@ -259,6 +279,10 @@ function vaultLock() {
   _vaultDek = null;
   _vaultCache = null;
   _vaultDirty = {};
+  /* Locking must also drop the in-memory copies of wrapped secrets, or the
+     cloud token and API key would survive the lock in RAM (security S-1). */
+  if (typeof clearApiKeyCache === "function") { try { clearApiKeyCache(); } catch (e) {} }
+  if (typeof cloudForgetSessionInMemory === "function") { try { cloudForgetSessionInMemory(); } catch (e) {} }
   if (_vaultFlushTimer) { clearTimeout(_vaultFlushTimer); _vaultFlushTimer = null; }
   return pending;
 }
@@ -406,7 +430,7 @@ function vaultEnable(passphrase) {
     .then(function () {
       vaultSaveMeta(meta);
       _vaultDek = dek;
-      return vaultHydrate();
+      return vaultHydrate().then(function () { return vaultRewrapSecrets(); });
     })
     .then(function () {
       if (typeof logAudit === "function") {
@@ -531,6 +555,111 @@ function vaultDisable(passphrase) {
 
 
 /* ═══════════════════════════════════════════════════════════════ */
+/* PROTECTED SECRETS (security review S-1)                         */
+/*                                                                  */
+/* Encrypting the RECORDS is not enough. A device also holds keys   */
+/* that open the records held elsewhere:                            */
+/*                                                                  */
+/*   • the Supabase session — an access token AND a long-lived      */
+/*     refresh token, which together let anyone holding them sign   */
+/*     in as that clinician and pull the whole clinic's data from   */
+/*     the SERVER, no local decryption required;                    */
+/*   • the Claude API key — a billable credential.                  */
+/*                                                                  */
+/* Both sat in localStorage in the clear, so a stolen laptop with   */
+/* the vault ON still gave up the cloud copy. That made the vault's */
+/* promise partly false, which is worse than an honest gap.         */
+/*                                                                  */
+/* These helpers wrap any small secret with the vault key when the  */
+/* vault is open, fall back to plain storage when it is off (the    */
+/* previous behaviour, so nothing changes for an install that has   */
+/* not enabled encryption), and refuse to hand anything back while  */
+/* the vault is LOCKED — a locked device must not be able to reach  */
+/* the cloud on the thief's behalf.                                 */
+/* ═══════════════════════════════════════════════════════════════ */
+
+function vaultSecretUsable() {
+  return vaultEnabled() && vaultUnlocked();
+}
+
+/* Store a secret string. Returns a promise; wrapped when the vault is open. */
+function vaultSecretSet(storageKey, value) {
+  if (value === null || value === undefined || value === "") {
+    try { localStorage.removeItem(storageKey); } catch (e) {}
+    return Promise.resolve(true);
+  }
+  var str = String(value);
+  if (!vaultSecretUsable()) {
+    try { localStorage.setItem(storageKey, str); } catch (e) {}
+    return Promise.resolve(true);
+  }
+  return vaultEncryptValue(str).then(function (env) {
+    try { localStorage.setItem(storageKey, JSON.stringify(env)); } catch (e) {}
+    return true;
+  }).catch(function () {
+    /* Never silently drop a secret we were asked to keep. */
+    try { localStorage.setItem(storageKey, str); } catch (e) {}
+    return true;
+  });
+}
+
+/* Read a secret back, handling both shapes. Resolves "" when the value is
+   wrapped but the vault is locked — the caller must treat that as
+   "unavailable", never as "absent, so create a new one". */
+function vaultSecretGet(storageKey) {
+  var raw = "";
+  try { raw = localStorage.getItem(storageKey) || ""; } catch (e) {}
+  if (!raw) return Promise.resolve("");
+  if (!vaultIsWrappedSecret(raw)) return Promise.resolve(raw);      /* plain (vault off / legacy) */
+  if (!vaultSecretUsable()) return Promise.resolve("");             /* locked → withheld */
+  var env;
+  try { env = JSON.parse(raw); } catch (e) { return Promise.resolve(""); }
+  return vaultDecryptValue(env).then(function (v) { return String(v == null ? "" : v); })
+                               .catch(function () { return ""; });
+}
+
+/* Is the stored blob one of our envelopes rather than a raw secret? */
+function vaultIsWrappedSecret(raw) {
+  if (!raw || raw.charAt(0) !== "{") return false;
+  try { return vaultIsEnvelope(JSON.parse(raw)); } catch (e) { return false; }
+}
+
+/* Is a secret present at all (wrapped or not)? Distinguishes "nothing stored"
+   from "stored but currently locked", which callers need to tell apart. */
+function vaultSecretPresent(storageKey) {
+  var raw = "";
+  try { raw = localStorage.getItem(storageKey) || ""; } catch (e) {}
+  return !!raw;
+}
+function vaultSecretAvailable(storageKey) {
+  var raw = "";
+  try { raw = localStorage.getItem(storageKey) || ""; } catch (e) {}
+  if (!raw) return false;
+  if (!vaultIsWrappedSecret(raw)) return true;
+  return vaultSecretUsable();
+}
+
+/* Re-wrap every plaintext secret the moment the vault becomes available.
+   Called after a successful unlock and after enabling the vault, so secrets
+   stored before encryption was turned on do not stay in the clear. */
+var VAULT_MANAGED_SECRETS = ["entopic_cloud_session", "entopic_apikey"];
+
+function vaultRewrapSecrets() {
+  if (!vaultSecretUsable()) return Promise.resolve(false);
+  var chain = Promise.resolve();
+  VAULT_MANAGED_SECRETS.forEach(function (k) {
+    chain = chain.then(function () {
+      var raw = "";
+      try { raw = localStorage.getItem(k) || ""; } catch (e) {}
+      if (!raw || vaultIsWrappedSecret(raw)) return;      /* absent or already wrapped */
+      return vaultSecretSet(k, raw);
+    });
+  });
+  return chain.then(function () { return true; });
+}
+
+
+/* ═══════════════════════════════════════════════════════════════ */
 /* ENCRYPTED BACKUP FILES (audit H-4)                              */
 /*                                                                  */
 /* Records are encrypted on the device, but the exported backup was */
@@ -612,6 +741,10 @@ if (typeof module !== "undefined" && module.exports) {
     vaultIsEnvelope: vaultIsEnvelope,
     backupEncrypt: backupEncrypt, backupDecrypt: backupDecrypt,
     backupIsEncrypted: backupIsEncrypted,
+    vaultSecretSet: vaultSecretSet, vaultSecretGet: vaultSecretGet,
+    vaultSecretPresent: vaultSecretPresent, vaultSecretAvailable: vaultSecretAvailable,
+    vaultIsWrappedSecret: vaultIsWrappedSecret, vaultRewrapSecrets: vaultRewrapSecrets,
+    VAULT_MANAGED_SECRETS: VAULT_MANAGED_SECRETS,
     vaultHydrate: vaultHydrate, vaultFlush: vaultFlush,
     vaultCacheGet: vaultCacheGet, vaultCacheSet: vaultCacheSet
   };
