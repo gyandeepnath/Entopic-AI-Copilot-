@@ -6,6 +6,62 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-07-31 — Verified risk scale, durable sign-offs, and two critical data-loss fixes
+
+Four pieces of work. Full reports: `docs/TEST_AUDIT_2026-07-31.md`,
+`docs/AI_CODE_REVIEW_2026-07-31.md`.
+
+**AREDS risk scale — implemented, because it is genuinely valid.** The founder
+asked for the quarantined calculators back on one condition: only if
+scientifically valid, with fixed published numbers and clinician-entered
+inputs. Researched both via PubMed. They split. The **AREDS Simplified Severity
+Scale** (Ferris FL 3rd et al., AREDS Report No. 18, *Arch Ophthalmol*
+2005;123(11):1570-4; PMID 16286620) qualifies exactly — the published abstract
+states the whole algorithm and every figure. Implemented as **data plus a
+generic evaluator**, not another hand-written calculator: the numbers live in
+`knowledge/clinical-scales.js` with the citation and the verbatim source
+sentence they were transcribed from, so a reviewer can diff the code against
+the paper without leaving the app. It refuses to produce a risk until every
+required input has an explicit yes/no per eye — recorded findings only
+pre-suggest, they never score. **OHTS does not qualify** (Cox
+proportional-hazards model; coefficients not published in reachable material)
+and is recorded in `UNIMPLEMENTABLE_SCALES` with the reason, so no future
+session re-derives it from memory.
+
+**Sign-offs made durable, honest and portable.** Verification could be
+destroyed: it lived in the KB content overlay, which is neither mirrored nor
+backed up, so a cleared browser or a new laptop lost all of it. Verifying also
+*froze* the condition's content, shadowing later KB improvements. And a
+signature stayed attached even after the text changed. Sign-offs now live in
+their own mirrored, backed-up store as attestations only, each carrying a
+fingerprint of the content signed: matching fingerprint re-applies silently
+(the admin is never asked twice); a changed one returns the condition to a
+new **"Re-review (content changed)"** bucket showing who approved it before.
+The workspace gained Save/Load/Bake buttons so the founder can move his own
+work between machines without an engineer.
+
+**T-1 (critical): a damaged store was silently overwritten.** Found by the test
+audit. Truncating `entopic_patients` — what a crash mid-write leaves — made the
+app show zero patients with no warning, and the next ordinary save destroyed
+three real patients permanently. The IndexedDB mirror made it worse: its
+recovery only fires when the key is *absent*, and it then copied the damaged
+bytes over the last good copy. Root cause was `loadStore` treating "cannot
+read" and "nothing there" as the same state. Now distinct: corrupt stores
+refuse writes, the damaged bytes are quarantined, the mirror validates before
+copying, and a red banner says what you are looking at is not what is on the
+device.
+
+**T-2 (critical): two windows destroyed a measurement.** Also found by the
+audit. Two tabs on one machine, same visit: tab A's IOP reading vanished when
+tab B saved, with no trace. The overwritten version is now preserved in full on
+the record, attributed and audited, and the clinician is told. Merging is
+deliberately not attempted — that is not something software should do to a
+clinical record unsupervised.
+
+551 tests passing (was 495), audit 0 FAIL.
+
+---
+
 ## 2026-07-31 — AI-generated-code review: a file of invented clinical numbers, removed
 
 A review of the repository specifically for the failure modes that AI-assisted
