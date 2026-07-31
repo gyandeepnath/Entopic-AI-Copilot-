@@ -80,7 +80,25 @@ function fsTx(mode, fn) {
       var store = tx.objectStore(FS_STORE);
       var out;
       try { out = fn(store); } catch (e) { reject(e); return; }
-      tx.oncomplete = function () { db.close(); resolve(out && out.result !== undefined ? out.result : out); };
+      /* Unwrap the IDBRequest to its result.
+
+         This used to read `out.result !== undefined ? out.result : out`, which
+         is wrong for the one case that matters: a `get` for a key that is NOT
+         THERE has result === undefined, so the whole REQUEST OBJECT was
+         resolved instead — and a request object is truthy.
+
+         Every "did we get the bytes back?" check downstream is `if (!blob)`,
+         so a missing attachment sailed straight past all of them:
+         fsCloudUpload would have posted a non-Blob as the request body rather
+         than reporting "no-bytes", and fsResolveUrl was saved only by
+         URL.createObjectURL throwing on a non-Blob and being caught.
+
+         "result" in out distinguishes an IDBRequest from anything else, so a
+         missing key now resolves to undefined, which is what it means. */
+      tx.oncomplete = function () {
+        db.close();
+        resolve(out && typeof out === "object" && "result" in out ? out.result : out);
+      };
       tx.onerror = function () { db.close(); reject(tx.error); };
       tx.onabort = function () { db.close(); reject(tx.error || new Error("idb-abort")); };
     });
@@ -189,6 +207,16 @@ function fsIngest(file, opts) {
   if (file.size > FS_ABS_MAX) {
     return Promise.reject(new Error("“" + file.name + "” is " + fsHumanSize(file.size) +
       " — beyond the " + fsHumanSize(FS_ABS_MAX) + " per-file limit."));
+  }
+
+  /* A zero-byte file is what an interrupted scan, a failed export or a
+     disconnected scanner leaves behind. Filing it would put an attachment on
+     the record that opens to nothing — the clinician believes the OCT is on
+     file, and there is no document. Refuse it while they are still standing
+     at the scanner and can repeat it. */
+  if (!file.size) {
+    return Promise.reject(new Error("“" + (file.name || "file") + "” is empty (0 B). " +
+      "Nothing was attached — check the scan or export and try again."));
   }
 
   var rec = {

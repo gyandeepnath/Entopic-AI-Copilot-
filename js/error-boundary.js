@@ -24,17 +24,63 @@
 
 var ERR_LOG = [];            /* ring buffer of recent faults (memory only) */
 var ERR_LOG_MAX = 25;
+var ERR_MSG_MAX = 200;
+
+/* ── Scrubbing ────────────────────────────────────────────────────
+   An error message routinely quotes the value that caused it, and in this
+   app that value is a patient record:
+
+     Unexpected token in {"first_name":"Meera","dob":"1978-04-02",…}
+
+   That string used to be written verbatim to logAudit, and the audit trail
+   is exported with every backup — so a rendering bug copied PHI into a file
+   that travels on a USB stick.
+
+   The honest position: you cannot reliably DETECT personal data in free
+   text, so this does not try to. It removes the STRUCTURES that carry a
+   payload — objects, arrays, quoted values, long digit runs, and
+   LETTERS-DIGITS identifiers like an MRN — and keeps the part that helps a
+   developer: what failed and where. Anything it cannot classify is dropped
+   by the length cap rather than kept on the optimistic reading.
+
+   Defence in depth, not the primary control. The primary control is that
+   the audit entry names the location and never carries a free-text payload
+   the app did not construct itself. */
+function errScrub(s) {
+  var t = String((s === null || s === undefined) ? "" : s);
+  t = t.replace(/\{[\s\S]*?\}/g, "{…}");            /* JSON-ish object payloads */
+  t = t.replace(/\[[\s\S]*?\]/g, "[…]");            /* arrays */
+  t = t.replace(/"[^"]*"/g, '"…"');                 /* quoted values */
+  t = t.replace(/'[^']*'/g, "'…'");
+  t = t.replace(/\b[A-Za-z]{2,}[-_]\d[\w-]*/g, "…");/* MRN-4471, EP-1A2B, id_9931 */
+  t = t.replace(/\b\d{4}-\d{2}-\d{2}\b/g, "…");     /* dates of birth */
+  t = t.replace(/\b[\d][\d\s().+-]{5,}\d\b/g, "…"); /* phone / long number runs */
+  return t.slice(0, ERR_MSG_MAX);
+}
 
 function errRecord(where, err) {
+  var raw = (err && (err.message || err.reason)) || err;
   var entry = {
     at: new Date().toISOString(),
     where: where || "unknown",
-    message: (err && (err.message || err.reason || String(err))) || "error",
-    stack: (err && err.stack) ? String(err.stack).split("\n").slice(0, 4).join(" | ") : ""
+    /* Scrubbed in the in-memory log too: the admin fault list renders it, and
+       a screenshot of that panel travels as easily as a backup does. */
+    message: errScrub(raw === undefined || raw === null ? "error" : raw) || "error",
+    /* The FRAMES are file/function/line and carry no patient data, so they are
+       kept — they are the most useful thing for diagnosing a fault.
+
+       But the first line of a V8 stack is "Error: <the message>", so keeping
+       the stack whole re-leaked every value the scrub above had just removed.
+       Drop that line: the message is already stored, scrubbed, beside it. */
+    stack: (err && err.stack)
+      ? String(err.stack).split("\n").slice(1, 5).map(errScrub).join(" | ").trim()
+      : ""
   };
   ERR_LOG.push(entry);
   if (ERR_LOG.length > ERR_LOG_MAX) ERR_LOG.shift();
-  try { if (typeof logAudit === "function") logAudit("app_error", where + ": " + entry.message, {}); } catch (e) {}
+  try {
+    if (typeof logAudit === "function") logAudit("app_error", entry.where + ": " + entry.message, {});
+  } catch (e) {}
   return entry;
 }
 
@@ -56,9 +102,13 @@ function errShowBanner(message) {
         "font:400 .72rem/1.4 system-ui,sans-serif;box-shadow:0 6px 24px rgba(0,0,0,.4)";
       document.body.appendChild(el);
     }
+    /* escHtml (js/dom-escape.js), NOT a local replace(/[<>&]/g,"") — a private
+       escaping implementation is exactly how the stored-XSS hole (R-1)
+       happened. Scrubbed as well, since an error message can carry patient
+       data and this banner is on screen in front of whoever is in the room. */
     el.innerHTML =
       '<b>Something went wrong on screen.</b> Your entered data is saved. ' +
-      (message ? '<span style="opacity:.75">(' + String(message).slice(0, 120).replace(/[<>&]/g, "") + ')</span> ' : "") +
+      (message ? '<span style="opacity:.75">(' + escHtml(errScrub(message).slice(0, 120)) + ')</span> ' : "") +
       '<button onclick="location.reload()" style="margin-left:8px;background:#fff;color:#4a1010;border:0;' +
       'border-radius:5px;padding:3px 10px;font-weight:600;cursor:pointer">Reload</button>' +
       '<button onclick="this.parentNode.remove()" style="margin-left:6px;background:transparent;color:#fff;' +
