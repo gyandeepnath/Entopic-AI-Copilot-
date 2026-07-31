@@ -190,3 +190,63 @@ test("an empty visit produces an entry with no invented content", () => {
   assert.strictEqual(rec.length, 1);
   assert.strictEqual(rec[0].sections.length, 0, "nothing recorded means nothing shown");
 });
+
+
+/* ── CL-2: finding laterality ─────────────────────────────────────
+   Ophthalmology is bilateral: "Hypopyon" with no eye is an incomplete
+   record. 85 of 202 clickable findings are inherently one-eye. */
+
+test("a finding cycles absent -> OD -> OS -> both -> absent in one tap each", () => {
+  let L = [];
+  L = R.recCycleFinding(L, "Hypopyon");
+  assert.strictEqual(R.recFindingState(L, "Hypopyon"), "OD", "the first tap already has an eye");
+  L = R.recCycleFinding(L, "Hypopyon");
+  assert.strictEqual(R.recFindingState(L, "Hypopyon"), "OS");
+  L = R.recCycleFinding(L, "Hypopyon");
+  assert.strictEqual(R.recFindingState(L, "Hypopyon"), "OU");
+  L = R.recCycleFinding(L, "Hypopyon");
+  assert.strictEqual(L.length, 0, "one more tap clears it");
+});
+
+test("a finding can never be recorded WITHOUT an eye", () => {
+  const L = R.recCycleFinding([], "Corneal infiltrate");
+  assert.ok(R.recFindingEye(L[0]), "there is no state where the finding exists with no laterality");
+});
+
+test("legacy bare-string findings still read correctly and are never rewritten", () => {
+  assert.strictEqual(R.recFindingLabel("Hypopyon"), "Hypopyon");
+  assert.strictEqual(R.recFindingEye("Hypopyon"), "", "laterality was never recorded, so it is blank");
+  assert.strictEqual(R.recFindingText("Hypopyon"), "Hypopyon",
+    "a legacy finding must NOT gain an eye it never had");
+  assert.strictEqual(R.recFindingState(["Hypopyon"], "Hypopyon"), "?",
+    "shown as unknown, not silently assumed");
+});
+
+test("tapping a legacy finding starts the cycle rather than deleting it", () => {
+  const L = R.recCycleFinding(["Hypopyon"], "Hypopyon");
+  assert.strictEqual(R.recFindingState(L, "Hypopyon"), "OD");
+});
+
+test("findings read with their eye in the clinical record", () => {
+  assert.strictEqual(R.recFindingText({ label: "Hypopyon", eye: "OD" }), "Hypopyon (OD)");
+  assert.strictEqual(R.recFindingText({ label: "Disc pallor", eye: "OU" }), "Disc pallor (OU)");
+});
+
+test("cycling one finding leaves the others untouched", () => {
+  let L = [{ label: "Hypopyon", eye: "OD" }, { label: "Corneal ulcer", eye: "OS" }];
+  L = R.recCycleFinding(L, "Hypopyon");
+  assert.strictEqual(R.recFindingState(L, "Hypopyon"), "OS");
+  assert.strictEqual(R.recFindingState(L, "Corneal ulcer"), "OS", "unrelated finding is unchanged");
+  assert.strictEqual(L.length, 2);
+});
+
+test("the continuous record prints the eye alongside the finding", () => {
+  const v = [{ id: "v1", patient_id: "pZ", date: "2026-05-01T09:00:00Z",
+    data: { sl: { findings: [{ label: "Hypopyon", eye: "OD" }] },
+            fun: { findings: ["Old finding"] } } }];
+  const rec = R.recBuildContinuous("pZ", v);
+  const sl = rec[0].sections.find((s) => /Slit lamp/.test(s.label));
+  assert.strictEqual(sl.value, "Hypopyon (OD)");
+  const fun = rec[0].sections.find((s) => /Fundus/.test(s.label));
+  assert.strictEqual(fun.value, "Old finding", "a legacy finding prints as it was recorded, with no invented eye");
+});

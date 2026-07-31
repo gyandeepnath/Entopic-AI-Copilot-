@@ -173,9 +173,14 @@ function collectTokens() {
   /* ── SOURCE 4: Slit lamp findings → tokens via map ── */
   if (V.sl && V.sl.findings && V.sl.findings.length > 0) {
     for (var si = 0; si < V.sl.findings.length; si++) {
+      /* A finding is {label, eye} since CL-2, but a bare string (legacy
+         records, and the simulator) is still accepted. The TOKEN comes from
+         the label either way, so scoring and red flags are unchanged — the
+         eye is recorded for the note, not for the engine. */
       var slFind = V.sl.findings[si];
-      if (typeof FINDING_TOKEN_MAP !== "undefined" && FINDING_TOKEN_MAP[slFind]) {
-        addTokens(FINDING_TOKEN_MAP[slFind]);
+      var slLabel = (slFind && typeof slFind === "object") ? slFind.label : slFind;
+      if (typeof FINDING_TOKEN_MAP !== "undefined" && FINDING_TOKEN_MAP[slLabel]) {
+        addTokens(FINDING_TOKEN_MAP[slLabel]);
       }
     }
   }
@@ -185,8 +190,9 @@ function collectTokens() {
   if (V.fun && V.fun.findings && V.fun.findings.length > 0) {
     for (var fi = 0; fi < V.fun.findings.length; fi++) {
       var funFind = V.fun.findings[fi];
-      if (typeof FINDING_TOKEN_MAP !== "undefined" && FINDING_TOKEN_MAP[funFind]) {
-        addTokens(FINDING_TOKEN_MAP[funFind]);
+      var funLabel = (funFind && typeof funFind === "object") ? funFind.label : funFind;
+      if (typeof FINDING_TOKEN_MAP !== "undefined" && FINDING_TOKEN_MAP[funLabel]) {
+        addTokens(FINDING_TOKEN_MAP[funLabel]);
       }
     }
   }

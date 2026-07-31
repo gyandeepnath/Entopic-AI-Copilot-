@@ -262,7 +262,9 @@ function recVisitSections(visit) {
 
   /* Anterior segment */
   if (d.sl) {
-    if (d.sl.findings && d.sl.findings.length) add("Slit lamp findings", d.sl.findings.join(", "), "abnormal");
+    if (d.sl.findings && d.sl.findings.length) {
+      add("Slit lamp findings", d.sl.findings.map(recFindingText).join(", "), "abnormal");
+    }
     var vh = recPair(d.sl.od && d.sl.od.vh, d.sl.os && d.sl.os.vh);
     if (vh) add("Van Herick", vh);
     var tb = recPair(d.sl.od && d.sl.od.tbut, d.sl.os && d.sl.os.tbut, "s");
@@ -276,7 +278,9 @@ function recVisitSections(visit) {
 
   /* Posterior segment */
   if (d.fun) {
-    if (d.fun.findings && d.fun.findings.length) add("Fundus findings", d.fun.findings.join(", "), "abnormal");
+    if (d.fun.findings && d.fun.findings.length) {
+      add("Fundus findings", d.fun.findings.map(recFindingText).join(", "), "abnormal");
+    }
     var cd = recPair(d.fun.od && d.fun.od.cd, d.fun.os && d.fun.os.cd);
     if (cd) add("Cup:disc", cd);
   }
@@ -341,13 +345,85 @@ function recDayGap(a, b) {
 }
 
 
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* 4. FINDING LATERALITY (clinical review CL-2)                    */
+/*                                                                  */
+/* Ophthalmology is a bilateral speciality: "Hypopyon" without an   */
+/* eye is an incomplete record. It weakens the referral letter and  */
+/* makes follow-up comparison impossible ("has the OD hypopyon      */
+/* resolved?"). 85 of the 202 clickable findings are inherently     */
+/* one-eye, and only one label encoded laterality.                  */
+/*                                                                  */
+/* MIGRATION SAFETY: a finding is now {label, eye}, but a bare      */
+/* string is still accepted everywhere and treated as "laterality   */
+/* not recorded". Existing records are NEVER rewritten — a record   */
+/* must not gain a laterality it never had. Engine behaviour is     */
+/* unchanged: the token comes from the LABEL either way, so red     */
+/* flags fire exactly as before.                                    */
+/* ═══════════════════════════════════════════════════════════════ */
+
+var REC_EYES = ["OD", "OS", "OU"];
+
+/* The finding's label, whichever shape it is stored in. */
+function recFindingLabel(f) {
+  if (f && typeof f === "object") return String(f.label == null ? "" : f.label);
+  return String(f == null ? "" : f);
+}
+
+/* The eye, or "" when it was never recorded (legacy or deliberately blank). */
+function recFindingEye(f) {
+  if (f && typeof f === "object" && f.eye) return String(f.eye);
+  return "";
+}
+
+/* How a finding should read in a note. */
+function recFindingText(f) {
+  var lab = recFindingLabel(f), eye = recFindingEye(f);
+  if (!lab) return "";
+  return eye ? lab + " (" + eye + ")" : lab;
+}
+
+/* Cycle a finding through: absent -> OD -> OS -> OU -> absent.
+
+   One tap per state is the fastest thing possible at the chair, and it means
+   laterality cannot be forgotten separately from the finding itself — you
+   cannot record the finding WITHOUT passing through an eye. Returns a NEW
+   array; callers assign it, so this stays pure and testable. */
+function recCycleFinding(list, label) {
+  var out = (list || []).slice();
+  var idx = -1;
+  for (var i = 0; i < out.length; i++) {
+    if (recFindingLabel(out[i]) === label) { idx = i; break; }
+  }
+  if (idx < 0) { out.push({ label: label, eye: "OD" }); return out; }
+
+  var cur = recFindingEye(out[idx]);
+  var next = REC_EYES[REC_EYES.indexOf(cur) + 1];
+  if (cur === "") next = "OD";              /* legacy string -> start the cycle */
+  if (!next) { out.splice(idx, 1); return out; }   /* past OU -> clear it */
+  out[idx] = { label: label, eye: next };
+  return out;
+}
+
+/* Which eye is this label currently recorded as? "" = not present at all. */
+function recFindingState(list, label) {
+  for (var i = 0; i < (list || []).length; i++) {
+    if (recFindingLabel(list[i]) === label) return recFindingEye(list[i]) || "?";
+  }
+  return "";
+}
+
 if (typeof module !== "undefined" && module.exports) {
   module.exports = {
     recStampVisit: recStampVisit, recIsAmended: recIsAmended, recAmendments: recAmendments,
     recNormName: recNormName, recNormPhone: recNormPhone,
     recComparePatients: recComparePatients, recFindDuplicates: recFindDuplicates,
     recVisitSections: recVisitSections, recBuildContinuous: recBuildContinuous,
-    recDayGap: recDayGap
+    recDayGap: recDayGap,
+    recFindingLabel: recFindingLabel, recFindingEye: recFindingEye,
+    recFindingText: recFindingText, recCycleFinding: recCycleFinding,
+    recFindingState: recFindingState, REC_EYES: REC_EYES
   };
 }
 

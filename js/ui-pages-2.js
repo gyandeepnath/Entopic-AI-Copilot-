@@ -103,8 +103,11 @@ function pgFun() {
     fh += '<div class="col-body' + (cnt > 0 ? " open" : "") + '" id="' + sid + '">';
     for (var ii = 0; ii < items.length; ii++) {
       var item = items[ii];
-      var isSel = V.fun.findings.indexOf(item) >= 0;
-      fh += '<span class="fn' + (isSel ? " sel" : "") + '" onclick="togFunFind(\'' + item.replace(/'/g, "\\'") + '\')">' + item + '</span>';
+      /* The chip shows WHICH EYE, and cycles OD -> OS -> OU -> off (CL-2). */
+      var eyeSel = (typeof recFindingState === "function") ? recFindingState(V.fun.findings, item)
+                                                          : (V.fun.findings.indexOf(item) >= 0 ? "?" : "");
+      fh += '<span class="fn' + (eyeSel ? " sel" : "") + '" title="Click to cycle OD / OS / both / off" onclick="togFunFind(\'' + item.replace(/'/g, "\\'") + '\')">' + item +
+            (eyeSel ? ' <b style="font-size:.9em">' + (eyeSel === "?" ? "eye?" : eyeSel) + '</b>' : '') + '</span>';
     }
     fh += '</div>';
   }

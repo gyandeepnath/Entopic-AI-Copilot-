@@ -901,8 +901,11 @@ function pgSL() {
     fh += '<div class="col-body' + (cnt > 0 ? " open" : "") + '" id="' + sid + '">';
     for (var ii = 0; ii < items.length; ii++) {
       var item = items[ii];
-      var isSel = V.sl.findings.indexOf(item) >= 0;
-      fh += '<span class="fn' + (isSel ? " sel" : "") + '" onclick="togSlFind(\'' + item.replace(/'/g, "\\'") + '\')">' + item + '</span>';
+      /* The chip shows WHICH EYE, and cycles OD -> OS -> OU -> off (CL-2). */
+      var eyeSel = (typeof recFindingState === "function") ? recFindingState(V.sl.findings, item)
+                                                          : (V.sl.findings.indexOf(item) >= 0 ? "?" : "");
+      fh += '<span class="fn' + (eyeSel ? " sel" : "") + '" title="Click to cycle OD / OS / both / off" onclick="togSlFind(\'' + item.replace(/'/g, "\\'") + '\')">' + item +
+            (eyeSel ? ' <b style="font-size:.9em">' + (eyeSel === "?" ? "eye?" : eyeSel) + '</b>' : '') + '</span>';
     }
     fh += '</div>';
   }
