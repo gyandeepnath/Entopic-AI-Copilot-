@@ -40,7 +40,12 @@ var MIRROR_STORE_NAME = "kv";
    Storing it here is safe: the meta contains only the data key WRAPPED by the
    passphrase- and recovery-derived keys, never the key itself, so a stolen
    IndexedDB is no more useful than stolen localStorage. */
-var MIRROR_KEYS = ["users", "patients", "visits", "settings", "registry_queue", "vault_meta"];
+/* kb_signoffs is here because a clinician's review of 394 conditions is
+   irreplaceable human work that nobody can regenerate. It used to live inside
+   the KB content-edit overlay, which is not mirrored — so a cleared browser
+   destroyed all of it. It is review attestations only (name, date, reviewer,
+   content fingerprint): no patient data, no clinical content. */
+var MIRROR_KEYS = ["users", "patients", "visits", "settings", "registry_queue", "vault_meta", "kb_signoffs"];
 var MIRROR_BOOT_FLAG = "entopic_mirror_recovered";
 
 function mirrorSupported() {

@@ -1876,6 +1876,23 @@ function esc(s) { return escHtml(s); }
     }
   }
 
+  /* Apply this device's clinical sign-offs to the knowledge base.
+
+     Runs AFTER the vault gate, because with an encrypted device the sign-off
+     store is unreadable until the passphrase is entered — applying before the
+     unlock would read zero sign-offs and put every condition the founder has
+     already verified back into the review queue. (vaultUiUnlock re-applies.)
+
+     A sign-off whose condition text has changed since it was signed is NOT
+     re-applied; it returns to the queue flagged as needing re-review. */
+  if (typeof signoffApplyAll === "function" && typeof KNOWLEDGE_ALL !== "undefined") {
+    var _so = signoffApplyAll(KNOWLEDGE_ALL);
+    if (_so.applied || _so.stale) {
+      console.log("Entopic: clinical sign-offs applied — " + _so.applied + " verified" +
+                  (_so.stale ? ", " + _so.stale + " need re-review (content changed)" : ""));
+    }
+  }
+
   /* Log knowledge base status */
   if (typeof KNOWLEDGE_ALL !== "undefined") {
     console.log("Entopic: Knowledge base loaded — " + KNOWLEDGE_ALL.length + " conditions");

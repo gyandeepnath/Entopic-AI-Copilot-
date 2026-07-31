@@ -2330,6 +2330,16 @@ input, select, textarea, button {
 .val-stat-prov b { color: #b9770e; }
 .val-stat-ver  b { color: #2e7d46; }
 
+/* Sign-off durability bar: how the founder keeps his own review work safe
+   and moves it between machines without needing an engineer. */
+.val-signoff { display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  margin-top: 10px; padding: 8px 10px; border: 1px solid var(--ms);
+  border-radius: var(--r); background: var(--sn); }
+.val-signoff-txt { flex: 1 1 260px; font-size: .62rem; color: var(--ink); }
+.val-signoff-txt .val-muted { font-size: .56rem; margin-top: 2px; }
+.val-signoff-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+.val-signoff-btns .btn { font-size: .58rem; padding: 3px 9px; }
+
 .val-facets { display: flex; flex-wrap: wrap; gap: 4px; margin: 8px 0 10px; }
 .val-dom { font: inherit; font-size: .58rem; padding: 3px 8px; border-radius: 99px;
   border: 1px solid var(--ms); background: var(--wh); color: var(--sl); cursor: pointer; }

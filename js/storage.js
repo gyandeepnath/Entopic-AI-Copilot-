@@ -591,7 +591,12 @@ function buildBackupPayload() {
     patients: loadPatients(),
     visits: loadVisits(),
     settings: loadSettings(),
-    audit: loadAudit()
+    audit: loadAudit(),
+    /* Clinical sign-offs. Irreplaceable human review work, and previously
+       absent from every backup — a restore onto a new machine brought the
+       patients back but silently dropped hundreds of verifications. Review
+       attestations only: no patient data. */
+    kb_signoffs: loadStore("kb_signoffs") || {}
   };
 }
 
@@ -792,6 +797,20 @@ function _importDecoded(data) {
     /* Restore the audit trail too — losing the access history on restore
        would break the record the clinic may have to produce. */
     if (Array.isArray(data.audit) && typeof saveAudit === "function") saveAudit(data.audit);
+
+    /* Clinical sign-offs. MERGED, not replaced: a restore must never destroy
+       verification work done on this device since the backup was taken. Older
+       backups have no kb_signoffs key at all, which is why this is guarded. */
+    if (data.kb_signoffs && typeof data.kb_signoffs === "object") {
+      var incoming = data.kb_signoffs;
+      var have = loadStore("kb_signoffs") || {};
+      for (var sn in incoming) {
+        if (!Object.prototype.hasOwnProperty.call(incoming, sn)) continue;
+        var mine = have[sn];
+        if (!mine || String(incoming[sn].on || "") > String(mine.on || "")) have[sn] = incoming[sn];
+      }
+      saveStore("kb_signoffs", have);
+    }
 
     if (typeof logAudit === "function") {
       try {

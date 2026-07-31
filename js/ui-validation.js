@@ -134,8 +134,16 @@ function valNextProvisional(afterName) {
   return items[0].name;
 }
 
-/* Status bucket for a live condition: verified | provisional | curated. */
+/* Status bucket for a live condition:
+     restale     — signed off before, but the content changed since. This is
+                   its own bucket, not lumped in with "never reviewed", because
+                   it is a fundamentally different job: the reviewer is
+                   checking what CHANGED against an approval they already gave.
+     provisional — never reviewed
+     verified    — reviewed, content unchanged since
+     curated     — neither flag set (legacy hand-authored entries) */
 function valStatusOf(c) {
+  if (c.review_stale) return "restale";
   if (c.review_status === "VERIFIED_BY_CLINICIAN") return "verified";
   if (c.review_status === "NEEDS_CLINICAL_REVIEW") return "provisional";
   return "curated";
@@ -144,7 +152,7 @@ function valStatusOf(c) {
 /* The condition list, with counts, for the master column (pure). */
 function valConditionList() {
   if (typeof KNOWLEDGE_ALL === "undefined" || !KNOWLEDGE_ALL) return { items: [], counts: {} };
-  var counts = { verified: 0, provisional: 0, curated: 0, total: 0 };
+  var counts = { verified: 0, provisional: 0, curated: 0, restale: 0, total: 0 };
   var items = [];
   for (var i = 0; i < KNOWLEDGE_ALL.length; i++) {
     var c = KNOWLEDGE_ALL[i];
@@ -154,13 +162,18 @@ function valConditionList() {
       name: c.name,
       domain: c._domain || c.domain || "",
       urgent: !!c.urgent,
-      status: st
+      status: st,
+      prev_on: c.review_prev_on || "",
+      prev_by: c.review_prev_by || ""
     });
   }
   items.sort(function (a, b) {
-    /* provisional first (needs attention), then verified, then curated;
-       within a bucket urgent-first, then domain, then name */
-    var order = { provisional: 0, verified: 1, curated: 2 };
+    /* Re-review first — a changed condition the founder already approved is
+       more urgent than one he has never seen, because the app is currently
+       showing content nobody has checked under a status he did approve.
+       Then never-reviewed, then verified, then curated; within a bucket
+       urgent-first, then domain, then name. */
+    var order = { restale: 0, provisional: 1, verified: 2, curated: 3 };
     if (order[a.status] !== order[b.status]) return order[a.status] - order[b.status];
     if (a.urgent !== b.urgent) return a.urgent ? -1 : 1;
     if (a.domain !== b.domain) return a.domain < b.domain ? -1 : 1;
@@ -244,6 +257,98 @@ if (typeof document !== "undefined") {
     });
   }
 
+  /* ── Sign-off durability bar ──────────────────────────────────────
+     Verification is the founder's own irreplaceable work, and he is not an
+     engineer — so every route it needs to survive has to be a button here,
+     not a git commit someone else makes for him:
+
+       Save a copy   a file he can keep, e-mail himself, or carry to another
+                     machine. Also the recovery path after a reinstall.
+       Load a copy   merge a file back in. Merge, never replace: importing an
+                     older file cannot delete newer work.
+       Bake in       generate knowledge/verified.js so the sign-offs ship with
+                     the product and every future user gets them already
+                     verified. This one still needs an engineer to commit the
+                     file, which is stated plainly rather than implied. */
+  function valSignoffBarHtml() {
+    var stats = (typeof signoffStats === "function" && typeof KNOWLEDGE_ALL !== "undefined")
+      ? signoffStats(KNOWLEDGE_ALL) : null;
+    if (!stats) return "";
+
+    var h = '<div class="val-signoff">';
+    h += '<div class="val-signoff-txt"><b>' + stats.verified + '</b> sign-off' +
+         (stats.verified === 1 ? '' : 's') + ' stored on this device';
+    if (stats.stale) {
+      h += ' · <b>' + stats.stale + '</b> need re-review because the condition text changed';
+    }
+    h += '<div class="val-muted">Backed up with your records and kept in the local safety mirror. ' +
+         'Save a copy as well if you review on more than one machine.</div></div>';
+    h += '<div class="val-signoff-btns">' +
+      '<button class="btn btn-s" onclick="valSignoffSave()">Save a copy</button>' +
+      '<button class="btn btn-s" onclick="valSignoffLoad()">Load a copy</button>' +
+      '<button class="btn btn-s" onclick="valSignoffBake()">Bake into the build</button>' +
+      '</div>';
+    h += '<input type="file" id="valSignoffFile" accept="application/json,.json" ' +
+         'style="display:none" onchange="valSignoffFilePicked(this)">';
+    h += '</div>';
+    return h;
+  }
+
+  window.valSignoffSave = function () {
+    if (typeof signoffExportPayload !== "function") return;
+    var payload = signoffExportPayload();
+    if (!payload.count) { window.alert("There are no sign-offs on this device yet."); return; }
+    dlSaveAs("entopic-signoffs-" + new Date().toISOString().slice(0, 10) + ".json",
+             JSON.stringify(payload, null, 2), "application/json");
+    if (typeof toast === "function") toast(payload.count + " sign-offs saved to a file.");
+  };
+
+  window.valSignoffLoad = function () {
+    var f = document.getElementById("valSignoffFile");
+    if (f) { f.value = ""; f.click(); }
+  };
+
+  window.valSignoffFilePicked = function (input) {
+    var file = input && input.files && input.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function () {
+      var payload;
+      try { payload = JSON.parse(String(reader.result)); }
+      catch (e) { window.alert("That file could not be read as a sign-off file."); return; }
+
+      var res = signoffImportPayload(payload);
+      if (!res.ok) { window.alert(res.error || "The file was not loaded."); return; }
+
+      var msg = "Loaded sign-offs.\n\n" +
+        "· " + res.added + " new\n" +
+        "· " + res.updated + " updated (the file's was more recent)\n" +
+        "· " + res.skipped + " skipped (this device already had the same or newer)\n";
+      if (res.stale) {
+        msg += "· " + res.stale + " need re-review — those conditions have changed since " +
+               "they were signed off, so they are NOT marked verified.\n";
+      }
+      msg += "\nNothing already on this device was deleted.";
+      window.alert(msg);
+      valRender();
+    };
+    reader.readAsText(file);
+  };
+
+  window.valSignoffBake = function () {
+    if (typeof kbBuildVerifiedExport !== "function") return;
+    var out = kbBuildVerifiedExport();
+    if (!out.count) { window.alert("There are no sign-offs to bake in yet."); return; }
+    dlSaveAs("verified.js", out.source, "text/javascript");
+    window.alert(
+      "Downloaded verified.js with " + out.count + " sign-offs.\n\n" +
+      "This is the file that makes your verifications ship WITH the product, so " +
+      "every future install starts with them already done.\n\n" +
+      "It has to be committed into the source as knowledge/verified.js — send it " +
+      "to whoever maintains the code. Your sign-offs are already safe on this " +
+      "device and in your backups either way.");
+  };
+
   function valRender() {
     var host = document.getElementById("valContent");
     if (!host) return;
@@ -277,10 +382,12 @@ if (typeof document !== "undefined") {
             '<span class="val-muted">Click a condition to see its engine wiring, verify it, or edit its logic.</span></div>' +
         '</div>' +
         '<div class="val-stats">' +
+          (counts.restale ? statChip("restale", "Re-review (content changed)", counts.restale, "prov") : "") +
           statChip("provisional", "Needs review", counts.provisional, "prov") +
           statChip("verified", "Verified", counts.verified, "ver") +
           statChip("curated", "Curated", counts.curated, "cur") +
         '</div>' +
+        valSignoffBarHtml() +
       '</div>' +
       '<div class="val-facets">' + domChips + '</div>' +
       '<div class="val-grid">' +

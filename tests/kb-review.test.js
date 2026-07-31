@@ -20,7 +20,17 @@ const vm = require("vm");
 const { createEngine } = require("../tools/lib/load-engine");
 
 const eng = createEngine();
-["knowledge/condition-info.js", "js/kb-review.js"].forEach((f) => {
+
+/* An in-memory store, matching the loadStore/saveStore contract (including
+   saveStore's boolean return). kb-signoffs.js needs it because verifying now
+   records a durable attestation instead of upserting the whole condition. */
+const _disk = {};
+eng.context.loadStore = (k, fb) =>
+  (Object.prototype.hasOwnProperty.call(_disk, k) ? JSON.parse(_disk[k]) : fb);
+eng.context.saveStore = (k, v) => { _disk[k] = JSON.stringify(v); return true; };
+eng.context.__disk = _disk;
+
+["knowledge/condition-info.js", "js/kb-signoffs.js", "js/kb-review.js"].forEach((f) => {
   vm.runInContext(
     fs.readFileSync(path.resolve(__dirname, "..", f), "utf8"),
     eng.context,

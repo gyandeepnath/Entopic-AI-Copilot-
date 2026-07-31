@@ -61,17 +61,37 @@ function kbConditionVerified(name) {
   return !!(c && c.review_status === "VERIFIED_BY_CLINICIAN");
 }
 
-/* The attestation. Flips the review flags on the live condition and
-   persists through the local-edits overlay. Returns the condition, or
-   null if it isn't found / isn't provisional. */
+/* The attestation. Flips the review flags on the live condition and records
+   a SIGN-OFF (js/kb-signoffs.js). Returns the condition, or null if it isn't
+   found, isn't provisional, or could not be persisted.
+
+   This used to persist by calling kbApplyLocalConditionUpsert(c) — writing
+   the WHOLE condition into the KB content-edit overlay. Two problems, both
+   fixed by recording an attestation instead:
+
+     · a sign-off became a competing copy of the clinical content, so a later
+       improvement in the shipped knowledge base was silently overwritten by
+       the older snapshot the signature carried;
+     · the overlay is neither mirrored nor included in backups, so clearing
+       the browser or moving machine destroyed every sign-off with nothing to
+       restore from.
+
+   A sign-off now stores {name, on, by, hash} in its own mirrored, backed-up
+   store. The hash means a signature stops applying if the text changes —
+   the condition returns to the queue as "re-review needed" rather than
+   carrying a clinician's name on words they never read. */
 function kbRapidVerify(name, verifiedBy) {
   var c = (typeof findCondition === "function") ? findCondition(name) : null;
   if (!c || c.review_status !== "NEEDS_CLINICAL_REVIEW") return null;
+
+  var rec = (typeof signoffRecord === "function") ? signoffRecord(c, verifiedBy) : null;
+  if (!rec) return null;   /* not persisted → do not report it as verified */
+
   c.review_status = "VERIFIED_BY_CLINICIAN";
   c.icd_status = "VERIFIED_BY_CLINICIAN";
-  c.review_verified_on = new Date().toISOString().slice(0, 10);
-  c.review_verified_by = verifiedBy || "";
-  if (typeof kbApplyLocalConditionUpsert === "function") kbApplyLocalConditionUpsert(c);
+  c.review_verified_on = rec.on;
+  c.review_verified_by = rec.by;
+  c.review_stale = false;
   return c;
 }
 
