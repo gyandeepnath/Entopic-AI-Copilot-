@@ -2002,5 +2002,38 @@ function runDiagnosticEngine() {
   /* Store in visit for persistence */
   V.engineLog = ENGINE_LOG.slice(-10);
 
+  /* ── STAGE 13: PROVENANCE (clinical review CL-1) ──
+     Record WHICH knowledge base produced this differential, on the visit
+     itself. Without it, a record reviewed months later shows a list of
+     conditions with no way to know what the engine actually saw at the time —
+     and because the KB is designed to be updated and re-published, today's
+     engine may rank the same findings differently. That gap defeats both
+     "glass box" defensibility and any retrospective audit of a decision.
+
+     Deliberately data-only: this changes no scoring, no ranking, no alert. It
+     records what already happened. */
+  V.engine_provenance = {
+    kb_version: (typeof KB_META !== "undefined" && KB_META.version) ? KB_META.version : "unknown",
+    kb_conditions: (typeof KNOWLEDGE_ALL !== "undefined" && KNOWLEDGE_ALL) ? KNOWLEDGE_ALL.length : 0,
+    store_version: (typeof STORE_VERSION !== "undefined") ? STORE_VERSION : "",
+    run_at: new Date().toISOString(),
+    token_count: tokens.length,
+    /* The exact ranked output the clinician was shown, so a later reviewer can
+       see the differential as PRESENTED rather than as recomputed today.
+       Field names follow the dxList shape (`n` / `prob`), not the raw scorer's. */
+    shown_top: (V.dxList || []).slice(0, 5).map(function (d) {
+      return {
+        name: d.n,
+        prob: (typeof d.prob === "number") ? +d.prob.toFixed(4) : null,
+        icd: d.icd || "",
+        /* whether that code was clinician-verified AT THE TIME — a code shown
+           as provisional must not later look as though it had been signed off */
+        icd_status: d.icd_status || "",
+        urgent: !!d.urgent
+      };
+    }),
+    urgent_alerts: (V.alerts || []).filter(function (a) { return a.l === "urgent"; }).length
+  };
+
   ENGINE_STATE.lastRun = new Date().toISOString();
 }
