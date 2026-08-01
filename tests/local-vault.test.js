@@ -51,7 +51,9 @@ function makeEnv(seed) {
      vault. The real browser-io is loaded rather than stubbed so the tests
      exercise the actual write path. */
   vm.runInContext(read("js/browser-io.js"), ctx, { filename: "browser-io.js" });
+  vm.runInContext(read("js/data-classification.js"), ctx, { filename: "data-classification.js" });
   vm.runInContext(read("js/storage.js"), ctx, { filename: "storage.js" });
+  vm.runInContext(read("js/storage-backup.js"), ctx, { filename: "storage-backup.js" });
   vm.runInContext(read("js/local-vault.js"), ctx, { filename: "local-vault.js" });
   ctx.__raw = store;
   return ctx;

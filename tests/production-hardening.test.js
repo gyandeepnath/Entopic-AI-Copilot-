@@ -35,6 +35,13 @@ function load(file, stubs) {
   return ctx;
 }
 
+/* Run another file into an already-built context, the way a second <script>
+   tag would. Needed since storage.js was split. */
+function runInto(ctx, file) {
+  vm.runInContext(fs.readFileSync(path.resolve(__dirname, "..", file), "utf8"), ctx, { filename: file });
+  return ctx;
+}
+
 
 /* ── clinic-mode: signup gate ─────────────────────────────────────── */
 
@@ -136,14 +143,20 @@ test("at-rest encryption is reported truthfully for this device", () => {
 
 /* ── backup validation ────────────────────────────────────────────── */
 
+/* Same three files, in the same order, that index.html loads: the
+   classification table, then storage, then the backup/restore module that was
+   split out of it. */
 function loadStorage() {
-  return load("js/storage.js", {
+  const ctx = load("js/data-classification.js", {
     STORE_VERSION: "1.0.0",
     alert: () => {}, confirm: () => true,
     document: { createElement: () => ({ click() {}, style: {} }), body: { appendChild() {}, removeChild() {} } },
     Blob: function () {}, URL: { createObjectURL: () => "blob:", revokeObjectURL() {} },
     mirrorStore: () => {}, mirrorRemove: () => {}
   });
+  runInto(ctx, "js/storage.js");
+  runInto(ctx, "js/storage-backup.js");
+  return ctx;
 }
 
 test("validateBackup rejects files that are not Entopic backups", () => {

@@ -27,25 +27,22 @@
 var MIRROR_DB_NAME = "entopic_mirror";
 var MIRROR_DB_VERSION = 1;
 var MIRROR_STORE_NAME = "kv";
-/* Keys (without the "entopic_" prefix) that constitute clinic data. */
-/* `vault_meta` is here for a reason that is easy to miss and catastrophic to
-   get wrong. With the record vault on, the mirrored copies of users/patients/
-   visits are CIPHERTEXT, and the only thing that can decrypt them is the
-   wrapped data key inside `entopic_vault_meta`. If localStorage were cleared —
-   precisely the situation this mirror exists to survive — recovery would
-   restore the ciphertext while the key wrapper stayed lost, and every patient
-   record would be permanently unreadable even with the correct passphrase AND
-   the recovery code. Mirroring the wrapper closes that hole.
+/* Which stores get mirrored is NOT decided here — it is declared once in
+   js/data-classification.js and derived. This list used to be maintained by
+   hand alongside two others, and the three drifted: the audit trail was
+   encrypted and backed up but never mirrored, and four stores added later
+   (consents, research_corpus, research_salt, feedback) were mirrored by
+   nothing at all.
 
-   Storing it here is safe: the meta contains only the data key WRAPPED by the
-   passphrase- and recovery-derived keys, never the key itself, so a stolen
-   IndexedDB is no more useful than stolen localStorage. */
-/* kb_signoffs is here because a clinician's review of 394 conditions is
-   irreplaceable human work that nobody can regenerate. It used to live inside
-   the KB content-edit overlay, which is not mirrored — so a cleared browser
-   destroyed all of it. It is review attestations only (name, date, reviewer,
-   content fingerprint): no patient data, no clinical content. */
-var MIRROR_KEYS = ["users", "patients", "visits", "settings", "registry_queue", "vault_meta", "kb_signoffs"];
+   Two entries worth understanding, both explained in full in the table:
+     vault_meta  — without the wrapped key, recovered ciphertext is
+                   permanently unreadable, which would make this mirror worse
+                   than useless in the exact disaster it exists for.
+     kb_signoffs — a clinician's review of 394 conditions; nobody can
+                   regenerate it. */
+var MIRROR_KEYS = (typeof dataStoresWith === "function")
+  ? dataStoresWith("mirror")
+  : ["users", "patients", "visits", "settings", "vault_meta", "kb_signoffs"];
 var MIRROR_BOOT_FLAG = "entopic_mirror_recovered";
 
 function mirrorSupported() {
@@ -177,23 +174,32 @@ function mirrorSeedFromLocalStorage() {
 
 /* Stores that must hold a list. A parsed-but-wrong-shape value is corrupt
    too, and more dangerous than unparseable bytes because it survives
-   JSON.parse and reaches every caller that iterates it. */
-var MIRROR_ARRAY_KEYS = ["users", "patients", "visits", "audit"];
+   JSON.parse and reaches every caller that iterates it. Derived from the
+   same declaration as everything else. */
+var MIRROR_ARRAY_KEYS = (typeof dataStoresShaped === "function")
+  ? dataStoresShaped("array")
+  : ["users", "patients", "visits", "audit"];
 
 /* Is this raw value safe to copy over the mirror's existing good copy?
    Deliberately conservative: when in doubt, keep what the mirror already has. */
 function mirrorRawLooksValid(key, raw) {
   var parsed;
   try { parsed = JSON.parse(raw); } catch (e) { return false; }
-  if (parsed === null || typeof parsed !== "object") return false;
+  if (parsed === undefined) return false;
 
   /* An encrypted envelope is opaque by design and always mirrorable — that
      is exactly what the vault needs the mirror to hold. */
-  var isEnvelope = !!(parsed.ct && parsed.iv);
+  var isEnvelope = !!(parsed && typeof parsed === "object" && parsed.ct && parsed.iv);
   if (isEnvelope) return true;
 
+  /* Shape comes from the classification table, which knows that research_salt
+     is a bare string. The old check demanded `typeof parsed === "object"` and
+     so would have silently refused to mirror the salt — and a corpus without
+     its salt cannot be linked to anything captured after the restore. */
+  if (typeof dataShapeOk === "function") return dataShapeOk(key, parsed);
+  if (parsed === null || typeof parsed !== "object") return false;
   if (MIRROR_ARRAY_KEYS.indexOf(key) >= 0) return Array.isArray(parsed);
-  return true;   /* settings / vault_meta / kb_signoffs are plain objects */
+  return true;
 }
 
 /* ── Boot-time recovery ──

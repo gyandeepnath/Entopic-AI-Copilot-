@@ -278,19 +278,17 @@ test("sign-offs are mirrored and included in the backup payload", () => {
   /* Both were missing, which is how the work could be destroyed with nothing
      to restore from. Read from the real sources so this cannot pass by
      copying a list into the test. */
-  const mirror = read("js/storage-mirror.js");
-  const keys = /var MIRROR_KEYS = \[([^\]]*)\]/.exec(mirror);
-  assert.ok(keys, "MIRROR_KEYS not found");
-  assert.ok(keys[1].indexOf("kb_signoffs") >= 0,
+  /* Protection is now declared once in js/data-classification.js and derived
+     by the mirror and the backup, so this reads the declaration rather than
+     regex-parsing three separate literals as it used to. */
+  const cls = require("../js/data-classification.js");
+  assert.ok(cls.DATA_STORES.kb_signoffs, "kb_signoffs must appear in the data classification table");
+  assert.strictEqual(cls.DATA_STORES.kb_signoffs.mirror, true,
     "kb_signoffs must be mirrored — otherwise a cleared browser destroys every sign-off");
-
-  const storage = read("js/storage.js");
-  const payload = /function buildBackupPayload\(\)[\s\S]*?\n}/.exec(storage);
-  assert.ok(payload, "buildBackupPayload not found");
-  assert.ok(/kb_signoffs/.test(payload[0]),
+  assert.strictEqual(cls.DATA_STORES.kb_signoffs.backup, true,
     "the backup must carry sign-offs — a restore that drops them loses irreplaceable review work");
 
-  assert.ok(/data\.kb_signoffs/.test(storage),
+  assert.ok(/data\.kb_signoffs/.test(read("js/storage-backup.js")),
     "the restore path must read kb_signoffs back");
 });
 

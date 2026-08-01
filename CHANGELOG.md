@@ -6,6 +6,54 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-08-01 — Five stores had no protection at all. Now they do.
+
+Moving from the audit's recommendations to actually fixing them.
+
+**What was wrong.** Which data gets encrypted, mirrored and backed up was
+decided by three separate hand-written lists in three different files, with
+nothing connecting them. So each time a feature was added, whoever wrote it
+updated the one list they were looking at. The result, measured:
+
+- the **audit trail** — who opened which record, the thing a clinic would have
+  to produce as evidence — was encrypted and backed up but **never mirrored**,
+  so clearing the browser destroyed it outright;
+- **consents**, the **research corpus**, its **salt**, and **feedback** had
+  **no protection of any kind** — not mirrored, not backed up. A new laptop
+  meant the consent ledger, the whole accumulating research asset and every
+  clinical-concern report simply did not come across;
+- `registry_queue`, a dead store, was still being mirrored.
+
+**What changed.** There is now one file, `js/data-classification.js`, that
+states what every store is and how it must be protected. The mirror and the
+backup read it directly, so a new store is protected by being declared rather
+than by somebody remembering three files. All five gaps are closed, and the
+restore path reads back everything the backup writes.
+
+The consent ledger is *replaced* rather than merged on restore, deliberately:
+merging means guessing whether a later withdrawal or a later grant is the true
+state, and guessing wrong in the permissive direction would mean processing
+data a patient had withdrawn. If it has to be wrong, it must be wrong in the
+direction that processes less.
+
+**A bug this found.** The research salt is stored as a bare text string, and
+the mirror's safety check accepted only objects — so the salt would have been
+silently refused. A corpus restored without its salt cannot be linked to
+anything recorded afterwards, so the clinic's history would have quietly
+detached from its present. Caught by deriving the shape rules from the same
+declaration instead of hand-listing them.
+
+**Also.** `storage.js` had grown to 1,219 lines doing four different jobs and
+tripped its own complexity budget, so backup/export/restore moved into
+`js/storage-backup.js` (Top-100 item 26). Three new contracts: the backup and
+the restore must agree; every `<script src>` must resolve to a real file (a
+typo there 404s silently and kills one module while the app still boots); and
+every protected store must state why.
+
+Verified in a real browser, not only in tests: all five stores now appear in
+IndexedDB, the backup carries them, 394 conditions and 63 red flags intact.
+650/650 tests pass. **KNOWN_DIVERGENCES is now empty** — it was nine.
+
 ## 2026-08-01 — Phase 1 addendum: the four sections I had skipped
 
 The founder asked whether I had skipped parts of the audit. He was right, and

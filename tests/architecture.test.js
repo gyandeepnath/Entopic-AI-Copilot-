@@ -11,14 +11,19 @@
 /* only asserts what the architecture already claims, so that a     */
 /* violation becomes a red test instead of a slow decay.            */
 /*                                                                  */
-/* It is also the SINGLE SOURCE OF TRUTH for data classification.   */
-/* Three separate hand-maintained lists currently decide what data  */
-/* is protected (vault / mirror / backup) and they have drifted.    */
-/* The table below states the INTENT; the tests measure the         */
-/* reality against it and name every divergence explicitly, with a  */
-/* reason. Divergences are recorded, not silently fixed — changing  */
-/* what gets encrypted or mirrored is a behaviour change and        */
-/* belongs to a deliberate migration, not to a test file.           */
+/* Data classification USED to live here, because production had no    */
+/* one place for it — three hand-maintained lists in three files       */
+/* decided what was protected, and they had drifted apart.             */
+/*                                                                     */
+/* Production now declares it once, in js/data-classification.js, and  */
+/* the mirror and the backup derive their lists from it. The table     */
+/* below is no longer that source of truth; it is now an INDEPENDENT   */
+/* SECOND OPINION. It says what protection each store OUGHT to have,   */
+/* written here on purpose so that a careless edit to the production   */
+/* table fails a test rather than silently unprotecting a store.       */
+/*                                                                     */
+/* Two tables that must agree is the point. One table that agrees with */
+/* itself would prove nothing.                                         */
 /* ═══════════════════════════════════════════════════════════════ */
 "use strict";
 
@@ -31,15 +36,18 @@ const ROOT = path.resolve(__dirname, "..");
 const read = (f) => fs.readFileSync(path.join(ROOT, f), "utf8");
 const strip = (s) => s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:\\])\/\/[^\n]*/g, "$1");
 
+/* The production declaration. */
+const PROD = require("../js/data-classification.js");
+
 
 /* ═══════════════════════════════════════════════════════════════ */
-/* THE DATA CLASSIFICATION TABLE — single source of truth          */
+/* THE EXPECTED CLASSIFICATION — the second opinion                */
 /*                                                                  */
-/*  class:   phi        identifiable patient data                  */
-/*           clinical   patient-derived, de-identified             */
-/*           legal      evidence of consent or access              */
-/*           operational配置 / device state                          */
-/*           derived    rebuildable from something else            */
+/*  class:   phi         identifiable patient data                 */
+/*           clinical    patient-derived, de-identified            */
+/*           legal       evidence of consent or access             */
+/*           operational configuration / device state              */
+/*           derived     rebuildable from something else           */
 /*                                                                  */
 /*  encrypt: should be unreadable without the clinic passphrase    */
 /*  mirror:  should survive a cleared localStorage                 */
@@ -53,7 +61,11 @@ const DATA_CLASSIFICATION = {
   consents:        { class: "legal",       encrypt: false, mirror: true,  backup: true  },
   kb_signoffs:     { class: "legal",       encrypt: false, mirror: true,  backup: true  },
   research_corpus: { class: "clinical",    encrypt: false, mirror: true,  backup: true  },
-  research_salt:   { class: "operational", encrypt: false, mirror: true,  backup: false },
+  /* backup:true — revised from the original false. The salt has to travel with
+     the corpus it belongs to, or every pseudonym in a restored corpus becomes
+     unlinkable to anything captured afterwards. It discloses nothing extra:
+     the same backup file already carries the patients in full. */
+  research_salt:   { class: "operational", encrypt: false, mirror: true,  backup: true  },
   feedback:        { class: "operational", encrypt: false, mirror: true,  backup: true  },
   settings:        { class: "operational", encrypt: false, mirror: true,  backup: true  },
   vault_meta:      { class: "operational", encrypt: false, mirror: true,  backup: false },
@@ -66,39 +78,109 @@ const DATA_CLASSIFICATION = {
    the list can only shrink by fixing the gap.
 
    Recorded 2026-08-01 (Phase 1 architecture review). */
-const KNOWN_DIVERGENCES = {
-  "audit/mirror": "The audit trail is encrypted and backed up but NOT mirrored, so a " +
-    "cleared localStorage destroys the access log — the one artefact most likely to be " +
-    "needed as evidence. Fixing this changes what the mirror stores and must be a " +
-    "deliberate migration.",
-  "consents/mirror": "No protection of any kind. This is the legal basis for every " +
-    "record in the research corpus; a restore returns patients without their consent state.",
-  "consents/backup": "As above.",
-  "research_corpus/mirror": "The accumulating research asset is lost on device replacement.",
-  "research_corpus/backup": "As above.",
-  "research_salt/mirror": "Without the salt, existing pseudonyms cannot be reproduced, so a " +
-    "restored corpus cannot be linked to newly captured encounters.",
-  "feedback/mirror": "Clinical-concern reports are lost on device replacement.",
-  "feedback/backup": "As above.",
-  "registry_queue/mirror": "Legacy store, superseded by research_corpus, still mirrored. " +
-    "Harmless but should be retired."
-};
+/* Empty, and it has to stay that way by fixing code rather than by adding
+   excuses. All nine original entries were closed on 2026-08-01: the audit
+   trail is mirrored, consents / research_corpus / research_salt / feedback are
+   mirrored and backed up, and registry_queue no longer claims protection it
+   does not need. Anything added here needs a reason a clinician would accept. */
+const KNOWN_DIVERGENCES = {};
 
 function actualLists() {
+  /* VAULT_PROTECTED is deliberately still a hand-written literal rather than
+     derived like the other two. If js/data-classification.js ever failed to
+     load, a derived list would evaluate to empty — and an empty
+     VAULT_PROTECTED means patient records written in PLAINTEXT while the UI
+     still says the vault is on. That failure is silent, and it is a
+     confidentiality breach rather than a loss of redundancy. So encryption
+     keeps a literal that fails safe, and this test is what keeps it honest. */
   const vault = /VAULT_PROTECTED = \[([^\]]*)\]/.exec(read("js/local-vault.js"));
-  const mirror = /MIRROR_KEYS = \[([^\]]*)\]/.exec(read("js/storage-mirror.js"));
-  const payload = /function buildBackupPayload\(\)[\s\S]*?\n}/.exec(read("js/storage.js"));
   const parse = (m) => (m ? m[1].match(/"([a-z_]+)"/g) || [] : []).map((s) => s.replace(/"/g, ""));
   return {
     encrypt: parse(vault),
-    mirror: parse(mirror),
-    backup: (payload ? [...payload[0].matchAll(/^\s{4}([a-z_]+):/gm)].map((m) => m[1]) : [])
-      .filter((k) => !["version", "exported"].includes(k))
+    /* The mirror and the backup derive from the production table at runtime,
+       so the table IS what the code does. */
+    mirror: PROD.dataStoresWith("mirror"),
+    backup: PROD.dataStoresWith("backup")
   };
 }
 
 
 /* ═══ 1. Data classification is declared in exactly one place ═══ */
+
+test("the production classification table agrees with this file's second opinion", () => {
+  /* Two tables, written at different times for different reasons, must say the
+     same thing. This is the check that a careless edit to production has to
+     get past — and the reason the expectations here are duplicated rather than
+     imported. */
+  const mismatches = [];
+  const prodKeys = PROD.dataStoreKeys().sort();
+  const wantKeys = Object.keys(DATA_CLASSIFICATION).sort();
+  assert.deepStrictEqual(prodKeys, wantKeys,
+    "js/data-classification.js and this test disagree about which stores exist");
+
+  for (const key of wantKeys) {
+    const want = DATA_CLASSIFICATION[key];
+    const got = PROD.DATA_STORES[key];
+    for (const field of ["class", "encrypt", "mirror", "backup"]) {
+      if (got[field] !== want[field]) {
+        mismatches.push(key + "." + field + ": production says " + JSON.stringify(got[field]) +
+          ", this test expects " + JSON.stringify(want[field]));
+      }
+    }
+  }
+  assert.deepStrictEqual(mismatches, [],
+    "production data classification diverges from the expected classification:\n  " +
+    mismatches.join("\n  "));
+});
+
+test("every classified store says why it is protected the way it is", () => {
+  /* A protection flag with no stated reason is a flag nobody can safely
+     change later, because nobody knows what it was for. */
+  const silent = PROD.dataStoreKeys().filter((k) => {
+    const w = PROD.DATA_STORES[k].why;
+    return typeof w !== "string" || w.trim().length < 20;
+  });
+  assert.deepStrictEqual(silent, [],
+    "these stores declare protection without explaining it:\n  " + silent.join("\n  "));
+});
+
+test("every classified store declares a shape", () => {
+  const bad = PROD.dataStoreKeys().filter(
+    (k) => !["array", "object", "string"].includes(PROD.DATA_STORES[k].shape));
+  assert.deepStrictEqual(bad, [],
+    "a store with no declared shape cannot be checked for corruption:\n  " + bad.join("\n  "));
+});
+
+test("the mirror and the backup derive their lists instead of re-hardcoding them", () => {
+  /* The whole point of the classification table is that these lists stop being
+     maintained by hand. A literal here would restore the drift it removed. */
+  const mirror = read("js/storage-mirror.js");
+  const storage = read("js/storage.js");
+  const backup = read("js/storage-backup.js");
+
+  assert.ok(/MIRROR_KEYS\s*=\s*\(typeof dataStoresWith === "function"\)/.test(mirror),
+    "MIRROR_KEYS must derive from dataStoresWith('mirror')");
+  assert.ok(/MIRROR_ARRAY_KEYS\s*=\s*\(typeof dataStoresShaped === "function"\)/.test(mirror),
+    "MIRROR_ARRAY_KEYS must derive from dataStoresShaped('array')");
+  assert.ok(/STORE_EXPECTED_ARRAY\s*=\s*\(typeof dataStoresShaped === "function"\)/.test(storage),
+    "STORE_EXPECTED_ARRAY must derive from dataStoresShaped('array')");
+  assert.ok(/dataStoresWith\("backup"\)/.test(backup),
+    "buildBackupPayload must derive its keys from dataStoresWith('backup')");
+});
+
+test("everything the backup writes, the restore reads back", () => {
+  /* A store added to the backup but forgotten in the restore is write-only:
+     the clinic's data is in the file and never comes home. That is worse than
+     not backing it up, because the backup looks complete. */
+  const importFn = /function _importDecoded\([\s\S]*?\n}\n/.exec(read("js/storage-backup.js"));
+  assert.ok(importFn, "could not find _importDecoded");
+  const body = importFn[0];
+
+  const missing = PROD.dataStoresWith("backup").filter(
+    (k) => !new RegExp("data\\." + k + "\\b").test(body));
+  assert.deepStrictEqual(missing, [],
+    "these stores are exported in the backup but never restored from it:\n  " + missing.join("\n  "));
+});
 
 test("every protected store is classified, and every classified store is real", () => {
   const actual = actualLists();
@@ -268,6 +350,20 @@ test("the load order enforces the layer sequence", () => {
   /* error-boundary wraps the renderers by name, so it can only work last. */
   assert.strictEqual(order[order.length - 1], "js/error-boundary.js",
     "error-boundary.js must load LAST: it monkey-patches renderers that must already exist");
+});
+
+test("every <script src> resolves to a file that exists", () => {
+  /* With no build step nothing verifies these paths. A typo'd or renamed src
+     404s silently in the browser: the other 91 scripts still run, so the app
+     boots and only the missing module's features are quietly dead. That
+     matters more now that storage-mirror, storage and local-vault derive
+     their protection lists from js/data-classification.js — a 404 there would
+     mean a clinic running with an unprotected mirror and no sign of it. */
+  const srcs = [...read("index.html").matchAll(/<script src="([^"]+)"/g)].map((m) => m[1]);
+  assert.ok(srcs.length > 50, "expected the full script list, found " + srcs.length);
+  const missing = srcs.filter((s) => !fs.existsSync(path.join(ROOT, s)));
+  assert.deepStrictEqual(missing, [],
+    "index.html loads scripts that do not exist:\n  " + missing.join("\n  "));
 });
 
 test("no module is loaded twice", () => {
