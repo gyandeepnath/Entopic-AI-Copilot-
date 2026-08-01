@@ -6,6 +6,45 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-08-01 — Phase 1 addendum: the four sections I had skipped
+
+The founder asked whether I had skipped parts of the audit. He was right, and
+the omission was mine, not an accident of scope. Against the Phase 1 brief I
+delivered steps 2–10, 12 and 14, and quietly dropped four things:
+
+- **Step 1** asked for thirteen diagrams. I produced three.
+- **Step 11** — documentation accuracy review and recommended ADRs — I skipped
+  entirely.
+- **Step 13** specified ten fields per recommendation. I gave the full format
+  for three items and one-liners for the other five.
+- **"Top 100 architectural improvements"** — I produced about sixteen and
+  grouped the rest away. That one I compressed *deliberately* and should have
+  said so rather than let the shorter list stand as if it were the answer.
+
+`docs/PHASE1_ADDENDUM_DIAGRAMS_ADRS_TOP100.md` completes all four. Documentation
+only — no production file changed, 644/644 tests unchanged, audit still 0 FAIL.
+
+Three findings worth naming outside the document:
+
+- **`ARCHITECTURE.md` is stale.** Its header claims v1.1 / 72 files against an
+  actual v1.3.1 / 92 loaded files, and six modules shipped in the last two
+  sessions (`build-info`, `research-corpus`, `insights`, `feedback`,
+  `kb-signoffs`, `clinical-scales`) appear in it zero times.
+- **The repository contains no ADRs at all.** Every significant decision —
+  no build step, globals over modules, localStorage as the record store,
+  roles-as-presentation — was made implicitly and is recoverable only by
+  reading code. Twelve are now written down, including two marked **NOT MADE**
+  and one, "roles are presentation, not authorization," marked
+  **Accepted by accident**, which is what it actually was.
+- **The state lifecycle of the `V` visit object** is the single strongest
+  argument in the whole review for introducing a domain model. Drawing it was
+  what made that obvious; the prose review had not.
+
+The Top 100 totals roughly 4,900 hours (~2.5 engineer-years) to enterprise
+grade. A five-item subset — the KB sign-off campaign, server-enforced
+authorization, and the storage/domain seams — covers the launch blockers in
+about 150.
+
 ## 2026-08-01 — CTO launch review: the review worklist was 53% larger than believed
 
 Independent re-review that deliberately did not trust earlier sessions.
