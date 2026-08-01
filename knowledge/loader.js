@@ -65,6 +65,26 @@ if (typeof KB_EXPANSION !== "undefined") {
     for (var i = 0; i < conditions.length; i++) {
       var cond = conditions[i];
 
+      /* REVIEW STATUS DEFAULTS TO "NEEDS REVIEW", FOR EVERY CONDITION.
+         (Found 2026-08-01 by an independent re-review.)
+
+         Only the EXPANSION batch was being stamped. The nine base domain
+         files — surface, corneal, retina, neuro, binocular, refractive,
+         glaucoma, anterior, lens: 137 conditions — carry no review_status
+         field at all, so they fell through to the "curated" bucket in the
+         Clinical Validation workspace and NEVER ENTERED THE REVIEW QUEUE.
+
+         That is the worst possible subset to miss. Those 137 are the
+         original, most commonly hit conditions — dry eye, allergic
+         conjunctivitis, blepharitis — the ones a clinician sees all day.
+         The founder's worklist read "257 to review, 137 curated", which
+         invites the reading that the 137 were checked by someone. Nobody
+         had checked them; they simply lacked a field.
+
+         Failing CLOSED here is the only defensible default: an entry whose
+         review state is unknown is unreviewed. The true worklist is 394. */
+      if (!cond.review_status) cond.review_status = "NEEDS_CLINICAL_REVIEW";
+
       /* Ensure every condition has all required fields */
       if (!cond.req)        cond.req = [];
       if (!cond.sup)        cond.sup = [];

@@ -143,6 +143,30 @@ function renderAdvisory() {
       }
     }
     h += '<div class="adv-sec">Differentials <span style="color:var(--sv);font-weight:400">· ranked</span></div>';
+
+    /* KNOWLEDGE-BASE VERIFICATION STATE, stated once, here.
+       (Added 2026-08-01 after an independent review found that a clinician
+       had no way to know how much of the knowledge base a clinician had
+       actually checked — the answer today is none of it.)
+
+       Deliberately ONE line at the top rather than a badge on every row:
+       with 394 of 394 entries unverified, per-row marking is noise that gets
+       tuned out within a day, and alert fatigue on a safety marker is worse
+       than no marker. When the verified share rises this becomes genuinely
+       informative rather than uniform. */
+    if (typeof KNOWLEDGE_ALL !== "undefined" && KNOWLEDGE_ALL.length) {
+      var _kbVer = 0;
+      for (var _kv = 0; _kv < KNOWLEDGE_ALL.length; _kv++) {
+        if (KNOWLEDGE_ALL[_kv].review_status === "VERIFIED_BY_CLINICIAN") _kbVer++;
+      }
+      if (_kbVer < KNOWLEDGE_ALL.length) {
+        h += '<div style="font-size:.5rem;line-height:1.4;color:var(--md);background:var(--sn);' +
+          'border-radius:var(--r);padding:4px 6px;margin-bottom:5px">' +
+          '<b>' + _kbVer + ' of ' + KNOWLEDGE_ALL.length + '</b> knowledge-base entries have been ' +
+          'verified by a clinician. The rest are drafted and unreviewed — weigh them accordingly.' +
+          '</div>';
+      }
+    }
     var maxToShow = Math.min(V.dxList.length, 6);
     for (var di = 0; di < maxToShow; di++) {
       var d = V.dxList[di];
