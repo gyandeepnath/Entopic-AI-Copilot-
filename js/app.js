@@ -384,6 +384,10 @@ function homeSecResearch() {
       '<div class="home-settings-desc">' + visits + ' encounters · ' + cases + ' de-identified cases on this device.</div>' +
       '<button class="btn btn-p" onclick="showAnalytics(\'researcher\')" style="font-size:.62rem">Open research analytics</button>' +
     '</div>' +
+    /* Prevalence, trends and care patterns over the CONSENTED corpus,
+       computed offline. Distinct from the analytics above, which reads this
+       device's visits: this reads only records patients agreed to contribute. */
+    (typeof insightsCardHtml === "function" ? insightsCardHtml() : "") +
     (typeof dataExportCard === "function" ? dataExportCard() : "") +
     homeCardCasebook() +
     homeCardKB();
@@ -630,6 +634,17 @@ function homeSecAccount() {
     : '<div class="home-settings-status" style="color:var(--md)">⚠ No key — diagnostic engine works offline, interpretive remarks disabled</div>';
   return '<div class="home-hd"><h1>Account</h1></div>' +
     homeCardTier() +
+    /* Reporting is reachable from every role, not just clinicians: the person
+       most likely to notice a knowledge-base error is whoever is looking at
+       it, which is as often a student or faculty member as a consultant. */
+    (typeof feedbackButtonHtml === "function"
+      ? '<div class="home-settings" style="margin-top:8px">' +
+          '<div class="home-settings-title">Report a problem or suggestion</div>' +
+          '<div class="home-settings-desc">Something wrong with the clinical content, a bug, or an idea. ' +
+            'Goes to your administrator. Works offline — patient details are never sent.</div>' +
+          feedbackButtonHtml("account") +
+        '</div>'
+      : "") +
     '<div class="home-settings" style="margin-top:8px">' +
       '<div class="home-settings-title">🔑 AI Interpretive Engine (Claude API)</div>' +
       '<div class="home-settings-desc">Optional. Provides clinical remarks and speech parsing. The diagnostic engine runs fully offline without this.</div>' +
@@ -653,6 +668,9 @@ function homeSecAdmin() {
   var users = loadUsers();
 
   return '<div class="home-hd"><h1>Admin</h1></div>' +
+    /* First on the page: open reports, clinical concerns at the top. */
+    (typeof feedbackAdminCard === "function" ? feedbackAdminCard() : "") +
+    (typeof insightsCardHtml === "function" ? insightsCardHtml() : "") +
     '<div class="study-hero">Super admin — every feature unlocked, unlimited saving, all modes available. This gate is a convenience lock on a local offline app; real authentication arrives with the backend.</div>' +
 
     '<div class="stats">' +

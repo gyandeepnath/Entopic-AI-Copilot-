@@ -152,7 +152,12 @@ function pgDemo() {
     '<div class="btn-g">' +
       '<button class="btn btn-p" onclick="goNext(\'demographics\',\'chief_complaint\')">Continue →</button>' +
     '</div>' +
-  '</div>';
+  '</div>' +
+  /* Data-use consent lives on the registration step, where identity is
+     already being discussed and the answer can be asked for once. It is
+     explicitly optional and separate from care — see js/consent.js. */
+  (typeof consentCardHtml === "function" && typeof CP !== "undefined" && CP
+    ? consentCardHtml(CP) : "");
 }
 
 

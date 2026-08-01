@@ -2404,3 +2404,102 @@ input, select, textarea, button {
 .val-excl { font-size: .6rem; color: var(--md); margin: 6px 0; }
 .val-actions { display: flex; gap: 8px; margin: 12px 0 6px; flex-wrap: wrap; }
 .val-subnote { font-size: .58rem; color: var(--md); line-height: 1.5; border-top: 1px dashed var(--ms); padding-top: 6px; }
+
+/* ── Feedback & reports ──────────────────────────────────────────
+   One reporting surface for every role, and an organised admin queue.
+   Clinical concerns are visually distinct because a safety report that
+   looks like a feature request gets read like one. */
+.fb-modal { position: fixed; inset: 0; z-index: 10001; background: rgba(0,0,0,.45);
+  display: flex; align-items: center; justify-content: center; padding: 16px; }
+.fb-card { background: var(--wh); border-radius: var(--r); max-width: 560px; width: 100%;
+  max-height: 90vh; overflow-y: auto; padding: 16px 18px; box-shadow: 0 10px 40px rgba(0,0,0,.3); }
+.fb-head { display: flex; align-items: center; justify-content: space-between; font-size: .82rem; }
+.fb-x { background: none; border: 0; font-size: .9rem; cursor: pointer; color: var(--sl); }
+.fb-sub { font-size: .6rem; color: var(--sl); margin: 4px 0 10px; }
+.fb-label { font-size: .58rem; font-weight: 600; margin: 10px 0 4px; color: var(--ink); }
+.fb-cats, .fb-sevs { display: flex; flex-wrap: wrap; gap: 5px; }
+.fb-cat, .fb-sev { font: inherit; font-size: .6rem; padding: 4px 10px; border-radius: 99px;
+  border: 1px solid var(--ms); background: var(--wh); color: var(--sl); cursor: pointer; }
+.fb-cat-on, .fb-sev-on { background: var(--ink); color: var(--wh); border-color: var(--ink); }
+.fb-cat-clin { border-color: #b9770e; color: #8a5a08; }
+.fb-cat-clin.fb-cat-on { background: #8a2318; border-color: #8a2318; color: #fff; }
+.fb-hint { font-size: .58rem; color: var(--md); background: var(--sn); border-radius: var(--r);
+  padding: 6px 8px; margin-top: 6px; }
+.fb-input, .fb-text { width: 100%; font: inherit; font-size: .64rem; padding: 5px 7px;
+  border: 1px solid var(--fg); border-radius: 3px; background: var(--wh); color: var(--ink); }
+.fb-text { resize: vertical; }
+.fb-note { font-size: .55rem; color: var(--sl); margin-top: 8px; line-height: 1.45; }
+.fb-err { font-size: .6rem; color: #8a2318; margin-top: 8px; }
+.fb-actions { display: flex; gap: 6px; justify-content: flex-end; margin-top: 12px; }
+.fb-open { font-size: .6rem; }
+
+.fb-count { font-size: .58rem; font-weight: 500; color: #8a2318; }
+.fb-alert { font-size: .62rem; background: #fdecea; border: 1px solid #e6a49c; color: #8a2318;
+  padding: 6px 8px; border-radius: var(--r); margin-bottom: 8px; }
+.fb-chips { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 8px; }
+.fb-chip { font: inherit; font-size: .58rem; padding: 3px 9px; border-radius: 99px;
+  border: 1px solid var(--ms); background: var(--wh); color: var(--sl); cursor: pointer; }
+.fb-chip-on { background: var(--ink); color: var(--wh); border-color: var(--ink); }
+.fb-chip-clin { border-color: #c0392b; color: #8a2318; }
+.fb-chip-live b { color: #8a2318; }
+.fb-list { max-height: 460px; overflow-y: auto; }
+.fb-empty { font-size: .6rem; color: var(--sv); padding: 10px; text-align: center; }
+.fb-row { border-top: 1px solid var(--cl); }
+.fb-row-clin { border-left: 3px solid #c0392b; }
+.fb-row-head { display: flex; align-items: center; gap: 7px; padding: 6px 4px; cursor: pointer;
+  font-size: .6rem; }
+.fb-row-cat { color: var(--sl); white-space: nowrap; }
+.fb-row-sub { flex: 1; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fb-row-meta { color: var(--sv); font-size: .54rem; white-space: nowrap; }
+.fb-badge { font-size: .5rem; text-transform: uppercase; padding: 1px 5px; border-radius: 3px;
+  background: var(--fg); color: var(--sl); }
+.fb-badge-blocking { background: #8a2318; color: #fff; }
+.fb-badge-major { background: #b9770e; color: #fff; }
+.fb-status { font-size: .52rem; text-transform: uppercase; color: var(--sv); }
+.fb-status-resolved { color: #2e7d46; }
+.fb-status-open { color: #b9770e; }
+.fb-row-body { padding: 4px 8px 10px; background: var(--sn); }
+.fb-quote { font-size: .62rem; white-space: pre-wrap; line-height: 1.5; }
+.fb-meta { font-size: .54rem; color: var(--sv); margin-top: 5px; }
+.fb-notes { margin-top: 6px; border-top: 1px solid var(--cl); padding-top: 5px; }
+.fb-note-row { font-size: .55rem; color: var(--sl); padding: 1px 0; }
+.fb-triage { margin-top: 7px; display: flex; flex-direction: column; gap: 5px; }
+.fb-triage-btns { display: flex; gap: 5px; flex-wrap: wrap; }
+.fb-triage-btns .btn { font-size: .56rem; padding: 2px 8px; }
+
+/* ── Consent & insights ──────────────────────────────────────────
+   The consent block shows the patient the exact wording they are agreeing
+   to, read off the same data the code enforces — so the promise on screen
+   and the behaviour in the corpus cannot drift apart. */
+.cons-card { margin-top: 8px; }
+.cons-intro { font-size: .6rem; color: var(--sl); line-height: 1.5; margin-bottom: 8px; }
+.cons-block { border-top: 1px solid var(--cl); padding: 8px 0; }
+.cons-label { font-size: .64rem; font-weight: 600; }
+.cons-text { font-size: .6rem; color: var(--ink); font-style: italic; margin: 3px 0 5px;
+  padding-left: 8px; border-left: 2px solid var(--ms); line-height: 1.5; }
+.cons-fields { display: flex; flex-wrap: wrap; gap: 10px; font-size: .54rem; color: var(--sl); }
+.cons-ex { color: #2e7d46; }
+.cons-state { font-size: .58rem; margin: 6px 0 5px; color: var(--sl); }
+.cons-state-granted { color: #2e7d46; }
+.cons-state-refused, .cons-state-withdrawn { color: var(--md); }
+.cons-stale { color: #b9770e; }
+.cons-btns { display: flex; gap: 5px; flex-wrap: wrap; }
+.cons-btns .btn { font-size: .58rem; padding: 3px 10px; }
+.cons-foot { font-size: .54rem; color: var(--sv); margin-top: 8px; line-height: 1.45; }
+
+.ins-meta { font-size: .58rem; color: var(--sl); margin-bottom: 6px; }
+.ins-warn { font-size: .58rem; background: #fdf6e3; border: 1px solid #e0cfa0; color: #7a5c00;
+  padding: 5px 7px; border-radius: var(--r); margin-bottom: 7px; line-height: 1.45; }
+.ins-sec { font-size: .58rem; font-weight: 600; margin: 10px 0 4px; text-transform: uppercase;
+  letter-spacing: .04em; color: var(--sl); }
+.ins-row { display: flex; justify-content: space-between; align-items: baseline; gap: 10px;
+  font-size: .62rem; padding: 2px 0; border-bottom: 1px solid var(--cl); }
+.ins-label { color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ins-val { white-space: nowrap; }
+.ins-n { color: var(--sv); font-size: .55rem; }
+.ins-supp { color: var(--sv); font-size: .55rem; font-style: italic; }
+.ins-note { font-size: .55rem; color: var(--sv); margin-top: 4px; line-height: 1.45; }
+.ins-caveat { font-size: .55rem; color: var(--md); margin-top: 10px; padding-top: 6px;
+  border-top: 1px solid var(--fg); line-height: 1.5; }
+.ins-actions { margin-top: 8px; }
+.ins-actions .btn { font-size: .6rem; }

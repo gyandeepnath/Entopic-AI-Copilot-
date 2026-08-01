@@ -616,10 +616,24 @@ function completeVisit() {
     logAudit("visit_completed", "Visit completed — leading impression: " + lead, { patient_id: CP, visit_id: CV });
   }
 
-  /* Build anonymized encounter if registry opt-in */
-  var settings = loadSettings();
-  if (settings.registry_optin) {
-    buildAnonymizedEncounter();
+  /* Contribute to the research corpus.
+
+     Gated on the PATIENT's explicit consent, not on a practice-wide setting.
+     The old code captured every completed visit whenever a clinic-level
+     `registry_optin` flag was on — a practice cannot consent on a patient's
+     behalf to secondary use of their data, so that flag was collecting
+     liability rather than a usable corpus. corpusCapture() refuses, with a
+     reason, unless this patient has granted research consent against the
+     current wording (js/consent.js). */
+  if (typeof corpusCapture === "function" && typeof P !== "undefined" && P) {
+    try {
+      /* Pass the stored visit's date: it lives on the wrapper, not on V. */
+      var _cvRec = null, _cvList = loadVisits();
+      for (var _ci = 0; _ci < _cvList.length; _ci++) {
+        if (_cvList[_ci].id === CV) { _cvRec = _cvList[_ci]; break; }
+      }
+      corpusCapture(V, P, { visitDate: _cvRec && (_cvRec.date || _cvRec.created) });
+    } catch (e) {}
   }
 
   alert("Visit marked as completed.");
