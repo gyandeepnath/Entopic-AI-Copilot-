@@ -6,6 +6,71 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-08-01 — Layer violations closed, a drug-matching bug fixed, and the docs made true
+
+Continuing from recommendations to actual fixes.
+
+**The engine's medication check was reporting drugs the patient wasn't taking.**
+`js/medication-checker.js` had no tests at all, which matters because its output
+is both shown to you as a medication review *and* fed into the diagnostic engine
+as risk tokens. Matching was a plain substring search, so "chloroquine" matched
+inside "hydroxychloroquine" — two separate entries. A patient on
+hydroxychloroquine, which is very common in lupus and rheumatoid arthritis, was
+listed as taking chloroquine as well. That is fabricated clinical information in
+front of a clinician.
+
+A drug name must now start at a word boundary. It may still continue, on
+purpose: clinicians write "steroids" and "SSRIs", and refusing to match the
+plural would mean *missing* a real drug exposure — the more dangerous mistake.
+
+The same bug existed in a **second, independently written copy** inside
+`js/ui-advisory.js`. Fixing one would have left the other wrong. Both now call
+one function. A sweep for other duplicated logic across the codebase found only
+one more instance, and it was harmless.
+
+**The layering violations are gone.** A 40-line event bus (`js/events.js`) lets
+the storage and sync layers report what happened without naming the screen that
+reacts. Storage no longer builds its own warning banners; sync no longer calls
+the home page by name; and `knowledge/age-classification.js` is clinical data
+again rather than a file that wrote to browser storage.
+
+**A sixth unprotected store, found on the way.** Your age-bracket decisions —
+which age band each condition belongs to — were being written to a raw browser
+key from inside the knowledge folder. No corruption check, no mirror, no backup,
+and a failed write was silently swallowed. Now protected like everything else,
+and migrated automatically.
+
+**A bug my own tests missed and a browser probe caught:** recording an
+age-bracket decision saved it correctly but never applied it to the live
+knowledge base — only the admin screen remembered to re-apply. Any other route
+would have stored a clinical decision that did nothing. Storing and applying are
+now one operation.
+
+**The documentation is true again.** `ARCHITECTURE.md` said v1.1 and 72 files
+against an actual v1.4.0 and 97; its file inventory is now generated from the
+code rather than hand-written, and four tests fail if it drifts again. The
+twelve architectural decisions are written down for the first time in
+`docs/adr/` — including two marked **NOT MADE** (regulatory classification, and
+whether Entopic becomes managed multi-tenant SaaS) because those are decisions
+being avoided rather than taken, and one marked **Accepted by accident**, which
+is honestly what happened to roles-as-authorization.
+
+Also: the console said "Entopic v1.0" for four releases, which is the wrong
+answer to the first question support ever asks. Versions bumped to 1.4.0 / KB
+1.3.1. Added `tools/serve.sh` for the rare case a browser refuses something on a
+`file://` page.
+
+**Left alone deliberately, and flagged for you:**
+- The medication checker does not understand negation — "no steroids" still
+  matches. Teaching it to suppress on negation risks hiding a real drug
+  exposure, which is the dangerous direction. **Your call.**
+- I did not build a structured logging system. Four boot messages in the console
+  is right-sized for a solo-founder product; a logging framework would be
+  over-engineering.
+
+684/684 tests pass, audit 0 FAIL. Verified in a real browser: 394 conditions, 63
+red flags, every alert renders, no new errors.
+
 ## 2026-08-01 — Five stores had no protection at all. Now they do.
 
 Moving from the audit's recommendations to actually fixing them.

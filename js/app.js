@@ -1921,6 +1921,11 @@ function esc(s) { return escHtml(s); }
     console.log("Entopic: Knowledge base not loaded — diagnostic engine will use fallback");
   }
 
-  console.log("Entopic v1.0 initialized");
+  /* The version the clinic is actually running. This line said "v1.0" for
+     four releases, which is exactly the wrong thing for the first question
+     support ever asks. buildLabel() reads js/build-info.js, which CI checks
+     is bumped whenever js/ or knowledge/ changes. */
+  console.log(((typeof buildLabel === "function") ? buildLabel() : "Entopic (version unknown)") +
+              " — initialized");
 
 })();

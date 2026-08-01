@@ -1,10 +1,27 @@
 # Entopic — System Architecture & Scaling Blueprint
 
-**Document version:** 1.0
-**Covers build:** Entopic v1.1 (72 js/knowledge files, 394 conditions across 9 domains)
-**Counts last verified:** 2026-07-26 by `node tools/audit.js`, which fails the build if this drifts again.
+**Document version:** 1.1
+**Covers build:** Entopic v1.4.0, KB v1.3.1 — 97 loaded files (76 in `js/`, 21 in
+`knowledge/`), 394 conditions across 9 domains, 67 test files.
+**Counts last verified:** 2026-08-01, regenerated from `index.html` and the repo.
 **Purpose:** A ground-truth teardown of everything in the current system, followed by a target architecture that keeps the same UI and concept but rebuilds the foundations for scale, onboarding, a stable backend, an independent continuously-looping diagnostic engine, and a trustworthy evidence-based knowledge base.
 **Standing constraint:** Entopic is advisory decision-support. Every diagnostic output requires clinical correlation. Nothing here changes that contract.
+
+> **Read this first — where the real detail now lives.**
+> This document was written against v1.1 and describes the system's *shape*,
+> which is still accurate. It is no longer the most current or most detailed
+> account. Newer, measured analysis lives in `docs/`:
+>
+> | For | Read |
+> |---|---|
+> | What every module does and how it is wired | `docs/PHASE0_SYSTEM_UNDERSTANDING.md` |
+> | Whether the architecture survives ten years | `docs/PHASE1_ARCHITECTURE_REVIEW.md` |
+> | Diagrams, ADRs, the ranked Top 100 | `docs/PHASE1_ADDENDUM_DIAGRAMS_ADRS_TOP100.md` |
+> | Why each significant decision was made | `docs/adr/` |
+> | Commercial readiness, honestly | `docs/CTO_LAUNCH_REVIEW_2026-08-01.md` |
+> | What changed and why, newest first | `CHANGELOG.md` |
+>
+> Where this document and the code disagree, **the code wins** — check it.
 
 ---
 
@@ -101,6 +118,56 @@ A thin CRUD layer over `localStorage`, namespaced with the `entopic_` prefix, st
 - **Anonymized encounter builder:** `buildAnonymizedEncounter()` strips PII and retains age bracket, sex, symptom/finding/diagnosis tokens, a coarse `treatment_category` (via keyword bucketing in `categorizeTreatment`), referral type, and completeness — queued locally on visit completion **if registry opt-in is set**. This is the seed of the clinical-validation pipeline that Part II formalizes.
 
 **Structural note:** all visits for all patients live in one array under one key. Every save rewrites the entire array. This is O(n) per save and shares a single 5 MB budget across the whole clinic — fine for a demo, a wall for onboarding.
+
+## 4a. Two seams added on 2026-08-01
+
+Both were recommendations in the Phase 1 review. Both are now code.
+
+### The data classification table (`js/data-classification.js`)
+
+**One** declaration of what every stored thing is and how it must be protected
+— class, encrypt, mirror, backup, shape, and a written reason. The IndexedDB
+mirror and the backup payload derive their lists from it at runtime.
+
+This replaced three hand-maintained lists in three files, which had drifted
+exactly as you would predict: the audit trail was encrypted and backed up but
+never mirrored; `consents`, `research_corpus`, `research_salt` and `feedback`
+had no protection at all; and the founder's age-bracket overrides were being
+written straight to a raw `localStorage` key from inside `knowledge/`.
+
+`VAULT_PROTECTED` in `local-vault.js` is deliberately **still a literal**. A
+derived list that evaluated to empty — if the table failed to load — would mean
+patient records written in plaintext while the UI still said the vault was on.
+That failure is silent and it is a confidentiality breach, so encryption keeps
+a list that fails safe, and a test asserts the two agree.
+
+### The event bus (`js/events.js`)
+
+Forty lines of synchronous publish/subscribe. It exists to stop the bottom of
+the stack reaching up to the top:
+
+| Event | Emitted by | Heard by |
+|---|---|---|
+| `storage:write-failed` / `storage:write-ok` | `storage.js` | `ui-storage-banners.js` |
+| `storage:corrupt` | `storage.js` | `ui-storage-banners.js` |
+| `visit:conflict` | `storage.js` | `ui-storage-banners.js` |
+| `visit:saved` | `storage.js` | `ui-storage-banners.js` |
+| `sync:applied` | `cloud-sync.js` | `ui-storage-banners.js` |
+
+Two design choices worth keeping:
+
+- **Synchronous.** A corrupt-store warning deferred to a microtask is a warning
+  the clinician may act before seeing.
+- **A throwing handler never reaches the emitter.** The emitter is usually a
+  save path; a broken banner must not become a lost record.
+
+The new failure mode events introduce is silence — rename an emitter, or stop
+loading the listener file, and the alert simply never appears while nothing
+crashes. `tests/events.test.js` closes it: every emitted event must have a
+subscriber, every subscriber must await an event something emits, and the
+listener file must load before `app.js`.
+
+---
 
 ## 5. The knowledge base
 
@@ -574,40 +641,115 @@ Each phase is independently shippable and independently valuable; none requires 
 
 ---
 
-# APPENDIX A — File inventory (33 files)
+# APPENDIX A — File inventory
 
-**Root**
-- `index.html` (242) — page shell, three pages (login/home/exam), modals, canvas overlay, ordered script tags.
-- `README.md` (256) — setup guide.
+Generated from the `<script>` order in `index.html`, which IS the dependency
+graph in a build-step-free app. 97 loaded files.
 
-**`/css`**
-- `entopic.css` (1598) — full styling system (design tokens, three-column exam grid, panels, forms).
+**Root** — `index.html` (546), `css/entopic.css` (2506)
 
-**`/knowledge`** (KB + token infrastructure)
-- `surface.js` (314, 29 conditions), `corneal.js` (285, 25), `retina.js` (256, 22), `neuro.js` (155, 13), `binocular.js` (118, 10), `refractive.js` (63, 5), `glaucoma.js` (98, 8), `anterior.js` (120, 10), `lens.js` (97, 8).
-- `token-dictionary.js` (219) — 183 token → alias mappings.
-- `finding-token-map.js` (206) — 171 finding → token mappings.
-- `medications.js` (164) — systemic-drug ocular-effect DB.
-- `loader.js` (209) — KB assembly + derived indexes + helpers.
+**`/knowledge`** — 21 files, loaded first, in this order:
 
-**`/js`** (core)
-- `data-model.js` (933) — master schema, 22 steps, clinical constants/norms, Hofstetter, age brackets.
-- `storage.js` (385) — localStorage CRUD, autosave, export/import, anonymized encounter builder.
-- `engine.js` (1207) — the 12-stage diagnostic pipeline.
+- `surface.js` (351)
+- `corneal.js` (293)
+- `retina.js` (266)
+- `neuro.js` (203)
+- `binocular.js` (127)
+- `refractive.js` (73)
+- `glaucoma.js` (105)
+- `anterior.js` (162)
+- `lens.js` (106)
+- `medications.js` (165)
+- `token-dictionary.js` (221)
+- `finding-token-map.js` (214)
+- `token-registry.js` (7980)
+- `icd-map.js` (910)
+- `expansion.js` (938)
+- `condition-info.js` (4116)
+- `verified.js` (23)
+- `common-conditions.js` (98)
+- `age-classification.js` (135)
+- `clinical-scales.js` (206)
+- `loader.js` (385)
 
-**`/js`** (UI)
-- `ui-sidebar.js` (90), `ui-advisory.js` (189), `ui-pages.js` (881), `ui-pages-2.js` (428), `ui-report.js` (385), `ui-flowmap.js` (485).
+**`/js`** — 76 files, in load order:
 
-**`/js`** (features)
-- `speech.js` (306), `claude.js` (292), `drawing.js` (381), `medication-checker.js` (162), `smart-intake.js` (406), `spectacle-advisor.js` (266).
-- `risk-calc.js` is **no longer here** — quarantined, see §8.
-
-**`/js`** (shared primitives, loaded first)
-- `dom-escape.js` — the one canonical `escHtml`/`escAttrJs`. Every other `esc*` delegates to it; `tests/generated-patterns.test.js` fails if a non-delegating escaper appears (this is how R-1, a stored-XSS hole, happened).
-- `browser-io.js` — the one `dlSaveAs()` (replaced four drifted copies) and `lsSet`/`lsGet`/`lsRemove`. Reads never throw; **writes return a boolean and raise the storage write-failure banner** rather than swallowing the error. Must load before any module that calls it (asserted).
-
-**`/js`** (init)
-- `app.js` (725) — auth, routing, patient/visit management, autosave, global state.
+- `dom-escape.js` (67)
+- `build-info.js` (78)
+- `browser-io.js` (101)
+- `kb-authoring.js` (312)
+- `data-classification.js` (166)
+- `events.js` (86)
+- `data-model.js` (1275)
+- `storage-mirror.js` (247)
+- `local-vault.js` (793)
+- `cloud-config.js` (68)
+- `kb-remote.js` (400)
+- `kb-signoffs.js` (287)
+- `kb-review.js` (241)
+- `cloud-crypto.js` (265)
+- `cloud-sync.js` (702)
+- `clinical-record.js` (591)
+- `consent.js` (231)
+- `research-corpus.js` (464)
+- `insights.js` (278)
+- `feedback.js` (257)
+- `storage.js` (811)
+- `storage-backup.js` (355)
+- `ui-storage-banners.js` (134)
+- `age-brackets.js` (136)
+- `auth-crypto.js` (167)
+- `clinic-mode.js` (231)
+- `roles.js` (370)
+- `clinical-validators.js` (109)
+- `engine.js` (2046)
+- `ui-sidebar.js` (150)
+- `clinical-scales.js` (371)
+- `medication-checker.js` (185)
+- `ui-advisory.js` (408)
+- `ui-pages.js` (1258)
+- `ui-pages-2.js` (539)
+- `module-links.js` (209)
+- `simulation-progress.js` (236)
+- `simulation-presentation.js` (393)
+- `simulation-realism.js` (314)
+- `simulation.js` (417)
+- `osce.js` (240)
+- `assignments.js` (231)
+- `simulation-ui.js` (544)
+- `osce-ui.js` (155)
+- `assignments-ui.js` (222)
+- `clinics.js` (399)
+- `clinics-ui.js` (111)
+- `ui-modules.js` (309)
+- `ui-report.js` (545)
+- `reasoning-views.js` (895)
+- `ui-quiz.js` (415)
+- `analytics.js` (287)
+- `data-export.js` (211)
+- `ui-flowmap.js` (753)
+- `ui-age-brackets.js` (138)
+- `ui-kb-editor.js` (354)
+- `ui-validation.js` (538)
+- `ui-research.js` (196)
+- `ui-feedback.js` (247)
+- `ui-deployment.js` (422)
+- `ui-vault.js` (244)
+- `ui-chart.js` (331)
+- `file-store.js` (340)
+- `ui-attach.js` (184)
+- `speech.js` (307)
+- `claude.js` (320)
+- `drawing-guide.js` (123)
+- `drawing.js` (823)
+- `smart-intake.js` (428)
+- `spectacle-advisor.js` (276)
+- `certificates.js` (209)
+- `certificates-ui.js` (134)
+- `investigations.js` (593)
+- `investigations-ui.js` (294)
+- `app.js` (1927)
+- `error-boundary.js` (162)
 
 ---
 
