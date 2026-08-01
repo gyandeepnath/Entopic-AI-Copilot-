@@ -6,6 +6,31 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-08-01 — Independent bug hunt: nothing found (after I corrected myself three times)
+
+Drove the real app in a browser at three screen widths — desktop, tablet, phone
+— rather than testing the test doubles. Signed up through the actual form,
+opened a real exam, fired all four red-flag cases, rendered all five roles, and
+round-tripped a patient through the real save path.
+
+**Result: no defects.** 394 conditions, 63 red flags, every alert renders, every
+role draws, storage round-trips, no console errors beyond the expected offline
+network fetch.
+
+Worth recording *how* that result was reached, because the first run reported
+eighteen serious-looking failures and **every one of them was my probe being
+wrong, not the app**:
+
+- I called `runEngine()`; the function is `runDiagnosticEngine()`.
+- I looked for the advisory panel while sitting on the home page; it lives on
+  the exam page, in `#advEl`.
+- I set RAPD as `V.pup`; the field is `V.pupil`.
+
+Any of those, reported without checking, would have been a false alarm sending
+you to look at working code. This is the same trap as the two false criticals in
+the launch review, and it is why the rule stands: **check the probe before
+believing the finding.**
+
 ## 2026-08-01 — Layer violations closed, a drug-matching bug fixed, and the docs made true
 
 Continuing from recommendations to actual fixes.
