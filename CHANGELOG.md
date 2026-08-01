@@ -6,6 +6,34 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-08-01 — CTO launch review: the review worklist was 53% larger than believed
+
+Independent re-review that deliberately did not trust earlier sessions.
+Full report: `docs/CTO_LAUNCH_REVIEW_2026-08-01.md`.
+
+**The worklist was 394, not 257.** `knowledge/loader.js` stamped
+`NEEDS_CLINICAL_REVIEW` onto the expansion batch only. The nine base domain
+files carry no `review_status` field at all, so **137 conditions never entered
+the review queue** and sat in a bucket labelled "Curated" — which reads as
+"someone checked these". Nobody had. They are the original, most commonly hit
+conditions: a routine dry-eye presentation returns three results and all three
+were among them. The loader now fails closed: an entry whose review state is
+unknown is unreviewed.
+
+**The clinician could not see it.** Nothing indicated how much of the knowledge
+base had been verified; drafted entries looked identical to signed ones. One
+line now states it at the top of the differentials.
+
+**Not fixed, because it cannot be fixed in the client:** a student account
+becomes an administrator with one line (`CU.admin = true`), persists it, and
+exports every record — proven by browser probe. The role system is a UI
+convenience, not a security boundary. That is a blocker for multi-user clinics
+and irrelevant for a single clinician on their own device.
+
+**Verdict:** deploy to the founder's own clinic; sell to nobody until a
+clinician has signed the knowledge base and a human other than its author has
+read the code. Neither blocker is an engineering problem.
+
 ## 2026-07-31 — Verified risk scale, durable sign-offs, and two critical data-loss fixes
 
 Four pieces of work. Full reports: `docs/TEST_AUDIT_2026-07-31.md`,
