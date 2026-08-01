@@ -132,3 +132,57 @@ test("index.html loads age-classification BEFORE the loader that applies it", ()
   assert.ok(a > 0, "age-classification.js is loaded by the app");
   assert.ok(a < b, "it must load before loader.js, which applies it");
 });
+
+
+/* ═══ Persistence moved out of knowledge/ (2026-08-01) ═══ */
+
+test("recording a bracket decision also puts it into effect", () => {
+  /* Found by a browser probe, not by a unit test: the decision was written to
+     the store correctly and never reached the knowledge base, because only the
+     admin screen remembered to re-apply. Any other caller — a restore, a sync,
+     a future screen — would have stored a clinical decision that did nothing.
+     Storing and applying must be one operation. */
+  const src = fs.readFileSync(path.resolve(__dirname, "..", "js/age-brackets.js"), "utf8");
+  const setFn = /function ageBracketSet\([\s\S]*?\n}/.exec(src);
+  assert.ok(setFn, "ageBracketSet not found");
+  assert.ok(/ageBracketApplyAll\(\)/.test(setFn[0]),
+    "ageBracketSet must apply the decision, not rely on its caller to remember");
+});
+
+test("applyAgeBracket is pure — it takes overrides, it does not read storage", () => {
+  /* This is what lets knowledge/ stay portable data. */
+  const raw = fs.readFileSync(
+    path.resolve(__dirname, "..", "knowledge/age-classification.js"), "utf8");
+  /* Comments stripped: the file explains at length why it no longer does this,
+     and the explanation naturally names the thing it stopped doing. */
+  const kb = raw.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:\\])\/\/[^\n]*/g, "$1");
+  assert.ok(!/localStorage/.test(kb),
+    "knowledge/age-classification.js must not touch localStorage — persistence " +
+    "belongs in js/age-brackets.js");
+  assert.ok(/function applyAgeBracket\(cond, overrides\)/.test(kb),
+    "overrides must be injected, not fetched");
+});
+
+test("applyAgeBracket is idempotent — the second pass still lands", () => {
+  /* It runs twice in a normal boot: once at KB assembly with suggestions only,
+     once after storage is available with the founder's confirmed overrides. A
+     naive second run finds no `young_age` left to replace and silently does
+     nothing, so a confirmed bracket would never reach the engine. */
+  const { applyAgeBracket } = require("../knowledge/age-classification.js");
+  const cond = { name: "Test Condition", req: ["young_age", "pain"], sup: [], tests: [] };
+
+  applyAgeBracket(cond, {});                                   /* pass 1: suggestion only */
+  const afterFirst = cond.req.slice();
+
+  applyAgeBracket(cond, { "Test Condition": "young_adult_age" }); /* pass 2: confirmed */
+  assert.ok(cond.req.includes("young_adult_age"),
+    "the confirmed bracket must replace whatever the first pass left: " +
+    JSON.stringify(afterFirst) + " -> " + JSON.stringify(cond.req));
+  assert.ok(!cond.req.includes("young_age"), "the deprecated token must be gone");
+  assert.strictEqual(cond.age_bracket_status, "VERIFIED_BY_CLINICIAN");
+
+  /* And a third pass with the same override must not corrupt anything. */
+  applyAgeBracket(cond, { "Test Condition": "young_adult_age" });
+  assert.strictEqual(cond.req.filter((t) => t === "young_adult_age").length, 1,
+    "re-applying must not duplicate the token");
+});

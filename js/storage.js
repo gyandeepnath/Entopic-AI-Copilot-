@@ -117,9 +117,7 @@ function storageNoteCorrupt(key, raw, reason) {
     try { logAudit("storage_corrupt", "The '" + key + "' store could not be read: " +
       STORE_CORRUPT[key].reason, {}); } catch (e) {}
   }
-  if (typeof storageShowCorrupt === "function") {
-    try { storageShowCorrupt(key, STORE_CORRUPT[key]); } catch (e) {}
-  }
+  if (typeof evEmit === "function") evEmit("storage:corrupt", { key: key, info: STORE_CORRUPT[key] });
   return STORE_CORRUPT[key];
 }
 
@@ -230,17 +228,13 @@ function storageNoteWriteFailure(key, reason) {
   if (STORAGE_FAILED && STORAGE_FAILED.key === key) STORAGE_FAILED.count++;
   else STORAGE_FAILED = { key: key, reason: reason, at: new Date().toISOString(), count: 1 };
   _storageWarned = true;
-  if (typeof storageShowWriteFailure === "function") {
-    try { storageShowWriteFailure(STORAGE_FAILED); } catch (e) {}
-  }
+  if (typeof evEmit === "function") evEmit("storage:write-failed", STORAGE_FAILED);
 }
 
 function storageNoteWriteOk(key) {
   if (STORAGE_FAILED && STORAGE_FAILED.key === key) {
     STORAGE_FAILED = null;
-    if (typeof storageClearWriteFailure === "function") {
-      try { storageClearWriteFailure(); } catch (e) {}
-    }
+    if (typeof evEmit === "function") evEmit("storage:write-ok", null);
   }
 }
 
@@ -539,9 +533,7 @@ function doSave() {
               "Another window had saved this visit (" + conflict.by + "). That version was " +
               "preserved on the record rather than discarded.", { visit_id: CV }); } catch (e) {}
           }
-          if (typeof storageShowVisitConflict === "function") {
-            try { storageShowVisitConflict(conflict); } catch (e) {}
-          }
+          if (typeof evEmit === "function") evEmit("visit:conflict", conflict);
         }
       }
       visits[i].data = V;
@@ -585,12 +577,9 @@ function doSave() {
   }
   savePatients(patients);
 
-  /* Flash save indicator */
-  var el = document.getElementById("saveInd");
-  if (el) {
-    el.classList.add("show");
-    setTimeout(function() { el.classList.remove("show"); }, 1200);
-  }
+  /* The visit was written. Whether that shows as a flashing indicator, a
+     toast, or nothing at all is not this layer's business. */
+  if (typeof evEmit === "function") evEmit("visit:saved", { patient_id: P && P.id, visit_id: V && V.id });
 }
 
 
@@ -814,95 +803,8 @@ function getStorageStats() {
 }
 
 
-/* ═══════════════════════════════════════════════════════════════ */
-/* WRITE-FAILURE BANNER (browser only)                             */
-/*                                                                  */
-/* Deliberately a STICKY banner, not an alert(). An alert is shown  */
-/* once, dismissed reflexively mid-consultation, and then the       */
-/* clinician works on believing records are saving. This stays on   */
-/* screen until writes succeed again.                               */
-/* ═══════════════════════════════════════════════════════════════ */
-/* Guarded on BOTH document and window: a test harness may stub one without the
-   other, and this block must never be the reason storage.js fails to load. */
-if (typeof document !== "undefined" && typeof window !== "undefined" && document.createElement) {
-
-  window.storageShowWriteFailure = function (state) {
-    var el = document.getElementById("storageFailBanner");
-    if (!el) {
-      el = document.createElement("div");
-      el.id = "storageFailBanner";
-      el.setAttribute("role", "alert");
-      el.style.cssText = "position:fixed;left:0;right:0;bottom:0;z-index:9999;" +
-        "background:#8a2318;color:#fff;padding:10px 14px;font-size:.72rem;line-height:1.45;" +
-        "box-shadow:0 -2px 10px rgba(0,0,0,.25)";
-      document.body.appendChild(el);
-    }
-    var full = state && state.reason === "quota";
-    el.innerHTML =
-      '<b>⚠ THIS DEVICE HAS STOPPED SAVING RECORDS.</b> ' +
-      (full
-        ? 'Its local storage is full. Work you do now may not be kept. '
-        : 'A save failed (' + escHtml(state && state.reason) + '). ') +
-      'Your existing records are intact, and this device keeps a second copy, but ' +
-      '<b>do not continue seeing patients on this device until it is resolved</b>.' +
-      '<br>Fix now: Admin → Backup (download a backup), then connect cloud sync or archive older records. ' +
-      'This message clears itself once saving works again.';
-  };
-
-  window.storageClearWriteFailure = function () {
-    var el = document.getElementById("storageFailBanner");
-    if (el && el.parentNode) el.parentNode.removeChild(el);
-  };
-
-  /* Another window saved this visit while it was open here. The other
-     version is preserved on the record, so this is information, not an
-     error — but the clinician must know that two people were writing, or
-     they will not know to check what the other one entered. */
-  window.storageShowVisitConflict = function (conflict) {
-    var el = document.getElementById("visitConflictBanner");
-    if (!el) {
-      el = document.createElement("div");
-      el.id = "visitConflictBanner";
-      el.setAttribute("role", "alert");
-      el.style.cssText = "position:fixed;left:0;right:0;top:0;z-index:9998;" +
-        "background:#b9770e;color:#fff;padding:9px 14px;font-size:.7rem;line-height:1.45;" +
-        "box-shadow:0 2px 10px rgba(0,0,0,.22)";
-      el.onclick = function () { if (el.parentNode) el.parentNode.removeChild(el); };
-      document.body.appendChild(el);
-    }
-    el.innerHTML =
-      '<b>Another window saved this visit while you had it open</b> (' +
-      escHtml(conflict && conflict.by) + '). Your save went through, and ' +
-      '<b>their version was kept on the record</b> rather than discarded — ' +
-      'but check the exam for anything they entered that is not showing here. ' +
-      '<span style="opacity:.8">(Tap to dismiss.)</span>';
-  };
-
-  /* Corrupt store: a different and worse failure than "cannot write".
-     Records already on this device are unreadable. Reading zero patients must
-     never be allowed to look like a clinic that has zero patients, so this is
-     sticky, red, and tells the clinician to stop rather than carry on. */
-  window.storageShowCorrupt = function (key, info) {
-    var el = document.getElementById("storageCorruptBanner");
-    if (!el) {
-      el = document.createElement("div");
-      el.id = "storageCorruptBanner";
-      el.setAttribute("role", "alert");
-      el.style.cssText = "position:fixed;left:0;right:0;top:0;z-index:10000;" +
-        "background:#6b0f0f;color:#fff;padding:10px 14px;font-size:.72rem;line-height:1.45;" +
-        "box-shadow:0 2px 10px rgba(0,0,0,.3)";
-      document.body.appendChild(el);
-    }
-    var friendly = { patients: "patient list", visits: "visit records",
-                     users: "user accounts", audit: "access log" }[key] || key;
-    el.innerHTML =
-      '<b>⚠ THIS DEVICE CANNOT READ ITS ' + escHtml(String(friendly).toUpperCase()) + '.</b> ' +
-      'The stored data is damaged (' + escHtml(info && info.reason) + '), so the app is showing ' +
-      'none of it. <b>What you see is not what is on this device.</b>' +
-      '<br>Writing to it has been blocked so the damaged data cannot be overwritten — ' +
-      'it may still be recoverable' +
-      (info && info.quarantine ? ' (a copy was kept)' : '') + '.' +
-      '<br><b>Do not see patients on this device.</b> Restore from your most recent backup, ' +
-      'or from another device, before continuing.';
-  };
-}
+/* The banners these conditions raise are NOT built here any more.
+   js/ui-storage-banners.js subscribes to storage:write-failed,
+   storage:write-ok, storage:corrupt and visit:conflict and decides how to
+   tell the clinician. This layer states the fact; it does not own the copy,
+   the colours, or the DOM. */

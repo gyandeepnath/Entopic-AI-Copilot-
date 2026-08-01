@@ -440,6 +440,9 @@
      vault and the backup all derive their lists from this table, so it has to
      exist before any of them. -->
 <script src="js/data-classification.js"></script>
+<!-- Domain event bus. Lets storage and sync report what happened without
+     naming the screen that reacts to it. Anything may emit, so it is early. -->
+<script src="js/events.js"></script>
 
 <!-- Core -->
 <script src="js/data-model.js"></script>
@@ -464,6 +467,14 @@
 <!-- Whole-clinic snapshots: export, encrypted export, validate, restore.
      Split out of storage.js; uses its accessors, so it loads after it. -->
 <script src="js/storage-backup.js"></script>
+<!-- Renders the alerts storage raises (stopped saving / unreadable store /
+     concurrent write) and the save indicator. Loaded before app.js so a
+     problem discovered during boot still reaches the screen. -->
+<script src="js/ui-storage-banners.js"></script>
+<!-- Age-bracket overrides: the founder's clinical decisions. Persistence was
+     moved out of knowledge/age-classification.js, so it needs storage.js
+     above it and the suggestion table (knowledge/) already loaded. -->
+<script src="js/age-brackets.js"></script>
 <script src="js/auth-crypto.js"></script>
 <script src="js/clinic-mode.js"></script>
 <script src="js/roles.js"></script>

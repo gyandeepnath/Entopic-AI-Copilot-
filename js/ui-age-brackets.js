@@ -98,6 +98,9 @@ function ageBracketFilter(v) {
 
 function ageBracketChoose(name, token) {
   if (typeof ageBracketSet !== "function") return;
+  /* ageBracketSet applies the decision to the live knowledge base itself, so
+     the engine picks it up without a reload and without this screen having to
+     remember a second call. */
   ageBracketSet(name, token);
   if (typeof toast === "function") {
     toast(token ? (name + " → " + token.replace(/_age$/, "").replace(/_/g, " "))

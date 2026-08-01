@@ -290,14 +290,32 @@ add(unescaped.length ? "WARN" : "INFO", "rendering",
 
 
 /* ── 7. STORAGE, BACKUP AND RESTORE ───────────────────────────────── */
-const storeSrc = read("js/storage.js");
+/* Backup/export/restore moved into js/storage-backup.js when storage.js was
+   split; read both so this check follows the code rather than the filename. */
+const storeSrc = read("js/storage.js") + read("js/storage-backup.js");
 const hasExport = /exportAllData|entopic-backup/.test(storeSrc);
 const hasImport = /importAllData|restore/i.test(storeSrc + read("js/storage-mirror.js"));
 add(hasExport ? "INFO" : "FAIL", "backup", hasExport ? "a full JSON backup can be exported" : "no full backup path");
 add(hasImport ? "INFO" : "WARN", "backup", hasImport ? "a restore path exists" : "no restore path found");
-if (/users:\s*loadUsers\(\)/.test(storeSrc)) {
+if (/users:\s*function\s*\(\)\s*\{\s*return loadUsers\(\)/.test(storeSrc)) {
   add("INFO", "backup", "the backup includes user accounts",
     "credential material is hashed, but the file is still sensitive — keep it private");
+}
+
+/* What the backup actually carries, from the one place that declares it. */
+try {
+  const cls = require("../js/data-classification.js");
+  const backed = cls.dataStoresWith("backup");
+  const unprotected = cls.dataStoreKeys().filter(
+    (k) => cls.DATA_STORES[k].class !== "derived" && !cls.DATA_STORES[k].mirror);
+  add("INFO", "backup", backed.length + " stores travel in a backup: " + backed.join(", "));
+  if (unprotected.length) {
+    add("WARN", "backup", unprotected.length + " non-derived store(s) are not mirrored",
+      unprotected.join(", "));
+  }
+} catch (e) {
+  add("FAIL", "backup", "js/data-classification.js could not be read — " +
+    "the mirror and the backup derive their lists from it");
 }
 if (exists("js/storage-mirror.js")) {
   add("INFO", "backup", "a second local mirror guards against a cleared store");

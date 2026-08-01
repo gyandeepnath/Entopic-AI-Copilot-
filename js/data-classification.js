@@ -73,6 +73,13 @@ var DATA_STORES = {
     class: "legal", encrypt: false, mirror: true, backup: true, shape: "object",
     why: "A clinician's review of 394 conditions. Irreplaceable human work; attestations only, no patient data."
   },
+  age_brackets: {
+    class: "legal", encrypt: false, mirror: true, backup: true, shape: "object",
+    why: "The founder's per-condition decisions about which age band a condition belongs to. " +
+         "Clinical judgement, not configuration: nobody else can regenerate it. Was written " +
+         "straight to a raw localStorage key from inside knowledge/ until 2026-08-01, so it had " +
+         "no protection at all."
+  },
 
   /* ── De-identified clinical ── */
   research_corpus: {

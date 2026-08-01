@@ -161,7 +161,19 @@ test("every path that opens an existing visit records the stamp it saw", () => {
 });
 
 test("the clinician is told, and the audit trail records it", () => {
+  /* storage.js used to build the notice itself. It now emits "visit:conflict"
+     and js/ui-storage-banners.js renders it, so the contract spans two files:
+     the fact must be announced, and something must be listening. A test that
+     only checked the emitter would pass with nobody subscribed — which is
+     exactly the failure mode of moving to events. */
   const src = read("js/storage.js");
-  assert.ok(/storageShowVisitConflict/.test(src), "a visible notice exists");
-  assert.ok(/logAudit\("visit_conflict"/.test(src), "and it is written to the audit trail");
+  assert.ok(/evEmit\("visit:conflict"/.test(src),
+    "storage must announce the conflict");
+  assert.ok(/logAudit\("visit_conflict"/.test(src),
+    "and it is written to the audit trail");
+
+  const ui = read("js/ui-storage-banners.js");
+  assert.ok(/evOn\("visit:conflict"/.test(ui),
+    "and something must actually render it — an unheard event is a silent failure");
+  assert.ok(/visitConflictBanner/.test(ui), "a visible notice exists");
 });

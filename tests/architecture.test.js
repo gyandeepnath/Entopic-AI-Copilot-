@@ -60,6 +60,7 @@ const DATA_CLASSIFICATION = {
   audit:           { class: "legal",       encrypt: true,  mirror: true,  backup: true  },
   consents:        { class: "legal",       encrypt: false, mirror: true,  backup: true  },
   kb_signoffs:     { class: "legal",       encrypt: false, mirror: true,  backup: true  },
+  age_brackets:    { class: "legal",       encrypt: false, mirror: true,  backup: true  },
   research_corpus: { class: "clinical",    encrypt: false, mirror: true,  backup: true  },
   /* backup:true — revised from the original false. The salt has to travel with
      the corpus it belongs to, or every pseudonym in a restored corpus becomes
@@ -270,14 +271,13 @@ test("the engine and the knowledge base carry no LLM dependency", () => {
    recommendations rather than Phase 1 edits.
 
    Recorded 2026-08-01. */
-const KNOWN_LAYER_VIOLATIONS = {
-  "js/cloud-sync.js": "cloud-sync.js:532 calls renderHome() directly after a sync pulls new " +
-    "records. Infrastructure reaching up into the UI. The correct design is an emitted event " +
-    "the UI subscribes to; introducing one is a real design change, not a test-file edit.",
-  "knowledge/age-classification.js": "reads and writes localStorage directly (lines 74-82), " +
-    "which breaks the property that knowledge/ is portable data extractable into a package, " +
-    "a server, or a different client. The persistence belongs in the application layer."
-};
+/* Empty since 2026-08-01. Both entries were closed by introducing the event
+   bus (js/events.js) that the previous note said was the correct design:
+     - cloud-sync.js now emits "sync:applied" instead of calling renderHome();
+     - knowledge/age-classification.js is data again, with its persistence
+       moved to js/age-brackets.js and routed through saveStore.
+   Storage's four DOM banners went the same way, into js/ui-storage-banners.js. */
+const KNOWN_LAYER_VIOLATIONS = {};
 
 test("no NEW infrastructure module calls the rendering layer", () => {
   /* Dependencies must point one way: UI → domain → infrastructure. An

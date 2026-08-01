@@ -310,6 +310,20 @@ function _importDecoded(data) {
        All four are guarded: backups taken before this release carry none of
        these keys, and an absent key must leave the device's own data alone
        rather than wipe it. */
+    /* Age-bracket overrides. MERGED like sign-offs, and for the same reason:
+       it is the founder's clinical judgement, one condition at a time, and a
+       restore must not throw away decisions made since the backup. Where both
+       sides have a value the LOCAL one wins, because it is the more recent
+       decision by the same person. */
+    if (data.age_brackets && typeof data.age_brackets === "object") {
+      var ab = loadStore("age_brackets", {}) || {};
+      for (var abn in data.age_brackets) {
+        if (!Object.prototype.hasOwnProperty.call(data.age_brackets, abn)) continue;
+        if (!ab[abn]) ab[abn] = data.age_brackets[abn];
+      }
+      saveStore("age_brackets", ab);
+    }
+
     if (data.consents && typeof data.consents === "object") saveStore("consents", data.consents);
     if (typeof data.research_salt === "string" && data.research_salt) {
       saveStore("research_salt", data.research_salt);

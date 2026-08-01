@@ -523,14 +523,19 @@ function cloudDecryptRows(rows, cb) {
   })).then(cb).catch(function () { cb([]); });
 }
 
-/* H-1: the home page element is `pgHome` (the old `page-home` never existed,
-   so live changes merged but never repainted). Repaint only when Home is the
-   active page. */
+/* Sync has merged rows from another device. Announce it; do not decide what
+   the screen should do about it.
+
+   This used to call renderHome() by name and look up "pgHome" itself, which
+   made the synchronisation layer depend on one specific page of the UI —
+   the bottom of the stack reaching up to the top. js/ui-storage-banners.js
+   now subscribes and repaints Home only when Home is what is on screen.
+   (H-1, kept: the element is `pgHome`; the original code looked for a
+   `page-home` that never existed, so changes merged but never repainted.)
+
+   evEmit never throws, so rendering still cannot break sync. */
 function cloudRerender() {
-  try {
-    var home = document.getElementById("pgHome");
-    if (home && home.classList.contains("active") && typeof renderHome === "function") renderHome();
-  } catch (e) { /* rendering must never break sync */ }
+  if (typeof evEmit === "function") evEmit("sync:applied", null);
 }
 
 function cloudPull(cb) {

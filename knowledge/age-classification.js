@@ -66,29 +66,22 @@ var KB_AGE_BRACKET = {
   "Anisometropic Amblyopia":                                   "paediatric_age"
 };
 
-/* Local founder overrides, applied on top of the suggestions above. */
-var KB_AGE_BRACKET_KEY = "entopic_age_brackets";
+/* The founder's overrides used to be read and written HERE, straight to
+   localStorage under a raw key. That was wrong twice over:
 
-function ageBracketOverrides() {
-  try {
-    if (typeof localStorage === "undefined") return {};
-    return JSON.parse(localStorage.getItem(KB_AGE_BRACKET_KEY) || "{}");
-  } catch (e) { return {}; }
-}
+     - knowledge/ is meant to be clinical content, not a layer that persists
+       anything. A pure data file had grown an I/O dependency, which is why it
+       was the one knowledge file that could not be loaded in a test without a
+       localStorage stub.
+     - Going straight to localStorage bypassed saveStore, so these overrides had NONE
+       of its protection: no corruption check, no mirror, no backup, and a
+       failed write was swallowed silently. The founder's clinical
+       classification work was one cleared browser away from gone.
 
-function ageBracketSet(conditionName, token) {
-  var o = ageBracketOverrides();
-  if (token) o[conditionName] = token; else delete o[conditionName];
-  try { localStorage.setItem(KB_AGE_BRACKET_KEY, JSON.stringify(o)); } catch (e) {}
-}
-
-/* The bracket in force for a condition: founder override, then suggestion,
-   then nothing (condition keeps `young_age` and its exact old behaviour). */
-function ageBracketFor(conditionName) {
-  var o = ageBracketOverrides();
-  if (o[conditionName]) return o[conditionName];
-  return KB_AGE_BRACKET[conditionName] || "";
-}
+   Persistence now lives in js/age-brackets.js and goes through the normal
+   store, with `age_brackets` declared in js/data-classification.js.
+   This file keeps only what it should have kept: the suggestion table and
+   the query for outstanding work. */
 
 /* Every condition still carrying the deprecated token, i.e. the founder's
    outstanding classification work. */
@@ -101,21 +94,41 @@ function ageBracketPending() {
   });
 }
 
-/* Rewrite a condition's token arrays in place. Called by the loader. */
-function applyAgeBracket(cond) {
-  var bracket = ageBracketFor(cond.name);
+/* Rewrite a condition's token arrays in place.
+   PURE: the founder's confirmed overrides are passed in, never read from
+   storage here. That is what lets knowledge/ stay portable data.
+
+   Called twice in a normal boot, and it must be safe both times:
+     1. knowledge/loader.js, at assembly, with no overrides — every condition
+        gets its suggested bracket and stays provisional.
+     2. js/age-brackets.js, once storage is available, with the real
+        overrides — confirmed conditions are upgraded.
+
+   Hence the idempotence: the token to replace is either the original
+   `young_age` or whatever this function put there on the previous pass. A
+   naive second run would find no `young_age`, silently do nothing, and the
+   founder's confirmed bracket would never reach the engine. */
+function applyAgeBracket(cond, overrides) {
+  var confirmed = (overrides && overrides[cond.name]) || "";
+  var bracket = confirmed || KB_AGE_BRACKET[cond.name] || "";
   if (!bracket) return;
+
+  var prev = cond.age_bracket || "";
   ["req", "sup", "tests"].forEach(function (key) {
     if (!cond[key]) return;
     var i = cond[key].indexOf("young_age");
+    if (i < 0 && prev) i = cond[key].indexOf(prev);
     if (i >= 0) cond[key][i] = bracket;
   });
   cond.age_bracket = bracket;
   /* A bracket that has not been confirmed by the founder stays provisional. */
-  if (!ageBracketOverrides()[cond.name]) cond.age_bracket_status = "NEEDS_CLINICAL_REVIEW";
-  else cond.age_bracket_status = "VERIFIED_BY_CLINICIAN";
+  cond.age_bracket_status = confirmed ? "VERIFIED_BY_CLINICIAN" : "NEEDS_CLINICAL_REVIEW";
 }
 
 if (typeof module !== "undefined" && module.exports) {
-  module.exports = { KB_AGE_BRACKET: KB_AGE_BRACKET };
+  module.exports = {
+    KB_AGE_BRACKET: KB_AGE_BRACKET,
+    applyAgeBracket: applyAgeBracket,
+    ageBracketPending: ageBracketPending
+  };
 }
