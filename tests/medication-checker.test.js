@@ -194,3 +194,109 @@ test("no medications renders nothing at all", () => {
   assert.strictEqual(load("").renderMedicationReview(), "",
     "an empty panel would take space and imply the check found something");
 });
+
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* NEGATION, PAST USE AND ALLERGY                                   */
+/*                                                                  */
+/* The safety rule: nothing is ever silently dropped. Every drug    */
+/* the text mentions still appears, labelled with how it was read.  */
+/* Only the ENGINE TOKEN is withheld, and only for negation and     */
+/* allergy — never for past use.                                    */
+/* ═══════════════════════════════════════════════════════════════ */
+
+const statusOf = (text, drug) => {
+  const hit = load(text).checkAllMedications().find((m) => m.drug === drug);
+  return hit ? hit.status : null;
+};
+const tokensFor = (text) => load(text).getMedicationTokens();
+
+test("'no steroids' does not become a steroid history", () => {
+  assert.strictEqual(statusOf("no steroids", "Prednisolone"), "negated");
+  assert.strictEqual(tokensFor("no steroids").length, 0,
+    "a denial must not push the differential toward steroid-induced disease");
+});
+
+test("the denied drug is still SHOWN, not deleted", () => {
+  /* If the software misreads the note, the clinician has to be able to see
+     that it misread it. A dropped row hides the mistake. */
+  const rows = load("no steroids").checkAllMedications();
+  assert.strictEqual(rows.length, 1, "the mention must still appear in the review");
+  assert.strictEqual(rows[0].counts, false, "but must not count as an exposure");
+});
+
+test("other denial phrasings are understood", () => {
+  for (const phrase of ["denies steroid use", "nil steroids", "not on prednisolone",
+                        "never took prednisolone", "negative for steroids"]) {
+    assert.strictEqual(statusOf(phrase, "Prednisolone"), "negated",
+      "failed to read as negated: " + phrase);
+  }
+});
+
+test("STOPPED is NOT the same as never — past exposure still counts", () => {
+  /* The most important test in this file. Steroid-induced cataract,
+     hydroxychloroquine maculopathy and ethambutol optic neuropathy are all
+     consequences of PAST exposure. Treating "stopped" as "never" would be the
+     most dangerous thing this module could do. */
+  assert.strictEqual(statusOf("stopped prednisolone 6 months ago", "Prednisolone"), "past");
+  assert.ok(tokensFor("stopped prednisolone 6 months ago").includes("steroid_history"),
+    "a stopped steroid is still a steroid history");
+
+  assert.strictEqual(statusOf("previously on hydroxychloroquine", "Hydroxychloroquine"), "past");
+  assert.ok(tokensFor("previously on hydroxychloroquine").includes("macular_screening_needed"),
+    "past hydroxychloroquine still needs macular screening");
+});
+
+test("allergy means not taking, and is shown as an allergy", () => {
+  assert.strictEqual(statusOf("allergic to doxycycline", "Doxycycline"), "allergy");
+  assert.strictEqual(tokensFor("allergic to doxycycline").length, 0);
+
+  const rows = load("allergic to doxycycline").checkAllMedications();
+  assert.strictEqual(rows.length, 1, "an allergy is clinically important and must stay visible");
+});
+
+test("negation does not leak across a clause boundary", () => {
+  /* "no diabetes, on prednisolone" must not negate the prednisolone. This is
+     the failure that would make negation handling dangerous. */
+  assert.strictEqual(statusOf("no diabetes, on prednisolone 20mg", "Prednisolone"), "current");
+  assert.ok(tokensFor("no diabetes, on prednisolone 20mg").includes("steroid_history"));
+
+  assert.strictEqual(statusOf("no known allergies. taking tamsulosin", "Tamsulosin"), "current");
+  assert.ok(tokensFor("no known allergies. taking tamsulosin").includes("ifis_risk"));
+});
+
+test("a positive cue after a negation cancels it in the same clause", () => {
+  assert.strictEqual(statusOf("no steroids but taking amiodarone", "Amiodarone"), "current");
+});
+
+test("plain current use is unaffected", () => {
+  assert.strictEqual(statusOf("prednisolone 20mg od", "Prednisolone"), "current");
+  assert.ok(tokensFor("prednisolone 20mg od").includes("steroid_history"));
+  assert.ok(tokensFor("hydroxychloroquine 200mg BD").includes("macular_screening_needed"));
+});
+
+test("when a drug is mentioned twice, the exposure reading wins", () => {
+  /* "stopped prednisolone, restarted prednisolone" must not resolve to the
+     denial. The rule is: any exposure anywhere outranks a denial. */
+  assert.strictEqual(statusOf("no prednisolone last year. prednisolone 10mg now", "Prednisolone"),
+    "current");
+});
+
+test("negation handling never reduces what the clinician sees", () => {
+  /* Property test across every drug and every negating phrasing: the row count
+     must be identical with and without the negation cue. Only `counts` may
+     change. */
+  const ctx = load("");
+  const drugs = ctx.MEDICATION_OCULAR_EFFECTS.map((m) => m.aliases[0]);
+  const losses = [];
+  for (const d of drugs) {
+    const plain = load(d).checkAllMedications().length;
+    for (const cue of ["no ", "denies ", "allergic to ", "stopped "]) {
+      const negated = load(cue + d).checkAllMedications().length;
+      if (negated < plain) losses.push(cue + d + ": " + plain + " -> " + negated);
+    }
+  }
+  assert.deepStrictEqual(losses, [],
+    "these phrasings made a drug mention disappear from the review entirely:\n  " +
+    losses.join("\n  "));
+});
