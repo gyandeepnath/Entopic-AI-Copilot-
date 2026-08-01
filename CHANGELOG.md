@@ -6,6 +6,53 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-08-01 — Phase 2: clinical review, and two more real bugs fixed
+
+**Medication checker now understands "no".** "No steroids" counted as a steroid
+history; so did "denies hydroxychloroquine" and "allergic to doxycycline". Each
+pushed the differential toward a drug-induced condition the patient could not
+have.
+
+The design follows one rule: missing a real drug exposure is far worse than
+reporting one that is not there. So **nothing is silently dropped** — every drug
+the note mentions still appears, labelled with how it was read. If the software
+misreads a note, you can see that it misread it. Only the engine token is
+withheld, and only for denials and allergies.
+
+**"Stopped" still counts.** Steroid cataract, hydroxychloroquine maculopathy and
+ethambutol optic neuropathy are all consequences of *past* drugs. Treating
+"stopped" as "never" would have been the most dangerous thing that file could do.
+
+**Binocular vision got a "Normal" button.** Measured in the browser: BV is the
+heaviest step in the whole exam at 68 fields, and it had no shortcut — so a
+completely normal BV screen had to be left blank, which in the record is
+indistinguishable from "not assessed". Related fix: the step's completion rule
+only recognised numbers, so a BV recorded as orthophoric and fusing still showed
+as unassessed.
+
+**A rule that now governs those buttons, and a flag for you.** A "Normal"
+template may state a normal *result*. It must not invent a *measurement*. The new
+BV template writes orthophoria, comitancy and fusion — never a stereo threshold
+or an NPC distance. But the older va, iop and fundus templates predate this rule
+and **do** write numbers: VA 6/6, IOP 15 mmHg, C:D 0.3. One click puts those in a
+patient record whether or not the test was done. That is the same class as the
+"plano" prescription bug fixed last week. **I have not changed it — that is a
+clinical and medico-legal judgement, and it is yours.** Logged as CS-01.
+
+**Five Phase 2 documents**, grounded in browser measurement rather than opinion:
+Clinical Excellence Report, Clinical Safety Register, Human Factors Register,
+Clinical Workflow Roadmap (ranked Top 200), Clinical Innovation Roadmap.
+
+Measured, not estimated: 33 exam steps · 408 inputs, 126 dropdowns, 72 text
+areas, 633 finding chips · 394 conditions across 9 domains, 63 urgent, 0
+verified · glaucoma has 23 conditions against retina's 93.
+
+Overall clinical score **6.3/10**. The reasoning engine scores 8 and is the best
+thing in the product. The gaps are longitudinal care (no IOP trend, no field
+progression) and multi-user safety.
+
+694/694 tests pass, audit 0 FAIL.
+
 ## 2026-08-01 — Independent bug hunt: nothing found (after I corrected myself three times)
 
 Drove the real app in a browser at three screen widths — desktop, tablet, phone
