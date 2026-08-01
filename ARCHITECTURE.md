@@ -1,7 +1,7 @@
 # Entopic — System Architecture & Scaling Blueprint
 
 **Document version:** 1.1
-**Covers build:** Entopic v1.4.0, KB v1.3.1 — 97 loaded files (76 in `js/`, 21 in
+**Covers build:** Entopic v1.4.1, KB v1.3.1 — 98 loaded files (77 in `js/`, 21 in
 `knowledge/`), 394 conditions across 9 domains, 67 test files.
 **Counts last verified:** 2026-08-01, regenerated from `index.html` and the repo.
 **Purpose:** A ground-truth teardown of everything in the current system, followed by a target architecture that keeps the same UI and concept but rebuilds the foundations for scale, onboarding, a stable backend, an independent continuously-looping diagnostic engine, and a trustworthy evidence-based knowledge base.
@@ -644,9 +644,9 @@ Each phase is independently shippable and independently valuable; none requires 
 # APPENDIX A — File inventory
 
 Generated from the `<script>` order in `index.html`, which IS the dependency
-graph in a build-step-free app. 97 loaded files.
+graph in a build-step-free app. 98 loaded files.
 
-**Root** — `index.html` (546), `css/entopic.css` (2506)
+**Root** — `index.html` (549), `css/entopic.css` (2506)
 
 **`/knowledge`** — 21 files, loaded first, in this order:
 
@@ -672,7 +672,7 @@ graph in a build-step-free app. 97 loaded files.
 - `clinical-scales.js` (206)
 - `loader.js` (385)
 
-**`/js`** — 76 files, in load order:
+**`/js`** — 77 files, in load order:
 
 - `dom-escape.js` (67)
 - `build-info.js` (78)
@@ -681,6 +681,7 @@ graph in a build-step-free app. 97 loaded files.
 - `data-classification.js` (166)
 - `events.js` (86)
 - `data-model.js` (1275)
+- `wnl-templates.js` (67)
 - `storage-mirror.js` (247)
 - `local-vault.js` (793)
 - `cloud-config.js` (68)
@@ -705,7 +706,7 @@ graph in a build-step-free app. 97 loaded files.
 - `engine.js` (2046)
 - `ui-sidebar.js` (150)
 - `clinical-scales.js` (371)
-- `medication-checker.js` (185)
+- `medication-checker.js` (328)
 - `ui-advisory.js` (408)
 - `ui-pages.js` (1258)
 - `ui-pages-2.js` (539)
@@ -748,7 +749,7 @@ graph in a build-step-free app. 97 loaded files.
 - `certificates-ui.js` (134)
 - `investigations.js` (593)
 - `investigations-ui.js` (294)
-- `app.js` (1927)
+- `app.js` (1926)
 - `error-boundary.js` (162)
 
 ---

@@ -1495,23 +1495,9 @@ function nav(stepId) {
   updateWNLButton();
 }
 
-/* ── "Mark this section Normal (WNL)" — one-click quick-fill ──
-   Fills the current exam step with normal values, marks it done, and re-runs
-   the engine so normal measurements become pertinent negatives (e.g. a normal
-   IOP derives `normal_iop`, which argues against glaucoma). Speeds routine
-   exams — the clinician only stops to type the ABNORMAL findings. */
-var WNL_TEMPLATES = {
-  va:        function () { V.va.od_un = V.va.od_un || "6/6"; V.va.os_un = V.va.os_un || "6/6"; },
-  iop:       function () { V.iop.od = V.iop.od || "15"; V.iop.os = V.iop.os || "15"; V.iop.method = V.iop.method || "GAT"; },
-  slit_lamp: function () {
-    ["od", "os"].forEach(function (e) { if (V.sl[e]) { V.sl[e].lids = "WNL"; V.sl[e].conj = "White and quiet"; V.sl[e].cornea = "Clear"; V.sl[e].cells = "0"; V.sl[e].flare = "0"; V.sl[e].iris = "Normal"; } });
-  },
-  pupil:     function () { V.pupil.rapd = "None"; V.pupil.notes = V.pupil.notes || "PERRL, no RAPD"; },
-  motility:  function () { V.mot.versions = "Full"; V.mot.ductions = "Full"; },
-  gonioscopy: function () { ["od", "os"].forEach(function (e) { if (V.gon[e]) V.gon[e].s = V.gon[e].s || "Open (Grade 4)"; }); },
-  fundus:    function () { ["od", "os"].forEach(function (e) { if (V.fun[e]) { V.fun[e].cd_v = V.fun[e].cd_v || "0.3"; } }); },
-  neuro:     function () { V.neuro.color_od = V.neuro.color_od || "Normal"; V.neuro.notes = V.neuro.notes || "Colour, fields, Amsler normal"; }
-};
+/* The WNL quick-fill templates live in js/wnl-templates.js (WNL_TEMPLATES).
+   Moved out when app.js reached its complexity budget; they are clinical
+   content in shape and belong together, not inside the router. */
 
 function stepHasWNL(step) { return !!WNL_TEMPLATES[step]; }
 
@@ -1635,7 +1621,15 @@ function markDone(sid) {
       has = !!V.mot.notes || V.mot.versions !== "Full";
       break;
     case "bv":
-      has = !!(V.bv.npc_b || V.bv.ct_n || V.bv.acc_od);
+      /* Categorical results count as an assessment, not just numbers. The rule
+         used to require NPC, a near cover-test value or accommodation — all
+         measurements — so a binocular screen recorded as orthophoric, comitant
+         and fusing read back as "not assessed". That understates what was
+         actually done and leaves the step looking incomplete for the rest of
+         the consultation. */
+      has = !!(V.bv.npc_b || V.bv.ct_n || V.bv.acc_od ||
+               V.bv.ct_type_d || V.bv.ct_type_n || V.bv.w4d || V.bv.w4n ||
+               V.bv.stereo || V.bv.comitancy);
       break;
     case "gonioscopy":
       has = !!(V.gon.od.s || V.gon.os.s);
