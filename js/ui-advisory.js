@@ -354,24 +354,33 @@ function dxInfoInPatient(dx) {
 /* ═══════════════════════════════════════════════════════════════ */
 /* MEDICATION ALERT CHECKER                                        */
 /* Scans free-text medications field against MEDICATION database   */
+/*                                                                  */
+/* This was a second, independently written copy of the alias       */
+/* matching in js/medication-checker.js — and it carried the same   */
+/* bug: a bare indexOf matched "chloroquine" inside                 */
+/* "hydroxychloroquine", so a patient on one drug raised alerts for */
+/* two. Fixing the first copy would have left this one wrong, which */
+/* is exactly why the matching rule now lives in ONE function that  */
+/* both callers use.                                                */
 /* ═══════════════════════════════════════════════════════════════ */
 
 function checkMedicationAlerts(medicationText) {
   if (!medicationText || typeof MEDICATION_OCULAR_EFFECTS === "undefined") return [];
 
-  var text = medicationText.toLowerCase();
+  var text = String(medicationText).toLowerCase();
   var alerts = [];
 
   for (var i = 0; i < MEDICATION_OCULAR_EFFECTS.length; i++) {
     var med = MEDICATION_OCULAR_EFFECTS[i];
 
-    /* Check if any alias matches */
     var found = false;
     for (var a = 0; a < med.aliases.length; a++) {
-      if (text.indexOf(med.aliases[a].toLowerCase()) >= 0) {
-        found = true;
-        break;
-      }
+      /* medAliasMatches lives in js/medication-checker.js, which loads first.
+         Guarded so this panel still renders if that module is absent. */
+      var hit = (typeof medAliasMatches === "function")
+        ? medAliasMatches(text, med.aliases[a])
+        : text.indexOf(String(med.aliases[a]).toLowerCase()) >= 0;
+      if (hit) { found = true; break; }
     }
 
     if (found) {

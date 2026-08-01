@@ -484,6 +484,10 @@
 <!-- UI -->
 <script src="js/ui-sidebar.js"></script>
 <script src="js/clinical-scales.js"></script>
+<!-- Drug-name matching. ui-advisory.js calls medAliasMatches from here, so
+     this must precede it. Depends only on knowledge/medications.js and the
+     escaper, both already loaded. -->
+<script src="js/medication-checker.js"></script>
 <script src="js/ui-advisory.js"></script>
 <script src="js/ui-pages.js"></script>
 <script src="js/ui-pages-2.js"></script>
@@ -526,7 +530,6 @@
      It contained unsourced OHTS/AREDS2 risk percentages and was never called.
      Do not re-add it without clinician-supplied, sourced numbers — see the
      header of that file. -->
-<script src="js/medication-checker.js"></script>
 <script src="js/smart-intake.js"></script>
 <script src="js/spectacle-advisor.js"></script>
 
