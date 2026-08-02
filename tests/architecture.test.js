@@ -60,6 +60,8 @@ const DATA_CLASSIFICATION = {
   audit:           { class: "legal",       encrypt: true,  mirror: true,  backup: true  },
   consents:        { class: "legal",       encrypt: false, mirror: true,  backup: true  },
   kb_signoffs:     { class: "legal",       encrypt: false, mirror: true,  backup: true  },
+  competencies:    { class: "legal",       encrypt: false, mirror: true,  backup: true  },
+  competency_log:  { class: "legal",       encrypt: false, mirror: true,  backup: true  },
   age_brackets:    { class: "legal",       encrypt: false, mirror: true,  backup: true  },
   research_corpus: { class: "clinical",    encrypt: false, mirror: true,  backup: true  },
   /* backup:true — revised from the original false. The salt has to travel with

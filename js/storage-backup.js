@@ -324,6 +324,24 @@ function _importDecoded(data) {
       saveStore("age_brackets", ab);
     }
 
+    /* Competency framework and evidence. The framework is REPLACED (it is the
+       institution's, and one version is authoritative); the evidence log is
+       MERGED by id, because a restore must never destroy a supervisor's
+       sign-off recorded since the backup was taken. */
+    if (data.competencies && typeof data.competencies === "object") {
+      saveStore("competencies", data.competencies);
+    }
+    if (Array.isArray(data.competency_log)) {
+      var haveLog = loadStore("competency_log", []) || [];
+      var seenIds = {};
+      for (var cli = 0; cli < haveLog.length; cli++) seenIds[haveLog[cli].id] = true;
+      for (var clj = 0; clj < data.competency_log.length; clj++) {
+        var inc = data.competency_log[clj];
+        if (inc && inc.id && !seenIds[inc.id]) haveLog.push(inc);
+      }
+      saveStore("competency_log", haveLog);
+    }
+
     if (data.consents && typeof data.consents === "object") saveStore("consents", data.consents);
     if (typeof data.research_salt === "string" && data.research_salt) {
       saveStore("research_salt", data.research_salt);

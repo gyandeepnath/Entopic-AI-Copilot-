@@ -73,6 +73,16 @@ var DATA_STORES = {
     class: "legal", encrypt: false, mirror: true, backup: true, shape: "object",
     why: "A clinician's review of 394 conditions. Irreplaceable human work; attestations only, no patient data."
   },
+  competencies: {
+    class: "legal", encrypt: false, mirror: true, backup: true, shape: "object",
+    why: "The university's own competency framework, imported by faculty. Losing it detaches " +
+         "every student's evidence from the standard it was assessed against."
+  },
+  competency_log: {
+    class: "legal", encrypt: false, mirror: true, backup: true, shape: "array",
+    why: "Students' evidence and supervisors' sign-offs. This is assessment evidence an " +
+         "examining body may demand years later; it holds no patient identifiers by design."
+  },
   age_brackets: {
     class: "legal", encrypt: false, mirror: true, backup: true, shape: "object",
     why: "The founder's per-condition decisions about which age band a condition belongs to. " +
