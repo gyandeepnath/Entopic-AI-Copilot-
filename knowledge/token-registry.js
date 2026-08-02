@@ -6,6 +6,29 @@
 /* every token's producers (input paths), KB usage counts, and      */
 /* reachability. type_hint is mechanically inferred and PROVISIONAL */
 /* — not verified clinical classification.                          */
+/*                                                                  */
+/* ── NAMING CONVENTION (Phase 3, knowledge audit) ──               */
+/*                                                                  */
+/*   lower_snake_case, ALWAYS — 468 of the 481 tokens in use.       */
+/*                                                                  */
+/*   EXCEPT that an established clinical ABBREVIATION keeps its     */
+/*   capitals, because RAPD is not rapd to a clinician and a token  */
+/*   a specialist cannot recognise is a token nobody will author    */
+/*   correctly. The thirteen in use:                                */
+/*                                                                  */
+/*     TBUT_reduced   RAPD_positive   CNVM        OCT_edema         */
+/*     MLF_lesion_sign   NPC_receded   reduced_PFV                  */
+/*     high_ACA_ratio   RNFL_thinning   gonioscopy_NVA              */
+/*     stellate_KPs   B_scan_ultrasound   CT_orbits_imaging         */
+/*                                                                  */
+/*   The rule: capitals ONLY for the abbreviation itself; the rest  */
+/*   of the token stays lower_snake_case. No spaces, no hyphens —   */
+/*   zero tokens use either today and none ever should.             */
+/*                                                                  */
+/*   This is documented rather than normalised on purpose. Renaming */
+/*   a token changes engine behaviour for no clinical gain; writing */
+/*   the convention down costs nothing and tells the next author    */
+/*   which form to use. tests/token-registry.test.js enforces it.   */
 /* ═══════════════════════════════════════════════════════════════ */
 "use strict";
 

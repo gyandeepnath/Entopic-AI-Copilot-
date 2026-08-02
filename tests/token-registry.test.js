@@ -63,3 +63,53 @@ test("every token the KB matches on (req/sup/con) is declared in the registry", 
   }
   assert.deepStrictEqual(missing, [], "undeclared tokens in KB");
 });
+
+
+/* ═══ Naming convention (Phase 3 knowledge audit) ═══ */
+
+test("no token uses a space or a hyphen", () => {
+  /* Zero do today. Either would break the token as a stable machine
+     identifier and would not survive a future graph or terminology binding. */
+  const { loadKnowledgeBase } = require("../tools/lib/load-kb");
+  const K = loadKnowledgeBase();
+  const list = Array.isArray(K) ? K : (K.KNOWLEDGE_ALL || []);
+  const bad = new Set();
+  list.forEach((c) => ["req", "sup", "con", "temporal", "tests", "exclusions"]
+    .forEach((k) => (c[k] || []).forEach((t) => { if (/[\s-]/.test(t)) bad.add(t); })));
+  assert.deepStrictEqual([...bad], [],
+    "tokens must be machine-safe identifiers:\n  " + [...bad].join("\n  "));
+});
+
+test("uppercase appears only in the documented clinical abbreviations", () => {
+  /* The convention is lower_snake_case, with capitals kept ONLY for an
+     established clinical abbreviation — RAPD is not rapd to a clinician. This
+     list is closed: a new uppercase token is either an abbreviation that
+     belongs here, or a mistake. Documented in tools/gen-token-registry.js. */
+  const ALLOWED = new Set([
+    "TBUT_reduced", "RAPD_positive", "CNVM", "OCT_edema", "MLF_lesion_sign",
+    "NPC_receded", "reduced_PFV", "high_ACA_ratio", "RNFL_thinning",
+    "gonioscopy_NVA", "stellate_KPs", "B_scan_ultrasound", "CT_orbits_imaging"
+  ]);
+  const { loadKnowledgeBase } = require("../tools/lib/load-kb");
+  const K = loadKnowledgeBase();
+  const list = Array.isArray(K) ? K : (K.KNOWLEDGE_ALL || []);
+  const found = new Set();
+  list.forEach((c) => ["req", "sup", "con", "temporal", "tests", "exclusions"]
+    .forEach((k) => (c[k] || []).forEach((t) => { if (/[A-Z]/.test(t)) found.add(t); })));
+
+  const unexpected = [...found].filter((t) => !ALLOWED.has(t));
+  assert.deepStrictEqual(unexpected, [],
+    "new uppercase token(s). If this is a real clinical abbreviation, add it to\n" +
+    "the list here AND to the convention block in tools/gen-token-registry.js.\n" +
+    "Otherwise use lower_snake_case:\n  " + unexpected.join("\n  "));
+});
+
+test("the naming convention is written down where an author would look", () => {
+  const fs = require("node:fs");
+  const path = require("node:path");
+  const gen = fs.readFileSync(
+    path.resolve(__dirname, "..", "tools/gen-token-registry.js"), "utf8");
+  assert.ok(/NAMING CONVENTION/.test(gen),
+    "the convention must live in the GENERATOR — the registry itself is " +
+    "regenerated and would lose a hand-added comment");
+});

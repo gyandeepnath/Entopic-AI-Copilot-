@@ -189,6 +189,29 @@ const banner =
   "/* every token's producers (input paths), KB usage counts, and      */\n" +
   "/* reachability. type_hint is mechanically inferred and PROVISIONAL */\n" +
   "/* — not verified clinical classification.                          */\n" +
+  "/*                                                                  */\n" +
+  "/* ── NAMING CONVENTION (Phase 3, knowledge audit) ──               */\n" +
+  "/*                                                                  */\n" +
+  "/*   lower_snake_case, ALWAYS — 468 of the 481 tokens in use.       */\n" +
+  "/*                                                                  */\n" +
+  "/*   EXCEPT that an established clinical ABBREVIATION keeps its     */\n" +
+  "/*   capitals, because RAPD is not rapd to a clinician and a token  */\n" +
+  "/*   a specialist cannot recognise is a token nobody will author    */\n" +
+  "/*   correctly. The thirteen in use:                                */\n" +
+  "/*                                                                  */\n" +
+  "/*     TBUT_reduced   RAPD_positive   CNVM        OCT_edema         */\n" +
+  "/*     MLF_lesion_sign   NPC_receded   reduced_PFV                  */\n" +
+  "/*     high_ACA_ratio   RNFL_thinning   gonioscopy_NVA              */\n" +
+  "/*     stellate_KPs   B_scan_ultrasound   CT_orbits_imaging         */\n" +
+  "/*                                                                  */\n" +
+  "/*   The rule: capitals ONLY for the abbreviation itself; the rest  */\n" +
+  "/*   of the token stays lower_snake_case. No spaces, no hyphens —   */\n" +
+  "/*   zero tokens use either today and none ever should.             */\n" +
+  "/*                                                                  */\n" +
+  "/*   This is documented rather than normalised on purpose. Renaming */\n" +
+  "/*   a token changes engine behaviour for no clinical gain; writing */\n" +
+  "/*   the convention down costs nothing and tells the next author    */\n" +
+  "/*   which form to use. tests/token-registry.test.js enforces it.   */\n" +
   "/* ═══════════════════════════════════════════════════════════════ */\n" +
   '"use strict";\n\n';
 

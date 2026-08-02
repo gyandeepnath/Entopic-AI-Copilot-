@@ -6,6 +6,77 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-08-02 — Structural gaps closed, education tier, and the knowledge audit
+
+**Your ADR-012 decision is recorded**: hybrid self-serve provisioning now,
+managed multi-tenant later. The record also lists the four things we must do
+*now* so switching stays cheap — chiefly, don't hard-code single-clinic
+assumptions, and keep the research corpus tenant-tagged.
+
+**"Not assessed" is now a real clinical statement.** A blank field used to mean
+three different things: examined and normal, deliberately skipped, or forgotten.
+In glaucoma follow-up "gonioscopy not performed" and "gonioscopy normal" are
+very different, and the record couldn't tell them apart. Four states per
+section, "not done" carries a reason, and it's written to the audit trail —
+choosing not to examine something is a clinical decision. The report now says
+what was assessed, what was declined and why, and what has no record either way.
+
+Two rules keep it safe: findings always outrank the flag, so a stale flag can
+never hide something that's actually in the record; and the engine never reads
+it, because "I didn't look" must never become "I looked and it was fine".
+
+**Trends.** IOP, cup:disc, visual-field MD and RNFL over time, on the patient
+chart. Drawn as plain SVG with no libraries, so it works offline. It shows the
+numbers and stops — it does **not** tell you whether something is progressing.
+That's a clinical judgement and getting it wrong in either direction is a safety
+event. Missing measurements are skipped, never plotted as zero.
+
+**A correction to my own Phase 2 review.** I reported "a follow-up starts blank".
+That was wrong — it already carried history forward. The real problem was worse:
+the copy was invisible, so a year-old medication list appeared as today's record.
+It's now per-field and marked as carried, so you can see it and confirm it. And
+examination findings never carry — not IOP, not VA, not slit lamp. Those are
+measured today or not at all.
+
+**The differential stops overstating itself.** A routine dry-eye case returns
+three conditions scoring *exactly* the same; shown as a numbered list, the first
+read as "most likely" when the engine was saying it can't separate them. Ties are
+now shown as ties. And the number is no longer a percentage — it's a match score,
+nothing has calibrated it against outcomes, and "75%" reads as a claim we haven't
+earned.
+
+**Education tier: competency framework and supervisor sign-off** — the two things
+blocking a university adopting this. **It ships with an empty framework on
+purpose.** I don't know the NCAHP competency list, and inventing one would be
+worse than shipping none: a programme would assess students against a standard
+corresponding to nothing they're accredited against. Faculty import their real
+one. A student's claim is never an achievement until a supervisor signs it, and a
+supervisor can agree a *different* level — that disagreement is the assessment.
+The logbook carries no patient identifiers, because it travels outside the clinic.
+
+**Phase 3 knowledge audit** — four documents. The headline: **not one of the 394
+conditions carries any citation, source or reference.** Zero. The knowledge base
+cannot answer "why does this rule exist?" for anything it contains. One file of
+twenty-one does it properly (the AREDS scale, with DOI and the verbatim source
+sentence) and that's the template everything else should follow.
+
+The structure is otherwise genuinely clean: no duplicate conditions, no
+unregistered tokens, complete ICD and narrative coverage, no contradictions
+found. Nothing needs rewriting — the work is additive.
+
+Knowledge score **5.8/10**, roughly 40% of the way to world-class. Two holes
+dominate: no evidence layer, and no clinical verification.
+
+**A caution about my own work.** Six of my measurement scripts produced
+confident, entirely false findings this session before I checked them. The worst
+concluded that 23 conditions — including Chemical Eye Burn and Open Globe Injury
+— could never fire. I ran the engine before writing it down. They fire correctly;
+my scan had simply missed a file. Had I reported it you'd have spent a day
+investigating working emergency logic. Every number in these documents survived
+that check, and the false finding is recorded so nobody re-derives it.
+
+742/742 tests pass, audit 0 FAIL.
+
 ## 2026-08-01 — Phase 2: clinical review, and two more real bugs fixed
 
 **Medication checker now understands "no".** "No steroids" counted as a steroid
