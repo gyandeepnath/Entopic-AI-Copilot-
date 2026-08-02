@@ -2532,3 +2532,11 @@ input, select, textarea, button {
   font-size: .5rem; padding: 1px 5px; border-radius: 8px;
   background: var(--sn); color: var(--sl); border: 1px solid var(--fg); margin-left: 5px;
 }
+
+/* ── Differential: ties and the match-strength scale ────────────── */
+.dx-tied { border-left: 2px solid var(--ms); padding-left: 6px !important; }
+.dx-tie-note { font-size: .5rem; color: var(--sv); font-style: italic; margin-bottom: 1px; }
+.dx-scale-note {
+  font-size: .52rem; color: var(--sv); line-height: 1.5;
+  padding: 6px 2px 2px; border-top: 1px solid var(--fg); margin-top: 6px;
+}

@@ -98,16 +98,16 @@ function renderAdvisory() {
 
   /* ═══ LEADING IMPRESSION (always visible — the headline answer) ═══ */
   var lead = V.dxList[0];
-  var leadPct = (lead.prob * 100).toFixed(0);
+  var leadPct = (lead.prob * 100).toFixed(0);   /* match strength, not probability — see the note under the list */
   var leadConf = (lead.evidence && lead.evidence.confidence) ? lead.evidence.confidence : "";
   h += '<div class="adv-sec">Leading Impression</div>';
   h += '<div class="dx-row" style="flex-direction:column;align-items:stretch;gap:3px;padding:6px 8px;border:1px solid var(--fg);border-radius:var(--r)' +
     (lead.urgent ? ';border-left:3px solid var(--ur,#c0392b)' : '') + '">';
   h += '<div style="display:flex;align-items:center;gap:6px">';
   h += '<div class="dx-n" style="flex:1;font-weight:600">' + lead.n + (lead.urgent ? ' <span style="color:var(--ur,#c0392b);font-size:.5rem">· URGENT</span>' : '') + '</div>';
-  h += '<div class="dx-pct">' + leadPct + '%</div>';
+  h += '<div class="dx-pct" title="Match strength (0-100), not a probability">' + leadPct + '</div>';
   h += '</div>';
-  if (leadConf) h += '<div style="font-size:.5rem;color:var(--sv)">' + leadConf + ' confidence · most likely by ranking</div>';
+  if (leadConf) h += '<div style="font-size:.5rem;color:var(--sv)">' + leadConf + ' confidence · best match, not most likely</div>';
   h += '<div style="font-size:.5rem;color:var(--sv);font-style:italic">Advisory only — clinical correlation required. Not a definitive diagnosis.</div>';
   h += dxInfoToggle(lead.n, "lead", lead);
   h += '</div>';
@@ -168,15 +168,35 @@ function renderAdvisory() {
       }
     }
     var maxToShow = Math.min(V.dxList.length, 6);
+
+    /* Which entries are tied with their neighbour.
+
+       A routine dry-eye case returns three conditions all scoring exactly the
+       same, and rendering them as an ordered list made the first read as "most
+       likely". The engine is saying the opposite — that it cannot tell them
+       apart — so an ordered list manufactures confidence it does not have.
+       Ties are now shown as ties. (Safety Register CS-07 / HF-03.) */
+    var tiedWithPrev = [];
+    for (var ti = 0; ti < maxToShow; ti++) {
+      tiedWithPrev[ti] = (ti > 0 && Math.abs(V.dxList[ti].prob - V.dxList[ti - 1].prob) < 0.005);
+    }
+
     for (var di = 0; di < maxToShow; di++) {
       var d = V.dxList[di];
       var pct = (d.prob * 100).toFixed(0);
       var ev = d.evidence || {};
-      h += '<div class="dx-row" style="flex-direction:column;align-items:stretch;gap:2px;padding:6px 0">';
+      var tiedNext = (di + 1 < maxToShow && tiedWithPrev[di + 1]);
+      var inTie = tiedWithPrev[di] || tiedNext;
+
+      h += '<div class="dx-row' + (inTie ? ' dx-tied' : '') +
+        '" style="flex-direction:column;align-items:stretch;gap:2px;padding:6px 0">';
+      if (tiedWithPrev[di]) {
+        h += '<div class="dx-tie-note">= equal match — the engine cannot separate this from the one above</div>';
+      }
       h += '<div style="display:flex;align-items:center;gap:6px"><div style="flex:1">' +
         '<div class="dx-n">' + d.n + '</div><div class="dx-icd">' + d.icd + (d.domain ? ' · ' + d.domain : '') + '</div></div>';
       h += '<div class="dx-bar"><div class="dx-bar-fill" style="width:' + pct + '%"></div></div>';
-      h += '<div class="dx-pct">' + pct + '%</div></div>';
+      h += '<div class="dx-pct" title="Match strength — how much of this condition\'s expected evidence is present. NOT a probability of having it.">' + pct + '</div></div>';
       if (ev.matched && ev.matched.length > 0) {
         h += '<div class="dx-evidence"><span class="matched">' + ev.matched.slice(0, 4).join(", ") + '</span>' +
           (ev.matched.length > 4 ? '<span class="matched"> +' + (ev.matched.length - 4) + '</span>' : '') +
@@ -188,6 +208,13 @@ function renderAdvisory() {
     if (V.dxList.length > maxToShow) {
       h += '<div style="font-size:.54rem;color:var(--sv);text-align:center;padding:4px">+' + (V.dxList.length - maxToShow) + ' more — see Diagnosis page</div>';
     }
+    /* What the number means. It is a match score — how much of the condition's
+       expected evidence is present — and nothing has calibrated it against
+       outcomes. Displayed bare as "75" rather than "75%" so it is not read as
+       "75% likely", which is a frequency claim nobody has earned. */
+    h += '<div class="dx-scale-note">Match strength (0–100): how much of each ' +
+      'condition\'s expected evidence is present. <b>Not a probability</b> — ' +
+      'it has not been calibrated against outcomes.</div>';
   }
 
   /* ── TAB: CHECK NEXT (the refinement loop + accuracy nudges) ── */
