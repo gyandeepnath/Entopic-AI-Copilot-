@@ -219,6 +219,9 @@
     <!-- One-click "this section is normal" quick-fill (shown only on exam
          steps where WNL applies); feeds normal findings to the engine. -->
     <button class="hdr-wnl" id="hdrWNL" onclick="markStepWNL()" style="display:none" title="Mark this section within normal limits">✓ Normal</button>
+    <!-- "Not assessed" is a clinical statement, not a blank. Sits beside
+         "Normal" because the two are the same decision made either way. -->
+    <button class="hdr-wnl hdr-nd" id="hdrNotDone" onclick="sectionUiAskNotDone()" style="display:none" title="Record that this section was deliberately not assessed">⊘ Not assessed</button>
     <!-- Diagnostic engine — always reachable; on narrow screens it opens the
          advisory as a slide-over drawer, on wide screens it opens the full map -->
     <span class="hdr-engine" id="hdrEngine" onclick="toggleEngineView()" title="Diagnostic engine — live">
@@ -449,6 +452,11 @@
 <!-- "Normal (WNL)" quick-fill templates. Split out of app.js when it hit
      its complexity budget; read only on a button press. -->
 <script src="js/wnl-templates.js"></script>
+<!-- Section status: "not assessed" as an explicit clinical statement,
+     distinct from "normal but not typed". Needs stepHasData from app.js at
+     call time only. -->
+<script src="js/section-status.js"></script>
+<script src="js/ui-section-status.js"></script>
 <script src="js/storage-mirror.js"></script>
 <!-- local-vault defines the secret-wrapping helpers that cloud-sync and
      storage consult at load time, so it must precede them. -->

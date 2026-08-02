@@ -54,10 +54,14 @@ function renderMain() {
      section — the banner is prepended to whatever page is showing. */
   var simTop = (typeof simBanner === "function") ? simBanner() : "";
 
+  /* A section recorded as deliberately not assessed says so where the
+     clinician is working, not only on the report. */
+  var ndTop = (typeof sectionNotDoneBanner === "function") ? sectionNotDoneBanner(V.step) : "";
+
   if (fn) {
-    el.innerHTML = simTop + fn();
+    el.innerHTML = simTop + ndTop + fn();
   } else {
-    el.innerHTML = simTop + '<div class="card"><div class="card-t">Section</div>' +
+    el.innerHTML = simTop + ndTop + '<div class="card"><div class="card-t">Section</div>' +
       '<p style="color:var(--sv);margin-top:8px">This section is under development.</p></div>';
   }
 }

@@ -1399,6 +1399,7 @@ function openExam() {
   renderMain();
   renderAdvisory();
   updateWNLButton();
+  if (typeof updateNotDoneButton === "function") updateNotDoneButton();
   startAutoSave();
 }
 
@@ -1493,6 +1494,7 @@ function nav(stepId) {
 
   /* Toggle the "✓ Normal" quick-fill button for this step. */
   updateWNLButton();
+  if (typeof updateNotDoneButton === "function") updateNotDoneButton();
 }
 
 /* The WNL quick-fill templates live in js/wnl-templates.js (WNL_TEMPLATES).
@@ -1578,47 +1580,68 @@ function goNext(currentStep, nextStep) {
   nav(nextStep);
 }
 
-function markDone(sid) {
-  if (!sid || !V || !V.completed) return;
+/* Does this step hold any recorded data? Pure and visit-scoped so it can be
+   asked about ANY visit, not just the open one — the section-status model and
+   the carry-forward both need that. Extracted from markDone unchanged. */
+function stepHasData(sid, visit, patient) {
+  var v = visit || V;
+  /* The demographics rule is the only one that reads the patient rather than
+     the visit. For the open visit that is P; for any other, the caller passes
+     it or we simply cannot say. */
+  var p = patient || ((v === V) ? P : {}) || {};
+  if (!sid || !v) return false;
+  var has = false;
 
+  /* Visits saved by older builds can be missing whole sub-objects, and this is
+     now called on arbitrary historical visits rather than only the open one.
+     A missing section means "no data", never a crash — this runs inside
+     rendering and inside the section-status model. */
+  try {
+    return _stepHasDataInner(sid, v, p);
+  } catch (e) {
+    return false;
+  }
+}
+
+function _stepHasDataInner(sid, v, p) {
   var has = false;
 
   switch (sid) {
     case "demographics":
-      has = !!(P.first_name || P.age);
+      has = !!(p.first_name || p.age);
       break;
     case "chief_complaint":
-      has = !!(V.cc || (V.symptoms && V.symptoms.length > 0));
+      has = !!(v.cc || (v.symptoms && v.symptoms.length > 0));
       break;
     case "hx_ocular":
-      has = !!(V.hxO.conditions || V.hxO.medications || (V.hxO.flags && V.hxO.flags.length > 0));
+      has = !!(v.hxO.conditions || v.hxO.medications || (v.hxO.flags && v.hxO.flags.length > 0));
       break;
     case "hx_medical":
-      has = !!(V.hxM.conditions || V.hxM.dm || V.hxM.htn || (V.hxM.drug_list && V.hxM.drug_list.length > 0));
+      has = !!(v.hxM.conditions || v.hxM.dm || v.hxM.htn || (v.hxM.drug_list && v.hxM.drug_list.length > 0));
       break;
     case "hx_family":
-      has = !!(V.hxF.details || V.hxF.glaucoma || V.hxF.amd);
+      has = !!(v.hxF.details || v.hxF.glaucoma || v.hxF.amd);
       break;
     case "va":
-      has = !!(V.va.od_un || V.va.od_bva);
+      has = !!(v.va.od_un || v.va.od_bva);
       break;
     case "refraction":
-      has = !!V.rx.od_sph;
+      has = !!v.rx.od_sph;
       break;
     case "dilation":
-      has = !!V.dil.drug;
+      has = !!v.dil.drug;
       break;
     case "slit_lamp":
-      has = V.sl.findings.length > 0;
+      has = v.sl.findings.length > 0;
       break;
     case "iop":
-      has = !!V.iop.od;
+      has = !!v.iop.od;
       break;
     case "pupil":
-      has = V.pupil.rapd !== "None" || !!V.pupil.notes;
+      has = v.pupil.rapd !== "None" || !!v.pupil.notes;
       break;
     case "motility":
-      has = !!V.mot.notes || V.mot.versions !== "Full";
+      has = !!v.mot.notes || v.mot.versions !== "Full";
       break;
     case "bv":
       /* Categorical results count as an assessment, not just numbers. The rule
@@ -1627,33 +1650,38 @@ function markDone(sid) {
          and fusing read back as "not assessed". That understates what was
          actually done and leaves the step looking incomplete for the rest of
          the consultation. */
-      has = !!(V.bv.npc_b || V.bv.ct_n || V.bv.acc_od ||
-               V.bv.ct_type_d || V.bv.ct_type_n || V.bv.w4d || V.bv.w4n ||
-               V.bv.stereo || V.bv.comitancy);
+      has = !!(v.bv.npc_b || v.bv.ct_n || v.bv.acc_od ||
+               v.bv.ct_type_d || v.bv.ct_type_n || v.bv.w4d || v.bv.w4n ||
+               v.bv.stereo || v.bv.comitancy);
       break;
     case "gonioscopy":
-      has = !!(V.gon.od.s || V.gon.os.s);
+      has = !!(v.gon.od.s || v.gon.os.s);
       break;
     case "fundus":
-      has = !!(V.fun.od.cd_v || V.fun.findings.length > 0);
+      has = !!(v.fun.od.cd_v || v.fun.findings.length > 0);
       break;
     case "neuro":
-      has = !!(V.neuro.color_od || V.neuro.notes);
+      has = !!(v.neuro.color_od || v.neuro.notes);
       break;
     case "investigations":
-      has = !!(V.inv.oct_rnfl_od || V.inv.vf_md_od || V.inv.notes);
+      has = !!(v.inv.oct_rnfl_od || v.inv.vf_md_od || v.inv.notes);
       break;
     case "diagnosis":
-      has = V.dxList.length > 0;
+      has = v.dxList.length > 0;
       break;
     case "plan":
-      has = !!(V.plan.mgmt || V.plan.ref_to);
+      has = !!(v.plan.mgmt || v.plan.ref_to);
       break;
     default:
       has = false;
   }
 
-  if (has && V.completed.indexOf(sid) === -1) {
+  return has;
+}
+
+function markDone(sid) {
+  if (!sid || !V || !V.completed) return;
+  if (stepHasData(sid, V) && V.completed.indexOf(sid) === -1) {
     V.completed.push(sid);
   }
 }

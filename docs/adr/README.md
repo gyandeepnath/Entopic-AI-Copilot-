@@ -12,7 +12,7 @@ These twelve records are written **retrospectively**. They document decisions
 already in force, so their value is not in choosing — it is in stating what was
 chosen, what it costs, and what would have to be true to revisit it.
 
-Two are marked **NOT MADE**: they are decisions the project has been avoiding
+One is marked **NOT MADE**: they are decisions the project has been avoiding
 rather than taking, and writing them down is the point.
 One is marked **Accepted by accident**, because that is honestly what happened.
 
@@ -36,4 +36,4 @@ Short on purpose. An ADR nobody reads protects nobody.
 | [009](009-fail-closed-review-status.md) | Unknown review state means unreviewed | Accepted |
 | [010](010-roles-are-presentation.md) | Roles are presentation, not authorization | **Accepted by accident** |
 | [011](011-regulatory-classification.md) | Regulatory classification of the product | **NOT MADE** |
-| [012](012-multi-tenancy-model.md) | Whether Entopic becomes managed multi-tenant SaaS | **NOT MADE** |
+| [012](012-multi-tenancy-model.md) | Hybrid self-serve per-clinic now; managed multi-tenant later | **Decided 2026-08-02** |

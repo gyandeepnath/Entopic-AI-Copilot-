@@ -153,6 +153,13 @@ function pgRpt() {
   if (V.plan.ref_to) h += 'Referral: ' + escH(V.plan.ref_to) + ' (' + escH(V.plan.ref_urgency) + ')';
   h += '</div>';
 
+  /* What was, and was NOT, assessed. A report that lists only findings lets a
+     reader assume everything unmentioned was examined and normal. This says
+     what was declined and what has no record either way. */
+  if (typeof sectionStatusReportBlock === "function") {
+    h += sectionStatusReportBlock(V);
+  }
+
   /* Signature (print only) */
   h += '<div class="print-only print-sign"><div>Clinician Signature</div><div>Date</div></div>';
 
