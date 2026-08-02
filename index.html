@@ -478,6 +478,11 @@
 <!-- Whole-clinic snapshots: export, encrypted export, validate, restore.
      Split out of storage.js; uses its accessors, so it loads after it. -->
 <script src="js/storage-backup.js"></script>
+<!-- Carry-forward (marked, confirmable) and read-only trend series.
+     Needs getPatientVisits from storage.js above. -->
+<script src="js/visit-history.js"></script>
+<!-- Trend charts read trendsAvailable() from visit-history.js above. -->
+<script src="js/ui-trends.js"></script>
 <!-- Renders the alerts storage raises (stopped saving / unreadable store /
      concurrent write) and the save indicator. Loaded before app.js so a
      problem discovered during boot still reaches the screen. -->

@@ -122,6 +122,19 @@ function renderChart() {
     }
   }
 
+  /* — TRENDS —
+     Placed above the timeline because for a chronic patient the trajectory IS
+     the clinical picture: a single IOP means little, six across two years is
+     the reason they are here. Renders nothing until two visits share a
+     measurement. */
+  if (typeof trendsPanel === "function") {
+    var _tr = trendsPanel(CP);
+    if (_tr && !/trend-empty/.test(_tr)) {
+      h += '<div class="adv-sec" style="font-size:.7rem">Trends <span style="color:var(--sv);font-weight:400">· recorded measurements over time</span></div>';
+      h += '<div style="margin-bottom:16px">' + _tr + '</div>';
+    }
+  }
+
   /* — VISIT TIMELINE — */
   h += '<div class="adv-sec" style="font-size:.7rem">Visit history <span style="color:var(--sv);font-weight:400">· ' + visits.length + ' total</span></div>';
   if (!visits.length) {
@@ -208,11 +221,15 @@ function startFollowUpVisit() {
   var visits = loadVisits();
   var prior = _lastCompletedVisit();
   var nv = blankVisit();
-  var carried = false;
+  var carried = 0;
   if (prior && prior.data) {
-    ["hxO", "hxM", "hxF", "hxS"].forEach(function (k) {
-      if (prior.data[k]) { try { nv[k] = JSON.parse(JSON.stringify(prior.data[k])); carried = true; } catch (e) {} }
-    });
+    /* Per-field and MARKED, rather than the blanket deep-copy this used to do.
+       The old version copied hxO/hxM/hxF/hxS wholesale with nothing on screen
+       to say so, which meant a year-old medication list was presented as
+       today's record. carryForward() marks every field it touches so the UI
+       can show it as carried and the clinician can confirm it. It also copies
+       only history — never an examination finding. */
+    carried = (typeof carryForward === "function") ? carryForward(nv, prior.data) : 0;
     if (carried) nv._carried_from = prior.id;
   }
   var vid = "v" + Date.now().toString(36);
@@ -225,7 +242,7 @@ function startFollowUpVisit() {
   });
   saveVisits(visits);
   if (typeof logAudit === "function") logAudit("visit_started",
-    (prior ? "Follow-up visit started" : "Initial visit started") + (carried ? " (history carried forward)" : ""),
+    (prior ? "Follow-up visit started" : "Initial visit started") + (carried ? " (" + carried + " history field(s) carried forward, unconfirmed)" : ""),
     { patient_id: CP, visit_id: vid });
   openExam();
 }

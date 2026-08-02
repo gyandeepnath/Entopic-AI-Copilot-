@@ -2515,3 +2515,20 @@ input, select, textarea, button {
 .rpt-sec-t { font-weight: 600; font-size: .68rem; margin-bottom: 4px; }
 .rpt-line { font-size: .62rem; line-height: 1.55; color: var(--sl); }
 .rpt-line ul { margin: 3px 0 0 16px; }
+
+/* ── Trends ─────────────────────────────────────────────────────── */
+.trend-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; }
+.trend { border: 1px solid var(--fg); border-radius: var(--r); padding: 8px 10px; }
+.trend-t { font-size: .62rem; font-weight: 600; margin-bottom: 2px; }
+.trend-u { color: var(--sv); font-weight: 400; }
+.trend-svg { width: 100%; height: auto; display: block; }
+.trend-line { fill: none; stroke: var(--ink, #333); stroke-width: 1.6; }
+.trend-dot { fill: var(--ink, #333); }
+.trend-ax { font-size: 8px; fill: var(--sv); }
+.trend-x { display: flex; justify-content: space-between; font-size: .52rem; color: var(--sv); }
+.trend-n { font-size: .52rem; color: var(--sv); margin-top: 2px; }
+.trend-empty, .trend-note { font-size: .6rem; color: var(--sv); padding: 6px 2px; }
+.carried-chip {
+  font-size: .5rem; padding: 1px 5px; border-radius: 8px;
+  background: var(--sn); color: var(--sl); border: 1px solid var(--fg); margin-left: 5px;
+}
