@@ -6,6 +6,57 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-08-02 — Design: user-authored conditions (exploration, nothing built)
+
+`docs/DESIGN_PERSONALISED_CONDITIONS.md`.
+
+Your idea is the right one, and it is the most important product idea in the
+project so far. It is also the most dangerous thing that could be built into
+Entopic, and the whole difference is the safety model.
+
+Worth noting: you have independently arrived at the contribution workflow I
+designed in the Phase 3 Governance Manual, from the opposite direction. I got
+there from "how does a knowledge base scale past one author?"; you got there
+from "how does a clinician make this fit their practice?" That they converge is
+a good sign it is the correct shape.
+
+**The risk that shapes everything.** The engine ranks one list from one array.
+Append a personal condition and it competes directly with core conditions — so a
+clinician's own "evening dryness" pattern could out-score retinal detachment and
+push it below the fold. Nobody would have done anything wrong, and a detachment
+would be buried.
+
+**The fix is structural, not disciplinary.** Run the engine twice — once over
+core knowledge, once over the overlay — and merge with every core urgent
+condition on top, always. A personal condition then cannot mathematically
+outrank a red flag, because they are never ranked against each other. Costs
+0.7 ms.
+
+Also proposed: overlays may only ADD, never delete or exclude; users may never
+set an urgent flag (that is a safety claim, and the governance manual says
+safety changes are never delegated); every overlay condition is permanently
+badged as unreviewed; and every visit records which knowledge produced its
+differential, so a differential from two years ago can still be explained.
+
+**The best part of your idea is the preview, and I would push it further.**
+Beyond the wiring map: run the new condition against the clinician's own last
+200 visits and tell them "this would have appeared in 34 differentials, and in 6
+of those it would have ranked above what you actually diagnosed" — then let them
+click through those 6. That is computable from data already stored, needs no new
+capture, and turns an abstract edit into evidence about their own practice
+before anything is saved.
+
+~250 hours across four stages. Stage 1 (the safety foundation, no UI) is worth
+doing first even if everything else waits.
+
+**Three decisions are yours** and are listed at the end of the document: whether
+to build it, whether to start personal-only, and whether a clinician may ever
+set an urgent flag. **Stage 4 — publishing user-authored diagnostic logic to
+other clinics — should not ship before ADR-011 has an answer**, because that
+activity is precisely what determines how the product is regulated.
+
+Nothing was built. 747/747 tests pass, audit 0 FAIL.
+
 ## 2026-08-02 — Structural gaps closed, education tier, and the knowledge audit
 
 **Your ADR-012 decision is recorded**: hybrid self-serve provisioning now,
