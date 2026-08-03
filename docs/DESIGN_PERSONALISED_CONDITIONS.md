@@ -283,6 +283,77 @@ precisely the activity that determines how the product is classified.
 
 ---
 
+## 6b. STATUS — verified in a browser, 2026-08-03
+
+Every line below was checked by driving the real app, not by reading code.
+
+| Stage | Status | Where it lives |
+|---|---|---|
+| **1 · Overlay engine + two-pass merge** | **BUILT** | `js/kb-overlay.js`; engine stage 8b |
+| **2 · Personal authoring + wiring map + test bench** | **BUILT** | `js/ui-condition-builder.js` |
+| **3 · Retrospective impact preview** | **BUILT** | `js/overlay-impact.js` |
+| **4 · Submission + admin review + clinic publish** | **MODEL ONLY — no review screen** | `overlaySubmit` / `overlaySubmitted` / `overlayReview` exist and are tested; nothing renders them |
+
+**What was verified working end to end.** A clinician creates "My Evening
+Dryness Pattern" requiring `dryness`, supported by `worse_evening` and
+`screen_use_exacerbation`. It saves, becomes active, is returned by
+`overlayConditions()`, and on a matching visit it fires at 0.72 — appearing
+**beneath** the three core dry-eye conditions, marked as an overlay. The
+safety model holds in practice: core keeps its own ordering and overlays are
+appended, never interleaved.
+
+**Exclusions are refused twice** — rejected by `overlayValidate` and stripped
+unconditionally by `overlaySave`. Belt and braces on the one field that could
+remove a core condition from a differential.
+
+### What the founder overruled, and what was built instead
+
+§7 listed **user-set urgent flags** under "what I would not build". The founder
+decided on 2026-08-02 that clinicians may set them. That decision is
+implemented with the mitigations proposed alongside the original concern: an
+urgent overlay **appends** an alert after the core alerts rather than merging
+into them, the banner carries the author's name and the words "not clinically
+reviewed" in its own text, and it auto-submits for review. A mistaken personal
+urgent therefore costs an extra line on screen — never a missing red flag. The
+mechanism is declared in `knowledge/red-flags.js` as `overlay_urgent`.
+
+### Can a user create a new TOKEN? No — and that is the design
+
+A clinician composes conditions from findings the exam already records. They
+cannot invent a finding, because a token only exists if some input path in
+`collectTokens()` produces it. Adding a genuinely new finding means adding a
+field to the exam and a derivation rule to the engine — a code change, not a
+data change.
+
+**This was silently broken until 2026-08-03.** The finding fields were free
+text. Typing "evening dryness" produced `evening_dryness`, which nothing
+emits, so the condition could never fire — and the chip looked exactly like a
+working one. A clinician would have left believing the app was watching for
+their pattern. Now: a required finding the engine cannot produce is refused
+with the reason, supporting ones are a non-blocking note, and the input is
+backed by a picker of all 461 producible findings. Fails open if the generated
+registry is missing.
+
+### What Stage 4 still needs
+
+The model layer is complete and tested — submit, list the queue, accept or
+decline with a reason. What does not exist is **any screen an administrator
+can open to review a submission**. Nothing calls `overlaySubmitted()` or
+`overlayReview()` in the UI; `overlayReviewScreen` and `overlayAdminScreen` are
+undefined.
+
+That is deliberate and the gate has not moved: **Stage 4 must not ship before
+ADR-011 has an answer.** Publishing user-authored diagnostic logic from one
+clinic to another is precisely the activity that determines how this product
+is regulated. ADR-011 is still **NOT MADE**. Building the review screen is
+perhaps 20 hours; shipping it without that decision is the risk.
+
+An interim step that does *not* touch the regulatory question: a clinician can
+already submit, and their own submitted conditions stay visible to them. What
+is missing is only the cross-user publish path.
+
+---
+
 ## 7. What I would not build
 
 | | Why |
