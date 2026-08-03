@@ -2027,6 +2027,18 @@ function runDiagnosticEngine() {
     };
   });
 
+  /* The tokens this differential was actually built from.
+
+     Stored on the visit, not just in ENGINE_STATE, because ENGINE_STATE is
+     memory and dies with the tab. Without this, anything asking "what would
+     this rule have done at that visit?" — the impact preview, a future
+     regression harness, a deterministic replay against an older KB — has to
+     RE-DERIVE the tokens using today's rules, which answers a different
+     question and drifts as the knowledge base changes.
+
+     Cost: a few hundred short strings per visit. */
+  V.engine_tokens = tokens.slice();
+
   /* Which knowledge produced this differential. Once knowledge varies per
      user, "the engine said X" is meaningless without it. */
   if (typeof overlayProvenance === "function") {

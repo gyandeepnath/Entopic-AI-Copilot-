@@ -157,6 +157,9 @@
   <!-- Home Content (rendered by JS) -->
   <div class="home-wrap" id="homeContent"></div>
 
+  <!-- Condition builder overlay panel (hidden until opened). -->
+  <div id="cbPanel" style="display:none"></div>
+
 </div>
 
 
@@ -502,6 +505,10 @@
 <script src="js/roles.js"></script>
 <script src="js/clinical-validators.js"></script>
 <script src="js/engine.js"></script>
+<!-- Impact preview: what a draft condition would have done to past visits.
+     Needs scoreCondition from engine.js above. -->
+<script src="js/overlay-impact.js"></script>
+<script src="js/ui-condition-builder.js"></script>
 
 <!-- UI -->
 <script src="js/ui-sidebar.js"></script>

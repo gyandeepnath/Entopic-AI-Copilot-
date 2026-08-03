@@ -363,7 +363,10 @@ function renderHomeTab(role, tab) {
     case "study":    return homeSecStudy();
     case "teaching": return homeSecTeaching();
     case "casebook": return homeSecCasebook();
-    case "kb":       return homeSecKB();
+    case "kb":       return homeSecKB() +
+      /* A clinician's own conditions sit beside the reference, because that
+         is where they go looking for "what does the engine know". */
+      ((typeof cbMyConditionsHtml === "function") ? cbMyConditionsHtml() : "");
     case "account":  return homeSecAccount();
     case "admin":    return homeSecAdmin();
     case "research": return homeSecResearch();

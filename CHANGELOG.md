@@ -6,6 +6,52 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-08-02 — Built: your own conditions, wired into the engine (stages 1–3)
+
+You can now write down a pattern you recognise, wire it to findings, watch it
+behave, and see what it would have done to your own past visits — before saving
+anything.
+
+**The safety guarantee is structural, not a rule.** The engine ranks one list,
+so simply adding your condition to it would let an "evening dryness" pattern
+requiring flashes and floaters out-score retinal detachment and push it off the
+screen. Instead the engine now scores your conditions in a **separate pass** and
+places them **below every reviewed condition**, always. Verified in a browser: a
+condition deliberately built to win, scoring 0.6, renders last — beneath a
+retinal detachment scoring zero. They are never compared, so yours can never win.
+
+**Urgent flags: you decided yes, and I built it your way.** I'd recommended
+against it. You overruled me, which is your call — a clinician who recognises a
+genuine local emergency should be able to act on it. It ships with the
+mitigations I proposed alongside that concern: your urgent flag **adds** an
+alert and never replaces one, core alerts are computed first and independently,
+it appears labelled **"YOUR ALERT … not clinically reviewed"** with your name, it
+requires you to say why, it auto-submits for review, and it's written to the
+audit trail.
+
+**Three things you can never do**, because each could hide a red flag: use
+exclusions (the only rule that removes a condition from a differential — it's
+stripped on save, not just refused), reuse the name of a shipped condition, or
+edit reviewed content. Wanting to change a shipped condition is legitimate — it
+becomes a proposal, not a local override.
+
+**The preview, which is the part that prevents harm.** Beyond the wiring map and
+the live test bench, there's now: *"Checked your last 200 completed visits. This
+would have appeared in 34, and in 6 it would have scored higher than the
+diagnosis you recorded at the time."* Then you can look at those 6. It reports
+counts and never a verdict — whether 34 is too many is your judgement, not the
+software's.
+
+To make that honest, the engine now **stores the findings each visit was scored
+from**. Without it the preview would have to re-derive them using today's rules,
+which answers a different question and drifts as the knowledge base changes.
+
+**Three real bugs the new tests caught in my own code:** deleting, submitting and
+reviewing a condition all mutated a freshly-parsed copy and then saved a re-read
+one, silently discarding every change.
+
+779 tests pass, audit 0 FAIL.
+
 ## 2026-08-02 — Design: user-authored conditions (exploration, nothing built)
 
 `docs/DESIGN_PERSONALISED_CONDITIONS.md`.
