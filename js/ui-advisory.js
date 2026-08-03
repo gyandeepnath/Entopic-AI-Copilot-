@@ -89,6 +89,27 @@ function renderAdvisory() {
     }
   }
 
+  /* ═══ CONTRADICTIONS (Phase 4 F-2) ═══
+     Two individually-plausible values that cannot both be true. Shown beside
+     the per-field data check because they are the same kind of help, but
+     separated because a contradiction is a stronger statement than an
+     implausible value — and because the CERTAIN ones are facts while the
+     others are questions. Never blocks entry. */
+  if (typeof clinContradictions === "function") {
+    var contras = clinContradictions(V, typeof P !== "undefined" ? P : null);
+    if (contras.length) {
+      h += '<div class="adv-sec">Contradictions</div>';
+      for (var cx = 0; cx < contras.length; cx++) {
+        var ct = contras[cx];
+        h += '<div class="alert-box ' + (ct.level === "error" ? "warn" : "info") +
+          '" style="font-size:.58rem">' +
+          (ct.level === "error" ? "⚠ " : "? ") + escH(ct.message) +
+          (ct.why ? '<div style="color:var(--sl);margin-top:2px">' + escH(ct.why) + '</div>' : '') +
+          '</div>';
+      }
+    }
+  }
+
   if (!V.dxList || V.dxList.length === 0) {
     h += '<div style="color:var(--sv);font-size:.64rem;margin-top:12px;padding:10px;border:1px dashed var(--ms);border-radius:var(--r);text-align:center;line-height:1.5">' +
       'Enter symptoms and clinical data to generate diagnostic suggestions</div>';
