@@ -17,6 +17,28 @@
 "use strict";
 
 
+/* ── CLINICAL THRESHOLDS — FAIL-SAFE SHIM  (Phase 4 F-4) ──────────
+   Every clinical number the engine compares against now lives in
+   knowledge/clinical-thresholds.js, so a clinician can read and sign off
+   the numbers that decide differentials without reading JavaScript. The
+   engine calls clinThreshold("iop_high", 21) — the literal stays as the
+   fallback, and tests/clinical-thresholds.test.js pins the two together
+   so they can never become two different rules.
+
+   If that file fails to load the exam must still work (ADR-006), so a
+   missing knowledge file degrades to the fallbacks rather than crashing.
+   `var` without assignment is deliberate: in the browser both files share
+   global scope, and a bare re-declaration does not overwrite. */
+
+var clinThreshold, scoreThreshold;
+if (typeof clinThreshold !== "function") {
+  clinThreshold = function (id, fallback) { return fallback; };
+}
+if (typeof scoreThreshold !== "function") {
+  scoreThreshold = function (id, fallback) { return fallback; };
+}
+
+
 /* ═══════════════════════════════════════════════════════════════ */
 /* ENGINE STATE                                                    */
 /* Persistent across the current session                           */
@@ -221,14 +243,16 @@ function collectTokens() {
   if (V.pupil) {
     var pod = parseFloat(V.pupil.od_l) || 0;
     var pos = parseFloat(V.pupil.os_l) || 0;
-    if (pod > 0 && pos > 0 && Math.abs(pod - pos) >= 1) addToken("anisocoria");
+    if (pod > 0 && pos > 0 && Math.abs(pod - pos) >= clinThreshold("anisocoria_min", 1)) addToken("anisocoria");
   }
 
   /* Proptosis / lid retraction from the exophthalmometry fields, when present. */
   if (V.orbit) {
     var exOd = parseFloat(V.orbit.exoph_od) || 0;
     var exOs = parseFloat(V.orbit.exoph_os) || 0;
-    if (exOd >= 21 || exOs >= 21 || Math.abs(exOd - exOs) >= 2) addToken("proptosis");
+    var _prAbs = clinThreshold("proptosis_absolute", 21);
+    if (exOd >= _prAbs || exOs >= _prAbs ||
+        Math.abs(exOd - exOs) >= clinThreshold("proptosis_asymmetry", 2)) addToken("proptosis");
     if (V.orbit.lid_retraction) addToken("lid_retraction");
   }
 
@@ -273,11 +297,15 @@ function collectTokens() {
        replacement with the same meaning; `young_adult_age` is the bracket that
        was missing, and whose absence had the KB tagging young-adult
        presentations as paediatric. */
-    if (age < 18)               { addToken("young_age"); addToken("paediatric_age"); }
-    if (age >= 18 && age < 40)  addToken("young_adult_age");
-    if (age >= 40) addToken("age_over_40");
-    if (age >= 60) addToken("older_age");
-    if (age >= 40) addToken("age_related");
+    var _agePaed = clinThreshold("age_paediatric_max", 18);
+    var _ageYA   = clinThreshold("age_young_adult_max", 40);
+    var _age40   = clinThreshold("age_over_40", 40);
+    var _ageOld  = clinThreshold("age_older", 60);
+    if (age < _agePaed)                     { addToken("young_age"); addToken("paediatric_age"); }
+    if (age >= _agePaed && age < _ageYA)    addToken("young_adult_age");
+    if (age >= _age40) addToken("age_over_40");
+    if (age >= _ageOld) addToken("older_age");
+    if (age >= _age40) addToken("age_related");
   }
 
   /* IOP auto-derivation */
@@ -285,9 +313,10 @@ function collectTokens() {
     var iopOd = parseFloat(V.iop.od) || 0;
     var iopOs = parseFloat(V.iop.os) || 0;
     var iopMax = Math.max(iopOd, iopOs);
-    if (iopMax > 21) addToken("high_iop");
-    if (iopMax > 30) addToken("very_high_iop");
-    if (iopMax > 0 && iopMax <= 21) addToken("normal_iop");
+    var _iopHigh = clinThreshold("iop_high", 21);
+    if (iopMax > _iopHigh) addToken("high_iop");
+    if (iopMax > clinThreshold("iop_very_high", 30)) addToken("very_high_iop");
+    if (iopMax > 0 && iopMax <= _iopHigh) addToken("normal_iop");
   }
 
   /* CCT / Pachymetry */
@@ -298,14 +327,15 @@ function collectTokens() {
     if (cctOd > 0 && cctOs > 0) cctMin = Math.min(cctOd, cctOs);
     else if (cctOd > 0) cctMin = cctOd;
     else if (cctOs > 0) cctMin = cctOs;
-    if (cctMin > 0 && cctMin < 520) addToken("thin_cornea");
+    if (cctMin > 0 && cctMin < clinThreshold("cct_thin", 520)) addToken("thin_cornea");
   }
 
   /* Van Herick */
   if (V.sl) {
     var vhOd = parseInt(V.sl.od.vh) || 99;
     var vhOs = parseInt(V.sl.os.vh) || 99;
-    if (vhOd <= 2 || vhOs <= 2) { addToken("narrow_angle"); addToken("shallow_ac"); }
+    var _vhN = clinThreshold("van_herick_narrow", 2);
+    if (vhOd <= _vhN || vhOs <= _vhN) { addToken("narrow_angle"); addToken("shallow_ac"); }
   }
 
   /* ── SOURCE 9b: STRUCTURED SLIT-LAMP GRADES + FREE-TEXT SIGNS ──
@@ -317,15 +347,23 @@ function collectTokens() {
   if (V.sl) {
     /* AC cells (SUN 0 / 0.5+ / 1+ … 4+) → cells_present + severity grade */
     var cellsN = Math.max(slGrade(V.sl.od.cells), slGrade(V.sl.os.cells));
-    if (cellsN > 0) { addToken("cells_present"); if (cellsN >= 2) addToken("cells_" + Math.min(cellsN, 4)); }
+    if (cellsN > 0) {
+      addToken("cells_present");
+      if (cellsN >= clinThreshold("ac_cells_graded", 2)) addToken("cells_" + Math.min(cellsN, 4));
+    }
     /* AC flare (SUN) → flare_present + grade */
     var flareN = Math.max(slGrade(V.sl.od.flare), slGrade(V.sl.os.flare));
-    if (flareN > 0) { addToken("flare_present"); if (flareN >= 2) addToken("flare_" + Math.min(flareN, 4)); }
+    if (flareN > 0) {
+      addToken("flare_present");
+      if (flareN >= clinThreshold("ac_flare_graded", 2)) addToken("flare_" + Math.min(flareN, 4));
+    }
     /* Lens LOCS graded tokens (nuclear grade / cortical / PSC opacities) */
     var nsN = Math.max(parseInt(V.sl.od.ns) || 0, parseInt(V.sl.os.ns) || 0);
-    if (nsN >= 2) addToken("nuclear_sclerosis_grade_" + Math.min(nsN, 4));
-    if ((parseInt(V.sl.od.c) || 0) >= 2 || (parseInt(V.sl.os.c) || 0) >= 2) addToken("cortical_opacity");
-    if ((parseInt(V.sl.od.psc) || 0) >= 2 || (parseInt(V.sl.os.psc) || 0) >= 2) addToken("psc_opacity");
+    if (nsN >= clinThreshold("locs_ns_graded", 2)) addToken("nuclear_sclerosis_grade_" + Math.min(nsN, 4));
+    var _locsC = clinThreshold("locs_cortical_opacity", 2);
+    var _locsP = clinThreshold("locs_psc_opacity", 2);
+    if ((parseInt(V.sl.od.c) || 0) >= _locsC || (parseInt(V.sl.os.c) || 0) >= _locsC) addToken("cortical_opacity");
+    if ((parseInt(V.sl.od.psc) || 0) >= _locsP || (parseInt(V.sl.os.psc) || 0) >= _locsP) addToken("psc_opacity");
     /* Free-text lids / conjunctiva / cornea → keyword-parsed sign tokens */
     slParseText([V.sl.od.cornea, V.sl.os.cornea], {
       edema: "corneal_edema", scar: "corneal_scar", opacit: "corneal_opacity",
@@ -352,7 +390,7 @@ function collectTokens() {
   /* NPC auto-derivation */
   if (V.bv && V.bv.npc_b) {
     var npc = parseFloat(V.bv.npc_b) || 0;
-    if (npc >= 6) addToken("NPC_receded");
+    if (npc >= clinThreshold("npc_receded", 6)) addToken("NPC_receded");
   }
 
   /* Cover test / phoria auto-derivation */
@@ -362,8 +400,9 @@ function collectTokens() {
     if (phoriaMatch) {
       var phoriaVal = parseFloat(phoriaMatch[1]);
       var phoriaDir = phoriaMatch[2];
-      if (phoriaDir === "exo" && phoriaVal > 6) addToken("exo_near");
-      if (phoriaDir === "eso" && phoriaVal > 6) addToken("eso_near");
+      var _phN = clinThreshold("phoria_near_significant", 6);
+      if (phoriaDir === "exo" && phoriaVal > _phN) addToken("exo_near");
+      if (phoriaDir === "eso" && phoriaVal > _phN) addToken("eso_near");
     }
   }
   if (V.bv && V.bv.ct_d) {
@@ -372,8 +411,9 @@ function collectTokens() {
     if (distMatch) {
       var distVal = parseFloat(distMatch[1]);
       var distDir = distMatch[2];
-      if (distDir === "exo" && distVal > 6) addToken("exo_distance");
-      if (distDir === "eso" && distVal > 6) addToken("eso_distance");
+      var _phD = clinThreshold("phoria_distance_significant", 6);
+      if (distDir === "exo" && distVal > _phD) addToken("exo_distance");
+      if (distDir === "eso" && distVal > _phD) addToken("eso_distance");
     }
   }
 
@@ -382,7 +422,7 @@ function collectTokens() {
     var acaMatch = V.bv.aca.match(/(\d+\.?\d*)/);
     if (acaMatch) {
       var acaVal = parseFloat(acaMatch[1]);
-      if (acaVal > 6) addToken("high_ACA_ratio");
+      if (acaVal > clinThreshold("aca_high", 6)) addToken("high_ACA_ratio");
     }
   }
 
@@ -403,20 +443,21 @@ function collectTokens() {
   /* Flipper rate (MAF / BAF) */
   if (V.bv && V.bv.maf_od) {
     var maf = parseFloat(V.bv.maf_od) || 999;
-    if (maf < 8 && maf < 999) addToken("reduced_flipper_rate");
+    if (maf < clinThreshold("flipper_reduced", 8) && maf < 999) addToken("reduced_flipper_rate");
   }
 
   /* Vergence ranges */
   if (V.bv) {
     var boNBk = parseFloat(V.bv.bo_n_bk) || 999;
-    if (boNBk < 15 && boNBk < 999) addToken("reduced_PFV");
+    if (boNBk < clinThreshold("pfv_reduced", 15) && boNBk < 999) addToken("reduced_PFV");
 
     /* Check if any vergence range is significantly reduced */
     var anyReduced = false;
+    var _vgR = clinThreshold("vergence_range_reduced", 8);
     var ranges = ["bo_d_bk", "bi_d_bk", "bo_n_bk", "bi_n_bk"];
     for (var ri = 0; ri < ranges.length; ri++) {
       var rv = parseFloat(V.bv[ranges[ri]]) || 0;
-      if (rv > 0 && rv < 8) anyReduced = true;
+      if (rv > 0 && rv < _vgR) anyReduced = true;
     }
     if (anyReduced) addToken("reduced_vergence_ranges");
   }
@@ -429,15 +470,18 @@ function collectTokens() {
   if (V.rx && (V.rx.od_sph || V.rx.os_sph || V.rx.od_cyl || V.rx.os_cyl)) {
     var sphOd = parseFloat(V.rx.od_sph) || 0;
     var sphOs = parseFloat(V.rx.os_sph) || 0;
-    if (sphOd < -0.50 || sphOs < -0.50) addToken("myopia");
-    if (sphOd > +0.75 || sphOs > +0.75) addToken("hyperopia");
+    var _myo = clinThreshold("myopia_min", -0.50);
+    var _hyp = clinThreshold("hyperopia_min", 0.75);
+    if (sphOd < _myo || sphOs < _myo) addToken("myopia");
+    if (sphOd > _hyp || sphOs > _hyp) addToken("hyperopia");
 
     var cylOd = parseFloat(V.rx.od_cyl) || 0;
     var cylOs = parseFloat(V.rx.os_cyl) || 0;
-    if (Math.abs(cylOd) >= 0.75 || Math.abs(cylOs) >= 0.75) addToken("astigmatism");
+    var _ast = clinThreshold("astigmatism_min", 0.75);
+    if (Math.abs(cylOd) >= _ast || Math.abs(cylOs) >= _ast) addToken("astigmatism");
 
     /* Anisometropia */
-    if (Math.abs(sphOd - sphOs) >= 1.0) addToken("unequal_refractive_error");
+    if (Math.abs(sphOd - sphOs) >= clinThreshold("anisometropia_min", 1.0)) addToken("unequal_refractive_error");
 
     /* Add power */
     if (V.rx.od_add || V.rx.os_add) addToken("add_required");
@@ -458,8 +502,9 @@ function collectTokens() {
   if (V.fun) {
     var cdOd = parseFloat(V.fun.od.cd_v) || 0;
     var cdOs = parseFloat(V.fun.os.cd_v) || 0;
-    if (cdOd >= 0.6 || cdOs >= 0.6) addToken("increased_cd");
-    if (cdOd > 0 && cdOs > 0 && Math.abs(cdOd - cdOs) > 0.2) addToken("cd_asymmetry");
+    var _cdHi = clinThreshold("cd_increased", 0.6);
+    if (cdOd >= _cdHi || cdOs >= _cdHi) addToken("increased_cd");
+    if (cdOd > 0 && cdOs > 0 && Math.abs(cdOd - cdOs) > clinThreshold("cd_asymmetry", 0.2)) addToken("cd_asymmetry");
   }
 
   /* NRR from fundus */
@@ -536,7 +581,7 @@ function collectTokens() {
     var butOd = parseFloat(V.sl.od.but) || 999;
     var butOs = parseFloat(V.sl.os.but) || 999;
     var butMin = Math.min(butOd, butOs);
-    if (butMin < 10 && butMin < 999) {
+    if (butMin < clinThreshold("tbut_reduced", 10) && butMin < 999) {
       addToken("dryness");
       addToken("TBUT_reduced");
       addToken("tear_film_instability");
@@ -546,7 +591,7 @@ function collectTokens() {
     var schOd = parseFloat(V.sl.od.schirmer) || 999;
     var schOs = parseFloat(V.sl.os.schirmer) || 999;
     var schMin = Math.min(schOd, schOs);
-    if (schMin < 10 && schMin < 999) {
+    if (schMin < clinThreshold("schirmer_low", 10) && schMin < 999) {
       addToken("reduced_tearing");
       addToken("schirmer_low");
     }
@@ -554,12 +599,15 @@ function collectTokens() {
     /* LOCS grading */
     var nsOd = parseInt(V.sl.od.ns) || 0;
     var nsOs = parseInt(V.sl.os.ns) || 0;
-    if (nsOd >= 2 || nsOs >= 2) addToken("gradual_blur");
-    if (nsOd >= 3 || nsOs >= 3) addToken("glare");
+    var _nsBlur = clinThreshold("locs_ns_symptomatic", 2);
+    var _nsGlare = clinThreshold("locs_ns_glare", 3);
+    if (nsOd >= _nsBlur || nsOs >= _nsBlur) addToken("gradual_blur");
+    if (nsOd >= _nsGlare || nsOs >= _nsGlare) addToken("glare");
 
     var pscOd = parseInt(V.sl.od.psc) || 0;
     var pscOs = parseInt(V.sl.os.psc) || 0;
-    if (pscOd >= 1 || pscOs >= 1) { addToken("near_blur"); addToken("glare"); }
+    var _pscSym = clinThreshold("locs_psc_symptomatic", 1);
+    if (pscOd >= _pscSym || pscOs >= _pscSym) { addToken("near_blur"); addToken("glare"); }
   }
 
   /* Neuro fields */
@@ -615,7 +663,8 @@ function collectTokens() {
     /* OCT RNFL */
     var rnflOd = parseFloat(V.inv.oct_rnfl_od) || 0;
     var rnflOs = parseFloat(V.inv.oct_rnfl_os) || 0;
-    if ((rnflOd > 0 && rnflOd < 80) || (rnflOs > 0 && rnflOs < 80)) {
+    var _rnflT = clinThreshold("rnfl_thin", 80);
+    if ((rnflOd > 0 && rnflOd < _rnflT) || (rnflOs > 0 && rnflOs < _rnflT)) {
       addToken("RNFL_thinning");
       addToken("field_defect");
     }
@@ -623,8 +672,10 @@ function collectTokens() {
     /* Visual field MD */
     var mdOd = parseFloat(V.inv.vf_md_od) || 0;
     var mdOs = parseFloat(V.inv.vf_md_os) || 0;
-    if (mdOd < -3 || mdOs < -3) addToken("field_defect");
-    if (mdOd < -6 || mdOs < -6) addToken("visual_field_defect");
+    var _mdDef = clinThreshold("vf_md_defect", -3);
+    var _mdSig = clinThreshold("vf_md_significant", -6);
+    if (mdOd < _mdDef || mdOs < _mdDef) addToken("field_defect");
+    if (mdOd < _mdSig || mdOs < _mdSig) addToken("visual_field_defect");
   }
 
   /* ── SOURCE 10: Systemic medication effects ──
@@ -1201,7 +1252,7 @@ function applyExclusions(results, tokens) {
   /* Build a set of high-scoring condition names */
   var highScorers = {};
   for (var i = 0; i < results.length; i++) {
-    if (results[i].score >= 0.5) {
+    if (results[i].score >= scoreThreshold("exclusion_high_scorer", 0.5)) {
       highScorers[results[i].name] = true;
     }
   }
@@ -1310,10 +1361,10 @@ function generateEvidence(condition, tokens, scoreResult, tokenSet) {
 /* ═══════════════════════════════════════════════════════════════ */
 
 function interpretConfidence(score) {
-  if (score >= 0.80) return "High";
-  if (score >= 0.60) return "Moderate-High";
-  if (score >= 0.40) return "Moderate";
-  if (score >= 0.20) return "Low-Moderate";
+  if (score >= scoreThreshold("confidence_high", 0.80)) return "High";
+  if (score >= scoreThreshold("confidence_moderate_high", 0.60)) return "Moderate-High";
+  if (score >= scoreThreshold("confidence_moderate", 0.40)) return "Moderate";
+  if (score >= scoreThreshold("confidence_low_moderate", 0.20)) return "Low-Moderate";
   return "Low";
 }
 
@@ -1351,11 +1402,17 @@ function computeAlerts(tokens) {
   if (V.iop) {
     var iopOd = parseFloat(V.iop.od) || 0;
     var iopOs = parseFloat(V.iop.os) || 0;
-    if (iopOd > 40 || iopOs > 40) {
-      alerts.push({ m: "IOP critically elevated (>40 mmHg) — acute angle closure?", l: "urgent" });
-    } else if (iopOd > 30 || iopOs > 30) {
-      alerts.push({ m: "IOP significantly elevated (>30 mmHg) — urgent assessment", l: "urgent" });
-    } else if (iopOd > 21 || iopOs > 21) {
+    /* Bands come from knowledge/clinical-thresholds.js — the SAME numbers the
+       token derivation uses, so an alert can never disagree with a token. The
+       message quotes the threshold rather than hardcoding it in prose. */
+    var _aCrit = clinThreshold("iop_critical", 40);
+    var _aUrg  = clinThreshold("iop_very_high", 30);
+    var _aWarn = clinThreshold("iop_high", 21);
+    if (iopOd > _aCrit || iopOs > _aCrit) {
+      alerts.push({ m: "IOP critically elevated (>" + _aCrit + " mmHg) — acute angle closure?", l: "urgent" });
+    } else if (iopOd > _aUrg || iopOs > _aUrg) {
+      alerts.push({ m: "IOP significantly elevated (>" + _aUrg + " mmHg) — urgent assessment", l: "urgent" });
+    } else if (iopOd > _aWarn || iopOs > _aWarn) {
       alerts.push({ m: "IOP elevated — glaucoma workup indicated", l: "warn" });
     }
   }
@@ -1369,8 +1426,9 @@ function computeAlerts(tokens) {
   if (V.sl) {
     var vhOd = parseInt(V.sl.od.vh) || 99;
     var vhOs = parseInt(V.sl.os.vh) || 99;
-    if (vhOd <= 2) alerts.push({ m: "Van Herick ≤2 OD — gonioscopy before dilation", l: "warn" });
-    if (vhOs <= 2) alerts.push({ m: "Van Herick ≤2 OS — gonioscopy before dilation", l: "warn" });
+    var _vhA = clinThreshold("van_herick_narrow", 2);
+    if (vhOd <= _vhA) alerts.push({ m: "Van Herick ≤" + _vhA + " OD — gonioscopy before dilation", l: "warn" });
+    if (vhOs <= _vhA) alerts.push({ m: "Van Herick ≤" + _vhA + " OS — gonioscopy before dilation", l: "warn" });
   }
 
   /* Diabetes + no fundus */
@@ -1453,7 +1511,9 @@ function computeAlerts(tokens) {
 /* conditions from the differential.                               */
 /* ═══════════════════════════════════════════════════════════════ */
 
-var DERIVED_ALERT_MIN = 0.15;
+/* Declared in knowledge/clinical-thresholds.js (SCORING_THRESHOLDS) so the
+   founder can find and change it without reading the engine — Phase 4 F-4. */
+var DERIVED_ALERT_MIN = scoreThreshold("derived_alert_min", 0.15);
 
 /* Urgent conditions in the shown differential that no hand-written rule has
    already named. Returns alerts to APPEND — never to replace. */
@@ -1519,7 +1579,7 @@ function computeNudges(results, tokens) {
      without. These are documentation suggestions, never diagnoses. */
   var _age = parseInt((typeof P !== "undefined" && P) ? P.age : "", 10);
   if (!isNaN(_age)) {
-    if (_age <= 16) {
+    if (_age <= clinThreshold("age_paediatric_workup", 16)) {
       var paedOn = !!(V.modules && V.modules.paediatric);
       if (!paedOn) {
         addNudge("Paediatric patient — add the Paediatric section (birth history, fixation, squint, amblyopia)", "demographics");
@@ -1528,7 +1588,7 @@ function computeNudges(results, tokens) {
       }
       if (!done.has("bv")) addNudge("Assess binocular status (cover test, stereo)", "bv");
     }
-    if (_age <= 8 && !done.has("refraction")) {
+    if (_age <= clinThreshold("age_cycloplegic_refraction", 8) && !done.has("refraction")) {
       addNudge("Consider cycloplegic refraction at this age", "refraction");
     }
   }
@@ -1790,7 +1850,7 @@ function computeProblemFoci(dxList) {
     var lead = members[0];
     /* A focus is only surfaced if its lead carries real evidence. Mirrors
        "zero evidence = zero output": don't manufacture a problem from noise. */
-    if (!lead || lead.prob < 0.15) continue;
+    if (!lead || lead.prob < scoreThreshold("focus_lead_min", 0.15)) continue;
 
     foci.push({
       focus: name,
@@ -2074,7 +2134,7 @@ function runDiagnosticEngine() {
      core condition, urgent or otherwise. */
   var mergedShown = shownResults.slice(0, 8);
   if (overlayResults.length) {
-    var OVERLAY_FLOOR = 0.15;
+    var OVERLAY_FLOOR = scoreThreshold("overlay_floor", 0.15);
     var shownOverlay = overlayResults.filter(function (r) { return r.score >= OVERLAY_FLOOR; });
     mergedShown = mergedShown.concat(shownOverlay.slice(0, 4));
   }

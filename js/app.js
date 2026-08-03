@@ -730,6 +730,7 @@ function homeSecAdmin() {
           '</div>' + meter + '</div>';
       })() : "") +
       ((typeof ageBracketScreen === "function") ? ageBracketScreen() : "") +
+      ((typeof thresholdScreen === "function") ? thresholdScreen() : "") +
       '<div class="home-settings-title">🔐 Change admin password</div>' +
       '<div class="home-settings-desc">Salted PBKDF2-SHA-256 (never plaintext, no longer the old lightweight hash). Minimum 8 characters.' +
         ((typeof adminUsingLegacyCredential === "function" && adminUsingLegacyCredential())

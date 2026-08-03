@@ -17,6 +17,7 @@
 /* Paths are repo-relative (what load-engine.js wants). load-kb.js strips the
    "knowledge/" prefix since it resolves inside that directory. */
 const KB_FILES = [
+  "knowledge/clinical-thresholds.js", /* pure data + clinThreshold(); no deps, must precede engine.js */
   "knowledge/surface.js",
   "knowledge/corneal.js",
   "knowledge/retina.js",
