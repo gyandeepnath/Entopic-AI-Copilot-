@@ -160,3 +160,32 @@ test("determinism survives the change", () => {
   }
   assert.strictEqual(seen.size, 1, "alerts must be identical across runs");
 });
+
+
+/* ═══ Gate reasons surfaced (Phase 4 finding F-5) ═══ */
+
+test("a force-surfaced condition says WHY, as its own field", () => {
+  /* The most explanatory thing the engine produces. It was computed, appended
+     to the end of a reasoning string, and effectively invisible. */
+  const r = run(["flashes", "floaters"], 62);
+  const gated = (r.dxList || []).filter((d) => d.gatedBecause);
+  assert.ok(gated.length > 0,
+    "flashes + floaters must force-surface retinal conditions with a stated reason");
+  assert.ok(/flashes/i.test(gated[0].gatedBecause),
+    "the reason must name the findings that caused it: " + gated[0].gatedBecause);
+});
+
+test("the reason is rendered, not merely computed", () => {
+  const ui = read("js/ui-advisory.js");
+  assert.ok(/d\.gatedBecause/.test(ui), "the panel must read the field");
+  assert.ok(/Shown because:/.test(ui), "and say plainly why the condition is on the list");
+});
+
+test("a condition that scored its way in has no gate reason", () => {
+  /* The field must distinguish "force-surfaced for safety" from "matched well",
+     or it says nothing. */
+  const r = run(["dryness", "burning", "grittiness"], 58);
+  const gated = (r.dxList || []).filter((d) => d.gatedBecause);
+  assert.strictEqual(gated.length, 0,
+    "a routine dry-eye differential is scored, not gated");
+});

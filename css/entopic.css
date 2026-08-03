@@ -2592,3 +2592,9 @@ input, select, textarea, button {
 .cb-actions { display:flex; gap:6px; flex-wrap:wrap; margin-top:14px; }
 .cb-list-row { font-size:.62rem; padding:7px 0; border-bottom:1px solid var(--fg); cursor:pointer; }
 .cb-state { font-size:.5rem; color:var(--sv); text-transform:uppercase; }
+
+/* ── Why a condition was force-surfaced (Phase 4 F-5) ───────────── */
+.dx-gated {
+  font-size: .55rem; line-height: 1.5; color: var(--sl);
+  border-left: 2px solid var(--md); padding: 2px 0 2px 6px; margin: 2px 0;
+}

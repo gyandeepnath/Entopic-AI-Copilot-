@@ -218,6 +218,14 @@ function renderAdvisory() {
         '<div class="dx-n">' + d.n + '</div><div class="dx-icd">' + d.icd + (d.domain ? ' · ' + d.domain : '') + '</div></div>';
       h += '<div class="dx-bar"><div class="dx-bar-fill" style="width:' + pct + '%"></div></div>';
       h += '<div class="dx-pct" title="Match strength — how much of this condition\'s expected evidence is present. NOT a probability of having it.">' + pct + '</div></div>';
+      /* Why it was force-surfaced. Shown ABOVE the evidence line and styled
+         distinctly, because "you recorded flashes and floaters, so this is on
+         the list whatever it scored" is the most useful sentence the engine
+         can say — and it was previously appended to the end of a string
+         nobody reads (Phase 4 F-5). */
+      if (d.gatedBecause) {
+        h += '<div class="dx-gated">Shown because: ' + escH(d.gatedBecause) + '</div>';
+      }
       if (ev.matched && ev.matched.length > 0) {
         h += '<div class="dx-evidence"><span class="matched">' + ev.matched.slice(0, 4).join(", ") + '</span>' +
           (ev.matched.length > 4 ? '<span class="matched"> +' + (ev.matched.length - 4) + '</span>' : '') +

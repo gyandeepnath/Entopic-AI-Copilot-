@@ -2110,6 +2110,12 @@ function runDiagnosticEngine() {
       urgent: r.urgent,
       reasoning: reasoning,
       evidence: ev,
+      /* WHY this condition was force-surfaced, as its own field rather than
+         buried in the reasoning string (Phase 4 F-5). This is the single most
+         explanatory thing the engine produces: it is the difference between
+         "the engine listed retinal detachment" and "the engine listed retinal
+         detachment BECAUSE you recorded flashes and floaters". */
+      gatedBecause: r._gateReason || null,
       /* Present ONLY on clinician-authored conditions. Every consumer uses
          this to render them distinctly — they are never reviewed content. */
       overlay: r._overlay || null

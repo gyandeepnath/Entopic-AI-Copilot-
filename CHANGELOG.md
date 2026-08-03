@@ -6,6 +6,60 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-08-02 — Phase 4 fixes: the alert gap closed, contradictions caught
+
+**Every urgent condition now raises a banner — 63 of 63, up from 12.**
+
+The gap I measured last entry is closed. Chemical Eye Burn, Open Globe Injury,
+Retinal Detachment and 48 others could reach your differential with no Clinical
+Alerts banner at all. They now raise one, stating the match strength so you can
+triage between "this is very likely" and "this is on the list".
+
+**The harder half was not creating alert fatigue**, and I measured that too: six
+routine presentations — dry eye, refractive, allergy, asthenopia, floaters, red
+eye — produce **zero** urgent banners. The easy version of this fix would have
+put a red banner on every visit, which trains you to dismiss the one that
+matters.
+
+The 17 hand-written rules stay exactly as they are and keep their place at the
+top. They fire on a *symptom*, before any condition is scored — earlier, and
+better worded. The new derived rule is a floor beneath them, not a replacement.
+
+**One number is yours to set.** `DERIVED_ALERT_MIN` decides how plausible an
+urgent condition must be before it warns. I defaulted it to the same threshold
+that decides whether a condition is shown at all — if it's confident enough to
+display, it's confident enough to warn. That's an engineering default, not a
+clinical finding, and the two knobs are deliberately separate so you can raise
+the alert bar without hiding conditions from the differential.
+
+**Contradictions are now caught.** The old checker looked at each value alone: is
+this IOP plausible, is this axis in range. It could not see that a cylinder of
+−1.25 with a blank axis is not a prescription — both halves look fine
+individually.
+
+Two classes, and the distinction is deliberate. **Errors** are definitional: a
+cylinder with no axis, a prism with no base, a section recorded normal that also
+carries findings, acute onset with a chronic course. **Questions** are clinical
+judgement: a reading add at 14, pinhole improving with no gain in best-corrected,
+both eyes identical across three fields. Each question names the legitimate
+reasons, because you may well have one.
+
+It never blocks entry, never edits a value, and never reaches the engine — a
+contradiction is information for you, not a decision. And the tests that matter
+most are the ones proving it stays quiet: an ordinary prescription, a plain
+spherical prescription, an empty visit all raise nothing.
+
+**The engine now says why it force-surfaced something.** "Shown because: Flashes
++ floaters → retinal tear / detachment" appears under the condition. It was
+always computed — it was appended to the end of a string nobody reads. It's the
+difference between "the engine listed retinal detachment" and "the engine listed
+it *because of what you recorded*".
+
+Two things caught by my own tests: a fixture I wrote was itself contradictory
+(cylinders with no axis), and the checker flagged it — which is exactly its job.
+
+812 tests pass, audit 0 FAIL.
+
 ## 2026-08-02 — Phase 4: the reasoning engine audited
 
 Four documents. The engine is the strongest part of Entopic by a clear margin —
