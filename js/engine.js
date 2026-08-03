@@ -2288,5 +2288,10 @@ function runDiagnosticEngine() {
     urgent_alerts: (V.alerts || []).filter(function (a) { return a.l === "urgent"; }).length
   };
 
+  /* STAGE 14 — WHAT CHANGED (F-6): snapshot this run so the panel can say
+     "adding photophobia moved Anterior Uveitis 4th → 1st" instead of silently
+     redrawing. Optional module; reads the outputs, changes nothing above. */
+  if (typeof engineRecordRun === "function") { try { engineRecordRun(V, tokens); } catch (e) {} }
+
   ENGINE_STATE.lastRun = new Date().toISOString();
 }

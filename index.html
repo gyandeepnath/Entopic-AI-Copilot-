@@ -508,6 +508,12 @@
 <script src="js/roles.js"></script>
 <script src="js/clinical-validators.js"></script>
 <script src="js/engine.js"></script>
+<!-- "What changed" between two engine runs (Phase 4 F-6). Loads after the
+     engine, which calls engineRecordRun() at the end of every run. -->
+<script src="js/engine-diff.js"></script>
+<!-- Deterministic replay: re-runs a stored visit against today's knowledge and
+     reports the drift. Needs engine.js and engine-diff.js above. -->
+<script src="js/engine-replay.js"></script>
 <!-- Impact preview: what a draft condition would have done to past visits.
      Needs scoreCondition from engine.js above. -->
 <script src="js/overlay-impact.js"></script>
@@ -546,6 +552,8 @@
 <!-- Read-only review of the numbers the engine compares measurements against
      (Phase 4 F-4). Needs knowledge/clinical-thresholds.js, loaded far above. -->
 <script src="js/ui-thresholds.js"></script>
+<!-- Knowledge-drift screen. Needs js/engine-replay.js, loaded above. -->
+<script src="js/ui-replay.js"></script>
 <script src="js/ui-kb-editor.js"></script>
 <script src="js/ui-validation.js"></script>
 <script src="js/ui-research.js"></script>

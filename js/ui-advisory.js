@@ -110,6 +110,27 @@ function renderAdvisory() {
     }
   }
 
+  /* ═══ WHAT CHANGED (Phase 4 F-6) ═══
+     The engine re-runs on every keystroke and the list below silently
+     redraws. This says what your last entry did to it — and, because the
+     engine is deterministic over its tokens, when exactly one finding
+     changed it can say so as cause rather than coincidence.
+
+     Placed ABOVE the differential deliberately: an urgent alert that stopped
+     showing is reported here, and that must be read before the new list. */
+  if (typeof engineLastDiff === "function" && typeof engineDiffNarrate === "function") {
+    var _lines = engineDiffNarrate(engineLastDiff());
+    if (_lines.length) {
+      h += '<div class="adv-sec">What changed</div>';
+      for (var wc = 0; wc < _lines.length && wc < 6; wc++) {
+        var _ln = _lines[wc];
+        h += '<div class="alert-box ' +
+          (_ln.level === "urgent" ? "urgent" : (_ln.level === "warn" ? "warn" : "info")) +
+          '" style="font-size:.58rem">' + escH(_ln.text) + '</div>';
+      }
+    }
+  }
+
   if (!V.dxList || V.dxList.length === 0) {
     h += '<div style="color:var(--sv);font-size:.64rem;margin-top:12px;padding:10px;border:1px dashed var(--ms);border-radius:var(--r);text-align:center;line-height:1.5">' +
       'Enter symptoms and clinical data to generate diagnostic suggestions</div>';
