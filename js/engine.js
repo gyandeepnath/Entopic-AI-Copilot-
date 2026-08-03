@@ -1927,8 +1927,38 @@ function runDiagnosticEngine() {
     return (a._index || 0) - (b._index || 0);
   });
 
+  /* ── STAGE 8b: OVERLAY PASS (clinician-authored conditions) ──
+     A SEPARATE scoring pass, deliberately. Overlay conditions are never
+     ranked against core conditions, so a clinician's own condition cannot
+     mathematically outrank a red flag — the two are never compared.
+
+     Appending them to `results` above and re-sorting would have been three
+     lines and would have reintroduced exactly the hazard the overlay design
+     exists to remove: a personal "evening dryness" pattern requiring
+     flashes+floaters out-scoring Retinal Detachment and pushing it below the
+     fold. See docs/DESIGN_PERSONALISED_CONDITIONS.md §3.2. */
+  var overlayResults = [];
+  if (typeof overlayConditions === "function") {
+    var overlays = overlayConditions();
+    for (var ov = 0; ov < overlays.length; ov++) {
+      var oc = overlays[ov];
+      var os = scoreCondition(oc, tokens, scoreTokenSet);
+      if (!os || !os.score) continue;
+      var orec = {
+        name: oc.name, icd: oc.icd, icd_label: "", icd_status: "",
+        domain: oc.domain, route: oc.route, urgent: !!oc.urgent,
+        score: os.score, _index: oc._index, _overlay: oc._overlay,
+        review_status: oc.review_status
+      };
+      orec._evidence = generateEvidence(oc, tokens, os, scoreTokenSet);
+      overlayResults.push(orec);
+    }
+    overlayResults.sort(function (a, b) { return b.score - a.score; });
+  }
+
   /* Store results */
   ENGINE_STATE.results = results;
+  ENGINE_STATE.overlayResults = overlayResults;
 
   /* ── Build the shown differential ──
      Filter out marginal partial matches before taking the top 8. A condition
@@ -1948,8 +1978,20 @@ function runDiagnosticEngine() {
     shownResults = [results[0]];
   }
 
+  /* ── MERGE: core first, always, then overlays beneath ──
+     Core keeps its own ordering (urgent-nudged, then by score). Overlay
+     conditions are APPENDED, never interleaved. So the worst an overlay can
+     do is occupy space below the core differential; it can never displace a
+     core condition, urgent or otherwise. */
+  var mergedShown = shownResults.slice(0, 8);
+  if (overlayResults.length) {
+    var OVERLAY_FLOOR = 0.15;
+    var shownOverlay = overlayResults.filter(function (r) { return r.score >= OVERLAY_FLOOR; });
+    mergedShown = mergedShown.concat(shownOverlay.slice(0, 4));
+  }
+
   /* ── Convert to V.dxList format ── */
-  V.dxList = shownResults.slice(0, 8).map(function(r) {
+  V.dxList = mergedShown.map(function(r) {
     var ev = r._evidence || { matched: [], missing: [], contradicted: [], suggestedTests: [] };
     var conf = interpretConfidence(r.score);
 
@@ -1978,15 +2020,47 @@ function runDiagnosticEngine() {
       domain: r.domain,
       urgent: r.urgent,
       reasoning: reasoning,
-      evidence: ev
+      evidence: ev,
+      /* Present ONLY on clinician-authored conditions. Every consumer uses
+         this to render them distinctly — they are never reviewed content. */
+      overlay: r._overlay || null
     };
   });
 
-  /* ── Problem foci (concurrent independent problems) ── */
-  V.problemFoci = computeProblemFoci(V.dxList);
+  /* Which knowledge produced this differential. Once knowledge varies per
+     user, "the engine said X" is meaningless without it. */
+  if (typeof overlayProvenance === "function") {
+    try { V.kb_provenance = overlayProvenance(); } catch (e) {}
+  }
 
-  /* ── STAGE 10: Alerts ── */
+  /* ── Problem foci (concurrent independent problems) ──
+     Core results only: a working-problem grouping built partly from
+     unreviewed personal conditions would present them as established. */
+  V.problemFoci = computeProblemFoci(V.dxList.filter(function (d) { return !d.overlay; }));
+
+  /* ── STAGE 10: Alerts ──
+     CORE alerts are computed first and independently of everything above, so
+     nothing an overlay does can alter, reorder or suppress them. */
   V.alerts = computeAlerts(tokens);
+
+  /* User-authored urgent conditions ADD an alert; they never replace one.
+     The founder decided (2026-08-02) that clinicians may mark their own
+     conditions urgent. Appending after the core alerts — rather than merging
+     into them — is what keeps that decision safe: a mistaken personal urgent
+     costs an extra line on screen, never a missing red flag. Attribution is
+     mandatory so it can never read as reviewed content. */
+  for (var oa = 0; oa < overlayResults.length; oa++) {
+    var oal = overlayResults[oa];
+    if (!oal.urgent || oal.score < 0.15) continue;
+    var who = (oal._overlay && oal._overlay.author_name) || "you";
+    var why = (oal._overlay && oal._overlay.urgent_reason) || "";
+    V.alerts.push({
+      m: "YOUR ALERT — " + oal.name + (why ? ": " + why : "") +
+         " (added by " + who + ", not clinically reviewed)",
+      l: "urgent",
+      overlay: oal._overlay || null
+    });
+  }
 
   /* ── STAGE 11: Nudges ── */
   V.nudges = computeNudges(results, tokens);

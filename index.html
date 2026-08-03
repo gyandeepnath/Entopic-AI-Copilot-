@@ -483,6 +483,9 @@
 <script src="js/visit-history.js"></script>
 <!-- Competency framework (faculty-defined, ships empty) and supervisor
      sign-off. Needs loadStore/saveStore from storage.js above. -->
+<!-- Clinician-authored conditions. Loaded before engine.js, which runs a
+     separate scoring pass over them. -->
+<script src="js/kb-overlay.js"></script>
 <script src="js/competency.js"></script>
 <!-- Trend charts read trendsAvailable() from visit-history.js above. -->
 <script src="js/ui-trends.js"></script>

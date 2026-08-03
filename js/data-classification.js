@@ -73,6 +73,12 @@ var DATA_STORES = {
     class: "legal", encrypt: false, mirror: true, backup: true, shape: "object",
     why: "A clinician's review of 394 conditions. Irreplaceable human work; attestations only, no patient data."
   },
+  kb_overlays: {
+    class: "legal", encrypt: false, mirror: true, backup: true, shape: "array",
+    why: "Clinician-authored conditions. Somebody's own clinical reasoning, written down — " +
+         "irreplaceable in the same way a sign-off is. Also evidence of what the engine was " +
+         "doing on a given day, which a historical differential may need to explain itself."
+  },
   competencies: {
     class: "legal", encrypt: false, mirror: true, backup: true, shape: "object",
     why: "The university's own competency framework, imported by faculty. Losing it detaches " +

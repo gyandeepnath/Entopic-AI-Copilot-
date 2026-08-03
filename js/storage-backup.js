@@ -328,6 +328,19 @@ function _importDecoded(data) {
        institution's, and one version is authoritative); the evidence log is
        MERGED by id, because a restore must never destroy a supervisor's
        sign-off recorded since the backup was taken. */
+    /* Clinician-authored conditions. MERGED by id — a restore must never
+       destroy a condition somebody wrote since the backup was taken. */
+    if (Array.isArray(data.kb_overlays)) {
+      var haveOv = loadStore("kb_overlays", []) || [];
+      var seenOv = {};
+      for (var ovi = 0; ovi < haveOv.length; ovi++) seenOv[haveOv[ovi].id] = true;
+      for (var ovj = 0; ovj < data.kb_overlays.length; ovj++) {
+        var incOv = data.kb_overlays[ovj];
+        if (incOv && incOv.id && !seenOv[incOv.id]) haveOv.push(incOv);
+      }
+      saveStore("kb_overlays", haveOv);
+    }
+
     if (data.competencies && typeof data.competencies === "object") {
       saveStore("competencies", data.competencies);
     }
