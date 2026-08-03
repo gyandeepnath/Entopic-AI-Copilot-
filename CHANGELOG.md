@@ -6,6 +6,63 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-08-02 — Phase 4: the reasoning engine audited
+
+Four documents. The engine is the strongest part of Entopic by a clear margin —
+**8.0/10** — and one finding matters more than the rest.
+
+**Your red-flag banner covers 12 of your 63 urgent conditions.**
+
+Measured by feeding each urgent condition its own required findings and counting
+alerts: 12 raise one, **51 do not**. The silent ones include Chemical Eye Burn,
+Open Globe Injury, Retinal Detachment and Microbial Keratitis.
+
+I want to be exact about what this does and does not mean, because the alarming
+version would be wrong. For a chemical splash the panel shows **"Chemical Eye
+Burn · URGENT"** as the leading impression — you are not blind to it. What never
+appears is the dedicated **Clinical Alerts** banner at the top, the one designed
+to be un-missable.
+
+The cause is the same drift I have found three times now in this codebase: two
+mechanisms that should agree, maintained separately. The alerts are 17
+hand-written rules; the urgent flag is a field on 63 conditions. Nothing connects
+them and nothing notices.
+
+The fix is to derive a floor from the knowledge — any urgent condition scoring
+above a threshold raises an alert naming itself — **in addition to** the 17
+hand-written rules, which fire earlier and must stay. About 24 hours. The
+threshold is your judgement.
+
+**What is genuinely excellent**, and measured rather than asserted: the engine
+is deterministic (20 identical runs, byte for byte), it explains every
+differential (100% carry what matched, what is missing, what argues against),
+and it **refuses to guess** — an empty visit and age alone both produce zero
+differentials. That last one is the hardest behaviour to build and the easiest to
+destroy, and it is written into the rule manual as something that may never
+change without a recorded decision.
+
+**Also found:** 129 hardcoded numeric thresholds live in the engine rather than
+in reviewable knowledge — so signing off 394 conditions does not sign off the
+numbers that decide when a measurement counts as abnormal. And nothing flags
+contradictory data: a visit recording both acute onset and chronic course scores
+through it silently.
+
+**The validation manual says the thing worth repeating:** 779 automated tests
+prove the arithmetic, the determinism and the safety separation. **Not one of
+them establishes that a single differential is clinically correct** — that needs
+a clinician, and it is not something software can assert about itself.
+
+It also sequences the work: reviewing the **109 common conditions and the 63
+urgent ones is about nine hours** and covers the overwhelming majority of real
+encounters plus every red flag. The remaining 222 are the long tail.
+
+**On AI** — the strategy is one line: keep the engine deterministic, and use AI
+to check itself against it. Every serious clinical AI problem is solved by having
+a deterministic core to verify against, and you already have one. The strategic
+error would be treating it as the old thing AI replaces. It is the asset.
+
+779 tests pass, audit 0 FAIL. Nothing in the engine was changed.
+
 ## 2026-08-02 — Built: your own conditions, wired into the engine (stages 1–3)
 
 You can now write down a pattern you recognise, wire it to findings, watch it
