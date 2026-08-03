@@ -114,6 +114,61 @@ function thresholdRows() {
     }).join("") + '</div>';
 }
 
+/* ═══════════════════════════════════════════════════════════════ */
+/* RED-FLAG REGISTER  (Phase 2 safety finding CS-04)               */
+/*                                                                  */
+/* Shares this file with the threshold screen because they are the  */
+/* same concern: the engine's own rules, made readable by the       */
+/* person responsible for them. The red flags themselves stay in    */
+/* js/engine.js — see knowledge/red-flags.js for why moving them    */
+/* into data would be a safety regression, not an improvement.      */
+/* ═══════════════════════════════════════════════════════════════ */
+
+function redFlagScreen() {
+  if (typeof RED_FLAG_RULES === "undefined") return "";
+  var all = RED_FLAG_RULES.concat(
+    (typeof RED_FLAG_DERIVED_RULE !== "undefined") ? [RED_FLAG_DERIVED_RULE] : [],
+    (typeof RED_FLAG_OVERLAY_RULE !== "undefined") ? [RED_FLAG_OVERLAY_RULE] : []
+  );
+  var open = all.filter(function (r) { return r.status !== "VERIFIED"; }).length;
+
+  return '<div class="home-settings" style="margin-top:8px">' +
+    '<div class="home-settings-title">🚩 Red flags — what raises an alert</div>' +
+    '<div class="home-settings-desc">' +
+      'Every alert this product can show, in one list. These rules live in the ' +
+      'engine\'s code, not in the knowledge base, so signing off 394 conditions ' +
+      'never signed off any of them.' +
+      '<br><span style="color:var(--sv)">They stay in code deliberately. Red flags ' +
+      'must be un-suppressible, and making them editable data would create a way ' +
+      'to lose one — a corrupt file, a stale sync, a mistaken edit. This list is ' +
+      'held in step with the code by a test that fails if either side changes ' +
+      'without the other.</span>' +
+    '</div>' +
+    '<div style="display:flex;gap:14px;flex-wrap:wrap;margin:8px 0;font-size:.62rem">' +
+      '<div><b>' + all.length + '</b> rules</div>' +
+      '<div><b>' + all.filter(function (r) { return r.level === "urgent"; }).length + '</b> urgent</div>' +
+      '<div><b style="color:' + (open ? "#b8860b" : "#2e7d32") + '">' + open + '</b> awaiting your sign-off</div>' +
+    '</div>' +
+    '<div style="max-height:420px;overflow:auto;border:1px solid var(--fg);border-radius:var(--r)">' +
+      all.map(function (r) {
+        return '<div style="padding:6px 8px;border-bottom:1px solid var(--fg)">' +
+          '<div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap">' +
+            '<div style="font-size:.62rem;flex:1;min-width:200px">' + esc(r.fires_when) + '</div>' +
+            '<div style="font-size:.54rem;font-weight:600;color:' +
+              (r.level === "urgent" ? "#c0392b" : "#b8860b") + '">' + esc(r.level.toUpperCase()) + '</div>' +
+          '</div>' +
+          '<div style="font-size:.56rem;margin-top:3px">→ <i>' + esc(r.match) + '…</i></div>' +
+          '<div style="font-size:.54rem;color:' + (/^⚠/.test(r.why) ? "#c0392b" : "var(--sv)") +
+            ';margin-top:3px">' + esc(r.why) + '</div>' +
+          ((r.uses && r.uses.length)
+            ? '<div style="font-size:.52rem;color:var(--sv);margin-top:2px">threshold: <code>' +
+              r.uses.map(esc).join('</code> <code>') + '</code></div>' : '') +
+        '</div>';
+      }).join("") +
+    '</div>' +
+  '</div>';
+}
+
 function thresholdFilter(v) {
   _thrFilter = v || "";
   var el = document.getElementById("thrList");

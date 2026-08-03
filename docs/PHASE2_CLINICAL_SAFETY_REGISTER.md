@@ -114,9 +114,27 @@ code. Verified: all four probed red flags fire (flashes+floaters, IOP >40,
 RAPD, sudden vision loss).
 **Mitigation.** Tests pin the behaviour; the audit probes three red flags on
 every run.
-**Recommendation.** Move red-flag rules into data (Top-100 item 47, ~40 h) so
-they enter the same sign-off workflow as conditions. Until then the alerts are
-trustworthy but *unreviewable*, which is a different thing.
+
+**CLOSED 2026-08-03 — and the original recommendation was deliberately NOT
+followed.** That recommendation was "move red-flag rules into data". It is the
+wrong fix. Red flags are un-suppressible; making them data creates a path by
+which a corrupt, missing, stale or mistakenly edited file removes one, and that
+path did not exist before. Reviewability is worth a great deal; it is not worth
+inventing a way to lose an alert.
+
+What was built instead is `knowledge/red-flags.js`: a register that declares
+all 18 alert rules — the 16 hand-written ones, the derived-urgent rule (F-1)
+and the clinician-authored rule — in clinical language, with the exact wording
+the clinician sees, the level, and the threshold ids each one compares against.
+The rules themselves stay in `js/engine.js`, where nothing can unload them, and
+the engine never reads the register. `tests/red-flags.test.js` fails if the
+engine gains an alert the register does not declare, or loses one it does, or
+emits a different level than the register claims — so the two cannot drift
+while remaining separate. Visible in the Admin panel under "🚩 Red flags".
+
+The hazard as stated — "the alerts are trustworthy but *unreviewable*" — is
+closed. Every rule now carries `status: "UNVERIFIED"` and awaits the founder's
+sign-off, which is the point: they are reviewable, and not yet reviewed.
 
 ### CS-05 · No explicit "not assessed" state
 **Hazard.** An empty field means both "normal and I did not write it down" and
@@ -170,12 +188,35 @@ structured allergy list is standard in every EMR and absent here.
 
 ### CS-10 · No drug–drug or drug–condition interaction checking
 The medication module maps drugs to *ocular effects* only. It does not check
-interactions, and must not be assumed to. Worth stating explicitly in the UI so
-nobody infers a safety net that does not exist.
+interactions, and must not be assumed to.
+
+**Mitigated 2026-08-03.** The limit is now stated in the advisory panel,
+directly beneath the medication alerts: "Ocular effects of individual drugs
+only. **Drug–drug and drug–condition interactions are not checked** — use your
+usual prescribing reference." Stating the limit *is* the safety feature: a
+clinician who watches a drug list produce alerts will reasonably infer that the
+drugs which produced none were checked and cleared. An invisible absence reads
+as a green light.
+
+The underlying gap is unchanged and is a **⚠ FOUNDER DECISION** on scope —
+interaction checking means either licensing a drug database or building one,
+and building one would mean inventing clinical facts, which is forbidden.
 
 ### CS-11 · Laterality is per-finding, not enforced
 Findings carry `{label, eye}`, but nothing requires an eye to be specified.
-A finding recorded without laterality is clinically incomplete.
+A finding recorded without laterality is clinically incomplete — on screen it
+looks complete; in the record and the referral letter it is not, and the reader
+cannot recover which eye it was.
+
+**Mitigated 2026-08-03.** `clinContradictions` now raises `finding_no_eye`, per
+section, naming the findings and counting them, surfaced in the advisory
+panel's Contradictions block. Deliberately a *question* and not an *error*: a
+few findings genuinely are not lateralised, and it is not the checker's place
+to decide which. Entry is never blocked. Four tests.
+
+Still open: nothing *enforces* laterality at entry. That is a UI change to the
+finding pickers rather than a validation change, and enforcing it would block
+entry — which this project's data-checking layer has never done.
 
 ---
 
@@ -188,6 +229,7 @@ A finding recorded without laterality is clinically incomplete.
 | CS-03c | "no steroids" counted as steroid history | Negation/past/allergy classification, 11 tests |
 | CS-12 | Age-bracket clinical decisions stored but never applied to the live knowledge base | `ageBracketSet` now stores and applies as one operation |
 | CS-13 | BV recorded as orthophoric/fusing read back as "not assessed" | Completion rule recognises categorical results |
+| CS-04 | 18 red-flag rules existed only as `if` statements no clinician could see | `knowledge/red-flags.js` register + `tests/red-flags.test.js` pinning it to the code; rules stay in code so nothing can suppress them |
 
 ---
 

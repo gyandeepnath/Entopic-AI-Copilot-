@@ -212,6 +212,13 @@ number is now labelled "match strength, not a probability" — but the *words*
 still carry more authority than the evidence supports. **⚠ Founder: the band
 boundaries are a clinical judgement.**
 
+**Partially addressed 2026-08-03.** The four boundaries are now declared in
+`SCORING_THRESHOLDS` (`knowledge/clinical-thresholds.js`) and visible in the
+Admin panel, with the finding recorded against them: they are evenly spaced,
+were never calibrated, and the *words* are the problem — "High" reads as
+diagnostic certainty when it means "matched most of the tokens we happened to
+ask for". **Still the founder's call**, but no longer invisible.
+
 ### F-4 · 129 hardcoded numeric comparisons in the engine
 Measured by grepping for numeric conditionals. Some are structural (array
 bounds); many are clinical thresholds — IOP cut-offs, MD values, age bands —
@@ -219,6 +226,25 @@ living in JavaScript rather than in reviewable knowledge. A clinician signing
 off 394 conditions is **not** signing these off, and cannot see them. Same
 finding as the Phase 3 note on red-flag rules (KD/CS-04). ~40 h to externalise
 the clinical ones.
+
+**CLOSED 2026-08-03.** 40 clinical thresholds now live in
+`knowledge/clinical-thresholds.js`, each declaring what it means in clinical
+language, its unit, the comparison operator as the code writes it, the tokens
+it emits, where it applies, and the caveats a reviewer needs. 8 scoring
+constants are declared in a **separate** table so nobody signs off an
+arithmetic constant as though it were a clinical fact. No value changed — every
+one is a verbatim transcription, and the golden vignettes passed untouched.
+
+The engine reads `clinThreshold(id, fallback)`; the literal remains as the
+fallback so a missing knowledge file degrades rather than crashing (ADR-006),
+and a test pins every fallback to its table value so the two cannot become two
+different rules. A ratchet test fails if a new clinical number is hardcoded in
+token derivation. Visible read-only in the Admin panel; read-only deliberately,
+because changing one re-scores every visit in the practice and that belongs in
+a versioned source edit rather than a text box.
+
+Every row carries `src: ""` and `status: "UNVERIFIED"`. **All 48 await the
+founder.**
 
 ### F-5 · Gating reasons are computed but under-surfaced
 `_gateReason` records *why* a condition was force-surfaced ("safety gate:
@@ -231,6 +257,43 @@ The engine re-runs on every input, but nothing tells the clinician *what the new
 finding did*. "Adding photophobia moved Anterior Uveitis from 4th to 1st" is
 computable from two consecutive `ENGINE_STATE.results` and would make the
 reasoning visible as it happens. ~24 h.
+
+**CLOSED 2026-08-03.** `js/engine-diff.js`, surfaced above the differential.
+Because the engine is deterministic and pure over its token set, when exactly
+ONE token changed that token *is* the cause of every difference — a proof, not
+an inference — and the wording says so. When several changed, no single one is
+blamed. `attributable` carries the distinction so the UI cannot overclaim.
+
+Driving the real app caught a defect no unit test would have: derived alerts
+embed their match strength in their wording, so comparing alerts by *text*
+reported one alert whose score moved two points as a removal **plus** an
+addition — and "No longer showing" is the loudest line the panel has. Alerts
+are now compared by identity; a derived alert leaving is a warning rather than
+an emergency, while a hand-written red-flag rule that stops firing stays
+urgent; and each condition is named once rather than once per mechanism.
+
+### Deterministic replay — **BUILT 2026-08-03**
+Listed under §10 rather than as a finding. `js/engine-replay.js` re-runs a
+stored visit and reports what is different now.
+
+It **cannot** run the old knowledge base — nothing on the device keeps
+historical KB versions — so it does the reverse and labels it: old inputs,
+today's knowledge, both version strings shown. Same version and a different
+answer is a record-integrity finding, not drift, and reads as one.
+
+Two passes, because drift has two causes. The visit's own data through the
+whole pipeline (end to end), and the visit's **recorded** tokens fed back in
+(knowledge change only). Their difference isolates **derivation** drift — an
+engine rule or a clinical threshold moved — from **knowledge** drift. "The
+differential changed" is not actionable; "the IOP threshold moved and that is
+why" is. F-4 is what makes the first half legible.
+
+Both passes run the real engine, and a test forbids a second scoring
+implementation: a replay that disagreed with the engine would be worse than
+none, because a clinician would believe it. `js/ui-replay.js` asks the
+practice-wide question — did this update change anything for patients already
+seen — and shows the only number that changes what you do next (red flags that
+would no longer be raised) first and alone.
 
 ---
 

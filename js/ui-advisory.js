@@ -71,6 +71,14 @@ function renderAdvisory() {
         h += '<div class="alert-box warn" style="font-size:.6rem"><b>' + ma.drug + '</b>: ' + ma.effect +
           (ma.action ? '<br><span style="color:var(--sl)">' + ma.action + '</span>' : '') + '</div>';
       }
+      /* CS-10. Stating the limit is the safety feature. A clinician who sees a
+         drug list produce alerts will reasonably infer that the ones it does
+         NOT produce were checked and cleared — and nothing here checks
+         interactions at all. The absence of a safety net has to be visible,
+         because an invisible absence reads as a green light. */
+      h += '<div style="font-size:.54rem;color:var(--sv);margin-top:2px;line-height:1.4">' +
+        'Ocular effects of individual drugs only. <b>Drug–drug and drug–condition ' +
+        'interactions are not checked</b> — use your usual prescribing reference.</div>';
     }
   }
 

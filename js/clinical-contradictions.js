@@ -177,6 +177,31 @@ function clinContradictions(V, P) {
     }
   }
 
+  /* A finding with no eye (Phase 2 safety finding CS-11).
+
+     Findings are stored as {label, eye} but nothing requires the eye, so
+     "corneal ulcer" can be recorded against neither eye. On the screen it
+     looks complete; in the record and the referral letter it is not, and the
+     reader cannot recover which eye it was.
+
+     A question rather than an error: a few findings are genuinely not
+     lateralised, and it is not this file's place to decide which. */
+  ["sl", "fun"].forEach(function (sec) {
+    var f = V[sec] && V[sec].findings;
+    if (!Array.isArray(f) || !f.length) return;
+    var noEye = f.filter(function (x) {
+      return x && x.label && !String(x.eye || "").trim();
+    });
+    if (!noEye.length) return;
+    out.push(_contra("finding_no_eye", "question",
+      (sec === "sl" ? "Slit lamp" : "Fundus") + ": " + noEye.length +
+      " finding(s) recorded without an eye — " +
+      noEye.slice(0, 3).map(function (x) { return x.label; }).join(", ") +
+      (noEye.length > 3 ? "…" : "") + ". Which side?",
+      false, "The record and any referral letter will carry the finding with no " +
+             "laterality, and the reader cannot recover it."));
+  });
+
   /* Errors first — a definitional contradiction outranks a question. */
   out.sort(function (a, b) {
     if (a.level !== b.level) return a.level === "error" ? -1 : 1;

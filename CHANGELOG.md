@@ -6,6 +6,123 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-08-03 — The engine's own numbers made visible; what changed; replay
+
+**Every number that decides a differential is now on a screen you can read.**
+
+The engine contained 129 numeric comparisons. Most are structural — array
+bounds, loop limits. But 40 of them are clinical decisions written as
+JavaScript: 21 mmHg, 520 µm, −6 dB, a cup-to-disc of 0.6. Each one changes
+which conditions appear. When you signed off conditions you were not signing
+off any of these, and you had no way to look at them. They were the least
+reviewed and most load-bearing numbers in the product.
+
+They now live in `knowledge/clinical-thresholds.js`, each stating what it means
+in plain clinical language, its unit, whether the comparison is "greater than"
+or "greater than or equal", which tokens it produces, and — where it matters —
+what is *wrong* with it. Some of those notes are uncomfortable and are meant to
+be: OCT RNFL thinning also asserts a visual **field** defect that was never
+tested; one number serves both exophoria and esophoria at near, which are not
+clinically equivalent; the lens grading infers that you have *symptoms* from a
+*sign*. You can see all of that now, in the Admin panel under "📐 Clinical
+thresholds".
+
+**Nothing changed value.** Every number is a straight transcription of what the
+engine already did, and the clinical vignettes passed untouched. Moving them
+does not make them right — it makes them visible, so they can be made right.
+
+**No source is cited on any row, deliberately.** Several of these are numbers
+you would recognise instantly, and it would be easy to attach a plausible
+guideline name to each. That is exactly the mistake this project has already
+made once. A citation nobody read is worse than none, because it stops the next
+reader checking. A source appears when you read one.
+
+**The panel now tells you what your last entry did.**
+
+The engine re-runs every time you touch a field and the advisory panel silently
+redraws. A condition could go from fourth to first, or vanish, between two
+keystrokes, and nothing said so. Now it says "Adding light sensitivity moved
+Anterior Uveitis 4th → 1st".
+
+It can say *moved* rather than *happened to move* for a specific reason: the
+engine always gives the same answer for the same findings, so when exactly one
+finding changed, that finding is provably the cause. When you change several at
+once it drops to "Since your last entry…" and blames nothing. That distinction
+is enforced in code, not left to wording.
+
+**Driving the real app caught a bug my own tests missed.** The urgent banners
+include their match strength — "(match 17)". Comparing alerts by their text
+meant one alert whose score drifted two points read as an alert *lost* plus an
+alert *gained*, and "No longer showing" is the loudest line the panel has. That
+is alert fatigue manufactured out of nothing. Alerts are now compared by
+identity; an urgent condition sliding off the list is a quiet warning, while a
+red-flag rule that stops firing stays loud; and each condition is mentioned
+once rather than once per mechanism.
+
+**You can now ask what a knowledge-base update did to patients you have already
+seen.**
+
+Until now, updating the knowledge base was an act of faith. "⏱ Knowledge drift"
+in the Admin panel re-runs completed visits through today's engine using the
+findings recorded at the time, and reports what comes out differently. Nothing
+is changed and no record is rewritten. The number shown first, on its own, is
+the only one that changes what you do next: **red flags that would no longer be
+raised.**
+
+**It is honest about what it cannot do.** It cannot run the *old* knowledge
+base — nothing on the device keeps old versions. So it does the reverse and
+labels it: old findings, today's knowledge, both version numbers on screen. If
+the version is the same and the answer is different, that is not drift — it
+means the record and the software disagree, and it says so.
+
+It separates two kinds of change, because only one of them is something I did to
+the software: **derivation** drift means the same findings now produce different
+engine tokens — a rule or one of those clinical thresholds moved — and
+**knowledge** drift means the tokens are identical and the conditions changed.
+"The differential changed" is not actionable; "the IOP threshold moved and that
+is why" is.
+
+**Red flags: every alert this product can show is now in one list.**
+
+The Phase 2 safety review found that the red-flag rules — unlike the knowledge
+base — were `if` statements no clinician could see. `knowledge/red-flags.js`
+declares all 18: what fires each one, the exact words you see, its level, and
+which threshold it compares against. Visible under "🚩 Red flags".
+
+**I deliberately did not follow that review's own recommendation.** It said
+"move the red-flag rules into data". That would have been a safety regression.
+Red flags must be un-suppressible, and making them data creates a way to lose
+one — a corrupt file, a stale sync, a mistaken edit. The rules stay in the
+engine where nothing can unload them; the register describes them; and a test
+fails if either side changes without the other. You get reviewability without
+buying a new way to fail.
+
+**Two smaller safety items closed.**
+
+The medication alerts now state their own limit: individual drugs' ocular
+effects only, **no drug–drug or drug–condition interaction checking**. Saying so
+*is* the safety feature — watching a drug list produce alerts makes it
+reasonable to assume the drugs that produced none were checked and cleared.
+
+And a finding recorded against neither eye is now flagged. On screen it looks
+complete; in the record and in a referral letter it is not, and the reader
+cannot recover which side it was. It asks rather than asserts, because a few
+findings genuinely are not lateralised.
+
+**Divergence from `ARCHITECTURE.md`:** the red-flag register is documentation
+that the engine never reads, rather than the data-driven rule engine the Phase 2
+register recommended. Reasoning above; recorded in that register too.
+
+**Still yours to decide:** all 48 thresholds and all 18 red-flag rules are
+`UNVERIFIED`; the confidence band *words* ("High" reads as certainty when it
+means "matched most of what we asked for"); whether a structural OCT
+measurement should assert a functional field defect; and whether one number
+should serve both exo and eso phoria.
+
+887 tests pass; audit 0 FAIL.
+
+---
+
 ## 2026-08-02 — Phase 4 fixes: the alert gap closed, contradictions caught
 
 **Every urgent condition now raises a banner — 63 of 63, up from 12.**

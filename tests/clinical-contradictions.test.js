@@ -174,3 +174,40 @@ test("the clinical checks are flagged for the founder to confirm", () => {
   assert.ok(/NEEDS_CLINICAL_REVIEW/.test(src),
     "whether each clinical check is worth raising is not mine to decide");
 });
+
+
+/* ── CS-11: a finding recorded against neither eye ── */
+
+test("a finding with no eye is questioned, not asserted wrong", () => {
+  const r = C.clinContradictions({ sl: { findings: [{ label: "Corneal ulcer", eye: "" }] } }, null);
+  const f = r.find((x) => x.id === "finding_no_eye");
+  assert.ok(f, "the missing laterality must be raised: " + JSON.stringify(r));
+  assert.strictEqual(f.level, "question");
+  assert.strictEqual(f.certain, false, "a few findings genuinely are not lateralised");
+  assert.match(f.message, /Corneal ulcer/);
+});
+
+test("findings that carry an eye raise nothing", () => {
+  const r = C.clinContradictions({
+    sl: { findings: [{ label: "Corneal ulcer", eye: "OD" }] },
+    fun: { findings: [{ label: "Drusen", eye: "OU" }] }
+  }, null);
+  assert.strictEqual(r.filter((x) => x.id === "finding_no_eye").length, 0);
+});
+
+test("fundus and slit lamp are reported separately, and counted", () => {
+  const r = C.clinContradictions({
+    sl: { findings: [{ label: "A", eye: "" }, { label: "B", eye: "" }] },
+    fun: { findings: [{ label: "C", eye: "" }] }
+  }, null);
+  const hits = r.filter((x) => x.id === "finding_no_eye");
+  assert.strictEqual(hits.length, 2, "one per section, so the clinician knows where to look");
+  assert.ok(hits.some((h) => /Slit lamp: 2 finding/.test(h.message)));
+  assert.ok(hits.some((h) => /Fundus: 1 finding/.test(h.message)));
+});
+
+test("an empty findings list is not a laterality problem", () => {
+  assert.strictEqual(
+    C.clinContradictions({ sl: { findings: [] }, fun: {} }, null)
+      .filter((x) => x.id === "finding_no_eye").length, 0);
+});

@@ -730,6 +730,7 @@ function homeSecAdmin() {
           '</div>' + meter + '</div>';
       })() : "") +
       ((typeof ageBracketScreen === "function") ? ageBracketScreen() : "") +
+      ((typeof redFlagScreen === "function") ? redFlagScreen() : "") +
       ((typeof thresholdScreen === "function") ? thresholdScreen() : "") +
       ((typeof replayScreen === "function") ? replayScreen() : "") +
       '<div class="home-settings-title">🔐 Change admin password</div>' +
