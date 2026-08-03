@@ -2554,6 +2554,9 @@ input, select, textarea, button {
 .cb-chips { display:flex; flex-wrap:wrap; gap:4px; margin-bottom:4px; }
 .cb-chip { font-size:.56rem; padding:2px 7px; border-radius:10px; cursor:pointer;
   border:1px solid var(--fg); background:var(--sn); }
+/* A finding the exam never records. It looked identical to a working one, so a
+   clinician could wire a condition that could never fire and never know. */
+.cb-chip-dead { border-color:#c0392b; border-style:dashed; color:#c0392b; background:transparent; }
 .cb-chip.bench { opacity:.55; }
 .cb-chip.bench.on { opacity:1; background:var(--ink,#333); color:#fff; }
 .cb-empty { font-size:.58rem; color:var(--sv); font-style:italic; }

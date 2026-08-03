@@ -163,8 +163,68 @@ function overlayValidate(draft, existingId) {
       "this is recorded and sent for review.");
   }
 
+  /* ── A REQUIRED finding the engine can never produce ──
+     The token fields are free text. A clinician who types "evening dryness"
+     gets `evening_dryness`, which is not a token the engine emits from any
+     input path — so the condition can never fire, and NOTHING said so. They
+     would leave believing the app was watching for that pattern on their
+     behalf. That is worse than not having the feature at all.
+
+     A structural check, not a clinical one: `reachable` in the generated
+     token registry means "some input path produces this token". If no
+     required token is reachable, the condition is dead by construction, which
+     is the same class of defect as having no required finding at all. */
+  req.forEach(function (t) {
+    if (overlayTokenReachable(t)) return;
+    errs.push('"' + t + '" is not a finding the engine can produce, so a condition ' +
+      'requiring it could never appear. Pick one from the suggestions — the list is ' +
+      'every finding the exam can record.');
+  });
+
   if (OVERLAY_SCOPES.indexOf(draft.scope || "personal") < 0) errs.push("Unknown scope.");
   return errs;
+}
+
+/* Can the engine actually emit this token from some input path?
+   Falls back to `true` when the registry is unavailable — a missing generated
+   file must not block a clinician from saving their own work. */
+function overlayTokenReachable(tok) {
+  if (typeof TOKEN_REGISTRY === "undefined" || !TOKEN_REGISTRY) return true;
+  var e = TOKEN_REGISTRY[tok];
+  return !!(e && e.reachable);
+}
+
+/* Non-blocking notes. Supporting and contradicting findings that the engine
+   never produces do not break the condition — it still fires on its required
+   findings — they just never contribute anything. Worth saying, not worth
+   refusing to save over. */
+function overlayWarnings(draft) {
+  var out = [];
+  if (!draft) return out;
+  ["sup", "con", "temporal"].forEach(function (f) {
+    (Array.isArray(draft[f]) ? draft[f] : []).forEach(function (t) {
+      if (overlayTokenReachable(t)) return;
+      out.push('"' + t + '" is not a finding the engine can produce, so it will never ' +
+        'add to or subtract from this condition\'s score. The condition still works ' +
+        'without it.');
+    });
+  });
+  return out;
+}
+
+/* Every finding the engine can actually produce — the list a picker offers.
+   Sorted so the same input always yields the same list. */
+function overlayTokenChoices(prefix, limit) {
+  if (typeof TOKEN_REGISTRY === "undefined" || !TOKEN_REGISTRY) return [];
+  var q = String(prefix || "").toLowerCase();
+  var out = [];
+  Object.keys(TOKEN_REGISTRY).forEach(function (t) {
+    if (!TOKEN_REGISTRY[t] || !TOKEN_REGISTRY[t].reachable) return;
+    if (q && t.toLowerCase().indexOf(q) < 0) return;
+    out.push(t);
+  });
+  out.sort();
+  return limit ? out.slice(0, limit) : out;
 }
 
 
@@ -353,6 +413,8 @@ if (typeof module !== "undefined" && module.exports) {
     OVERLAY_SCOPES: OVERLAY_SCOPES, OVERLAY_STATES: OVERLAY_STATES,
     overlayAll: overlayAll, overlayActive: overlayActive, overlayById: overlayById,
     overlayValidate: overlayValidate, overlaySave: overlaySave,
+    overlayTokenReachable: overlayTokenReachable, overlayWarnings: overlayWarnings,
+    overlayTokenChoices: overlayTokenChoices,
     overlayDelete: overlayDelete, overlaySubmit: overlaySubmit,
     overlaySubmitted: overlaySubmitted, overlayReview: overlayReview,
     overlayConditions: overlayConditions, overlayProvenance: overlayProvenance

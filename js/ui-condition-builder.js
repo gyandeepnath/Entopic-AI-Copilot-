@@ -181,14 +181,38 @@ function cbTokenChips(field, label, hint) {
   var list = CB.draft[field] || [];
   var h = '<div class="cb-field"><div class="cb-lab">' + escHtml(label) +
           '<span class="cb-hint"> ' + escHtml(hint) + '</span></div><div class="cb-chips">';
+  /* A finding the engine cannot produce is marked here rather than only at
+     save time. Typing "evening dryness" used to yield a chip that looked
+     exactly like a working one and could never match anything. */
+  var anyDead = false;
   list.forEach(function (t) {
-    h += '<span class="cb-chip" onclick="cbToggleToken(\'' + escAttrJs(field) + '\',\'' +
-         escAttrJs(t) + '\')" title="Remove">' + escHtml(t) + ' ×</span>';
+    var dead = (typeof overlayTokenReachable === "function") && !overlayTokenReachable(t);
+    if (dead) anyDead = true;
+    h += '<span class="cb-chip' + (dead ? " cb-chip-dead" : "") + '" onclick="cbToggleToken(\'' +
+         escAttrJs(field) + '\',\'' + escAttrJs(t) + '\')" title="' +
+         (dead ? "The exam never records this — it can never match. Click to remove." : "Remove") +
+         '">' + escHtml(t) + (dead ? " ⚠" : "") + ' ×</span>';
   });
   if (!list.length) h += '<span class="cb-empty">none</span>';
-  h += '</div><div class="cb-add">' +
-    '<input id="cbIn_' + escHtml(field) + '" placeholder="type a finding and press Add" ' +
+  h += '</div>';
+  if (anyDead) {
+    h += '<div class="cb-hint" style="color:#c0392b">⚠ Marked findings are not something ' +
+         'the exam records, so the engine can never produce them. ' +
+         (field === "req"
+           ? 'A condition requiring one can never appear at all.'
+           : 'They will never add to or subtract from the score.') + '</div>';
+  }
+  /* The picker is the real fix. The list is every finding the engine can
+     actually produce, so a chosen one always works. */
+  var listId = "cbDl_" + field;
+  var choices = (typeof overlayTokenChoices === "function") ? overlayTokenChoices("", 0) : [];
+  h += '<div class="cb-add">' +
+    '<input id="cbIn_' + escHtml(field) + '" list="' + escHtml(listId) + '" autocomplete="off" ' +
+    'placeholder="start typing — choose from the exam\'s findings" ' +
     'onkeydown="if(event.key===\'Enter\'){cbAddTokenFromInput(\'' + escAttrJs(field) + '\',\'cbIn_' + escAttrJs(field) + '\');return false;}">' +
+    '<datalist id="' + escHtml(listId) + '">' +
+      choices.map(function (t) { return '<option value="' + escHtml(t) + '">'; }).join("") +
+    '</datalist>' +
     '<button class="btn btn-s" onclick="cbAddTokenFromInput(\'' + escAttrJs(field) + '\',\'cbIn_' + escAttrJs(field) + '\')">Add</button>' +
     '</div></div>';
   return h;

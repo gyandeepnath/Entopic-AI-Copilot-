@@ -31,6 +31,9 @@ function load(user) {
   };
   ctx.logAudit = (a, d) => ctx.audit.push({ a, d });
   vm.createContext(ctx);
+  /* The REAL generated token registry: overlayValidate refuses a required
+     finding the engine cannot produce, and a stub would not test that. */
+  vm.runInContext(read("knowledge/token-registry.js"), ctx, { filename: "token-registry.js" });
   vm.runInContext(read("js/kb-overlay.js"), ctx, { filename: "kb-overlay.js" });
   return ctx;
 }
@@ -252,4 +255,68 @@ test("kb-overlay.js loads before engine.js", () => {
   assert.ok(order.indexOf("js/kb-overlay.js") >= 0, "must be loaded");
   assert.ok(order.indexOf("js/kb-overlay.js") < order.indexOf("js/engine.js"),
     "the engine reads overlayConditions() — it must exist first");
+});
+
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* A CONDITION THAT CAN NEVER FIRE                                  */
+/*                                                                  */
+/* The token fields are free text. A clinician who types "evening    */
+/* dryness" gets `evening_dryness`, which no input path produces —   */
+/* so the condition never fires, and nothing said so. They leave     */
+/* believing the app is watching that pattern for them. That is      */
+/* worse than not having the feature.                                */
+/*                                                                  */
+/* Found by driving the real app: overlayValidate accepted an        */
+/* invented token without comment.                                   */
+/* ═══════════════════════════════════════════════════════════════ */
+
+test("a required finding the engine cannot produce is refused", () => {
+  const errs = load().overlayValidate({
+    name: "My Pattern", req: ["a_finding_that_does_not_exist"], sup: [], con: []
+  });
+  assert.ok(errs.some((e) => /could never appear/.test(e)),
+    "the reason must say why, not just 'invalid': " + JSON.stringify(errs));
+});
+
+test("a required finding the engine does produce is accepted", () => {
+  const errs = load().overlayValidate({ name: "My Pattern", req: ["dryness"], sup: [], con: [] });
+  /* .length, not deepStrictEqual: sandbox arrays are cross-realm. */
+  assert.strictEqual(errs.length, 0, errs.join(" | "));
+});
+
+test("an unproducible SUPPORTING finding is a note, not a refusal", () => {
+  /* The condition still fires on its required findings; the supporting one
+     just never contributes. Refusing to save over it would be wrong. */
+  const ctx = load();
+  const draft = { name: "My Pattern", req: ["dryness"], sup: ["not_a_real_finding"], con: [] };
+  assert.strictEqual(ctx.overlayValidate(draft).length, 0);
+  const warns = ctx.overlayWarnings(draft);
+  assert.strictEqual(warns.length, 1);
+  assert.match(warns[0], /never add to or subtract from/);
+});
+
+test("the picker offers only findings the engine can actually produce", () => {
+  const ctx = load();
+  const all = ctx.overlayTokenChoices("", 0);
+  assert.ok(all.length > 100, "there should be a real vocabulary to choose from");
+  assert.ok(all.every((t) => ctx.overlayTokenReachable(t)),
+    "offering an unreachable token would recreate the bug the picker exists to fix");
+  assert.ok(all.indexOf("dryness") >= 0);
+
+  const filtered = ctx.overlayTokenChoices("dry", 0);
+  assert.ok(filtered.length && filtered.every((t) => t.toLowerCase().includes("dry")));
+  assert.ok(filtered.length < all.length);
+  assert.strictEqual(filtered.join(","), filtered.slice().sort().join(","), "stable order");
+});
+
+test("a missing token registry does not stop a clinician saving their work", () => {
+  /* Fail open, not closed: the registry is a generated file. If it is absent,
+     refusing every condition would be a worse failure than allowing one that
+     might not fire. */
+  const ctx = load();
+  vm.runInContext("TOKEN_REGISTRY = undefined;", ctx);
+  assert.strictEqual(ctx.overlayTokenReachable("anything_at_all"), true);
+  assert.strictEqual(
+    ctx.overlayValidate({ name: "My Pattern", req: ["anything_at_all"], sup: [], con: [] }).length, 0);
 });
