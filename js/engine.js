@@ -1405,6 +1405,95 @@ function computeAlerts(tokens) {
 
 
 /* ═══════════════════════════════════════════════════════════════ */
+/* STAGE 10b: DERIVED ALERTS  (Phase 4 finding F-1)                */
+/*                                                                  */
+/* THE DEFECT THIS CLOSES                                          */
+/* ──────────────────────                                          */
+/* 63 conditions in the knowledge base carry `urgent: true`.       */
+/* computeAlerts() above is 17 hand-written rules. Nothing         */
+/* connected them, so — measured by feeding each urgent condition  */
+/* its own required tokens — only 12 raised an alert and 51 did    */
+/* not, including Chemical Eye Burn, Open Globe Injury, Retinal    */
+/* Detachment and Microbial Keratitis.                             */
+/*                                                                  */
+/* The clinician was not blind: those conditions still appeared in */
+/* the differential marked URGENT. What never appeared was the     */
+/* Clinical Alerts banner — the top-of-panel notice designed to be */
+/* un-missable. Two mechanisms that should agree, maintained       */
+/* separately, drifting. The same shape as three other defects     */
+/* already fixed in this codebase.                                 */
+/*                                                                  */
+/* WHY THIS IS ADDITIONAL, NOT A REPLACEMENT                       */
+/* ────────────────────────────────────────                        */
+/* The 17 hand-written rules fire on a SYMPTOM, before any         */
+/* condition has been scored. That is earlier, and earlier is      */
+/* better: "flashes + floaters" warns before the engine has        */
+/* decided anything. They stay exactly as they are. This adds a    */
+/* floor beneath them so that no urgent condition can reach the    */
+/* differential with no banner at all.                             */
+/*                                                                  */
+/* ⚠ NEEDS_CLINICAL_REVIEW — THE THRESHOLD IS A CLINICAL CALL      */
+/* ────────────────────────────────────────────────────────        */
+/* DERIVED_ALERT_MIN decides how plausible an urgent condition     */
+/* must be before it raises a banner. It trades two real harms     */
+/* against each other:                                             */
+/*                                                                  */
+/*   too LOW  → a banner on every routine visit → alert fatigue    */
+/*              → the one that matters gets dismissed with the     */
+/*                rest (Phase 2, CS-06)                            */
+/*   too HIGH → a genuinely urgent condition reaches the           */
+/*              differential with no banner — the defect this      */
+/*              exists to close                                    */
+/*                                                                  */
+/* The default below deliberately matches DX_FLOOR: if a condition */
+/* is confident enough to SHOW, it is confident enough to WARN.    */
+/* That is a defensible engineering default, not a clinical        */
+/* finding. The founder should set it, and the two knobs are       */
+/* separated so he can raise the alert bar without hiding          */
+/* conditions from the differential.                               */
+/* ═══════════════════════════════════════════════════════════════ */
+
+var DERIVED_ALERT_MIN = 0.15;
+
+/* Urgent conditions in the shown differential that no hand-written rule has
+   already named. Returns alerts to APPEND — never to replace. */
+function computeDerivedAlerts(shownResults, existingAlerts) {
+  var out = [];
+  if (!shownResults || !shownResults.length) return out;
+
+  /* Don't say the same thing twice. A hand-written rule that already mentions
+     the condition by name is more specific and better worded, so it wins. */
+  var alreadySaid = (existingAlerts || []).map(function (a) {
+    return String(a.m || "").toLowerCase();
+  }).join(" | ");
+
+  for (var i = 0; i < shownResults.length; i++) {
+    var r = shownResults[i];
+    if (!r.urgent) continue;
+    if (r._overlay) continue;          /* user conditions alert via their own path */
+    if (r.score < DERIVED_ALERT_MIN) continue;
+
+    var nm = String(r.name || "");
+    if (!nm) continue;
+    if (alreadySaid.indexOf(nm.toLowerCase()) >= 0) continue;
+
+    /* The match strength travels with the alert so the clinician can triage
+       between "this is very likely" and "this is on the list". An alert that
+       states its own strength is far less fatiguing than one that does not. */
+    out.push({
+      m: nm + " — urgent condition in the differential (match " +
+         Math.round(r.score * 100) + "). Consider referral urgency.",
+      l: "urgent",
+      derived: true,
+      condition: nm,
+      score: r.score
+    });
+  }
+  return out;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════ */
 /* STAGE 11: COMPUTE NUDGES                                        */
 /* Suggest next exam steps based on incomplete data and active     */
 /* diagnostic pathways                                             */
@@ -2054,6 +2143,12 @@ function runDiagnosticEngine() {
      CORE alerts are computed first and independently of everything above, so
      nothing an overlay does can alter, reorder or suppress them. */
   V.alerts = computeAlerts(tokens);
+
+  /* Derived alerts (F-1): any urgent CORE condition that reached the shown
+     differential and which no hand-written rule already named. Appended, so
+     the 17 specific rules keep their place at the top. */
+  var _derived = computeDerivedAlerts(mergedShown, V.alerts);
+  for (var dv = 0; dv < _derived.length; dv++) V.alerts.push(_derived[dv]);
 
   /* User-authored urgent conditions ADD an alert; they never replace one.
      The founder decided (2026-08-02) that clinicians may mark their own

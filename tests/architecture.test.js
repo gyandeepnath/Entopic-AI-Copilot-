@@ -392,8 +392,10 @@ test("no NEW module exceeds the size at which one file stops having one job", ()
        conditions are scored SEPARATELY and merged with core urgents on top, so
        a user condition can never outrank a red flag. Doing it in three lines by
        appending to `results` would have been smaller and would have
-       reintroduced exactly that hazard. */
-    "js/engine.js": 2200, "js/app.js": 2000, "js/data-model.js": 1300,
+       reintroduced exactly that hazard.
+       Raised again 2200 -> 2300 for derived alerts (Phase 4 F-1): 51 of 63
+       urgent conditions reached the differential with no alert banner. */
+    "js/engine.js": 2300, "js/app.js": 2000, "js/data-model.js": 1300,
     /* app.js raised 1950 -> 2000 for the stepHasData extraction, which made
        markDone reusable for any visit rather than only the open one. It is the
        known god module (Top-100 item 4); the cap exists to stop it growing
