@@ -147,6 +147,77 @@ function mirrorReadAll(cb) {
   }, function () { cb({}); });
 }
 
+/* ── Snapshot namespace (automatic backup, BE-18) ──
+   mirrorPutRaw refuses any key not in MIRROR_KEYS, which is right: the mirror
+   holds declared clinic stores and nothing else, so a stray key cannot quietly
+   consume a clinic's IndexedDB quota. Automatic backups need somewhere to live
+   that is NOT a store, so they get an explicit, narrow namespace rather than a
+   hole in the allowlist. Returns a promise — a snapshot's caller needs to know
+   whether the bytes actually landed. */
+var MIRROR_SNAPSHOT_PREFIX = "snap_";
+
+function mirrorIsSnapshotKey(key) {
+  return typeof key === "string" && key.indexOf(MIRROR_SNAPSHOT_PREFIX) === 0;
+}
+
+function mirrorPutBlob(key, rawJson) {
+  if (!mirrorSupported()) return Promise.reject(new Error("IndexedDB unavailable"));
+  if (!mirrorIsSnapshotKey(key)) return Promise.reject(new Error("not a snapshot key"));
+  return new Promise(function (resolve, reject) {
+    openMirror(function (db) {
+      try {
+        var tx = db.transaction(MIRROR_STORE_NAME, "readwrite");
+        tx.objectStore(MIRROR_STORE_NAME).put({
+          key: key, json: rawJson, updated: new Date().toISOString()
+        });
+        tx.oncomplete = function () { db.close(); resolve(true); };
+        tx.onerror = function () { db.close(); reject(new Error("snapshot write failed")); };
+      } catch (e) {
+        try { db.close(); } catch (e2) {}
+        reject(e);
+      }
+    }, function (err) { reject(err || new Error("could not open the mirror")); });
+  });
+}
+
+/* Read ONE key back out. Added for the automatic-backup snapshots, which are
+   large and must not require loading every mirrored store to fetch one.
+   Returns a promise for the raw JSON string, or null. */
+function mirrorRemoveBlob(key) {
+  if (!mirrorSupported() || !mirrorIsSnapshotKey(key)) return Promise.resolve(false);
+  return new Promise(function (resolve) {
+    openMirror(function (db) {
+      try {
+        var tx = db.transaction(MIRROR_STORE_NAME, "readwrite");
+        tx.objectStore(MIRROR_STORE_NAME).delete(key);
+        tx.oncomplete = function () { db.close(); resolve(true); };
+        tx.onerror = function () { db.close(); resolve(false); };
+      } catch (e) { try { db.close(); } catch (e2) {} resolve(false); }
+    }, function () { resolve(false); });
+  });
+}
+
+function mirrorGetRaw(key) {
+  if (!mirrorSupported()) return Promise.resolve(null);
+  return new Promise(function (resolve) {
+    openMirror(function (db) {
+      try {
+        var tx = db.transaction(MIRROR_STORE_NAME, "readonly");
+        var req = tx.objectStore(MIRROR_STORE_NAME).get(key);
+        req.onsuccess = function () {
+          var rec = req.result;
+          db.close();
+          resolve(rec ? rec.json : null);   /* the field mirrorPutRaw writes */
+        };
+        req.onerror = function () { db.close(); resolve(null); };
+      } catch (e) {
+        try { db.close(); } catch (e2) {}
+        resolve(null);
+      }
+    }, function () { resolve(null); });
+  });
+}
+
 /* Seed/refresh the mirror from whatever is currently in localStorage
    (covers data written before this module existed). */
 /* Seed the mirror from localStorage — but ONLY from values that are actually

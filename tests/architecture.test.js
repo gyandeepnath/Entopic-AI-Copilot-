@@ -68,6 +68,7 @@ const DATA_CLASSIFICATION = {
      ledger would look like an unmigrated device and re-run every migration
      over already-migrated data. */
   migrations:      { class: "operational", encrypt: false, mirror: true,  backup: true  },
+  autobackup:      { class: "operational", encrypt: false, mirror: true,  backup: true  },
   /* backup:false — a tombstone is a message in flight, not state. Replaying a
      stale one out of a month-old backup could delete a record that has since
      been legitimately restored. Mirrored and encrypted because losing the queue

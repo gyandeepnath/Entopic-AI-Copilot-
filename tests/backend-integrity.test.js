@@ -514,3 +514,147 @@ test("a mid-pagination failure keeps the pages already fetched", () => {
   assert.ok(stored.length >= 500, "kept " + stored.length + " — fetched rows must not be thrown away");
   assert.ok(stored.length < 1200, "and the pull genuinely did not finish");
 });
+
+
+/* ═══ BE-18 · AUTOMATIC BACKUP ═══ */
+
+/* Backups were complete and the restore careful — and entirely manual. A device
+   that dies having never been backed up and never synced takes the practice's
+   whole record with it, and the only thing in the way was somebody remembering
+   to press a button every week for years. That is a human problem, which is
+   exactly why it has to be solved in software. */
+
+function backupSandbox(extra) {
+  const ctx = sandbox(Object.assign({
+    buildBackupPayload: () => ({ version: "1.0.0", patients: [{ id: "p1" }], visits: [] }),
+    mirrorPutBlob: function (k, j) { ctx._blobs[k] = j; return Promise.resolve(true); },
+    mirrorRemoveBlob: function (k) { delete ctx._blobs[k]; return Promise.resolve(true); },
+    mirrorGetRaw: function (k) { return Promise.resolve(ctx._blobs[k] || null); },
+    MIRROR_SNAPSHOT_PREFIX: "snap_"
+  }, extra || {}));
+  ctx._blobs = {};
+  vm.runInContext(read("js/storage-autobackup.js"), ctx, { filename: "storage-autobackup.js" });
+  return ctx;
+}
+
+test("a snapshot is written and can be read back whole", async () => {
+  const ctx = backupSandbox();
+  const r = await vm.runInContext("autobackupSnapshot({force:true})", ctx);
+  assert.strictEqual(r.ok, true, r.reason);
+  const list = vm.runInContext("autobackupSnapshots()", ctx);
+  assert.strictEqual(list.length, 1);
+  const back = await vm.runInContext(`autobackupRead(${JSON.stringify(list[0].id)})`, ctx);
+  assert.strictEqual(back.patients.length, 1, "a snapshot that cannot be read back is not a backup");
+});
+
+test("a snapshot is REFUSED while a store is damaged", async () => {
+  /* A snapshot of the empty fallback would look like a valid backup of an
+     empty clinic — worse than no snapshot, because it would be restored with
+     confidence. */
+  const ctx = backupSandbox();
+  ctx.localStorage.setItem("entopic_visits", '[{"id":"v1"');
+  vm.runInContext("loadVisits();", ctx);
+  const r = await vm.runInContext("autobackupSnapshot({force:true})", ctx);
+  assert.strictEqual(r.ok, false);
+  assert.match(r.reason, /damaged/);
+});
+
+test("a snapshot is refused while the vault is locked", async () => {
+  const ctx = backupSandbox({ vaultEnabled: () => true, vaultUnlocked: () => false });
+  const r = await vm.runInContext("autobackupSnapshot({force:true})", ctx);
+  assert.strictEqual(r.ok, false);
+  assert.match(r.reason, /vault is locked/);
+});
+
+test("snapshots roll — the oldest is pruned, data before index", async () => {
+  const ctx = backupSandbox();
+  for (let i = 0; i < ctx.AUTOBACKUP_KEEP + 3; i++) {
+    await vm.runInContext("autobackupSnapshot({force:true})", ctx);
+  }
+  const list = vm.runInContext("autobackupSnapshots()", ctx);
+  assert.strictEqual(list.length, ctx.AUTOBACKUP_KEEP);
+  assert.strictEqual(Object.keys(ctx._blobs).length, ctx.AUTOBACKUP_KEEP,
+    "pruned snapshots must actually free their bytes");
+});
+
+test("snapshots are rate-limited unless forced", async () => {
+  const ctx = backupSandbox();
+  await vm.runInContext("autobackupSnapshot({force:true})", ctx);
+  const second = await vm.runInContext("autobackupSnapshot()", ctx);
+  assert.strictEqual(second.skipped, true);
+  assert.strictEqual(vm.runInContext("autobackupSnapshots().length", ctx), 1);
+});
+
+test("an on-device snapshot does NOT count as an off-device backup", async () => {
+  /* The distinction the whole feature rests on. A snapshot protects against a
+     bad write; it protects against nothing if the device is stolen. Conflating
+     them is how a clinic ends up believing it is protected when it is not. */
+  const ctx = backupSandbox();
+  await vm.runInContext("autobackupSnapshot({force:true})", ctx);
+  assert.strictEqual(vm.runInContext("autobackupExportAgeDays()", ctx), null,
+    "taking a snapshot must not reset the export clock");
+  assert.strictEqual(vm.runInContext("autobackupExportIsStale()", ctx), true);
+
+  vm.runInContext("autobackupNoteExport()", ctx);
+  assert.strictEqual(vm.runInContext("autobackupExportAgeDays()", ctx), 0);
+  assert.strictEqual(vm.runInContext("autobackupExportIsStale()", ctx), false);
+});
+
+test("a device that has never exported is treated as stale, not as unknown", async () => {
+  const ctx = backupSandbox();
+  assert.strictEqual(vm.runInContext("autobackupExportIsStale()", ctx), true,
+    "'never' must be at least as alarming as 'a long time ago'");
+});
+
+test("an export older than the threshold is stale again", async () => {
+  const ctx = backupSandbox();
+  vm.runInContext('saveStore("autobackup", { snapshots: [], last_export: ' +
+    JSON.stringify(new Date(Date.now() - 30 * 86400000).toISOString()) + " });", ctx);
+  assert.strictEqual(vm.runInContext("autobackupExportAgeDays()", ctx), 30);
+  assert.strictEqual(vm.runInContext("autobackupExportIsStale()", ctx), true);
+});
+
+test("both export paths record that a copy left the device", () => {
+  const src = read("js/storage-backup.js");
+  const plain = src.slice(src.indexOf("function exportAllData"), src.indexOf("function exportEncryptedBackup"));
+  const enc = src.slice(src.indexOf("function exportEncryptedBackup"), src.indexOf("DATA IMPORT"));
+  assert.ok(plain.indexOf("autobackupNoteExport") > 0, "the plain export must count");
+  assert.ok(enc.indexOf("autobackupNoteExport") > 0, "the encrypted export must count too");
+});
+
+test("a restore never makes a device look better protected than it is", () => {
+  /* Taking the NEWER of the two export stamps would let restoring an old
+     backup silence the warning on a device that has genuinely never exported. */
+  const src = read("js/storage-backup.js");
+  assert.ok(src.indexOf("must never make a device look better protected") > 0,
+    "the reasoning must be written where the next author will read it");
+});
+
+test("the stale warning reaches the user, and the snapshot does not", () => {
+  const src = read("js/ui-storage-banners.js");
+  assert.ok(src.indexOf('evOn("backup:export-stale"') > 0, "the one message worth interrupting for");
+  assert.ok(src.indexOf('evOn("backup:snapshot"') > 0, "subscribed, so nothing is emitted into the void");
+  assert.ok(src.indexOf("backupStaleBanner") > 0);
+  assert.ok(src.indexOf("do <b>not</b> survive this device being lost") > 0,
+    "the banner must say what a snapshot does NOT protect against");
+});
+
+test("autobackup is declared, and started at boot", () => {
+  const D = require("../js/data-classification.js");
+  assert.ok(D.DATA_STORES.autobackup, "an undeclared store gets no mirror and no corruption check");
+  assert.strictEqual(D.DATA_STORES.autobackup.backup, true);
+  assert.ok(read("js/app.js").indexOf("autobackupStart()") > 0,
+    "an automatic backup nothing starts is not automatic");
+  const order = [...read("index.html").matchAll(/<script src="([^"]+)"/g)].map((m) => m[1]);
+  assert.ok(order.indexOf("js/storage-autobackup.js") > order.indexOf("js/storage-backup.js"));
+});
+
+test("snapshots live in their own namespace, not in the store allowlist", () => {
+  /* The mirror holds declared clinic stores and nothing else, so a stray key
+     cannot quietly consume a clinic's IndexedDB quota. Snapshots get an
+     explicit narrow namespace rather than a hole in that allowlist. */
+  const src = read("js/storage-mirror.js");
+  assert.ok(src.indexOf("mirrorIsSnapshotKey") > 0);
+  assert.ok(/function mirrorPutBlob[\s\S]{0,300}mirrorIsSnapshotKey/.test(src),
+    "mirrorPutBlob must reject any key outside the snapshot namespace");
+});

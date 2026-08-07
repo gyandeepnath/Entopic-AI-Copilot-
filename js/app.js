@@ -1891,6 +1891,10 @@ function esc(s) { return escHtml(s); }
     } catch (e) { console.error("Entopic: migration runner failed", e); }
   }
 
+  /* Automatic on-device backup (BE-18). Deferred inside autobackupStart, so it
+     is never on the critical path of the first paint or of opening a record. */
+  if (typeof autobackupStart === "function") { try { autobackupStart(); } catch (e) {} }
+
   /* Load API key */
   API_KEY = loadApiKey();
 

@@ -83,6 +83,11 @@ function exportAllData() {
   var data = buildBackupPayload();
   if (typeof logAudit === "function") logAudit("data_exported", "Exported all data (plain JSON backup)", { patient_id: null, visit_id: null });
   downloadBackupFile(data, "");
+  /* Record that an OFF-DEVICE copy now exists. Only this path and the
+     encrypted-export path may set it: an on-device snapshot is protection
+     against a bad write, not against losing the device, and conflating the two
+     is how a clinic ends up believing it is protected when it is not. */
+  if (typeof autobackupNoteExport === "function") { try { autobackupNoteExport(); } catch (e) {} }
 }
 
 /* Encrypted backup (audit H-4). A backup file travels — USB stick, Downloads
@@ -101,6 +106,8 @@ function exportEncryptedBackup(passphrase, cb) {
       logAudit("data_exported_encrypted", "Exported an ENCRYPTED backup", { patient_id: null, visit_id: null });
     }
     downloadBackupFile(env, "-encrypted");
+    /* Counts as an off-device copy, exactly like the plain export. */
+    if (typeof autobackupNoteExport === "function") { try { autobackupNoteExport(); } catch (e) {} }
     cb(null);
   }).catch(function (e) { cb(e); });
 }
@@ -335,6 +342,21 @@ function _importDecoded(data) {
        that shape change HAS been applied to the data now on this device, and
        a migration that was genuinely never run is simply absent from both.
        The version string takes the higher of the two for the same reason. */
+    /* Backup bookkeeping. Take the OLDER export stamp of the two: a restore
+       must never make a device look better protected than it is. */
+    if (data.autobackup && typeof data.autobackup === "object") {
+      var abHave = loadStore("autobackup", null) || { snapshots: [], last_export: null };
+      var mine = abHave.last_export ? Date.parse(abHave.last_export) : 0;
+      var theirs = data.autobackup.last_export ? Date.parse(data.autobackup.last_export) : 0;
+      saveStore("autobackup", {
+        /* snapshots are per-device blobs; the restored list would point at
+           IndexedDB entries this device does not have. Keep our own. */
+        snapshots: abHave.snapshots || [],
+        last_export: (mine && theirs) ? (mine < theirs ? abHave.last_export : data.autobackup.last_export)
+                   : (abHave.last_export || data.autobackup.last_export || null)
+      });
+    }
+
     if (data.migrations && typeof data.migrations === "object") {
       var mHave = loadStore("migrations", null) || { version: null, applied: [] };
       var mIn = data.migrations;

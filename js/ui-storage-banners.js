@@ -92,6 +92,36 @@
       "storage problem, then complete it.");
   });
 
+  /* ── An on-device snapshot was taken (backend audit BE-18) ──
+     Silent by design. This is housekeeping, not news, and a clinic that is
+     told about its backups every morning stops reading the messages that
+     matter. It is recorded so the health panel can show it. */
+  evOn("backup:snapshot", function (ev) {
+    if (typeof console !== "undefined" && console.info) {
+      console.info("Entopic: on-device snapshot taken (" + ((ev && ev.bytes) || 0) + " bytes).");
+    }
+  });
+
+  /* ── No OFF-DEVICE copy for a week or more ──
+     The one backup message worth interrupting for. A snapshot on this device
+     protects against a bad write; it protects against nothing at all if the
+     device is lost, stolen or dropped, and that distinction is the whole
+     reason this banner exists rather than a reassuring green tick. */
+  evOn("backup:export-stale", function (ev) {
+    var days = ev && ev.days;
+    var el = banner("backupStaleBanner",
+      "position:fixed;left:0;right:0;bottom:0;z-index:9998;" +
+      "background:#8a6d18;color:#fff;padding:9px 14px;font-size:.7rem;line-height:1.45;" +
+      "box-shadow:0 -2px 10px rgba(0,0,0,.2)");
+    el.innerHTML =
+      '<b>No backup has left this device' +
+      (days === null || days === undefined ? ' — ever' : ' for ' + days + ' days') + '.</b> ' +
+      'Automatic snapshots are being kept here, and they survive a bad write or a mistaken ' +
+      'deletion — they do <b>not</b> survive this device being lost, stolen or broken. ' +
+      'Account → Data → <b>Export all</b>, and put the file somewhere else. ' +
+      '<span style="cursor:pointer;text-decoration:underline" onclick="this.closest(\'div\').remove()">Dismiss for now</span>';
+  });
+
   /* ── Sync brought in changes from another device ──
      cloud-sync.js used to call renderHome() by name, which made the
      synchronisation layer depend on a specific screen of the UI. It now says

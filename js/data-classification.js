@@ -67,6 +67,16 @@ var DATA_STORES = {
          "already-migrated records is how an EMR corrupts itself."
   },
 
+  /* Automatic-backup bookkeeping (backend audit BE-18): which on-device
+     snapshots exist, and when a real off-device export last happened. Small,
+     no clinical content. Backed up so a restored device does not immediately
+     believe it has never been exported and start nagging. */
+  autobackup: {
+    class: "operational", encrypt: false, mirror: true, backup: true, shape: "object",
+    why: "The record of when this device was last actually protected. Losing it makes the " +
+         "app understate the risk the clinic is carrying, which is the wrong direction to be wrong in."
+  },
+
   /* Pending deletes waiting to reach the server (backend audit BE-2).
 
      The one queue in the system that CANNOT be rebuilt from anything else.

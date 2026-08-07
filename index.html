@@ -513,6 +513,9 @@
 <!-- Store migrations: the ledger + runner. Needs loadStore/saveStore above,
      and must load before app.js boots so migrationsRun() happens first. -->
 <script src="js/storage-migrations.js"></script>
+<!-- Automatic on-device snapshots + the age of the last real export (BE-18).
+     Needs buildBackupPayload above and the IndexedDB mirror. -->
+<script src="js/storage-autobackup.js"></script>
 <!-- Carry-forward (marked, confirmable) and read-only trend series.
      Needs getPatientVisits from storage.js above. -->
 <script src="js/visit-history.js"></script>
