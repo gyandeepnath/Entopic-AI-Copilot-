@@ -483,7 +483,7 @@ function homeSecPatients() {
   return '<div class="home-hd"><h1>Patients</h1>' +
       '<div style="display:flex;gap:6px">' +
         '<button class="btn btn-p" onclick="newPatient()">+ New Patient</button>' +
-        '<button class="btn btn-s" onclick="exportAllData()" style="font-size:.6rem">Export</button>' +
+        '<button class="btn btn-s" onclick="exportBackup()" style="font-size:.6rem">Export</button>' +
       '</div></div>' +
     '<div class="stats">' +
       '<div class="stat"><div class="v">' + patients.length + '</div><div class="l">Total Patients</div></div>' +
@@ -758,7 +758,7 @@ function homeSecAdmin() {
     '<div class="home-settings" style="margin-top:8px">' +
       '<div class="home-settings-title">📁 Data Management</div>' +
       '<div class="home-settings-desc">Full export / import of everything on this device.</div>' +
-      '<button class="btn btn-s" onclick="exportAllData()" style="font-size:.62rem">Export all</button> ' +
+      '<button class="btn btn-s" onclick="exportBackup()" style="font-size:.62rem">Export all</button> ' +
       '<input type="file" accept=".json" onchange="if(this.files[0])importData(this.files[0])" style="font-size:.62rem">' +
     '</div>';
 }

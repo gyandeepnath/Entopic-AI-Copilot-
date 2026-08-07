@@ -190,7 +190,7 @@ if (typeof document !== "undefined") {
                '<button class="btn btn-s" onclick="exportCasebookCSV()" style="font-size:.6rem">Casebook CSV</button>';
     if (admin || role === "clinician") btns += ' <button class="btn btn-s" onclick="exportRecordsCSV()" style="font-size:.6rem">Records CSV</button>';
     if (admin || role === "researcher") btns += ' <button class="btn btn-s" onclick="exportResearchCSV()" style="font-size:.6rem">Research CSV (de-identified)</button>';
-    if (admin) btns += ' <button class="btn btn-s" onclick="exportAllData()" style="font-size:.6rem">Full backup JSON</button>';
+    if (admin) btns += ' <button class="btn btn-s" onclick="exportBackup()" style="font-size:.6rem">Full backup JSON</button>';
     return '<div class="home-settings" style="margin-top:8px">' +
       '<div class="home-settings-title">⭳ Data export</div>' +
       '<div class="home-settings-desc">Open formats for spreadsheets and analysis.' +

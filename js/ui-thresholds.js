@@ -199,8 +199,8 @@ function archiveScreen() {
       (su ? '<br><span style="color:var(--sv)">This device is at <b>' + su.pct + '%</b> of its storage budget.</span>' : '') +
     '</div>' +
     '<div style="display:flex;gap:14px;flex-wrap:wrap;margin:8px 0;font-size:.62rem">' +
-      '<div><b>' + p.eligible + '</b> visit(s) eligible</div>' +
-      '<div><b>' + p.held + '</b> staying put</div>' +
+      '<div><b>' + esc(String(p.eligible)) + '</b> visit(s) eligible</div>' +
+      '<div><b>' + esc(String(p.held)) + '</b> staying put</div>' +
       '<div>frees about <b>' + kb(p.freed_bytes) + '</b></div>' +
     '</div>' +
     '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:6px">' +
@@ -209,7 +209,7 @@ function archiveScreen() {
         '" style="width:52px;font-size:.62rem;padding:2px 4px;border:1px solid var(--fg);border-radius:2px"> year(s)</label>' +
       '<button class="btn btn-s" style="font-size:.6rem" onclick="archiveUiSetYears()">Update</button>' +
       '<button class="btn btn-p" style="font-size:.6rem" onclick="archiveUiRun()"' +
-        (p.eligible ? '' : ' disabled') + '>Archive ' + p.eligible + ' visit(s)…</button>' +
+        (p.eligible ? '' : ' disabled') + '>Archive ' + esc(String(p.eligible)) + ' visit(s)…</button>' +
     '</div>' +
     '<div style="font-size:.54rem;color:var(--sv)">' +
       'Never archived: a visit still in progress, a patient\'s most recent visit (it is the ' +

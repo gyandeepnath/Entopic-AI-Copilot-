@@ -6,6 +6,123 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-08-07 (final) — ADR-011 decided; old records have somewhere to go
+
+**ADR-011 is decided.** It sat open for eight phases because it looked like a
+question only a lawyer could answer. That was the wrong way to see it, and
+seeing why is the whole decision: there are **two** questions hiding in it.
+
+*"Is Entopic a regulated medical device in India / the EU / the US?"* is a legal
+question. I can't answer it, you can't answer it, and the ADR deliberately
+doesn't — there's now a test that **fails the build if that document ever
+asserts one**, for the same reason we never invent a citation.
+
+*"How should we build it, given we don't know?"* is an engineering question, and
+waiting was quietly costing you money. The expensive part of medical-device
+regulation isn't the paperwork at the end — it's the evidence you can only
+create **as you go**: why each decision was made, what was tested, what
+changed and when. If it turns out later that the rules apply, that evidence
+can't be back-filled. The work gets done twice.
+
+**So the decision is: build to that standard now, claim nothing, and never ship
+anything that closes off the easier answer.**
+
+Eight things Entopic already does are now **invariants it isn't allowed to
+lose** — you can always see why a condition was suggested; the same findings
+always give the same answer; no AI anywhere near the diagnosis; it never acts
+on its own (never prescribes, refers, orders or notifies); the "advisory only"
+wording survives into printed reports; red flags can't be switched off; nothing
+diagnostic is ever addressed to a patient; and unverified content always looks
+unverified.
+
+Each is pinned by a test. They came from clinical-safety thinking, not
+regulatory thinking, which is exactly why they're real. **The practical effect
+for you: auto-referral, patient-facing summaries with a differential in them,
+and AI-written impressions are now decisions you make deliberately, not things
+that can slip in.**
+
+The one gap I won't paper over: **394 of 394 conditions are still clinically
+unverified.** No amount of engineering discipline substitutes for evidence that
+the differential is right. That is your work, and it's now the largest single
+thing standing between Entopic and a hospital.
+
+---
+
+**Old records finally have somewhere to go.**
+
+This was the one I told you I hadn't built. Your browser runs out of room at
+roughly 3,000 patients, and a busy practice gets there in about four years.
+Since last time the failure is loud instead of silent — but you'd still have
+been stuck, because there was nowhere to put anything.
+
+Now: **Archive older records** in the admin panel. It moves completed visits
+older than your chosen cut-off (default 3 years) into a file you keep.
+
+**It is a move, not a deletion, and the code is built that way round.** The
+file is written, then read back, then checked visit by visit — and only *then*
+are the records removed from the device. If that check fails for any reason,
+**nothing is removed**. Import the file and everything comes back in full.
+
+**Your charts don't get holes in them.** An archived visit still shows in the
+patient's history with its date, the leading impression, and whether it raised
+a red flag — plus which file the rest is in. A chart with three silent years
+missing reads as continuous care where there wasn't any; that's a misleading
+clinical document and I wasn't willing to create one. The markers are about
+1/40th the size, so you get the room without losing the story.
+
+**Never archived:** a visit still in progress; a patient's most **recent**
+visit, whatever its age, because that's the baseline you compare the next one
+against; anything inside your cut-off; and nothing at all while a store is
+damaged or the vault is locked — you can't safely remove what you can't read.
+
+The cut-off can't go below one year. Retention periods are a legal matter and
+in some places disposal isn't allowed at all, so this only ever moves records
+into a file you hold.
+
+---
+
+**Two security items closed.**
+
+**Your backup export is now encrypted by default.** It asks for a passphrase
+first. The backup file is the copy most likely to end up on a USB stick or in
+an email, and it was the one with no protection on it. Plaintext is still
+available — you'll need it if you ever move to another system — but it now
+takes a second, explicit confirmation that says in plain words that anyone
+opening the file can read every patient's record, and it goes on the audit
+trail.
+
+**Attachments are checked properly.** I overstated this last time — there *was*
+already a size limit and an empty-file guard. What there wasn't: any check of
+what the file actually is. The "images and PDFs only" on the file picker is
+just a hint the browser ignores if you drag a file in. Now there's a proper
+allow-list, plus a check of the file's own first bytes — so an HTML file
+renamed `report.pdf` is caught, which neither the name nor the browser's
+file-type would have caught. Both checks run **before** anything is stored, so
+a refused file never reaches your device, a backup, or the cloud.
+
+---
+
+**What I have NOT done, so you know where you stand.**
+
+Four things from my own list remain open, and I'd rather name them than let
+them look finished:
+
+1. **Encryption at rest is still off by default.** I can't switch it on for you
+   — it needs a passphrase, which needs you. This is my #1 launch blocker and
+   the right fix is to make it part of setting up a clinic rather than
+   something you have to go and find.
+2. **Still no "sign out everywhere".** If a token is stolen, containment is
+   still changing a password and waiting.
+3. **`loadVisits()` still reads every visit on every call.** Archiving raises
+   the ceiling; it doesn't make each read cheaper. That's a speed problem, not
+   a data-loss one, but it will show up at a few thousand records.
+4. **No privacy notice, no retention schedule, no DPIA.** These are documents
+   and decisions rather than code, and they're what a hospital asks for first.
+
+1,046 tests pass; audit 0 FAIL.
+
+---
+
 ## 2026-08-07 (later) — An admin can now rescue a forgotten passphrase; security audit
 
 **First, a correction.** In the backend report I told you the vault had **no

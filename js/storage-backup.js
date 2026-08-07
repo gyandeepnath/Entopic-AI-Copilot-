@@ -79,6 +79,65 @@ function downloadBackupFile(obj, suffix) {
   return dlSaveAs(name, JSON.stringify(obj, null, 2), "application/json");
 }
 
+/* ── THE DEFAULT EXPORT IS ENCRYPTED  (security audit SEC-3) ──
+
+   A backup file travels: a USB stick, a Downloads folder, an email to
+   whoever is helping. It is the copy of the records MOST likely to leave the
+   building, and it was the one with no protection on it — the encrypted
+   export existed, and it was the second button.
+
+   Now `exportBackup()` is the one thing the UI calls, and it asks for a
+   passphrase first. Plaintext is still reachable, deliberately: a clinic
+   migrating to another system, or an engineer helping at 9 a.m., needs it.
+   But it is now a named, warned choice rather than the path of least
+   resistance.
+
+   `exportAllData()` keeps its name and behaviour so every existing caller and
+   test still works — it is simply no longer what the buttons call. */
+function exportBackup(cb) {
+  cb = cb || function () {};
+  if (typeof backupEncrypt !== "function" || typeof prompt !== "function") {
+    /* No crypto or no way to ask: fall back rather than refuse to back up.
+       An unencrypted backup is far better than none, and the caller is told. */
+    exportAllData();
+    cb(null, { encrypted: false, reason: "encryption is unavailable in this browser" });
+    return;
+  }
+  var pass = prompt(
+    "Set a passphrase for this backup file.\n\n" +
+    "The file holds every patient record. It will be encrypted with this " +
+    "passphrase and CANNOT be restored without it — write it down.\n\n" +
+    "Leave blank and press OK to export WITHOUT encryption (not recommended).", "");
+  if (pass === null) { cb(null, { cancelled: true }); return; }
+
+  if (!String(pass).trim()) {
+    if (!confirm(
+      "Export this backup WITHOUT encryption?\n\n" +
+      "The file will contain every patient's name, history and clinical record " +
+      "in plain text. Anyone who opens it can read all of it.\n\n" +
+      "Only do this if you are moving to another system or a support engineer " +
+      "has asked for it — and delete the file afterwards.")) {
+      cb(null, { cancelled: true });
+      return;
+    }
+    exportAllData();
+    if (typeof logAudit === "function") {
+      try { logAudit("data_exported_unencrypted",
+        "An UNENCRYPTED full backup was exported after an explicit confirmation.", {}); } catch (e) {}
+    }
+    cb(null, { encrypted: false });
+    return;
+  }
+  if (String(pass).length < 10) {
+    cb(new Error("Choose a passphrase of at least 10 characters — this file protects everything."));
+    return;
+  }
+  exportEncryptedBackup(pass, function (err) {
+    if (err) { cb(err); return; }
+    cb(null, { encrypted: true });
+  });
+}
+
 function exportAllData() {
   var data = buildBackupPayload();
   if (typeof logAudit === "function") logAudit("data_exported", "Exported all data (plain JSON backup)", { patient_id: null, visit_id: null });

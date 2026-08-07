@@ -300,11 +300,21 @@ serialises to ~4–12 KB; a patient ~1–2 KB).
 
 **The finding that matters: the scaling wall is on the device, not in
 Postgres.** localStorage exhausts at roughly 3,000 patients / 9,000 visits — a
-single busy practice over a few years, not a chain. The quota watch warns at
-80 % and the write-failure state is now honest about it, but there is no
-archival, no "close this year", and no partial-load. A four-year-old clinic
-will hit this. It is BE-10, and it is the single highest-value backend work
-remaining.
+single busy practice over a few years, not a chain.
+
+**BE-10 — ✅ CLOSED 2026-08-07.** `js/storage-archive.js` moves completed
+visits past a retention floor into a file the clinic keeps, leaving a stub in
+each chart carrying the date, the leading impression and whether that visit
+raised a red flag. The order of operations is the design: export, verify
+record-for-record, and only then prune — a failed verification removes
+nothing, and a test asserts that ordering in the source. Stubs are ~220 bytes
+against ~8 KB, so roughly 40x the headroom while the chart stays a truthful
+document. Fully reversible by importing the archive.
+
+**Still open at scale:** `loadVisits()` still parses every visit on every call
+(BE-15), so archival raises the ceiling without changing the per-call cost.
+That is the next scale item and it is a performance problem, not a data-loss
+one.
 
 ---
 

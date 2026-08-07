@@ -135,16 +135,16 @@ Ranked by expected harm.
 |---|---|---|---|
 | **SEC-1** | **Encryption at rest is OFF by default.** A clinic that never opens the admin panel stores every record in plaintext localStorage. The best control in the product is opt-in. | **High** | open |
 | **SEC-2** | **Roles are a UI concern, not a security boundary.** `isAdmin()` is `CU.admin === true` in the page. Locally, any signed-in user can reach any record. Server-side RLS is clinic-level, not role-level. | **High** | open |
-| **SEC-3** | **Default backup export is plaintext.** The copy most likely to travel (USB, Downloads, email) is the one with no encryption. An encrypted export exists but is the second button. | **High** | open |
+| **SEC-3** | **Default backup export is plaintext.** The copy most likely to travel (USB, Downloads, email) is the one with no encryption. | **High** | ✅ **fixed 2026-08-07** — `exportBackup()` asks for a passphrase and encrypts; plaintext needs a second explicit confirmation and is audited |
 | **SEC-4** | **No session revocation.** A stolen refresh token stays valid until it expires. There is no in-app "sign out everywhere". | **High** | open |
-| **SEC-5** | **Attachments are not validated.** No type allow-list, no size cap, no content sniffing. Stored, never executed — so this is a storage-abuse and onward-transmission risk, not code execution. | Medium | open |
+| **SEC-5** | **Attachments were not type-validated.** A size cap and a zero-byte guard existed — my original wording overstated this — but `accept=` is a UI hint that drag-and-drop ignores, and `fsIngest` never checked the type at all. | Medium | ✅ **fixed 2026-08-07** — allow-list plus magic-byte checking, both before the bytes are stored |
 | **SEC-6** | **No MFA anywhere.** Neither account nor vault. | Medium | open |
 | **SEC-7** | **`script-src 'unsafe-inline'`.** The UI is built on inline handlers, so the CSP cannot forbid inline script. Escaping discipline is the actual control; `connect-src` limits the blast radius. | Medium | accepted, documented |
 | **SEC-8** | **Audit push is best-effort.** A failed push is not queued or retried; the local log is capped at 2,000. For evidence, that is the wrong service level. | Medium | open |
 | **SEC-9** | **Record *changes* were not audited** — only reads. | Medium | ✅ **fixed 2026-08-07** |
 | **SEC-10** | **Admin escrow is a real confidentiality reduction.** Enrolled, the master-password holder can decrypt every record on the device. | By design | ✅ mitigated: opt-in, consent-gated, audited, revocable |
 | **SEC-11** | No breach detection. Nothing notices bulk export, mass reads, or repeated failed unlocks across devices. | Medium | open |
-| **SEC-12** | No retention or disposal policy. Records are kept forever by default. | Medium | open |
+| **SEC-12** | No retention or disposal policy. Records are kept forever by default. | Medium | ◐ **partly closed** — a retention floor and archival now exist (BE-10), but archiving is a MOVE, not disposal; nothing is ever destroyed and no disposal record exists |
 | **SEC-13** | Server-side input validation is absent — a valid token can write any JSON into `data`. Contained by encryption and RLS. | Low | open |
 | **SEC-14** | Client-generated record ids are `Date.now()`-based, so they are guessable. They are not capability tokens (RLS is the control), so this is enumeration comfort, not access. | Low | accepted |
 

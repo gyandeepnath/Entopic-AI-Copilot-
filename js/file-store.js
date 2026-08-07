@@ -199,10 +199,92 @@ function fsBlobToDataUrl(blob) {
      id, name, type, size, orig_size, w, h, thumb, store, dataUrl?,
      profile, added, added_by, cloud
    } */
+/* ── ACCEPTED FILE TYPES  (security audit SEC-5) ──
+
+   The file input carries accept="image/*,application/pdf". That is a UI HINT
+   and nothing more: drag-and-drop ignores it, and so does anything that calls
+   fsIngest directly. Measured — fsIngest checked size and emptiness and never
+   looked at the type at all.
+
+   What that risks is NOT code execution: attachments are stored as blobs and
+   rendered through an object URL, never evaluated. It is (a) a clinic's
+   storage filling with things that are not clinical documents, and (b) onward
+   transmission — an attachment travels in a backup, to the cloud, and
+   sometimes to a referral, and a clinical record should carry clinical
+   documents.
+
+   An ALLOW-LIST, not a deny-list. A deny-list of dangerous extensions is a
+   list you are always one entry behind on. */
+var FS_ALLOWED_TYPES = [
+  "image/jpeg", "image/png", "image/gif", "image/webp", "image/bmp",
+  "image/tiff", "image/heic", "image/heif",
+  "application/pdf"
+];
+
+/* Extension is the fallback when a browser reports no MIME type at all —
+   common for TIFF from imaging devices and for HEIC on some platforms. */
+var FS_ALLOWED_EXT = /\.(jpe?g|png|gif|webp|bmp|tiff?|heic|heif|pdf)$/i;
+
+function fsTypeAllowed(file) {
+  var t = String((file && file.type) || "").toLowerCase().split(";")[0].trim();
+  if (t) return FS_ALLOWED_TYPES.indexOf(t) >= 0;
+  /* No reported type: fall back to the name, and refuse if there is neither. */
+  return FS_ALLOWED_EXT.test(String((file && file.name) || ""));
+}
+
+/* Read the first bytes and check them against what the file CLAIMS to be.
+
+   A renamed file passes an extension check and a MIME check — the browser
+   derives `type` from the extension, so both are the uploader's word for it.
+   The magic bytes are the file's own account of itself.
+
+   Deliberately advisory-shaped: it resolves {ok, reason}, and only the formats
+   with unambiguous signatures are checked. An unrecognised-but-allowed type is
+   accepted rather than refused, because refusing a legitimate scan from an
+   unusual device is a worse failure in a clinic than accepting an odd file. */
+function fsSniff(file) {
+  if (typeof FileReader === "undefined" || !file.slice) {
+    return Promise.resolve({ ok: true, reason: "" });
+  }
+  return new Promise(function (resolve) {
+    var r = new FileReader();
+    r.onerror = function () { resolve({ ok: true, reason: "" }); };
+    r.onload = function () {
+      var b = new Uint8Array(r.result || new ArrayBuffer(0));
+      if (b.length < 4) { resolve({ ok: true, reason: "" }); return; }
+      var hex = "";
+      for (var i = 0; i < Math.min(b.length, 12); i++) {
+        hex += ("0" + b[i].toString(16)).slice(-2);
+      }
+      var sigs = {
+        "application/pdf": /^25504446/,                 /* %PDF */
+        "image/jpeg": /^ffd8ff/,
+        "image/png": /^89504e47/,
+        "image/gif": /^474946383[79]61/,
+        "image/webp": /^52494646.{8}57454250/,
+        "image/bmp": /^424d/
+      };
+      var claimed = String(file.type || "").toLowerCase().split(";")[0].trim();
+      var sig = sigs[claimed];
+      if (!sig) { resolve({ ok: true, reason: "" }); return; }   /* not one we can check */
+      if (sig.test(hex)) { resolve({ ok: true, reason: "" }); return; }
+      resolve({ ok: false, reason: "the contents do not match a " + claimed + " file" });
+    };
+    try { r.readAsArrayBuffer(file.slice(0, 16)); }
+    catch (e) { resolve({ ok: true, reason: "" }); }
+  });
+}
+
 function fsIngest(file, opts) {
   opts = opts || {};
   var profileName = opts.profile || FS_DEFAULT_PROFILE;
   var id = "f" + Date.now().toString(36) + Math.floor(Math.random() * 1e6).toString(36);
+
+  if (!fsTypeAllowed(file)) {
+    return Promise.reject(new Error("“" + (file.name || "file") + "” is not a file type " +
+      "Entopic accepts. A clinical record holds images and PDFs — scans, photographs, " +
+      "OCT and field printouts. Convert it, or attach it as a PDF."));
+  }
 
   if (file.size > FS_ABS_MAX) {
     return Promise.reject(new Error("“" + file.name + "” is " + fsHumanSize(file.size) +
@@ -235,6 +317,10 @@ function fsIngest(file, opts) {
     cloud: "pending"   /* pending | synced | local-only */
   };
 
+  /* Content check before anything is stored. Refusing here means the file
+     never reaches IndexedDB, the record, a backup or the cloud. */
+  var gate = (opts.skipSniff ? Promise.resolve({ ok: true }) : fsSniff(file));
+
   var prep;
   if (fsIsImage(file.type) && opts.compress !== false) {
     prep = fsCompressImage(file, profileName).then(function (out) {
@@ -256,7 +342,14 @@ function fsIngest(file, opts) {
     prep = Promise.resolve(file);
   }
 
-  return prep.then(function (blob) {
+  return gate.then(function (sniff) {
+    if (!sniff.ok) {
+      throw new Error("“" + (file.name || "file") + "” was refused: " + sniff.reason +
+        ". A file renamed to look like an image or a PDF is not one, and a clinical " +
+        "record should not carry it.");
+    }
+    return prep;
+  }).then(function (blob) {
     return fsPut(id, blob).then(function () {
       rec.store = "idb";
       return rec;
@@ -334,6 +427,9 @@ function fsCloudUpload(rec, bucket) {
 if (typeof module !== "undefined" && module.exports) {
   module.exports = {
     FS_PROFILES: FS_PROFILES, fsProfile: fsProfile,
-    fsHumanSize: fsHumanSize, fsIsImage: fsIsImage
+    fsHumanSize: fsHumanSize, fsIsImage: fsIsImage,
+    FS_ALLOWED_TYPES: FS_ALLOWED_TYPES, FS_ALLOWED_EXT: FS_ALLOWED_EXT,
+    FS_ABS_MAX: FS_ABS_MAX,
+    fsTypeAllowed: fsTypeAllowed, fsSniff: fsSniff
   };
 }

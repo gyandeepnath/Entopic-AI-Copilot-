@@ -12,16 +12,16 @@ are what stands between today and a defensible commercial launch.
 | # | improvement | effort |
 |---|---|---|
 | 1 | **Encryption at rest ON by default** — opt-in security is a feature nobody used (SEC-1) | 16 h |
-| 2 | **Encrypted backup as the default export** — the file most likely to leave the building has no protection (SEC-3) | 12 h |
+| 2 | ✅ **Encrypted backup as the default export** (SEC-3) | done |
 | 3 | **Privacy notice in-product** — no lawful deployment without one | 8 h § |
 | 4 | **Session revocation / sign out everywhere** (SEC-4) | 24 h |
-| 5 | ⚠ **ADR-011 regulatory classification** — decides which rules even apply | ⚠ |
+| 5 | ✅ **ADR-011 regulatory classification** — decided 2026-08-07: device-grade discipline, no classification claimed, R1–R8 enforced by tests | done |
 | 6 | **Retention policy + disposal**, per clinic (SEC-12) | 60 h § |
 | 7 | **Failed-unlock and failed-reset counters visible to an admin** — cheapest detection available | 16 h |
 | 8 | **Durable audit push** (queue + retry, like the tombstone queue) (SEC-8) | 24 h |
 | 9 | **Bulk-export alerting** — `data_exported` is the tripwire between a read and a breach | 16 h |
 | 10 | **MFA (TOTP)** on the account (SEC-6) | 40 h |
-| 11 | **Attachment type + size validation** (SEC-5) | 16 h |
+| 11 | ✅ **Attachment type validation + content sniffing** (SEC-5) | done |
 | 12 | **DPIA** | 40 h § |
 | ✅ | Audit who CHANGES a record, not only who reads one (SEC-9) | done |
 | ✅ | Administrator vault reset, opt-in and consent-gated | done |
@@ -263,3 +263,9 @@ a hospital's information-security office would accept.
 between today and a defensible commercial launch to private practices.** Five
 of its twelve items are under 20 hours each, and two are decisions rather than
 code.
+
+**Updated 2026-08-07: items 2, 5 and 11 are done, and SEC-9 and the vault
+recovery before them. Tranche A is now roughly 240 hours.** What remains in it,
+in order: encryption at rest ON by default (1), a privacy notice (3), session
+revocation (4), retention and disposal (6), the failed-unlock counters (7),
+durable audit push (8), bulk-export alerting (9), MFA (10), and the DPIA (12).
