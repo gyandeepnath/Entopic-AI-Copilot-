@@ -6,6 +6,120 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-08-07 (later) — An admin can now rescue a forgotten passphrase; security audit
+
+**First, a correction.** In the backend report I told you the vault had **no
+recovery at all** — that a forgotten passphrase destroyed the records
+permanently. That was wrong, and I should have checked before writing it.
+Entopic has *always* printed a recovery code when you turn encryption on, and
+that code has always opened the vault. If you wrote yours down, a forgotten
+passphrase was already survivable. I am flagging this rather than quietly
+fixing it because you might have made a decision based on what I said.
+
+**What genuinely did not exist is what you asked for: an administrator reset.**
+
+It exists now. Think of it as three keys to the same lock:
+
+1. **The passphrase** — day to day.
+2. **The printed recovery code** — if the passphrase is forgotten.
+3. **A clinic master password** — new, and off unless you switch it on.
+
+An administrator enters the master password and a new passphrase on the lock
+screen, and the user is back in. **No records are re-encrypted**, so it is
+instant and cannot half-finish. The user is then required to set their own
+passphrase, and can change it as often as they like afterwards — exactly as you
+described it.
+
+**What it costs you, said plainly, because the app says it too.** Once you enrol
+an administrator, whoever holds that master password **can read every record on
+that device**. There is no way to have "can reset but cannot read" — resetting
+means being able to unwrap the key, and unwrapping the key means being able to
+decrypt. So:
+
+- It is **off unless you turn it on**, per device.
+- Turning it on **requires the user's own passphrase**, so nobody can add
+  themselves to a vault they could not already open.
+- The master password must be **16+ characters** — it now protects more than
+  the passphrase it overrides.
+- **A reset does not open the vault.** It hands back a working passphrase and
+  stops. Whoever then signs in is recorded as themselves.
+- Enrolment, every reset, and **every failed attempt** go in the audit trail.
+- The user can withdraw it at any time with their own passphrase.
+
+**Treat the master password as the most sensitive thing the practice holds**,
+and make sure more than one person has it.
+
+---
+
+**Backups now happen by themselves.**
+
+The biggest remaining way to lose everything was simply forgetting. Entopic now
+keeps seven rolling snapshots on the device automatically.
+
+**But it is honest about what that is worth.** A snapshot on this device
+protects you against a bad write, a failed update, or a mistaken deletion. It
+protects you against **nothing** if the laptop is stolen or dropped. So the app
+tracks, separately, how long it has been since a backup actually *left* the
+device — and says so in plain words when that gets stale. Taking a snapshot
+does not reset that clock; only a real export does.
+
+**Your records now stop losing arguments to a slow clock.** If one machine's
+clock was an hour behind, its records quietly lost every conflict to an older
+version from another device. The server now stamps the time itself, so one
+clock decides instead of every device having its own opinion. (This is in
+`db/migrations/005_sync_integrity.sql` — it needs running on your Supabase
+project; the file lists exactly what to check afterwards.)
+
+---
+
+**The security audit, and the honest headline.**
+
+Entopic records who *opens* a chart. Until today it recorded nobody **changing**
+one — not a prescription, not a diagnosis, not a management plan. For a
+clinical record that is the wrong way round: reading is a privacy question,
+changing is the accountability question, and it is what a complaint or a
+coroner actually asks about.
+
+That is now recorded, including the case that matters most: **altering a visit
+you had already marked complete** is logged as an amendment and says so. What is
+recorded is *which field* changed — never the values, because the audit log is
+not the right place to keep a second copy of the prescription.
+
+**Overall security score: 5.6 / 10 against what a hospital needs.** The pattern
+throughout is consistent: **what has been built is built well; what is missing
+is missing entirely.** That is much better than half-built controls — there is
+nothing here to unpick.
+
+**Genuinely strong:** no third-party code runs in the app at all (the supply
+chain attack that has hit most healthcare front-ends has no way in); real
+end-to-end encryption, so Supabase cannot read your patients' data; the LLM
+firewall is *measured* by a test, not just asserted; clinic-to-clinic isolation
+is enforced by the database, not by the app.
+
+**The four things I would fix before selling to anyone**, all weeks not months:
+
+1. **Encryption is off by default.** The best protection in the product is one
+   a clinic has to go and find. Opt-in security is a feature nobody used.
+2. **The default backup export is unencrypted** — the file most likely to end
+   up on a USB stick or in an email is the one with no protection on it.
+3. **There is no "sign out everywhere".** If a token is stolen, containment
+   means changing a password and hoping.
+4. **Roles are cosmetic locally.** They decide what the screen shows, not what
+   the data allows. Clinic-to-clinic isolation is real and server-enforced;
+   student-versus-clinician is not. That is the right one to have got right
+   first, but it needs fixing before a multi-user clinic.
+
+**⚠ Still yours, and now the oldest open item:** ADR-011, the regulatory
+classification. It decides *which rules even apply* to everything above — and
+every compliance answer I can give you is conditional on it.
+
+Five documents in `docs/`: threat model, security architecture and scorecard,
+compliance gap report, incident response playbook, and the ranked Top 200.
+
+971 tests pass; audit 0 FAIL.
+
+---
+
 ## 2026-08-07 — Backend audit: five ways data could go wrong, closed
 
 **The app told you a visit was saved when it was not.**
