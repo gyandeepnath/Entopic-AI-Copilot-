@@ -6,6 +6,108 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-08-07 — Backend audit: five ways data could go wrong, closed
+
+**The app told you a visit was saved when it was not.**
+
+This is the one that matters. Entopic has an unusually good protection: if a
+record store is damaged, it *refuses to write*, so the damaged data cannot be
+overwritten and can still be recovered. That protection works — I corrupted a
+store in a real browser and no records were destroyed.
+
+But nothing was telling you. The save indicator flashed exactly as it always
+does. A clinician working on a device whose writes were blocked would have been
+actively reassured, and would have carried on for the rest of the consultation
+believing their work was being captured.
+
+Now: a red banner that says **THIS VISIT IS NOT BEING SAVED**, what the problem
+is, that your existing records have *not* been altered, and what to do. It stays
+until a save actually succeeds — it is not a toast that fades, because the
+problem does not fade.
+
+And **a visit whose data did not save can no longer be marked complete.** A
+record saying the consultation is finished, missing everything typed after the
+writes started failing, with an audit entry claiming completion, is a worse
+thing to have in a chart than an unfinished visit.
+
+**A deleted patient could come back from the dead.**
+
+Deletes were queued in memory only. Delete a patient, close the tab within a
+second, and the delete never reached the server — so the next time another
+device synced, the patient reappeared. Every other piece of sync state can be
+recalculated from the records themselves; a delete cannot, because the record is
+already gone. It is the one thing that had to be written down and was the one
+thing that was not. Now it survives a crash, and a second delete made while the
+first is still being sent is no longer thrown away.
+
+**A growing clinic would have silently stopped receiving its own records.**
+
+The app asked the server for "all visits" with no limit. Servers cap that. Past
+the cap, the server returns the first page and says nothing the app was looking
+at — so a practice that grew past it would keep working, keep syncing, and
+quietly stop seeing part of its own record on that device. No error. Now it
+fetches in pages until there are none left, and if it cannot finish it says so
+instead of pretending.
+
+**There was no way to change the shape of stored data safely.**
+
+Over ten years an EMR's data format changes many times. There was no mechanism
+for that at all — no record of what shape a device's data was in, and three
+one-off patches scattered through the code. Each was careful; together they were
+a pattern with no floor under it.
+
+There is now a proper migration system: it takes a snapshot before touching
+anything, applies each change exactly once, **undoes the whole batch if any part
+fails**, and refuses to run at all on a damaged store or a locked device rather
+than guessing. It ships with **zero migrations**, deliberately — inventing one
+to prove the mechanism works would mean changing real clinical records to
+exercise test code, which is exactly the trade the thing exists to refuse.
+
+**Four documents, and an honest scorecard.**
+
+`PHASE5_BACKEND_ENGINEERING_REPORT`, `PHASE5_STORAGE_RELIABILITY_REPORT`,
+`PHASE5_SYNCHRONISATION_VALIDATION_REPORT`, `PHASE5_DISASTER_RECOVERY_MANUAL`,
+plus the ranked Top 200.
+
+The overall score is **6.3 / 10 against what a hospital needs** — which for a
+solo-founder product is genuinely good, and I have written it against the
+harder standard on purpose. The answers to the four questions:
+
+- **Real patient records?** Yes — once backups are automatic and the vault
+  passphrase question has an answer.
+- **Paying clinics?** Yes, solo and small group, today.
+- **University hospitals?** For teaching, yes. For their clinical records, no —
+  they will ask for SSO, MFA, retention policy and a regulatory classification
+  in the first meeting.
+- **Nationwide?** No, and it should not try. That is a different company.
+
+**The two things I would fix next, and why they are not the ones you would
+guess.** First: **backups are entirely manual.** They are complete, and the
+restore is careful — but if nobody presses the button and the device dies, the
+practice's whole record is gone. Second: **the device runs out of room at
+roughly 3,000 patients.** The failure is now loud rather than silent, but a busy
+practice reaches it in about four years and there is nowhere for old records to
+go. Neither is glamorous; both are what actually ends a clinic's data.
+
+**Also fixed:** the visit and patient save functions now report whether they
+worked (they used to swallow it, which is how the first bug survived); a
+successful delete-push now clears only the deletes it actually sent; and
+`cloud-sync.js` was split in two because it had grown two jobs — talking to the
+server, and deciding which version of a record wins. Nothing was rewritten in
+the move.
+
+**⚠ Your decision, and it should be made before the vault is recommended to
+paying clinics:** a forgotten vault passphrase destroys every record on that
+device, permanently, with no recovery. That is the correct cryptographic
+property and a catastrophic operational one. A printed recovery code, an
+escrowed key, or a second admin's key would each fix it and each weakens the
+"nobody but you can read your data" promise differently. That is a business
+call, not an engineering one.
+
+921 tests pass; audit 0 FAIL.
+
+---
+
 ## 2026-08-03 — The engine's own numbers made visible; what changed; replay
 
 **Every number that decides a differential is now on a screen you can read.**
