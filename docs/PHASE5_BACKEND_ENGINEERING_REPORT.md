@@ -337,12 +337,26 @@ reloads at most once per tab session.
 | Cloud row beyond the server's page cap | **Was: yes, silently** (BE-5). Fixed. |
 | Vault passphrase forgotten | **Yes, permanently, by design.** No recovery key exists. See BE-11. |
 
-**BE-11 (open, ⚠ FOUNDER DECISION).** The vault has no recovery mechanism. A
-forgotten passphrase destroys every patient record on that device beyond any
-recovery. That is the correct cryptographic property and a catastrophic
-operational one. The options — printed recovery code, escrowed key, a second
-admin's key — are a real trade between "we cannot read your data" and "a clinic
-can survive its own staff turnover". This is not an engineering call.
+**BE-11 — ✅ CLOSED 2026-08-07, and the original finding was WRONG.**
+
+I wrote that "the vault has no recovery mechanism". That was incorrect and I
+should have checked before writing it: `vaultEnable()` has always issued a
+125-bit printed recovery code and dual-wrapped the data key under it, and
+`vaultUnlockWithRecovery()` has always existed. A forgotten passphrase was
+already survivable if the printed code was kept. The error is recorded here
+rather than quietly edited out, because a founder acting on "there is no
+recovery" would have made a different decision.
+
+What genuinely did not exist is what the founder then asked for: an
+**administrator reset**. That is now built — a third, opt-in wrapping of the
+same data key under a clinic master password (`js/vault-admin-recovery.js`), so
+an administrator can restore access for a user who has lost both the passphrase
+and the code. It is key escrow and is treated as such: enrolment requires the
+user's own passphrase, the master password must be at least 16 characters,
+every enrolment/reset/failed attempt is audited, the reset does not unlock the
+vault as a side effect, the user is forced to replace the administrator's
+temporary passphrase, and consent is revocable in one call. See
+`docs/PHASE6_SECURITY_ARCHITECTURE.md` §4.
 
 ### 3.3 Conflict resolution
 

@@ -152,14 +152,24 @@ revocation.** That is a real gap and is on the enterprise list.
 
 ## 6. Forgotten vault passphrase
 
-**⚠ Read this before you turn the vault on.**
+**Correction.** An earlier draft of this manual said there was no recovery at
+all. That was wrong — please re-read this section.
 
-There is **no recovery**. No reset, no backdoor, no support override. The
-passphrase derives the key; without it the ciphertext is mathematically
-unreadable, by anyone, forever.
+There are up to **three** ways into a vault, and they all open the same data
+key:
 
-That is the correct cryptographic property and a catastrophic operational one.
-Today's mitigations are entirely procedural:
+1. **The passphrase.** Day to day.
+2. **The printed recovery code**, issued once when the vault is turned on. If
+   you wrote it down, a forgotten passphrase is an inconvenience, not a
+   disaster. Enter it on the lock screen under "Forgotten the passphrase?".
+3. **An administrator reset** — *only if an administrator was enrolled while
+   the vault was open*. On the lock screen, "Administrator reset with the
+   clinic master password". Enter the master password and a new passphrase.
+   Nothing is unlocked by the reset itself; sign in with the new passphrase as
+   normal, and the user is then required to replace it with their own.
+
+**If all three are unavailable, the records on that device are unrecoverable**
+— by anyone, including Entopic. The remaining mitigations are procedural:
 
 - Write it down and store it the way you store the practice's other critical
   secrets — a sealed envelope in the safe, or a password manager the practice
@@ -169,11 +179,16 @@ Today's mitigations are entirely procedural:
 - Keep unencrypted backups only somewhere physically secure, and know that they
   are unencrypted.
 
-**⚠ Founder decision outstanding (BE-11).** A printed recovery code, an escrowed
-key, or a second admin's key would each remove this risk and each weakens the
-"we cannot read your data" promise differently. This is a business decision, not
-an engineering one, and it should be made before the vault is recommended to
-paying clinics.
+**Decided 2026-08-07: administrator reset is available, opt-in.** Enrolling one
+means whoever holds the clinic master password can decrypt every record on that
+device. That is a real reduction in the confidentiality promise and the app says
+so in those words before you enrol. In exchange, a forgotten passphrase stops
+being able to end a practice. Enrolment needs the user's own passphrase (so it
+cannot be imposed), every use is audited, and it can be withdrawn at any time.
+
+**Treat the master password as the most sensitive secret the practice holds.**
+It is not a convenience credential — it is a key to every encrypted record on
+every enrolled device.
 
 ---
 
@@ -268,5 +283,5 @@ is about 24 hours of work.
 | 2 | Restore-drill checklist and a "verify this backup" button | ~16 h | Backups that turn out not to restore |
 | 3 | Server-side `schema_migrations` table + `down` scripts | ~40 h | "Which migrations has this database had?" |
 | 4 | In-app session revocation | ~24 h | Stolen-device exposure |
-| 5 | Vault recovery mechanism | ⚠ founder | The unrecoverable-passphrase path |
+| 5 | ✅ Administrator vault reset | done | The unrecoverable-passphrase path |
 | 6 | Backend health page (last sync, queue depth, storage headroom, backup age) | ~32 h | Diagnosing anything by guesswork |

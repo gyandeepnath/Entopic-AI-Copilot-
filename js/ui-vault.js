@@ -110,6 +110,42 @@ if (typeof document !== "undefined") {
     }).catch(function (e) { vaultUiErr((e && e.message) || "Could not unlock."); });
   };
 
+  /* ── Administrator reset, from the LOCK SCREEN ──
+     This is the path that matters operationally: the passphrase is forgotten,
+     the printed code is lost, and the clinic cannot get in. It lives here
+     rather than in the admin panel because the admin panel is behind the very
+     lock this is meant to open. */
+  window.vaultUiShowAdminReset = function () {
+    var b = document.getElementById("vaultAdminResetBox");
+    if (b) b.style.display = (b.style.display === "none") ? "block" : "none";
+  };
+
+  window.vaultUiAdminResetAvailable = function () {
+    return typeof vaultAdminEnrolled === "function" && vaultAdminEnrolled();
+  };
+
+  window.vaultUiAdminResetDo = function () {
+    var m = (document.getElementById("inp_vmaster") || {}).value || "";
+    var n = (document.getElementById("inp_vnewpass") || {}).value || "";
+    if (!m || !n) { vaultUiErr("Enter the master password and a new passphrase."); return; }
+    vaultUiErr("Checking the master password…");
+    vaultAdminReset(m, n, (typeof CU !== "undefined" && CU) ? (CU.name || CU.username || "") : "")
+      .then(function () {
+        var mi = document.getElementById("inp_vmaster"); if (mi) mi.value = "";
+        var ni = document.getElementById("inp_vnewpass"); if (ni) ni.value = "";
+        /* Deliberately does NOT unlock. Restoring access and taking access are
+           different acts; whoever opens the vault now does so as themselves,
+           through the ordinary path, and is audited as such. */
+        window.alert("The passphrase has been reset.\n\n" +
+          "Nothing has been opened — sign in with the new passphrase as normal.\n\n" +
+          "The user MUST then set their own passphrase (Admin → Record encryption → " +
+          "Change passphrase). Until they do, the app will keep asking.\n\n" +
+          "This reset has been written to the audit trail.");
+        vaultUiErr("Passphrase reset. Unlock with the new one.");
+      })
+      .catch(function (e) { vaultUiErr((e && e.message) || "Could not reset."); });
+  };
+
 
   /* ── Admin card ───────────────────────────────────────────────── */
   window.vaultAdminCard = function () {
@@ -156,7 +192,90 @@ if (typeof document !== "undefined") {
         '<button class="btn btn-s" style="font-size:.6rem" onclick="vaultUiReissue()">Issue a new recovery code</button>' +
         '<button class="btn btn-s" style="font-size:.6rem" onclick="vaultUiDisable()">Turn encryption OFF…</button>' +
       '</div>' +
+      vaultAdminRecoveryBlock() +
       '<div id="vaultAdminMsg" class="home-settings-status"></div></div>';
+  };
+
+  /* ── Administrator recovery (founder decision, 2026-08-07) ──
+
+     This block has one job beyond its buttons: make sure nobody enrols an
+     administrator without understanding that they are handing someone else
+     the ability to read every record on the device. The wording is the
+     control, not decoration — an escrow the user did not understand they
+     agreed to is a privacy incident waiting to be discovered. */
+  function vaultAdminRecoveryBlock() {
+    if (typeof vaultAdminEnrolled !== "function") return "";
+    var on = vaultAdminEnrolled();
+    var e = on ? vaultAdminEnrolment() : null;
+
+    var h = '<div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--fg)">' +
+      '<div style="font-size:.64rem;font-weight:600">Administrator recovery — ' +
+        (on ? '<span style="color:#b9770e">ENROLLED</span>' : '<span style="color:var(--sv)">not enrolled</span>') +
+      '</div>';
+
+    if (on) {
+      h += '<div class="home-settings-desc">' +
+        'An administrator can reset this device\'s passphrase with the clinic master password' +
+        (e && e.by ? ', enrolled by <b>' + _vue(e.by) + '</b>' : '') +
+        (e && e.at ? ' on ' + _vue(String(e.at).slice(0, 10)) : '') + '.' +
+        '<br><b>What this means:</b> whoever holds the master password can decrypt every ' +
+        'record on this device. That is the price of being able to recover from a forgotten ' +
+        'passphrase. Every reset is recorded in the audit trail.' +
+        '</div>' +
+        '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:6px">' +
+          '<input id="vaultWithdrawPass" type="password" placeholder="passphrase" style="font-size:.62rem;padding:3px 6px;border:1px solid var(--fg);border-radius:2px">' +
+          '<button class="btn btn-s" style="font-size:.6rem" onclick="vaultUiAdminWithdraw()">Withdraw administrator recovery</button>' +
+        '</div>';
+    } else {
+      h += '<div class="home-settings-desc">' +
+        'Off. Only the passphrase and the printed recovery code open this vault — if both are ' +
+        'lost, the records are gone permanently and nobody, including Entopic, can retrieve them.' +
+        '<br>Enrolling an administrator adds a third way in: a clinic master password that can ' +
+        'reset the passphrase. <b>It also means whoever holds that password can read every record ' +
+        'on this device.</b> That is a real trade, and it is yours to make.' +
+        '</div>' +
+        '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:6px">' +
+          '<input id="vaultEnrolPass" type="password" placeholder="current passphrase" style="font-size:.62rem;padding:3px 6px;border:1px solid var(--fg);border-radius:2px">' +
+          '<input id="vaultEnrolMaster" type="password" placeholder="master password (16+ chars)" style="font-size:.62rem;padding:3px 6px;border:1px solid var(--fg);border-radius:2px">' +
+          '<button class="btn btn-s" style="font-size:.6rem" onclick="vaultUiAdminEnrol()">Enrol administrator recovery</button>' +
+        '</div>';
+    }
+    return h + '</div>';
+  }
+
+  window.vaultUiAdminEnrol = function () {
+    if (typeof isAdmin !== "function" || !isAdmin()) return;
+    var p = (document.getElementById("vaultEnrolPass") || {}).value || "";
+    var m = (document.getElementById("vaultEnrolMaster") || {}).value || "";
+    if (!window.confirm(
+      "Enrol administrator recovery?\n\n" +
+      "Anyone holding the master password will be able to decrypt EVERY patient record " +
+      "on this device, and to reset the passphrase without the user's involvement.\n\n" +
+      "In exchange, a forgotten passphrase stops being fatal.\n\n" +
+      "Store the master password the way you store the practice's other critical secrets, " +
+      "and make sure more than one person has it.\n\nContinue?")) return;
+    vaultAdminMsg("Enrolling…", "var(--sl)");
+    vaultAdminEnrol(p, m, (typeof CU !== "undefined" && CU) ? (CU.name || CU.username || "") : "")
+      .then(function () {
+        vaultAdminMsg("Administrator recovery is enrolled. Keep the master password safe — " +
+          "it now protects every record on this device.", "#b9770e");
+        if (typeof renderHome === "function") renderHome();
+      })
+      .catch(function (e) { vaultAdminMsg((e && e.message) || "Could not enrol.", "#c0392b"); });
+  };
+
+  window.vaultUiAdminWithdraw = function () {
+    if (typeof isAdmin !== "function" || !isAdmin()) return;
+    var p = (document.getElementById("vaultWithdrawPass") || {}).value || "";
+    if (!window.confirm(
+      "Withdraw administrator recovery?\n\n" +
+      "The master password will no longer open or reset this vault. If the passphrase and " +
+      "the recovery code are then both lost, the records are unrecoverable.\n\nContinue?")) return;
+    vaultAdminWithdraw(p).then(function () {
+      vaultAdminMsg("Administrator recovery withdrawn. Only the passphrase and the recovery " +
+        "code open this vault now.", "#2e7d46");
+      if (typeof renderHome === "function") renderHome();
+    }).catch(function (e) { vaultAdminMsg((e && e.message) || "Could not withdraw.", "#c0392b"); });
   };
 
   function vaultAdminMsg(text, colour) {

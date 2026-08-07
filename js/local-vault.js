@@ -22,13 +22,12 @@
 /* clinic loses its records permanently. So the layout is:           */
 /*                                                                  */
 /*   random DEK  ──wrapped by──>  passphrase-derived key   (daily)   */
-/*               └─wrapped by──>  recovery-code key        (escape)  */
-/*                                                                  */
-/* Two independent ways to reach the same data key. The recovery     */
-/* code is high-entropy, generated once, shown once, and MUST be     */
-/* written down and stored off the device. Changing the passphrase   */
-/* re-wraps the DEK — it never re-encrypts the records, so it is     */
-/* instant and cannot half-fail.                                     */
+/*               ├─wrapped by──>  recovery-code key        (escape)  */
+/*               └─wrapped by──>  master-password key      (escrow,  */
+/*                                 opt-in; js/vault-admin-recovery)  */
+/* Independent ways to reach the SAME data key. Changing or          */
+/* resetting a passphrase re-wraps the DEK — it never re-encrypts    */
+/* the records, so it is instant and cannot half-fail.               */
 /*                                                                  */
 /* ── WHAT THIS DOES AND DOES NOT PROTECT ──────────────────────────  */
 /* Protects: a powered-off or signed-out device, a stolen disk, a    */
@@ -508,10 +507,19 @@ function vaultChangePassphrase(currentPass, newPass) {
       });
     })
     .then(function (wrapped) {
+      meta = vaultMeta();                       /* re-read: never save a stale copy */
       meta.kdf.salt = newSalt;
       meta.wrapped.pass = wrapped;
+      /* Clears the flag an administrator reset set. This is the step that
+         takes the admin's temporary passphrase back out of circulation. */
+      var wasForced = !!meta.must_change;
+      delete meta.must_change;
       vaultSaveMeta(meta);
-      if (typeof logAudit === "function") { try { logAudit("vault_passphrase_changed", "Vault passphrase changed", {}); } catch (e) {} }
+      if (typeof logAudit === "function") {
+        try { logAudit("vault_passphrase_changed",
+          wasForced ? "Vault passphrase changed by the user after an administrator reset"
+                    : "Vault passphrase changed", {}); } catch (e) {}
+      }
       return true;
     })
     .catch(function (e) {
@@ -545,7 +553,6 @@ function vaultRegenerateRecoveryCode(passphrase) {
     })
     .catch(function () { throw new Error("That passphrase was not correct — the recovery code is unchanged."); });
 }
-
 
 /* ── Disable (decrypt back to plaintext) ─────────────────────────── */
 function vaultDisable(passphrase) {

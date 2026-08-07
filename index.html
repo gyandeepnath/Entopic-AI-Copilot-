@@ -72,6 +72,23 @@
             Unlock with recovery code
           </button>
         </div>
+        <!-- Administrator reset. Lives on the LOCK SCREEN because the admin
+             panel sits behind the very lock this exists to open. Shown only
+             when an administrator was enrolled while the vault was open. -->
+        <div class="alt-link" onclick="vaultUiShowAdminReset()">Administrator reset with the clinic master password</div>
+        <div id="vaultAdminResetBox" style="display:none;margin-top:10px">
+          <div class="fi" style="margin-bottom:8px">
+            <label>Clinic master password</label>
+            <input type="password" id="inp_vmaster" placeholder="Administrator only" autocomplete="off">
+          </div>
+          <div class="fi" style="margin-bottom:8px">
+            <label>New passphrase for this device</label>
+            <input type="password" id="inp_vnewpass" placeholder="At least 10 characters" autocomplete="new-password">
+          </div>
+          <button class="btn btn-s" style="width:100%;justify-content:center" onclick="vaultUiAdminResetDo()">
+            Reset the passphrase
+          </button>
+        </div>
       </div>
 
       <!-- Login Form -->
@@ -468,6 +485,9 @@
 <!-- local-vault defines the secret-wrapping helpers that cloud-sync and
      storage consult at load time, so it must precede them. -->
 <script src="js/local-vault.js"></script>
+<!-- Key escrow: who ELSE may open the vault. Split from local-vault.js so the
+     whole trust decision reads in one place. Needs the vault helpers above. -->
+<script src="js/vault-admin-recovery.js"></script>
 <script src="js/cloud-config.js"></script>
 <script src="js/kb-remote.js"></script>
 <script src="js/kb-signoffs.js"></script>

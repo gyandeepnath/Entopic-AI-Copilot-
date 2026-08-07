@@ -129,8 +129,12 @@ Ranked by likelihood, honestly.
 2. **Nobody ever pressed the backup button.** Backups are complete and the
    restore is merge-aware. They are also entirely manual. Device lost, never
    synced, never backed up → everything is gone. **BE-18.**
-3. **Forgotten vault passphrase (BE-11).** Unrecoverable by design. ⚠ Founder
-   decision.
+3. **Vault passphrase AND printed recovery code both lost, with no
+   administrator enrolled.** Then it is unrecoverable. Two of the three doors
+   now exist by default (passphrase, printed code) and the third
+   (administrator master password) is opt-in — **my earlier claim that there
+   was no recovery at all was wrong**; see the correction in the backend
+   report.
 4. **Clock skew across devices (BE-17).** Silent, plausible, and the merge has
    no defence.
 5. **Conflicts are not persisted (BE-12).** The losing version is discarded and
@@ -151,7 +155,7 @@ Everything else in the matrix is handled.
 | 3 | **Server-stamped `updated_at` (BE-17)** | ~16 h | Small; closes the most likely silent-loss path |
 | 4 | **Persist conflicts on the record (BE-12)** | ~40 h | Reuses `recPreserveOverwritten`, which already exists |
 | 5 | **Sync event ring buffer (BE-16)** | ~24 h | Makes every future incident diagnosable rather than guessed at |
-| 6 | **Vault recovery (BE-11)** | ⚠ founder | Design decision before engineering |
+| 6 | ✅ **Administrator vault reset (BE-11)** | done | Was a founder decision; decided and built 2026-08-07 |
 
 Items 1, 3 and 5 total ~64 hours and remove two of the six loss paths. They are
 the best-value backend work available.
