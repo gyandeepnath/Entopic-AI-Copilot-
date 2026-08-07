@@ -569,6 +569,17 @@ function doSave() {
           if (typeof evEmit === "function") evEmit("visit:conflict", conflict);
         }
       }
+      /* Material-change audit (security audit SEC-9). Captured BEFORE the
+         payload is replaced, because afterwards the previous version is gone
+         from this array. Only the prescription, the plan and the recorded
+         diagnosis — and only which FIELD changed, never the values, which
+         already live on the record itself under the correct access controls. */
+      if (typeof auditMaterialChange === "function") {
+        try {
+          auditMaterialChange(visits[i].data, V, { patient_id: CP, visit_id: CV },
+            visits[i].status === "completed");
+        } catch (e) {}
+      }
       visits[i].data = V;
       /* Attribution + amendment trail (clinical review CL-3): stamp WHO saved
          this and WHEN. A save by another clinician, or on a later day, is

@@ -516,6 +516,9 @@
 <!-- Automatic on-device snapshots + the age of the last real export (BE-18).
      Needs buildBackupPayload above and the IndexedDB mirror. -->
 <script src="js/storage-autobackup.js"></script>
+<!-- Material-change audit: who altered a prescription, plan or diagnosis
+     (security audit SEC-9). Needs logAudit from storage.js above. -->
+<script src="js/audit-clinical.js"></script>
 <!-- Carry-forward (marked, confirmable) and read-only trend series.
      Needs getPatientVisits from storage.js above. -->
 <script src="js/visit-history.js"></script>
