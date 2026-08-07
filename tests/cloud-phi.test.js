@@ -123,6 +123,7 @@ function mergeContext(localPatients) {
   });
   load(ctx, "js/cloud-crypto.js");
   load(ctx, "js/cloud-sync.js");
+  load(ctx, "js/cloud-replication.js");
   ctx.__saved = () => saved;
   return ctx;
 }

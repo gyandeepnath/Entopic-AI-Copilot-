@@ -169,6 +169,7 @@ function syncSandbox() {
   ctx.WebSocket = undefined;
   ctx.window = {};
   vm.runInContext(read("js/cloud-sync.js"), ctx, { filename: "cloud-sync.js" });
+  vm.runInContext(read("js/cloud-replication.js"), ctx, { filename: "cloud-replication.js" });
   vm.runInContext('CLOUD.session = { access_token: "t", refresh_token: "r" };' +
                   'CLOUD.clinicId = "c1";' +
                   'cloudEnabled = function () { return true; };' +
@@ -399,4 +400,117 @@ test("the runner is loaded before the app boots and is actually called", () => {
   assert.ok(order.indexOf("js/storage-migrations.js") < order.indexOf("js/app.js"));
   assert.ok(read("js/app.js").indexOf("migrationsRun()") > 0,
     "a migration runner nothing calls is not a migration runner");
+});
+
+
+/* ═══ BE-5 · THE SILENT PAGINATION CEILING ═══ */
+
+/* The old pull asked for every row with no limit and no cursor. PostgREST caps
+   the response at the project's db-max-rows; past that the server returns the
+   first page and the client never learns there is more. A clinic that grows
+   past the cap stops receiving its own records — no error, no banner, two
+   devices quietly diverging. */
+
+function pullSandbox(rowsByKind) {
+  const ctx = sandbox();
+  ctx.CLOUD_CONFIG = { url: "https://x.test", anonKey: "k" };
+  ctx.CLOUD_MAX_RETRIES = 3;
+  ctx.fetch = () => Promise.reject(new Error("no network in tests"));
+  ctx.WebSocket = undefined;
+  ctx._requests = [];
+  vm.runInContext(read("js/cloud-sync.js"), ctx, { filename: "cloud-sync.js" });
+  vm.runInContext(read("js/cloud-replication.js"), ctx, { filename: "cloud-replication.js" });
+  vm.runInContext('CLOUD.session = { access_token: "t" }; CLOUD.clinicId = "c1";' +
+                  'cloudSignedIn = function () { return true; };' +
+                  'cloudEnabled = function () { return true; };' +
+                  'cloudDecryptRows = function (rows, cb) { cb(rows); };' +
+                  'cloudRerender = function () {};', ctx);
+  /* A fake PostgREST that honours order/limit/gte exactly as the server does. */
+  ctx.__serve = (path) => {
+    ctx._requests.push(path);
+    const kind = path.indexOf("/visits") >= 0 ? "visits" : "patients";
+    const all = (rowsByKind[kind] || []).slice()
+      .sort((a, b) => String(a.updated_at).localeCompare(String(b.updated_at)));
+    const lim = parseInt((path.match(/limit=(\d+)/) || [])[1] || "1000000", 10);
+    const gteM = path.match(/updated_at=gte\.([^&]+)/);
+    const gte = gteM ? decodeURIComponent(gteM[1]) : null;
+    const filtered = gte ? all.filter((r) => String(r.updated_at) >= gte) : all;
+    return filtered.slice(0, lim);
+  };
+  vm.runInContext("cloudApi = function (path, opts, cb) { cb(null, __serve(path)); };", ctx);
+  return ctx;
+}
+
+function rows(kind, n, tsFn) {
+  const out = [];
+  for (let i = 0; i < n; i++) {
+    out.push({ id: kind + i, data: { id: kind + i },
+               updated_at: tsFn ? tsFn(i) : new Date(Date.UTC(2026, 0, 1, 0, 0, 0, 0) + i * 1000).toISOString(),
+               deleted: false });
+  }
+  return out;
+}
+
+test("a pull asks for a bounded page, in a defined order", () => {
+  const ctx = pullSandbox({ patients: rows("p", 3), visits: [] });
+  vm.runInContext("cloudPull();", ctx);
+  const req = ctx._requests.find((r) => r.indexOf("/patients") >= 0);
+  assert.match(req, /limit=\d+/, "an unbounded request inherits whatever the server's cap is");
+  assert.match(req, /order=updated_at\.asc/, "keyset paging needs a defined order");
+});
+
+test("every record is fetched when there are more than one page", () => {
+  /* 1,250 visits at a 500-row page: the old code would have received whatever
+     one page the server chose and silently stopped. */
+  const ctx = pullSandbox({ patients: [], visits: rows("v", 1250) });
+  vm.runInContext("cloudPull();", ctx);
+  const stored = JSON.parse(ctx.localStorage.getItem("entopic_visits"));
+  assert.strictEqual(stored.length, 1250,
+    "got " + stored.length + " of 1250 — the rest are invisible to this device");
+});
+
+test("no record is fetched twice, and none is skipped at a page boundary", () => {
+  const ctx = pullSandbox({ patients: [], visits: rows("v", 1001) });
+  vm.runInContext("cloudPull();", ctx);
+  const stored = JSON.parse(ctx.localStorage.getItem("entopic_visits"));
+  assert.strictEqual(new Set(stored.map((v) => v.id)).size, 1001);
+});
+
+test("records sharing a timestamp across a page boundary are not lost", () => {
+  /* The reason the cursor is `gte` with id de-duplication rather than `gt`:
+     two rows can share a millisecond, and `gt` would drop the rest of the tie
+     when a page boundary landed inside it. */
+  const ctx = pullSandbox({
+    patients: [],
+    visits: rows("v", 700, (i) => new Date(Date.UTC(2026, 0, 1) + Math.floor(i / 100) * 1000).toISOString())
+  });
+  vm.runInContext("cloudPull();", ctx);
+  const stored = JSON.parse(ctx.localStorage.getItem("entopic_visits"));
+  assert.strictEqual(stored.length, 700, "a tie spanning a page boundary lost records");
+});
+
+test("a page of identical timestamps stops the loop and says so", () => {
+  /* Degenerate but reachable: a bulk import stamps 500+ rows the same
+     millisecond. The cursor cannot advance without skipping them, so looping
+     forever or truncating silently are both wrong answers. */
+  const ctx = pullSandbox({
+    patients: [], visits: rows("v", 600, () => "2026-01-01T00:00:00.000Z")
+  });
+  vm.runInContext("cloudPull();", ctx);
+  assert.ok(ctx._requests.length < 50, "must not loop: made " + ctx._requests.length + " requests");
+  assert.match(String(ctx.CLOUD.lastError), /share one timestamp/,
+    "an incomplete sync must never look like a complete one");
+});
+
+test("a mid-pagination failure keeps the pages already fetched", () => {
+  /* A partial pull is not a failed pull. Discarding fetched rows would let an
+     unreliable network keep a device permanently behind. */
+  const ctx = pullSandbox({ patients: [], visits: rows("v", 1200) });
+  vm.runInContext(
+    "var __n = 0;" +
+    "cloudApi = function (path, opts, cb) { __n++; if (__n > 2) return cb(new Error('network')); cb(null, __serve(path)); };" +
+    "cloudPull();", ctx);
+  const stored = JSON.parse(ctx.localStorage.getItem("entopic_visits") || "[]");
+  assert.ok(stored.length >= 500, "kept " + stored.length + " — fetched rows must not be thrown away");
+  assert.ok(stored.length < 1200, "and the pull genuinely did not finish");
 });

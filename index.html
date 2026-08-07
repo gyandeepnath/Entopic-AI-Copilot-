@@ -474,6 +474,11 @@
 <script src="js/kb-review.js"></script>
 <script src="js/cloud-crypto.js"></script>
 <script src="js/cloud-sync.js"></script>
+<!-- The replication protocol (outbox, tombstones, paginated pull, merge),
+     split out of cloud-sync.js when it grew two jobs. Needs CLOUD + cloudApi
+     from above; its tombstone queue needs storage.js, which loads later —
+     that is fine, nothing here runs until cloudStart(). -->
+<script src="js/cloud-replication.js"></script>
 <script src="js/clinical-record.js"></script>
 <!-- Consent ledger, research corpus and offline insights. consent.js must
      precede research-corpus.js (the corpus asks it before every capture). -->

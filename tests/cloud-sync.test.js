@@ -58,6 +58,8 @@ function makeSandbox(opts) {
   if ("CV" in opts) sandbox.CV = opts.CV;
   vm.createContext(sandbox);
   vm.runInContext(fs.readFileSync(path.join(REPO, "js", "cloud-sync.js"), "utf8"), sandbox, { filename: "cloud-sync.js" });
+  /* The replication half was split out of cloud-sync.js; both are needed. */
+  vm.runInContext(fs.readFileSync(path.join(REPO, "js", "cloud-replication.js"), "utf8"), sandbox, { filename: "cloud-replication.js" });
   return sandbox;
 }
 
