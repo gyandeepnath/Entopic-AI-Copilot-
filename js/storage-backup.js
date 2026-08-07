@@ -324,6 +324,31 @@ function _importDecoded(data) {
       saveStore("age_brackets", ab);
     }
 
+    /* Migration ledger — UNION of applied ids, never a replace.
+
+       Restoring records without it makes the device look unmigrated, so the
+       next boot re-runs every migration over already-migrated data. Replacing
+       it outright is the opposite hazard: a backup taken before a migration
+       would erase the record that the migration ran, on a device where it did.
+
+       The union is the only safe answer — an id present on either side means
+       that shape change HAS been applied to the data now on this device, and
+       a migration that was genuinely never run is simply absent from both.
+       The version string takes the higher of the two for the same reason. */
+    if (data.migrations && typeof data.migrations === "object") {
+      var mHave = loadStore("migrations", null) || { version: null, applied: [] };
+      var mIn = data.migrations;
+      var merged = (mHave.applied || []).slice();
+      (Array.isArray(mIn.applied) ? mIn.applied : []).forEach(function (id) {
+        if (merged.indexOf(id) < 0) merged.push(id);
+      });
+      var vHave = mHave.version || "", vIn = mIn.version || "";
+      saveStore("migrations", {
+        version: (compareStoreVersion(vIn, vHave) === 1) ? vIn : (vHave || vIn),
+        applied: merged
+      });
+    }
+
     /* Competency framework and evidence. The framework is REPLACED (it is the
        institution's, and one version is authoritative); the evidence log is
        MERGED by id, because a restore must never destroy a supervisor's

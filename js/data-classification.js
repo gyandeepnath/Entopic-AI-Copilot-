@@ -57,6 +57,41 @@ var DATA_STORES = {
     why: "Named clinicians and students. Credential material is hashed, but the names are still personal data."
   },
 
+  /* Which store migrations this device has applied (backend audit BE-4).
+     Backed up and mirrored: restoring records without the ledger would make a
+     restored device re-run every migration over already-migrated data. */
+  migrations: {
+    class: "operational", encrypt: false, mirror: true, backup: true, shape: "object",
+    why: "The record of which shape changes this device's data has been through. Without it a " +
+         "restore cannot tell migrated data from unmigrated, and re-running a migration over " +
+         "already-migrated records is how an EMR corrupts itself."
+  },
+
+  /* Pending deletes waiting to reach the server (backend audit BE-2).
+
+     The one queue in the system that CANNOT be rebuilt from anything else.
+     Every other sync state is derivable — a record's dirtiness is recomputed
+     by comparing its `updated` stamp against `_cloud_updated`. A tombstone is
+     different: the record it refers to is already gone locally, so if the
+     queue is lost there is nothing left to notice the absence, and the next
+     pull from another device resurrects the deleted patient.
+
+     It held only ids, never content, so it is not PHI — but an id plus the
+     fact of deletion is still clinic data, so it is mirrored and encrypted
+     with everything else. NOT backed up: a tombstone is a message in flight,
+     and replaying a stale one out of a month-old backup could delete a record
+     that has since been legitimately restored. */
+  cloud_tombstones: {
+    class: "operational", encrypt: false, mirror: true, backup: false, shape: "array",
+    why: "Deletes that have not yet reached the server. Unlike every other sync flag this " +
+         "cannot be recomputed — the record is already gone — so losing it silently " +
+         "resurrects a deleted patient on the next pull. NOT vault-encrypted, and that is " +
+         "a decision, not an oversight: it holds opaque client-generated ids and nothing " +
+         "else (the same ids the server's audit_log stores in the clear by design), and a " +
+         "vault-protected queue could not be written while the vault is locked — which is " +
+         "exactly when a queued delete most needs to survive to the next session."
+  },
+
   /* ── Legal / evidentiary ── */
   audit: {
     class: "legal", encrypt: true, mirror: true, backup: true, shape: "array",

@@ -64,6 +64,15 @@ const DATA_CLASSIFICATION = {
   competencies:    { class: "legal",       encrypt: false, mirror: true,  backup: true  },
   competency_log:  { class: "legal",       encrypt: false, mirror: true,  backup: true  },
   age_brackets:    { class: "legal",       encrypt: false, mirror: true,  backup: true  },
+  /* backup:true — a restore that brought back records WITHOUT the migration
+     ledger would look like an unmigrated device and re-run every migration
+     over already-migrated data. */
+  migrations:      { class: "operational", encrypt: false, mirror: true,  backup: true  },
+  /* backup:false — a tombstone is a message in flight, not state. Replaying a
+     stale one out of a month-old backup could delete a record that has since
+     been legitimately restored. Mirrored and encrypted because losing the queue
+     silently resurrects a deleted patient. */
+  cloud_tombstones:{ class: "operational", encrypt: false, mirror: true,  backup: false },
   research_corpus: { class: "clinical",    encrypt: false, mirror: true,  backup: true  },
   /* backup:true — revised from the original false. The salt has to travel with
      the corpus it belongs to, or every pseudonym in a restored corpus becomes

@@ -56,6 +56,42 @@
     setTimeout(function () { el.classList.remove("show"); }, 1200);
   });
 
+  /* ── The save did NOT happen (backend audit BE-1) ──
+     The counterpart of the indicator above, and the more important half. The
+     app used to flash "saved" whatever the storage layer said, so a clinician
+     working on a device whose writes were blocked was actively reassured. A
+     persistent banner, not a toast: this does not go away by itself because
+     the condition does not go away by itself. */
+  evOn("visit:save-failed", function (ev) {
+    var el = banner("visitSaveFailBanner",
+      "position:fixed;left:0;right:0;bottom:0;z-index:10000;" +
+      "background:#8a2318;color:#fff;padding:10px 14px;font-size:.72rem;line-height:1.45;" +
+      "box-shadow:0 -2px 10px rgba(0,0,0,.25)");
+    /* escHtml, not a private copy: a second escaper drifts from the first and
+       weakens silently. js/dom-escape.js is the only one. */
+    var why = (typeof escHtml === "function")
+      ? escHtml(String((ev && ev.reason) || "the record store refused the write"))
+      : "";
+    el.innerHTML =
+      '<b>THIS VISIT IS NOT BEING SAVED.</b> ' + why + '.<br>' +
+      'Everything you type from now on is held only in this browser tab and will be lost if ' +
+      'it closes. <b>Export a backup now</b> (Account → Data), then reload. Your existing ' +
+      'records have not been altered — the write was refused precisely so they could not be.';
+  });
+
+  /* Writes are working again — the only thing that clears the banner. */
+  evOn("visit:saved", function () { removeBanner("visitSaveFailBanner"); });
+
+  /* ── A visit could not be marked complete ── */
+  evOn("visit:complete-failed", function (ev) {
+    if (typeof alert !== "function") return;
+    alert("This visit was NOT marked complete.\n\n" +
+      ((ev && ev.reason) || "the record store refused the write") + ".\n\n" +
+      "It has been left in progress deliberately: a visit signed off as finished, whose data " +
+      "did not save, is a worse record than an unfinished one. Export a backup, fix the " +
+      "storage problem, then complete it.");
+  });
+
   /* ── Sync brought in changes from another device ──
      cloud-sync.js used to call renderHome() by name, which made the
      synchronisation layer depend on a specific screen of the UI. It now says

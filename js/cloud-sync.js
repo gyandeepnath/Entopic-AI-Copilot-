@@ -331,9 +331,62 @@ function cloudEnqueue(key) {
    it as a soft-delete row (deleted=true). Storage's deletePatient calls this. */
 function cloudEnqueueDelete(kind, id) {
   if (!cloudEnabled() || (kind !== "patients" && kind !== "visits") || !id) return;
-  CLOUD.tombstones.push({ kind: kind, id: id });
+  CLOUD.tombstones.push({ kind: kind, id: id, at: new Date().toISOString() });
+  cloudTombstonesPersist();
   if (CLOUD.drainTimer) clearTimeout(CLOUD.drainTimer);
   CLOUD.drainTimer = setTimeout(cloudDrain, 800);
+}
+
+/* ── Durable tombstones (backend audit BE-2) ──
+
+   The queue used to live only on the CLOUD object, i.e. in memory. Close the
+   tab, lose power, or crash between deleting a patient and the 800 ms drain,
+   and the delete never reaches the server — so the next pull from another
+   device brings the patient back, with no error anywhere.
+
+   Every other piece of sync state survives a restart because it is derivable:
+   a record is dirty if its `updated` is newer than its `_cloud_updated`, and
+   both are on the record. A tombstone has no record left to derive from. It is
+   the only sync state that must be written down, and it was the only one that
+   was not.
+
+   Kept small deliberately — ids and a timestamp, never content. */
+var CLOUD_TOMBSTONE_STORE = "cloud_tombstones";
+var CLOUD_TOMBSTONE_MAX = 5000;
+
+function cloudTombstonesPersist() {
+  if (typeof saveStore !== "function") return false;
+  /* Bounded. A queue this long means sync has been unreachable for a very
+     long time; dropping the OLDEST is the least-bad answer, and it is said
+     out loud rather than done quietly. */
+  if (CLOUD.tombstones.length > CLOUD_TOMBSTONE_MAX) {
+    var dropped = CLOUD.tombstones.length - CLOUD_TOMBSTONE_MAX;
+    CLOUD.tombstones = CLOUD.tombstones.slice(-CLOUD_TOMBSTONE_MAX);
+    if (typeof logAudit === "function") {
+      try { logAudit("sync_tombstones_truncated",
+        dropped + " pending delete(s) were dropped from the sync queue — it exceeded " +
+        CLOUD_TOMBSTONE_MAX + ". Those records may reappear from another device.", {}); } catch (e) {}
+    }
+  }
+  return saveStore(CLOUD_TOMBSTONE_STORE, CLOUD.tombstones) !== false;
+}
+
+/* Called at boot, before the first drain, so a delete queued in a previous
+   session still reaches the server. */
+function cloudTombstonesRestore() {
+  if (typeof loadStore !== "function") return;
+  var saved = loadStore(CLOUD_TOMBSTONE_STORE, []);
+  if (!Array.isArray(saved) || !saved.length) return;
+  /* Merge rather than replace: a delete performed THIS session before the
+     vault unlocked must not be thrown away by the restore. */
+  var seen = {};
+  CLOUD.tombstones.forEach(function (t) { seen[t.kind + ":" + t.id] = true; });
+  saved.forEach(function (t) {
+    if (!t || !t.kind || !t.id) return;
+    if (seen[t.kind + ":" + t.id]) return;
+    seen[t.kind + ":" + t.id] = true;
+    CLOUD.tombstones.push(t);
+  });
 }
 
 /* HARD PHI GATE (C-1 / C-2): a patient or visit record leaves the device only
@@ -414,16 +467,33 @@ function cloudDrainTombstones() {
   var batch = CLOUD.tombstones.slice();
   var stamp = new Date().toISOString();
   var byKind = { patients: [], visits: [] };
+  var sentIds = { patients: {}, visits: {} };
   batch.forEach(function (t) {
-    if (t.kind === "patients") byKind.patients.push({ id: t.id, clinic_id: CLOUD.clinicId, data: { id: t.id, deleted: true }, updated_at: stamp, deleted: true });
-    else byKind.visits.push({ id: t.id, clinic_id: CLOUD.clinicId, patient_id: "", data: { id: t.id, deleted: true }, updated_at: stamp, deleted: true });
+    if (t.kind === "patients") {
+      byKind.patients.push({ id: t.id, clinic_id: CLOUD.clinicId, data: { id: t.id, deleted: true }, updated_at: stamp, deleted: true });
+      sentIds.patients[t.id] = true;
+    } else {
+      byKind.visits.push({ id: t.id, clinic_id: CLOUD.clinicId, patient_id: "", data: { id: t.id, deleted: true }, updated_at: stamp, deleted: true });
+      sentIds.visits[t.id] = true;
+    }
   });
   ["patients", "visits"].forEach(function (kind) {
     if (!byKind[kind].length) return;
     cloudApi("/rest/v1/" + kind + "?on_conflict=id", {
       method: "POST", body: byKind[kind], prefer: "resolution=merge-duplicates"
     }, function (err) {
-      if (!err) CLOUD.tombstones = CLOUD.tombstones.filter(function (t) { return t.kind !== kind; });
+      if (err) return;                     /* leave queued; the next drain retries */
+      /* Clear exactly what was SENT, not everything of this kind.
+
+         The old line was `filter(t => t.kind !== kind)`, which also discarded
+         any delete enqueued while this request was in flight — a delete the
+         server never heard about, dropped as though it had succeeded. A
+         request takes hundreds of milliseconds and a clinician can delete
+         twice in that window. (BE-3) */
+      CLOUD.tombstones = CLOUD.tombstones.filter(function (t) {
+        return !(t.kind === kind && sentIds[kind][t.id]);
+      });
+      cloudTombstonesPersist();
     });
   });
 }
@@ -607,6 +677,9 @@ function cloudConnectRealtime() {
 /* ── lifecycle ── */
 function cloudStart() {
   if (!cloudSignedIn()) return;
+  /* Before anything else: pick up deletes queued in a previous session, so a
+     crash between the delete and its drain does not resurrect a record. */
+  cloudTombstonesRestore();
   cloudPull();
   cloudDrain();
   cloudConnectRealtime();

@@ -1876,6 +1876,21 @@ function esc(s) { return escHtml(s); }
 
 (function init() {
 
+  /* Store migrations, before anything reads a record (backend audit BE-4).
+     Runs once per device, snapshots every store it touches first, and rolls
+     the whole run back if any step fails. It refuses — rather than guesses —
+     when a store is damaged or the vault is locked, and returns a reason;
+     the vault case is re-attempted after unlock in vaultUiBootGate's path.
+     A migration failure must not stop the app: a clinician with an
+     unmigrated device can still read their records. */
+  if (typeof migrationsRun === "function") {
+    try {
+      var _mig = migrationsRun();
+      if (!_mig.ok) console.warn("Entopic: store migrations held — " + _mig.reason);
+      else if (_mig.ran.length) console.info("Entopic: applied " + _mig.ran.length + " store migration(s).");
+    } catch (e) { console.error("Entopic: migration runner failed", e); }
+  }
+
   /* Load API key */
   API_KEY = loadApiKey();
 

@@ -171,7 +171,13 @@ function saveStore(key, data) {
     vaultCacheSet(key, data);                       /* memory now, ciphertext shortly */
     if (typeof cloudEnqueue === "function") cloudEnqueue(key);
     storageQuotaWatch();
-    return;
+    /* `true`, not a bare return. saveStore's contract is a boolean; this path
+       used to return undefined, which is why every caller in the codebase is
+       written `saveStore(...) !== false` rather than the obvious
+       `if (saveStore(...))`. A write function whose success value is falsy is
+       an invitation to a silent-failure bug, and one of those is fixed
+       immediately below in doSave(). */
+    return true;
   }
   /* Mirror FIRST, deliberately.
 
@@ -295,8 +301,10 @@ function loadUsers() {
   return loadStore("users", []);
 }
 
+/* These four return saveStore's boolean. They used to swallow it, so a caller
+   could not tell a completed write from a refused one — see doSave(). */
 function saveUsers(users) {
-  saveStore("users", users);
+  return saveStore("users", users) !== false;
 }
 
 /* Patients */
@@ -305,7 +313,7 @@ function loadPatients() {
 }
 
 function savePatients(patients) {
-  saveStore("patients", patients);
+  return saveStore("patients", patients) !== false;
 }
 
 /* Visits */
@@ -314,7 +322,7 @@ function loadVisits() {
 }
 
 function saveVisits(visits) {
-  saveStore("visits", visits);
+  return saveStore("visits", visits) !== false;
 }
 
 /* API Key — a billable credential, so it is vault-wrapped like the cloud
@@ -514,13 +522,38 @@ var VISIT_SEEN_STAMP = null;
 
 function setVisitSeenStamp(stamp) { VISIT_SEEN_STAMP = stamp || null; }
 
+/* Save the open exam.
+
+   RETURNS a result object, and the return value matters:
+   { ok, visit_written, patient_written, visit_found, reason }
+
+   ── THE DEFECT THIS CLOSES (backend audit BE-1) ──
+
+   doSave() used to ignore what the storage layer told it and emit
+   "visit:saved" unconditionally. Measured in a browser: corrupt the visits
+   store (what a truncated write leaves behind), keep typing, save — the
+   write is correctly REFUSED by the corrupt-store guard, and the app still
+   announced the save. The clinician sees the saved indicator and carries on
+   for the rest of the consultation believing their work is captured.
+
+   The records were never destroyed — that protection held, and it is why
+   this is a reporting failure rather than a loss. But a clinician who is
+   told their work is safe when it is not will not act, and the distinction
+   is invisible to them. Silence would have been better than a false
+   reassurance; the truth is better than both.
+
+   The same applied to a locked vault, a quota-exhausted device, and a
+   visit whose id is no longer in the store at all. */
 function doSave() {
-  if (!CV) return;
+  if (!CV) return { ok: false, visit_written: false, patient_written: false,
+                    visit_found: false, reason: "no visit is open" };
 
   /* Save visit data */
   var visits = loadVisits();
+  var visitFound = false;
   for (var i = 0; i < visits.length; i++) {
     if (visits[i].id === CV) {
+      visitFound = true;
       /* Did another window write this visit since we last saw it? If so, keep
          the version we are about to replace — a clinician's measurement must
          never vanish because a second tab happened to save later. */
@@ -551,7 +584,7 @@ function doSave() {
       break;
     }
   }
-  saveVisits(visits);
+  var visitWritten = saveVisits(visits);
 
   /* Save patient data */
   var patients = loadPatients();
@@ -575,11 +608,55 @@ function doSave() {
       break;
     }
   }
-  savePatients(patients);
+  var patientWritten = savePatients(patients);
 
-  /* The visit was written. Whether that shows as a flashing indicator, a
-     toast, or nothing at all is not this layer's business. */
-  if (typeof evEmit === "function") evEmit("visit:saved", { patient_id: P && P.id, visit_id: V && V.id });
+  /* A visit whose id is not in the store cannot have been written, however
+     well the write itself went. This happens when the store was unreadable
+     and handed back the empty fallback, or when another device's delete
+     tombstone removed the record while it was open here. The loop above
+     simply found nothing and the array went back untouched — silently. */
+  /* Order matters: a damaged store EXPLAINS a missing visit, so say that
+     first. "The visit is no longer in the record store" is alarming and
+     unactionable; "the store is damaged and writes are blocked" tells the
+     clinician what to do and that their records were not destroyed. */
+  var reason = "";
+  if (storageIsCorrupt("visits")) {
+    reason = "the visit store is damaged and writes are blocked";
+  } else if (!visitFound) {
+    reason = "the open visit is no longer in the record store";
+  } else if (!visitWritten) {
+    reason = STORAGE_FAILED ? "the last write failed (" + STORAGE_FAILED.reason + ")"
+                            : "the visit store refused the write";
+  } else if (!patientWritten) {
+    reason = storageIsCorrupt("patients") ? "the patient store is damaged and writes are blocked"
+           : "the patient store refused the write";
+  }
+
+  var res = {
+    ok: visitFound && visitWritten && patientWritten,
+    visit_written: visitWritten, patient_written: patientWritten,
+    visit_found: visitFound, reason: reason
+  };
+
+  /* Announce what ACTUALLY happened. Whether that shows as a flashing
+     indicator, a banner, or nothing at all is not this layer's business —
+     but this layer must not claim a save it did not make. */
+  if (typeof evEmit === "function") {
+    var payload = { patient_id: P && P.id, visit_id: V && V.id };
+    if (res.ok) {
+      evEmit("visit:saved", payload);
+    } else {
+      payload.reason = reason;
+      payload.result = res;
+      evEmit("visit:save-failed", payload);
+      if (typeof logAudit === "function") {
+        try { logAudit("visit_save_failed", "A save of the open visit did not complete: " +
+          reason, { visit_id: CV }); } catch (e) {}
+      }
+      console.error("Entopic: the open visit was NOT saved — " + reason);
+    }
+  }
+  return res;
 }
 
 
@@ -589,18 +666,45 @@ function doSave() {
 /* ═══════════════════════════════════════════════════════════════ */
 
 function completeVisit() {
-  doSave();
+  /* If the exam could not be SAVED, it must not be marked COMPLETED. Signing
+     off a consultation whose data did not persist produces the worst artefact
+     this system can make: a record that says the visit is finished, missing
+     everything recorded after the write started failing, with an audit entry
+     asserting completion. Refuse, say why, and leave the visit in progress so
+     the clinician can fix the device and complete it properly. (BE-1) */
+  var saved = doSave();
+  if (saved && saved.ok === false) {
+    if (typeof logAudit === "function") {
+      try { logAudit("visit_complete_refused",
+        "Completion refused because the visit could not be saved: " + saved.reason,
+        { patient_id: CP, visit_id: CV }); } catch (e) {}
+    }
+    if (typeof evEmit === "function") {
+      evEmit("visit:complete-failed", { visit_id: CV, patient_id: CP, reason: saved.reason });
+    }
+    return { ok: false, reason: saved.reason };
+  }
 
   var visits = loadVisits();
+  var found = false;
   for (var i = 0; i < visits.length; i++) {
     if (visits[i].id === CV) {
       visits[i].status = "completed";
       visits[i].completed_at = new Date().toISOString();
       visits[i].data = V;
+      found = true;
       break;
     }
   }
-  saveVisits(visits);
+  var completeWritten = saveVisits(visits) && found;
+  if (!completeWritten) {
+    if (typeof evEmit === "function") {
+      evEmit("visit:complete-failed", { visit_id: CV, patient_id: CP,
+        reason: found ? "the record store refused the write" : "the visit is no longer in the record store" });
+    }
+    return { ok: false, reason: found ? "the record store refused the write"
+                                      : "the visit is no longer in the record store" };
+  }
 
   if (typeof logAudit === "function") {
     var lead = (V.dxList && V.dxList.length) ? V.dxList[0].n : "no diagnosis";
@@ -629,6 +733,7 @@ function completeVisit() {
 
   alert("Visit marked as completed.");
   goHome();
+  return { ok: true, reason: "" };
 }
 
 
