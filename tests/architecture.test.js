@@ -69,6 +69,7 @@ const DATA_CLASSIFICATION = {
      over already-migrated data. */
   migrations:      { class: "operational", encrypt: false, mirror: true,  backup: true  },
   autobackup:      { class: "operational", encrypt: false, mirror: true,  backup: true  },
+  archives:        { class: "legal",       encrypt: false, mirror: true,  backup: true  },
   /* backup:false — a tombstone is a message in flight, not state. Replaying a
      stale one out of a month-old backup could delete a record that has since
      been legitimately restored. Mirrored and encrypted because losing the queue

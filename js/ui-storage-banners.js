@@ -122,6 +122,19 @@
       '<span style="cursor:pointer;text-decoration:underline" onclick="this.closest(\'div\').remove()">Dismiss for now</span>';
   });
 
+  /* ── Records were archived (backend audit BE-10) ──
+     Not a warning — a confirmation of something the clinician deliberately
+     started, and the one moment they need to be told to keep the file. */
+  evOn("archive:complete", function (ev) {
+    if (typeof alert !== "function" || !ev) return;
+    alert(ev.count + " visit(s) have been moved to an archive file.\n\n" +
+      ev.file + "\n\n" +
+      "KEEP THAT FILE. The patients' charts now show those visits as archived, " +
+      "with the date and the leading impression, and point at this file for the rest. " +
+      "Importing it back restores them in full — nothing was destroyed.\n\n" +
+      "Store it wherever you keep your backups, not only in Downloads.");
+  });
+
   /* ── Sync brought in changes from another device ──
      cloud-sync.js used to call renderHome() by name, which made the
      synchronisation layer depend on a specific screen of the UI. It now says

@@ -77,6 +77,17 @@ var DATA_STORES = {
          "app understate the risk the clinic is carrying, which is the wrong direction to be wrong in."
   },
 
+  /* The archive index (backend audit BE-10): which archive files exist, what
+     each holds, and the clinic's retention floor. Not the records themselves —
+     those live in the archive FILES the clinic keeps. Backed up, because a
+     restored device that did not know an archive existed would show stubs
+     pointing at a file nobody knew to look for. */
+  archives: {
+    class: "legal", encrypt: false, mirror: true, backup: true, shape: "object",
+    why: "The map from a stub in a patient's chart to the file holding the rest of that visit. " +
+         "Losing it does not lose the records, but it loses the ability to find them."
+  },
+
   /* Pending deletes waiting to reach the server (backend audit BE-2).
 
      The one queue in the system that CANNOT be rebuilt from anything else.

@@ -357,6 +357,25 @@ function _importDecoded(data) {
       });
     }
 
+    /* The archive index. UNION by id, and keep the higher retention floor —
+       an index is a map from a stub in a chart to the file holding the rest of
+       that visit. Dropping an entry does not lose records, but it loses the
+       ability to find them, so a restore may only ever ADD to it. */
+    if (data.archives && typeof data.archives === "object") {
+      var arHave = loadStore("archives", null) || { archives: [], years: 3 };
+      var seenAr = {};
+      (arHave.archives || []).forEach(function (a) { if (a && a.id) seenAr[a.id] = true; });
+      var merged = (arHave.archives || []).slice();
+      (Array.isArray(data.archives.archives) ? data.archives.archives : []).forEach(function (a) {
+        if (a && a.id && !seenAr[a.id]) { seenAr[a.id] = true; merged.push(a); }
+      });
+      saveStore("archives", {
+        archives: merged,
+        years: Math.max(arHave.years || 0, data.archives.years || 0) ||
+               (typeof ARCHIVE_DEFAULT_YEARS !== "undefined" ? ARCHIVE_DEFAULT_YEARS : 3)
+      });
+    }
+
     if (data.migrations && typeof data.migrations === "object") {
       var mHave = loadStore("migrations", null) || { version: null, applied: [] };
       var mIn = data.migrations;

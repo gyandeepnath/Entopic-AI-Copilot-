@@ -519,6 +519,9 @@
 <!-- Material-change audit: who altered a prescription, plan or diagnosis
      (security audit SEC-9). Needs logAudit from storage.js above. -->
 <script src="js/audit-clinical.js"></script>
+<!-- Record archival (BE-10): export, verify, THEN prune to stubs. Needs
+     storage-backup.js and the mirror above. -->
+<script src="js/storage-archive.js"></script>
 <!-- Carry-forward (marked, confirmable) and read-only trend series.
      Needs getPatientVisits from storage.js above. -->
 <script src="js/visit-history.js"></script>

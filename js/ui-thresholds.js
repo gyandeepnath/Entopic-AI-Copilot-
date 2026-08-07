@@ -169,6 +169,103 @@ function redFlagScreen() {
   '</div>';
 }
 
+/* ═══════════════════════════════════════════════════════════════ */
+/* ARCHIVE SCREEN  (backend audit BE-10)                            */
+/*                                                                  */
+/* The clinic's only route out of the storage ceiling. Written to    */
+/* make the trade legible BEFORE anyone commits: how much room it    */
+/* buys, what stays behind, and — the line that matters — that this  */
+/* is a move rather than a deletion, and that the file must be kept. */
+/* ═══════════════════════════════════════════════════════════════ */
+
+function archiveScreen() {
+  if (typeof archiveProjection !== "function") return "";
+  var st = archiveState();
+  var p;
+  try { p = archiveProjection({ years: st.years }); } catch (e) { return ""; }
+  var su = (typeof storageUsage === "function") ? storageUsage() : null;
+  var kb = function (n) { return (n / 1024).toFixed(0) + " KB"; };
+  var past = archiveList();
+
+  return '<div class="home-settings" style="margin-top:8px">' +
+    '<div class="home-settings-title">🗄 Archive older records</div>' +
+    '<div class="home-settings-desc">' +
+      'This browser can hold roughly 3,000 patients before it stops saving. Archiving moves ' +
+      'completed visits older than your retention floor into a file <b>you keep</b>, and leaves ' +
+      'a marker in each chart showing the date, the leading impression, and where the rest went.' +
+      '<br><b>Nothing is destroyed.</b> Importing the file restores those visits in full. ' +
+      'The records are only removed from this device <i>after</i> the file has been written and ' +
+      'read back and checked, record for record — if that check fails, nothing is removed.' +
+      (su ? '<br><span style="color:var(--sv)">This device is at <b>' + su.pct + '%</b> of its storage budget.</span>' : '') +
+    '</div>' +
+    '<div style="display:flex;gap:14px;flex-wrap:wrap;margin:8px 0;font-size:.62rem">' +
+      '<div><b>' + p.eligible + '</b> visit(s) eligible</div>' +
+      '<div><b>' + p.held + '</b> staying put</div>' +
+      '<div>frees about <b>' + kb(p.freed_bytes) + '</b></div>' +
+    '</div>' +
+    '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:6px">' +
+      '<label style="font-size:.6rem">Keep everything from the last' +
+        ' <input id="arcYears" type="number" min="1" max="30" value="' + st.years +
+        '" style="width:52px;font-size:.62rem;padding:2px 4px;border:1px solid var(--fg);border-radius:2px"> year(s)</label>' +
+      '<button class="btn btn-s" style="font-size:.6rem" onclick="archiveUiSetYears()">Update</button>' +
+      '<button class="btn btn-p" style="font-size:.6rem" onclick="archiveUiRun()"' +
+        (p.eligible ? '' : ' disabled') + '>Archive ' + p.eligible + ' visit(s)…</button>' +
+    '</div>' +
+    '<div style="font-size:.54rem;color:var(--sv)">' +
+      'Never archived: a visit still in progress, a patient\'s most recent visit (it is the ' +
+      'baseline the next consultation is compared against), or anything inside the floor above. ' +
+      'Archiving is refused outright while a record store is damaged or the vault is locked.' +
+    '</div>' +
+    (past.length
+      ? '<div style="margin-top:8px;font-size:.58rem"><b>Archives created</b>' +
+        past.slice(0, 6).map(function (a) {
+          return '<div style="color:var(--sv)">' + esc(String(a.at).slice(0, 10)) + ' · ' +
+            a.count + ' visit(s) · <code>' + esc(a.file) + '</code></div>';
+        }).join("") + '</div>'
+      : '') +
+    '<div id="arcMsg" class="home-settings-status"></div></div>';
+}
+
+function archiveUiSetYears() {
+  var el = document.getElementById("arcYears");
+  var v = el ? el.value : "";
+  var msg = document.getElementById("arcMsg");
+  if (archiveSetYears(v)) {
+    if (typeof renderHome === "function") renderHome();
+  } else if (msg) {
+    msg.style.color = "#c0392b";
+    msg.textContent = "The floor must be at least 1 year. Retention periods are a legal matter, " +
+      "and in some places disposal is not permitted at all — this only ever moves records to a file you keep.";
+  }
+}
+
+function archiveUiRun() {
+  var msg = document.getElementById("arcMsg");
+  var p = archiveProjection({});
+  if (!p.eligible) return;
+  if (!window.confirm(
+    "Archive " + p.eligible + " completed visit(s)?\n\n" +
+    "A file will be downloaded. KEEP IT — it holds the full records.\n\n" +
+    "Those visits will then show in each chart as archived, with the date and the leading " +
+    "impression, pointing at that file. Importing it restores them in full.\n\n" +
+    "If the file cannot be written and verified, nothing will be removed.\n\nContinue?")) return;
+  if (msg) { msg.style.color = "var(--sl)"; msg.textContent = "Writing and verifying the archive…"; }
+  archiveRun({}).then(function (r) {
+    if (!msg) return;
+    if (r.ok && r.archived) {
+      msg.style.color = "#2e7d46";
+      msg.textContent = r.archived + " visit(s) archived to " + r.file + ". Keep that file.";
+      if (typeof renderHome === "function") renderHome();
+    } else if (r.ok) {
+      msg.style.color = "var(--sl)";
+      msg.textContent = r.reason || "Nothing was eligible.";
+    } else {
+      msg.style.color = "#c0392b";
+      msg.textContent = r.reason;
+    }
+  });
+}
+
 function thresholdFilter(v) {
   _thrFilter = v || "";
   var el = document.getElementById("thrList");
