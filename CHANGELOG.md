@@ -6,6 +6,108 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-08-08 — The app took 12 seconds to appear offline. It now takes 64 ms.
+
+**This is the one that matters, and six rounds of audits missed it — including
+mine.**
+
+On a laptop with no internet — the situation Entopic is *built* for — the
+screen stayed blank for **twelve and a half seconds** before the sign-in box
+appeared. Measured, not estimated.
+
+The cause was a single line loading the fonts from Google. A stylesheet from
+another website blocks the page from drawing until it arrives, and with no
+internet it doesn't arrive — the browser just waits for it to give up.
+
+Every audit so far, mine included, asked "does the diagnostic engine touch the
+internet?" The answer was always no, and it was always true. **Nobody asked
+whether the page did.** The engine was never the problem; getting to it was.
+
+Fixed: the fonts now load in the background instead of holding everything up.
+Offline they simply never load and you get a slightly different typeface — a
+trade I'd make every time against twelve seconds of blank screen.
+
+    before: 12,600 ms to first paint
+    after:       64 ms
+
+There's a test now that fails the build if anyone adds another blocking
+external file to the page.
+
+---
+
+**The app is dramatically faster with a large record set.**
+
+I measured the storage layer properly with a benchmark you can re-run
+(`node tools/bench/storage-bench.js`). At 9,000 visits:
+
+| | before | after |
+|---|---|---|
+| opening the patient list | 284 ms | 0.012 ms |
+| loading one patient's visits | 245 ms | 0.66 ms |
+| finding a patient's last visit | 239 ms | 0.50 ms |
+| saving | 962 ms | 267 ms |
+
+The cause: **every single read re-parsed the entire clinic.** Just saving one
+visit did it twice. The fix remembers the last parse and re-uses it, and
+notices immediately if another browser tab changes anything.
+
+That change also uncovered a genuine bug that had been sitting there: the
+migration system took its "undo" snapshot in a way that pointed at the live
+data rather than copying it, so a failed migration would have restored the
+damage instead of undoing it. Fixed.
+
+---
+
+**A correction, and it's an important one.**
+
+I told you localStorage runs out at around **9,000 visits, in about four
+years**. I measured it: it's **~1,900 visits**.
+
+For a two-clinician practice seeing twenty patients a day, that's **under six
+months**, not four years. My estimate was wrong by nearly five times, and it
+changes what archiving is for: not a nice-to-have for the future, but the first
+thing a real clinic will actually need. It's built and it works — you'll just
+need it sooner than I said.
+
+---
+
+**The three things I'd promised are done too.**
+
+- **Encryption is now offered when you create a clinic** — the one moment it's
+  free, before there's anything to convert. If a clinic already exists and is
+  unencrypted, a banner says how many records are exposed and comes back each
+  session. I still can't switch it on for you; it needs a passphrase, which
+  needs a person.
+- **"Sign out everywhere" exists.** One click revokes every device. It tells
+  you honestly if the server didn't confirm, because a revocation you believe
+  worked and didn't is worse than none.
+- **Attachments and backup exports** were closed in the last entry.
+
+---
+
+**The verdict on scale, in plain terms.**
+
+- **100 clinics — yes, today.** Nothing I measured comes close to a limit.
+- **1,000 clinics — yes**, with archiving switched on by default.
+- **10,000 clinics — the software could; one person couldn't.** The
+  engineering is maybe 400 hours. Supporting 10,000 practices is a team.
+- **100,000 — no, and not because of the code.**
+
+**What breaks first:** the device running out of room, at ~1,900 visits.
+**What never will:** the diagnostic engine. It runs in **0.44 milliseconds**
+and would still take 0.44 ms with a million records on the device. The most
+clinically important part of the system is the least fragile — which is the
+right way round, and wasn't luck.
+
+**Overall performance and reliability: 7.0 / 10.** The weakest area by far is
+**observability — 3/10**: there is no timing instrumentation anywhere, so if a
+clinic tells you "it got slow", nobody can find out why. That's ~80 hours and
+it's what I'd do next after archiving.
+
+1,067 tests pass; audit 0 FAIL.
+
+---
+
 ## 2026-08-07 (final) — ADR-011 decided; old records have somewhere to go
 
 **ADR-011 is decided.** It sat open for eight phases because it looked like a
