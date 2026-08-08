@@ -431,6 +431,27 @@ function _importDecoded(data) {
       });
     }
 
+    /* Automatic-archive bookkeeping. Take the OLDER prompt stamp of the two,
+       for the same reason the export stamp above takes the older one: a
+       restore must never make a device look more recently attended-to than it
+       is. Getting this backwards would suppress the "running out of room"
+       warning for a week on a device that has never been warned at all.
+
+       `enabled` is a deliberate choice by whoever set it, so the restored
+       value wins — except that an absent value defaults to ON, because a clinic
+       that never turns this on is exactly the clinic that hits the wall. */
+    if (data.archive_auto && typeof data.archive_auto === "object") {
+      var aaHave = loadStore("archive_auto", null) || { last_prompt: null, enabled: true };
+      var aMine = aaHave.last_prompt ? Date.parse(aaHave.last_prompt) : 0;
+      var aTheirs = data.archive_auto.last_prompt ? Date.parse(data.archive_auto.last_prompt) : 0;
+      saveStore("archive_auto", {
+        last_prompt: (aMine && aTheirs)
+          ? (aMine < aTheirs ? aaHave.last_prompt : data.archive_auto.last_prompt)
+          : (aaHave.last_prompt || data.archive_auto.last_prompt || null),
+        enabled: data.archive_auto.enabled !== false
+      });
+    }
+
     /* The archive index. UNION by id, and keep the higher retention floor —
        an index is a map from a stub in a chart to the file holding the rest of
        that visit. Dropping an entry does not lose records, but it loses the

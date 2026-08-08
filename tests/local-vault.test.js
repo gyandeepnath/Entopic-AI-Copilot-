@@ -593,3 +593,138 @@ test("throttle state is in memory only, so it cannot lock a clinic out of its re
   assert.strictEqual(persisted, false,
     "persisting attempts would let an attacker burn them and deny the clinic its own data");
 });
+
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* PER-VISIT RECORDS MUST BE ENCRYPTED TOO                          */
+/*                                                                  */
+/* REGRESSION. js/visit-store.js split the visit array into one key */
+/* per visit (entopic_visit_<id>). vaultEnable, vaultDisable and    */
+/* vaultHydrate each walked the STATIC list VAULT_PROTECTED, which  */
+/* names none of them. Measured in a browser, on the real code:     */
+/*                                                                  */
+/*   turning encryption ON left every visit record — the entire     */
+/*   clinical content of every examination — on disk IN PLAINTEXT,  */
+/*   while the device reported itself encrypted. The records also   */
+/*   became unreadable, because loadStore correctly routed them     */
+/*   through a vault cache that hydrate had never filled.           */
+/*                                                                  */
+/* A confidentiality failure and an availability failure from one   */
+/* hard-coded list. These tests use REAL crypto and the REAL split. */
+/* ═══════════════════════════════════════════════════════════════ */
+
+function makeSplitEnv() {
+  const ctx = makeEnv();
+  const read = (f) => fs.readFileSync(path.resolve(__dirname, "..", f), "utf8");
+  vm.runInContext(read("js/visit-store.js"), ctx, { filename: "visit-store.js" });
+  vm.runInContext(`
+    savePatients(${JSON.stringify(PATIENTS)});
+    saveVisits([{ id: "v1", patient_id: "p1", date: "2026-01-01", status: "completed",
+                  data: { id: "v1", final_dx: "CONFIDENTIAL DIAGNOSIS",
+                          cc: "SECRET COMPLAINT TEXT", iop: { od: "18" } } },
+                { id: "v2", patient_id: "p2", date: "2026-02-01", status: "completed",
+                  data: { id: "v2", final_dx: "ANOTHER PRIVATE FINDING" } }]);
+    visitStoreSplitNow();
+  `, ctx);
+  return ctx;
+}
+
+const SECRETS = /CONFIDENTIAL DIAGNOSIS|SECRET COMPLAINT|ANOTHER PRIVATE FINDING|Meera|MRN-4471/;
+
+test("vaultProtectedKeys enumerates the per-visit records actually on the device", () => {
+  const ctx = makeSplitEnv();
+  const keys = vm.runInContext("vaultProtectedKeys()", ctx);
+  for (const k of ["patients", "visits", "visit_index", "visit_v1", "visit_v2"]) {
+    assert.ok(keys.includes(k), k + " is not in the protected set — it will be left in plaintext");
+  }
+  assert.ok(!keys.includes("settings"), "settings must not be swept into the vault");
+});
+
+test("enabling the vault leaves NO visit content in plaintext on disk", async () => {
+  const ctx = makeSplitEnv();
+  const before = Object.keys(ctx.__raw).filter((k) => k.indexOf("entopic_visit_") === 0);
+  assert.ok(before.length >= 3, "setup: expected split records, got " + before.join(","));
+
+  await vm.runInContext(`vaultEnable(${JSON.stringify(PASS)})`, ctx);
+
+  const leaks = Object.keys(ctx.__raw).filter((k) => SECRETS.test(ctx.__raw[k] || ""));
+  assert.deepStrictEqual(leaks, [],
+    "clinical content is readable on disk after enabling encryption: " + leaks.join(", "));
+
+  /* Not merely "not matching the regex" — each record must be a real envelope. */
+  for (const k of before) {
+    const parsed = JSON.parse(ctx.__raw[k]);
+    assert.strictEqual(vm.runInContext("vaultIsEnvelope", ctx)(parsed), true,
+      k + " was not encrypted");
+  }
+});
+
+test("and the records are still readable through the unlocked vault", async () => {
+  const ctx = makeSplitEnv();
+  await vm.runInContext(`vaultEnable(${JSON.stringify(PASS)})`, ctx);
+  assert.strictEqual(vm.runInContext("loadVisits().length", ctx), 2,
+    "the visits became unreadable the moment they were encrypted");
+  assert.strictEqual(
+    vm.runInContext('getPatientVisits("p1")[0].data.final_dx', ctx), "CONFIDENTIAL DIAGNOSIS");
+  assert.strictEqual(vm.runInContext('getLastVisit("p2").data.final_dx', ctx),
+    "ANOTHER PRIVATE FINDING");
+});
+
+test("lock, then unlock, and every visit comes back", async () => {
+  const ctx = makeSplitEnv();
+  await vm.runInContext(`vaultEnable(${JSON.stringify(PASS)})`, ctx);
+  vm.runInContext("vaultLock()", ctx);
+
+  assert.strictEqual(vm.runInContext("loadVisits().length", ctx), 0,
+    "a locked vault must report nothing available, not the records");
+  assert.strictEqual(vm.runInContext('saveVisits([{ id: "x" }])', ctx), false,
+    "a locked vault must refuse writes, or the empty fallback overwrites real records");
+
+  await vm.runInContext(`vaultUnlock(${JSON.stringify(PASS)})`, ctx);
+  assert.strictEqual(vm.runInContext("loadVisits().length", ctx), 2, "records did not come back");
+  assert.strictEqual(
+    vm.runInContext('getPatientVisits("p1")[0].data.final_dx', ctx), "CONFIDENTIAL DIAGNOSIS");
+});
+
+test("saving one visit while encrypted writes ciphertext, not plaintext", async () => {
+  const ctx = makeSplitEnv();
+  await vm.runInContext(`vaultEnable(${JSON.stringify(PASS)})`, ctx);
+
+  vm.runInContext(`
+    var v = visitRecordLoad("v1");
+    v.data.final_dx = "A NEWLY TYPED PRIVATE DIAGNOSIS";
+    visitRecordSave(v);
+  `, ctx);
+  await vm.runInContext("vaultFlush()", ctx);
+
+  const leaks = Object.keys(ctx.__raw).filter((k) => /A NEWLY TYPED PRIVATE/.test(ctx.__raw[k] || ""));
+  assert.deepStrictEqual(leaks, [],
+    "a visit saved while the vault was on landed on disk in the clear: " + leaks.join(", "));
+  assert.strictEqual(vm.runInContext('visitRecordLoad("v1").data.final_dx', ctx),
+    "A NEWLY TYPED PRIVATE DIAGNOSIS", "and it must still read back");
+});
+
+test("turning the vault OFF returns every visit to readable plaintext", async () => {
+  /* The reverse of the same bug: disable that walks a static list would leave
+     the visit records as unreadable ciphertext with the key thrown away. */
+  const ctx = makeSplitEnv();
+  await vm.runInContext(`vaultEnable(${JSON.stringify(PASS)})`, ctx);
+  await vm.runInContext(`vaultDisable(${JSON.stringify(PASS)})`, ctx);
+
+  assert.strictEqual(vm.runInContext("vaultEnabled()", ctx), false, "setup: vault should be off");
+  assert.strictEqual(vm.runInContext("loadVisits().length", ctx), 2,
+    "visits were left as ciphertext nobody can decrypt");
+  assert.strictEqual(
+    vm.runInContext('getPatientVisits("p1")[0].data.final_dx', ctx), "CONFIDENTIAL DIAGNOSIS");
+});
+
+test("no vault loop walks the static list any more", () => {
+  /* The static list is still the DECLARATION; it must no longer be the thing
+     enable/disable/hydrate iterate, or the next store added by prefix is
+     silently left in the clear again. */
+  const src = fs.readFileSync(path.resolve(__dirname, "..", "js/local-vault.js"), "utf8");
+  const loops = src.match(/VAULT_PROTECTED\.forEach/g) || [];
+  assert.strictEqual(loops.length, 1,
+    "expected exactly one VAULT_PROTECTED.forEach (inside vaultProtectedKeys); found " +
+    loops.length + ". enable, disable and hydrate must enumerate what is actually stored.");
+});

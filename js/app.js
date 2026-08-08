@@ -1900,9 +1900,24 @@ function esc(s) { return escHtml(s); }
     } catch (e) { console.error("Entopic: migration runner failed", e); }
   }
 
+  /* One key per visit (js/visit-store.js). AFTER migrationsRun, which rewrites
+     the combined array and must see the shape it was written against. Safe on
+     every boot: a no-op once split, and it verifies the new copy reads back
+     before touching the old one. */
+  if (typeof visitStoreSplitNow === "function") {
+    try {
+      var _sp = visitStoreSplitNow();
+      if (!_sp.ok) console.warn("Entopic: visit-store split held — " + _sp.reason);
+      else if (_sp.migrated) console.info("Entopic: visit store split into " + _sp.migrated + " records.");
+    } catch (e) { console.error("Entopic: visit-store split failed", e); }
+  }
+
   /* Automatic on-device backup (BE-18). Deferred inside autobackupStart, so it
      is never on the critical path of the first paint or of opening a record. */
   if (typeof autobackupStart === "function") { try { autobackupStart(); } catch (e) {} }
+
+  /* Watch storage headroom; prompt when archiving would help. Deferred. */
+  if (typeof archiveAutoStart === "function") { try { archiveAutoStart(); } catch (e) {} }
 
   /* Records unencrypted? Say so, once per session (SEC-1). Deferred. */
   setTimeout(function () {

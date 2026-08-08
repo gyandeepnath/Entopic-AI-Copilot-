@@ -50,7 +50,26 @@ var DATA_STORES = {
   },
   visits: {
     class: "phi", encrypt: true, mirror: true, backup: true, shape: "array",
-    why: "The clinical content of every encounter."
+    why: "The clinical content of every encounter. Since the per-visit split (js/visit-store.js) " +
+         "this is the PRE-SPLIT combined store: still read on a device that has not been " +
+         "converted, and still the shape a backup file carries, so it keeps full protection."
+  },
+
+  /* The per-visit layout (js/visit-store.js). The INDEX is declared here; the
+     individual records are entopic_visit_<id> and cannot be enumerated in
+     advance, so encryption for them is decided by prefix in local-vault.js and
+     mirroring by prefix in storage-mirror.js.
+
+     The index holds no clinical content — id, patient_id, date, status — but it
+     is still PHI: a list of which patient attended on which date is identifying
+     on its own, and encrypting the records while leaving the attendance list in
+     the clear would protect very little. */
+  visit_index: {
+    class: "phi", encrypt: true, mirror: true, backup: false, shape: "array",
+    why: "Which visits exist, for whom, and when. No examination content, but an attendance " +
+         "list is identifying by itself. Not backed up directly — a backup carries the " +
+         "reassembled `visits` array, and the index is rebuilt from it on restore, so exporting " +
+         "both would risk restoring an index that disagreed with the records."
   },
   users: {
     class: "phi", encrypt: true, mirror: true, backup: true, shape: "array",
@@ -86,6 +105,16 @@ var DATA_STORES = {
     class: "legal", encrypt: false, mirror: true, backup: true, shape: "object",
     why: "The map from a stub in a patient's chart to the file holding the rest of that visit. " +
          "Losing it does not lose the records, but it loses the ability to find them."
+  },
+
+  /* When this device last warned that it was running out of room, and whether
+     it is allowed to (js/storage-archive-auto.js). Backed up so a restored
+     device does not immediately re-prompt about a decision already taken. */
+  archive_auto: {
+    class: "operational", encrypt: false, mirror: true, backup: true, shape: "object",
+    why: "Whether automatic archive prompting is on, and when it last fired. Holds no clinical " +
+         "content — but losing it means a clinic that has already been told, and acted, gets " +
+         "told again."
   },
 
   /* Pending deletes waiting to reach the server (backend audit BE-2).

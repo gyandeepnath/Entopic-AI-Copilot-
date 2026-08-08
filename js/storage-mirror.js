@@ -45,6 +45,21 @@ var MIRROR_KEYS = (typeof dataStoresWith === "function")
   : ["users", "patients", "visits", "settings", "vault_meta", "kb_signoffs"];
 var MIRROR_BOOT_FLAG = "entopic_mirror_recovered";
 
+/* Per-visit record keys (js/visit-store.js) cannot be listed in advance —
+   there is one per visit. They carry the clinical content of an encounter, so
+   the mirror must cover them: the mirror is what survives a localStorage store
+   being cleared or damaged, and a safety net with a hole exactly where the
+   records now live is not a safety net.
+
+   Prefix rather than enumeration, matching the vault's reasoning in
+   js/local-vault.js. `visit_index` is caught by the same prefix. */
+var MIRROR_KEY_PREFIX = "visit_";
+
+function mirrorWants(key) {
+  if (MIRROR_KEYS.indexOf(key) >= 0) return true;
+  return typeof key === "string" && key.indexOf(MIRROR_KEY_PREFIX) === 0;
+}
+
 function mirrorSupported() {
   try {
     return typeof indexedDB !== "undefined" && indexedDB !== null;
@@ -81,7 +96,7 @@ function openMirror(onReady, onFail) {
    costs redundancy, so it is logged and swallowed. */
 function mirrorPutRaw(key, rawJson) {
   if (!mirrorSupported()) return;
-  if (MIRROR_KEYS.indexOf(key) === -1) return; /* only clinic data */
+  if (!mirrorWants(key)) return;               /* only clinic data */
   openMirror(function (db) {
     try {
       var tx = db.transaction(MIRROR_STORE_NAME, "readwrite");
@@ -113,7 +128,7 @@ function mirrorStore(key, data) {
 /* Called by storage.js removeStore. */
 function mirrorRemove(key) {
   if (!mirrorSupported()) return;
-  if (MIRROR_KEYS.indexOf(key) === -1) return;
+  if (!mirrorWants(key)) return;
   openMirror(function (db) {
     try {
       var tx = db.transaction(MIRROR_STORE_NAME, "readwrite");

@@ -366,12 +366,29 @@ function savePatients(patients) {
 }
 
 /* Visits */
+/* Delegated to js/visit-store.js, which holds one key per visit.
+
+   These two remain the collection API because roughly twenty callers —
+   export, archive, sync, analytics, replay — genuinely want every visit.
+   What changed is that the TYPING path no longer comes through here:
+   doSave() writes a single record via visitRecordSave(), which measured
+   104.5 ms -> 0.021 ms at the 1,900-visit ceiling.
+
+   When visit-store.js is absent (several Node harnesses load storage.js
+   alone) these fall back to the original single-array behaviour, so the
+   module is additive rather than a hard dependency. */
 function loadVisits() {
-  return _perf("load_visits", function () { return loadStore("visits", []); });
+  return _perf("load_visits", function () {
+    return (typeof visitStoreLoadAll === "function")
+      ? visitStoreLoadAll() : loadStore("visits", []);
+  });
 }
 
 function saveVisits(visits) {
-  return _perf("save_visits", function () { return saveStore("visits", visits) !== false; });
+  return _perf("save_visits", function () {
+    return (typeof visitStoreSaveAll === "function")
+      ? visitStoreSaveAll(visits) : (saveStore("visits", visits) !== false);
+  });
 }
 
 /* API Key — a billable credential, so it is vault-wrapped like the cloud
@@ -528,6 +545,8 @@ function getPatientVisits(patientId) {
   return _perf("get_patient_visits", function () { return _getPatientVisits(patientId); });
 }
 function _getPatientVisits(patientId) {
+  /* O(k) via the visit index — reads only this patient's records. */
+  if (typeof visitStoreForPatient === "function") return visitStoreForPatient(patientId);
   var visits = loadVisits();
   return visits
     .filter(function(v) { return v.patient_id === patientId; })
@@ -538,6 +557,8 @@ function _getPatientVisits(patientId) {
  * Get the most recent visit for a patient
  */
 function getLastVisit(patientId) {
+  /* O(1) record read via the index — does not touch any other patient. */
+  if (typeof visitStoreLastFor === "function") return visitStoreLastFor(patientId);
   var pv = getPatientVisits(patientId);
   return pv.length > 0 ? pv[0] : null;
 }
@@ -596,6 +617,51 @@ function setVisitSeenStamp(stamp) { VISIT_SEEN_STAMP = stamp || null; }
 
    The same applied to a locked vault, a quota-exhausted device, and a
    visit whose id is no longer in the store at all. */
+/* Everything that happens to the stored visit wrapper on a save, in the order
+   it must happen. Extracted so the fast single-record path and the pre-split
+   array path cannot drift apart — a conflict rule that applied on one device
+   layout and not the other would be a silent data-loss bug. */
+function _doSaveApply(rec) {
+  /* Did another window write this visit since we last saw it? If so, keep
+     the version we are about to replace — a clinician's measurement must
+     never vanish because a second tab happened to save later. */
+  if (typeof recDetectConflict === "function") {
+    var conflict = recDetectConflict(rec, VISIT_SEEN_STAMP);
+    if (conflict) {
+      recPreserveOverwritten(rec, conflict);
+      if (typeof logAudit === "function") {
+        try { logAudit("visit_conflict",
+          "Another window had saved this visit (" + conflict.by + "). That version was " +
+          "preserved on the record rather than discarded.", { visit_id: CV }); } catch (e) {}
+      }
+      if (typeof evEmit === "function") evEmit("visit:conflict", conflict);
+    }
+  }
+  /* Material-change audit (security audit SEC-9). Captured BEFORE the payload
+     is replaced, because afterwards the previous version is gone. Only the
+     prescription, the plan and the recorded diagnosis — and only which FIELD
+     changed, never the values, which already live on the record itself under
+     the correct access controls. */
+  if (typeof auditMaterialChange === "function") {
+    try {
+      auditMaterialChange(rec.data, V, { patient_id: CP, visit_id: CV },
+        rec.status === "completed");
+    } catch (e) {}
+  }
+  rec.data = V;
+  /* Attribution + amendment trail (clinical review CL-3): stamp WHO saved this
+     and WHEN. A save by another clinician, or on a later day, is recorded as an
+     amendment rather than silently replacing the original. */
+  if (typeof recStampVisit === "function") {
+    recStampVisit(rec, (typeof CU !== "undefined" ? CU : null));
+  } else {
+    rec.updated = new Date().toISOString();
+  }
+  /* This tab has now seen the visit at this stamp; the next save compares
+     against it to notice another window writing in between. */
+  VISIT_SEEN_STAMP = rec.updated;
+}
+
 function doSave() {
   /* The whole autosave, timed as one operation: this is what a clinician
      actually waits for, and it is two reads and two writes, not one. */
@@ -605,54 +671,34 @@ function _doSave() {
   if (!CV) return { ok: false, visit_written: false, patient_written: false,
                     visit_found: false, reason: "no visit is open" };
 
-  /* Save visit data */
-  var visits = loadVisits();
+  /* ── Save the visit ──
+     ONE record read, ONE record written. This used to load every visit in the
+     clinic, walk the array for a matching id, and write the whole array back:
+     measured 104.5 ms per keystroke-save at the 1,900-visit ceiling, against
+     0.021 ms now (js/visit-store.js).
+
+     The semantics below are unchanged — conflict detection, the material-change
+     audit and the attribution stamp all still see the PREVIOUS version of the
+     record, which is what they each depend on. */
   var visitFound = false;
-  for (var i = 0; i < visits.length; i++) {
-    if (visits[i].id === CV) {
+  var visitWritten = false;
+
+  if (typeof visitRecordLoad === "function" && typeof visitRecordSave === "function" &&
+      typeof visitStoreSplit === "function" && visitStoreSplit()) {
+    var rec = visitRecordLoad(CV);
+    if (rec) {
       visitFound = true;
-      /* Did another window write this visit since we last saw it? If so, keep
-         the version we are about to replace — a clinician's measurement must
-         never vanish because a second tab happened to save later. */
-      if (typeof recDetectConflict === "function") {
-        var conflict = recDetectConflict(visits[i], VISIT_SEEN_STAMP);
-        if (conflict) {
-          recPreserveOverwritten(visits[i], conflict);
-          if (typeof logAudit === "function") {
-            try { logAudit("visit_conflict",
-              "Another window had saved this visit (" + conflict.by + "). That version was " +
-              "preserved on the record rather than discarded.", { visit_id: CV }); } catch (e) {}
-          }
-          if (typeof evEmit === "function") evEmit("visit:conflict", conflict);
-        }
-      }
-      /* Material-change audit (security audit SEC-9). Captured BEFORE the
-         payload is replaced, because afterwards the previous version is gone
-         from this array. Only the prescription, the plan and the recorded
-         diagnosis — and only which FIELD changed, never the values, which
-         already live on the record itself under the correct access controls. */
-      if (typeof auditMaterialChange === "function") {
-        try {
-          auditMaterialChange(visits[i].data, V, { patient_id: CP, visit_id: CV },
-            visits[i].status === "completed");
-        } catch (e) {}
-      }
-      visits[i].data = V;
-      /* Attribution + amendment trail (clinical review CL-3): stamp WHO saved
-         this and WHEN. A save by another clinician, or on a later day, is
-         recorded as an amendment rather than silently replacing the original. */
-      if (typeof recStampVisit === "function") {
-        recStampVisit(visits[i], (typeof CU !== "undefined" ? CU : null));
-      } else {
-        visits[i].updated = new Date().toISOString();
-      }
-      /* This tab has now seen the visit at this stamp; the next save compares
-         against it to notice another window writing in between. */
-      VISIT_SEEN_STAMP = visits[i].updated;
-      break;
+      _doSaveApply(rec);
+      visitWritten = visitRecordSave(rec);
     }
+  } else {
+    /* Pre-split device, or visit-store.js not loaded (Node harnesses). */
+    var visits = loadVisits();
+    for (var i = 0; i < visits.length; i++) {
+      if (visits[i].id === CV) { visitFound = true; _doSaveApply(visits[i]); break; }
+    }
+    visitWritten = saveVisits(visits);
   }
-  var visitWritten = saveVisits(visits);
 
   /* Save patient data */
   var patients = loadPatients();

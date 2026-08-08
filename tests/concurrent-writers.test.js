@@ -132,14 +132,111 @@ test("preserved versions are capped, keeping the earliest divergence", () => {
 
 /* ═══ The wiring that makes it real ═══ */
 
-test("doSave detects the conflict before replacing the visit data", () => {
-  const src = read("js/storage.js");
-  const fn = /function doSave\(\)[\s\S]*?\n  saveVisits\(visits\);/.exec(src);
-  assert.ok(fn, "doSave not found");
+/* Behavioural, not a source scrape.
 
+   This used to regex `doSave()`'s text for the ORDER of two identifiers, and
+   it broke the moment that logic moved into _doSaveApply during the per-visit
+   storage split — while the behaviour it cared about was completely intact. A
+   test that fails on a refactor and would pass on a re-introduced bug is worse
+   than no test: it trains whoever comes next to adjust the regex.
+
+   So: run two writers against the real storage layer and assert what actually
+   matters — the version being overwritten survives, in full, on the record. */
+function saveSandbox() {
+  const mem = {};
+  const audits = [], events = [];
+  const c = {
+    localStorage: {
+      get length() { return Object.keys(mem).length; },
+      key: (i) => Object.keys(mem)[i] ?? null,
+      getItem: (k) => (Object.prototype.hasOwnProperty.call(mem, k) ? mem[k] : null),
+      setItem: (k, v) => { mem[k] = String(v); },
+      removeItem: (k) => { delete mem[k]; }
+    },
+    _mem: mem, _audits: audits, _events: events,
+    console: { log() {}, warn() {}, info() {}, error() {} },
+    JSON, Math, String, Number, Array, Object, Date, RegExp, Set, Promise, Error,
+    parseInt, parseFloat, isNaN, isFinite, Boolean,
+    setTimeout: (fn) => { try { fn(); } catch (e) {} return 0; }, clearTimeout: () => {},
+    module: { exports: {} },
+    evEmit: (n, p) => events.push([n, p]),
+    lsSet: (k, v) => { mem[k] = String(v); return true; }, alert: () => {}
+  };
+  c.window = c;
+  vm.createContext(c);
+  for (const f of ["js/data-classification.js", "js/clinical-record.js",
+                   "js/storage.js", "js/visit-store.js"]) {
+    vm.runInContext(read(f), c, { filename: f });
+  }
+  vm.runInContext("logAudit = function (a, d) { _audits.push({ a: a, d: d }); };", c);
+  return c;
+}
+
+for (const split of [false, true]) {
+  test("a concurrent write is preserved, not destroyed — " +
+       (split ? "per-visit storage" : "pre-split storage"), () => {
+    const c = saveSandbox();
+    const call = (e) => vm.runInContext(e, c);
+
+    call(`saveVisits([{ id: "v1", patient_id: "p1", status: "in_progress",
+      date: "2026-07-31T09:00:00.000Z", updated: "2026-07-31T09:05:00.000Z",
+      updated_by: "Dr A", data: { iop: { od: 24, os: 22 } } }]);`);
+    if (split) {
+      const r = call("visitStoreSplitNow()");
+      assert.strictEqual(r.ok, true, "setup: split should succeed — " + r.reason);
+    }
+
+    /* This tab opened the visit at 09:05 and has been typing since. */
+    c.CP = "p1"; c.CV = "v1";
+    c.P = { id: "p1", first_name: "A" };
+    c.V = { id: "v1", fun: { findings: ["disc haemorrhage OD"] } };
+    call('setVisitSeenStamp("2026-07-31T09:05:00.000Z");');
+
+    /* Meanwhile the OTHER window saved: a later stamp, and the IOP this tab
+       never saw. Written straight to the store, as a second tab would. */
+    const other = {
+      id: "v1", patient_id: "p1", status: "in_progress",
+      date: "2026-07-31T09:00:00.000Z", updated: "2026-07-31T09:30:00.000Z",
+      updated_by: "Dr B", data: { iop: { od: 24, os: 22 }, cc: "typed by the other window" }
+    };
+    c.__other = other;
+    call(split ? "saveStore('visit_v1', __other);" : "saveVisits([__other]);");
+
+    const res = call("doSave()");
+    assert.strictEqual(res.ok, true, "the save itself must still succeed: " + res.reason);
+
+    const stored = call("getPatientVisits('p1')")[0];
+    assert.ok(stored, "the visit must still exist");
+
+    /* THE ASSERTION: this tab's work landed, AND the other window's version
+       was kept on the record rather than silently discarded. */
+    assert.deepStrictEqual(
+      Array.from(stored.data.fun.findings), ["disc haemorrhage OD"],
+      "this tab's finding must be saved");
+
+    const preserved = JSON.stringify(stored.overwritten || stored.amendments || stored);
+    assert.ok(/typed by the other window/.test(preserved),
+      "the overwritten version was DESTROYED — a clinician's measurement vanished because a " +
+      "second tab happened to save later. Stored record: " + JSON.stringify(stored).slice(0, 400));
+
+    assert.ok(c._events.some((e) => e[0] === "visit:conflict"),
+      "the clinician must be told that two windows were writing");
+    assert.ok(c._audits.some((a) => a.a === "visit_conflict"),
+      "and it must be in the audit trail");
+  });
+}
+
+test("the conflict check runs BEFORE the data is replaced", () => {
+  /* The one ordering fact worth pinning in source, because getting it wrong
+     produces a test-passing bug: preserving AFTER the replacement preserves
+     the overwriting version, which looks correct and saves nothing. */
+  const src = read("js/storage.js");
+  const fn = /function _doSaveApply\(rec\)[\s\S]*?\n}/.exec(src);
+  assert.ok(fn, "_doSaveApply not found — if the save path was restructured again, " +
+                "re-point this at wherever the visit wrapper is now updated");
   const detect = fn[0].indexOf("recDetectConflict");
-  const replace = fn[0].indexOf("visits[i].data = V");
-  assert.ok(detect >= 0, "doSave must check for a concurrent write");
+  const replace = fn[0].indexOf("rec.data = V");
+  assert.ok(detect >= 0 && replace >= 0, "both steps must be present");
   assert.ok(detect < replace,
     "the check must run BEFORE the data is replaced — afterwards the version " +
     "being preserved is already the overwriting one");

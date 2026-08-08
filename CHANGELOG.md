@@ -6,6 +6,78 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-08-08 — Saving is now ~100x faster, and archiving watches for you
+
+Both of the things you approved. And one serious bug I found while testing
+them, which I would not have found by reasoning about the code.
+
+### Saving one visit no longer rewrites every visit
+
+Every visit for every patient lived in one big block. Changing one field meant
+rewriting the whole clinic. Measured, on a full device:
+
+| | before | after |
+|---|---|---|
+| saving the open visit | **104.5 ms** | **0.021 ms** |
+| opening a patient's chart | 29.6 ms | 0.9 ms |
+| reading everything (export, sync) | 30.1 ms | 28.4 ms |
+
+Each visit is now its own record. The last row is the trade and it is the right
+way round: reading everything happens on export and backup, never while you are
+typing.
+
+It costs about **5% more space**, which moves the ceiling from ~1,900 visits to
+~1,800. Automatic archiving now covers that.
+
+The conversion happens once, by itself, the next time you open the app. It
+writes the new copy, **reads every record back to check it**, and only then
+considers the old copy redundant — and it keeps the old copy until it has
+proved the new one is complete. If anything goes wrong at any point, your
+device is left exactly as it was and carries on working.
+
+### Archiving now watches, and tells you
+
+When the device passes 70% full — or 1,200 visits — you get a banner saying how
+many visits could be moved and roughly how much room that frees. At most once a
+week, and only when archiving would actually help: if everything is inside your
+three-year retention floor it stays quiet rather than raising an alarm you
+cannot act on.
+
+**It stops one click short of doing it.** I want to be straight about why,
+because you asked for automatic. Archiving ends in a file you must keep, and a
+web browser cannot put a file anywhere — it can only offer a download, into
+whatever folder the browser picks, which may be silently blocked and may be
+cleared later. Fully automatic archiving would mean removing records from your
+device having written their only other copy somewhere nobody chose and nobody
+checked. That is not archiving; it is deletion with a download attached.
+
+So the remembering is automatic. The agreeing is yours, once per archive. If
+you want it to go further than that, tell me and I will — but I did not want to
+make that call for you.
+
+### The bug: encryption would have left every visit readable on disk
+
+This is the one that matters, and it only appeared because I ran the real thing
+in a browser instead of trusting the tests.
+
+Splitting the records into one file each meant the encryption code no longer
+knew where they all were — it was working from a fixed list written when there
+were four. So turning encryption on would have:
+
+- left **every examination you have ever recorded sitting on the disk in plain
+  readable text**, while the app told you the device was encrypted; and
+- made those records unreadable to the app at the same time.
+
+A privacy failure and a data failure from the same hard-coded list. Fixed: the
+vault now looks at what is actually stored rather than a list somebody has to
+remember to update. Seven new tests use real encryption and check the actual
+bytes on disk for readable clinical text.
+
+**No device was ever in this state** — the split and encryption changes are
+being released together, and encryption is off by default until you turn it on.
+
+1,126 tests pass. 46 stress attacks hold.
+
 ## 2026-08-08 — You were right: I did half the job. Here is the other half.
 
 You asked me two things: **fix the pending issues**, and **stress test it**. I

@@ -122,6 +122,32 @@
       '<span style="cursor:pointer;text-decoration:underline" onclick="this.closest(\'div\').remove()">Dismiss for now</span>';
   });
 
+  /* ── This device is running out of room, and something can be done ──
+     Raised by js/storage-archive-auto.js, at most once a week. It is a
+     banner rather than an alert() because it must survive being ignored for
+     the rest of the consultation and still be there afterwards — and it names
+     the NUMBER of visits, because that is the argument.
+
+     It stops one click short of archiving. Nothing leaves the device until a
+     human has agreed; see the note at the top of storage-archive-auto.js. */
+  evOn("archive:due", function (ev) {
+    if (!ev) return;
+    var el = banner("archiveDueBanner",
+      "position:fixed;left:0;right:0;bottom:0;z-index:9996;" +
+      "background:#7a5a12;color:#fff;padding:9px 14px;font-size:.7rem;line-height:1.45;" +
+      "box-shadow:0 -2px 10px rgba(0,0,0,.2)");
+    var esc = (typeof escHtml === "function") ? escHtml : function (x) { return String(x); };
+    el.innerHTML =
+      "<b>This device is " + esc(String(ev.pct)) + "% full (" + esc(String(ev.visits)) +
+      " visits).</b> When it fills, it stops saving. " +
+      esc(String(ev.eligible)) + " visit(s) are old enough to move into an archive file — " +
+      "nothing is destroyed, and importing the file brings them back in full. " +
+      "Account &rarr; <b>Archive older records</b>." +
+      "<br><span style=\"opacity:.85\">You have to do this bit yourself: the archive becomes a " +
+      "file you keep, and this app cannot choose where to put it or check that it arrived.</span> " +
+      '<span style="cursor:pointer;text-decoration:underline" onclick="this.closest(\'div\').remove()">Not now</span>';
+  });
+
   /* ── Records were archived (backend audit BE-10) ──
      Not a warning — a confirmation of something the clinician deliberately
      started, and the one moment they need to be told to keep the file. */

@@ -52,7 +52,17 @@ var VAULT_CHECK_TEXT = "entopic-vault-check";
    listed here is ciphertext on disk once the vault is on. Deliberately
    NOT the knowledge base or UI preferences — encrypting those would cost
    startup time and protect nothing. */
-var VAULT_PROTECTED = ["patients", "visits", "audit", "users"];
+var VAULT_PROTECTED = ["patients", "visits", "audit", "users", "visit_index"];
+
+/* Per-visit record keys (js/visit-store.js writes entopic_visit_<id>). A
+   PREFIX, because there is one key per visit and they cannot be listed in
+   advance — the only pattern-decided protection in the vault, so it is written
+   to FAIL CLOSED and `visit_index` is ALSO listed above, where a change to this
+   prefix cannot silently unprotect it. Getting it wrong the other way writes a
+   patient's full examination to disk in plaintext on a device whose owner was
+   told it is encrypted; tests/local-vault.test.js asserts it rather than
+   trusting it. */
+var VAULT_PROTECTED_PREFIX = "visit_";
 
 /* In-memory only. Cleared on lock; never written to disk in raw form. */
 var _vaultDek = null;
@@ -65,7 +75,50 @@ function vaultHasCrypto() {
 }
 
 function vaultIsProtected(storeKey) {
-  return VAULT_PROTECTED.indexOf(storeKey) >= 0;
+  if (VAULT_PROTECTED.indexOf(storeKey) >= 0) return true;
+  /* Every per-visit record. See VAULT_PROTECTED_PREFIX above. */
+  return typeof storeKey === "string" &&
+         storeKey.indexOf(VAULT_PROTECTED_PREFIX) === 0;
+}
+
+/* ── EVERY protected store actually on this device ──
+   (Added 2026-08-08, after the per-visit storage split.)
+
+   enable, disable and hydrate all used to walk VAULT_PROTECTED directly. That
+   was correct while the protected set was four fixed keys. After the split it
+   was not, and the consequence was measured in a browser rather than reasoned
+   about:
+
+     turning encryption ON left every entopic_visit_<id> record — the entire
+     clinical content of every examination — sitting on disk IN PLAINTEXT,
+     while the device reported itself encrypted. The records then became
+     unreadable as well, because loadStore correctly routed them through a
+     vault cache that hydrate had never filled.
+
+   Confidentiality failure and availability failure from one static list.
+
+   So the set is now ENUMERATED from what is actually stored. Fails safe in
+   the direction that matters: a key nobody remembered to declare is still
+   caught by vaultIsProtected, and therefore still encrypted. */
+function vaultProtectedKeys() {
+  var out = [], seen = Object.create(null);
+  /* The declared ones first, in their declared order — patients and visits
+     before the per-visit records, so a partial failure leaves the most
+     recognisable stores done. */
+  VAULT_PROTECTED.forEach(function (k) { if (!seen[k]) { seen[k] = true; out.push(k); } });
+  try {
+    for (var i = 0; i < localStorage.length; i++) {
+      var full = localStorage.key(i);
+      if (!full || full.indexOf(STORE_PREFIX) !== 0) continue;
+      var k2 = full.slice(STORE_PREFIX.length);
+      /* Quarantined copies of damaged stores are deliberately left alone:
+         they exist to be recovered by hand and must not be locked away
+         behind the key of a vault that is being set up right now. */
+      if (k2.indexOf("corrupt_") === 0) continue;
+      if (!seen[k2] && vaultIsProtected(k2)) { seen[k2] = true; out.push(k2); }
+    }
+  } catch (e) { /* storage unavailable — the declared list is still returned */ }
+  return out;
 }
 
 /* ── byte helpers (same conventions as cloud-crypto.js) ──────────── */
@@ -332,7 +385,7 @@ function vaultHydrate() {
   if (!_vaultDek) return Promise.reject(new Error("Vault is locked"));
   var cache = {};
   var chain = Promise.resolve();
-  VAULT_PROTECTED.forEach(function (k) {
+  vaultProtectedKeys().forEach(function (k) {
     chain = chain.then(function () {
       var raw = null;
       try { raw = localStorage.getItem(STORE_PREFIX + k); } catch (e) {}
@@ -441,7 +494,7 @@ function vaultEnable(passphrase) {
          would destroy a clinic's records; verifying each store is the whole
          difference between safe and catastrophic. */
       var chain = Promise.resolve();
-      VAULT_PROTECTED.forEach(function (k) {
+      vaultProtectedKeys().forEach(function (k) {
         chain = chain.then(function () {
           var raw = null;
           try { raw = localStorage.getItem(STORE_PREFIX + k); } catch (e) {}
@@ -568,7 +621,7 @@ function vaultDisable(passphrase) {
     })
     .then(function (dek) {
       var chain = Promise.resolve();
-      VAULT_PROTECTED.forEach(function (k) {
+      vaultProtectedKeys().forEach(function (k) {
         chain = chain.then(function () {
           var raw = null;
           try { raw = localStorage.getItem(STORE_PREFIX + k); } catch (e) {}
