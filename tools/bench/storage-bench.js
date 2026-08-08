@@ -64,11 +64,37 @@ function makeVisit(i, pid) {
   };
 }
 
+/* ── MEDIAN, NOT MEAN, AND THE SPREAD ALONGSIDE IT ──
+   (Changed 2026-08-08.)
+
+   This used to total N iterations and divide. One garbage-collection pause
+   inside the loop then moved the whole figure, and it did: a single run
+   reported saveVisits at 9,000 visits as 2,552 ms and getPatientVisits as
+   1,492 ms. Neither reproduced — the stable values are ~600 ms and ~146 ms.
+   Those outliers were quoted to the founder as measurements.
+
+   Phase 7's own rule is "predictability is more important than benchmarks".
+   A number that swings 4x between runs is not a measurement, and a mean hides
+   exactly that. Each iteration is now timed separately; we report the MEDIAN
+   (what actually happens) and p95 (how bad the tail is), so a noisy result
+   announces itself instead of being averaged into something plausible. */
 function ms(fn, iterations) {
-  const t0 = process.hrtime.bigint();
-  for (let i = 0; i < iterations; i++) fn(i);
-  const t1 = process.hrtime.bigint();
-  return Number(t1 - t0) / 1e6 / iterations;
+  /* Warm up: the first pass through a code path in V8 is not representative,
+     and it is never what a clinician experiences either. */
+  const warm = Math.max(1, Math.floor(iterations / 10));
+  for (let i = 0; i < warm; i++) fn(i);
+
+  const samples = [];
+  for (let i = 0; i < iterations; i++) {
+    const t0 = process.hrtime.bigint();
+    fn(i);
+    samples.push(Number(process.hrtime.bigint() - t0) / 1e6);
+  }
+  samples.sort((a, b) => a - b);
+  const at = (q) => samples[Math.min(samples.length - 1, Math.floor(samples.length * q))];
+  const r = { p50: at(0.5), p95: at(0.95) };
+  r.toFixed = (d) => r.p50.toFixed(d);          /* callers print the median */
+  return r;
 }
 
 function bench(n) {
@@ -87,24 +113,35 @@ function bench(n) {
   vm.runInContext("saveVisits(__v); savePatients(__p);", ctx);
 
   const bytes = ctx._mem["entopic_visits"].length + ctx._mem["entopic_patients"].length;
-  const iters = n > 2000 ? 20 : 100;
+  const iters = n > 2000 ? 25 : 100;
+
+  const lv = ms(() => vm.runInContext("loadVisits();", ctx), iters);
+  const lp = ms(() => vm.runInContext("loadPatients();", ctx), iters);
+  const gpv = ms(() => vm.runInContext('getPatientVisits("p3");', ctx), iters);
+  const glv = ms(() => vm.runInContext('getLastVisit("p3");', ctx), iters);
+  const sv = ms(() => vm.runInContext("saveVisits(loadVisits());", ctx), Math.max(10, iters / 2));
 
   return {
     n,
     bytes,
     kb_per_visit: +(ctx._mem["entopic_visits"].length / n / 1024).toFixed(2),
-    loadVisits_ms: +ms(() => vm.runInContext("loadVisits();", ctx), iters).toFixed(3),
-    loadPatients_ms: +ms(() => vm.runInContext("loadPatients();", ctx), iters).toFixed(3),
-    getPatientVisits_ms: +ms(() => vm.runInContext('getPatientVisits("p3");', ctx), iters).toFixed(3),
-    getLastVisit_ms: +ms(() => vm.runInContext('getLastVisit("p3");', ctx), iters).toFixed(3),
-    saveVisits_ms: +ms(() => vm.runInContext("saveVisits(loadVisits());", ctx), Math.max(5, iters / 10)).toFixed(3)
+    loadVisits_ms: +lv.p50.toFixed(3),
+    loadPatients_ms: +lp.p50.toFixed(3),
+    getPatientVisits_ms: +gpv.p50.toFixed(3),
+    getLastVisit_ms: +glv.p50.toFixed(3),
+    saveVisits_ms: +sv.p50.toFixed(3),
+    /* The tail, reported separately. A p95 far above the median means the
+       figure on the left is not what a clinician will always see. */
+    p95: { loadVisits: +lv.p95.toFixed(3), getPatientVisits: +gpv.p95.toFixed(3),
+           getLastVisit: +glv.p95.toFixed(3), saveVisits: +sv.p95.toFixed(3) }
   };
 }
 
 const arg = process.argv.find((a) => a.startsWith("--n="));
 const sizes = arg ? arg.slice(4).split(",").map(Number) : [100, 500, 1000, 3000, 9000];
 
-console.log("Entopic storage benchmark — real storage layer, synthetic clinic\n");
+console.log("Entopic storage benchmark — real storage layer, synthetic clinic");
+console.log("All figures are MEDIAN of a warmed run; the p95 tail is printed below.\n");
 console.log("visits | store MB | KB/visit | loadVisits | loadPatients | getPatientVisits | getLastVisit | saveVisits");
 console.log("-------+----------+----------+------------+--------------+------------------+--------------+-----------");
 const rows = [];
@@ -120,6 +157,13 @@ for (const n of sizes) {
     (r.getPatientVisits_ms + " ms").padStart(16) + " | " +
     (r.getLastVisit_ms + " ms").padStart(12) + " | " +
     (r.saveVisits_ms + " ms").padStart(10));
+}
+
+console.log("\np95 tail (how bad it gets, not how it usually is):");
+for (const r of rows) {
+  console.log("  " + String(r.n).padStart(6) + " | loadVisits " + (r.p95.loadVisits + " ms").padStart(10) +
+    " | getPatientVisits " + (r.p95.getPatientVisits + " ms").padStart(10) +
+    " | saveVisits " + (r.p95.saveVisits + " ms").padStart(10));
 }
 
 const first = rows[0], last = rows[rows.length - 1];

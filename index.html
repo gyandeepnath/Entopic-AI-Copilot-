@@ -577,6 +577,9 @@
 <script src="js/clinic-mode.js"></script>
 <script src="js/roles.js"></script>
 <script src="js/clinical-validators.js"></script>
+<!-- Timing ring (Phase 7, step 10). Loads before everything it measures.
+     Durations and counts only — never a patient id, a token or free text. -->
+<script src="js/perf-metrics.js"></script>
 <!-- Stage 8 of the pipeline, split out of engine.js: the only stage that
      removes a condition from the differential. Must load BEFORE engine.js,
      which calls applyExclusions(). -->
@@ -657,6 +660,17 @@
 <script src="js/investigations-ui.js"></script>
 <script src="js/app.js"></script>
 <script src="js/error-boundary.js"></script>
+<!-- Time to interactive on THIS device. The 12.6 s offline stall was invisible
+     until someone measured it; recording it every boot means the next such
+     regression shows up in the health panel instead of in a complaint. -->
+<script>
+  (function () {
+    if (typeof perfRecord !== "function") return;
+    var t = (typeof performance !== "undefined" && performance.now)
+      ? performance.now() : null;
+    if (t !== null) perfRecord("first_paint", t);
+  })();
+</script>
 
 </body>
 </html>

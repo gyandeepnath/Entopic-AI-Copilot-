@@ -71,6 +71,21 @@ function buildBackupPayload() {
     var val = loadStore(k, empty);
     out[k] = (val === null || val === undefined) ? empty : val;
   }
+
+  /* Performance timings from this device (Phase 7, step 10).
+
+     Under its own key rather than as a store, because it is NOT clinical data:
+     it is never restored, never merged, and a restore path that ignores it
+     entirely is correct. It rides along so a clinic reporting "it has got
+     slow" can send the backup they already know how to produce instead of
+     being talked through developer tools.
+
+     Durations and counts only — js/perf-metrics.js cannot record anything
+     else. Worth re-checking if that ever changes, because this is the point at
+     which the numbers leave the building. */
+  if (typeof perfExportPayload === "function") {
+    try { out.performance = perfExportPayload(); } catch (e) { /* never block a backup */ }
+  }
   return out;
 }
 

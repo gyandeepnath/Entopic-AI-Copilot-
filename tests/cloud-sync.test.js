@@ -215,3 +215,69 @@ test("status reflects signed-out and no-clinic states", () => {
   assert.ok(["polling", "live"].indexOf(sb.cloudStatus().state) >= 0);
   assert.ok(sb.cloudSignedIn(), "signed in once session + clinic are set");
 });
+
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* RECONNECT BACKOFF  (Phase 7, reliability item 12)                */
+/*                                                                  */
+/* The socket used to reconnect after a FIXED 8 seconds. Every       */
+/* device that was connected when the server bounced therefore came  */
+/* back in lockstep, eight seconds later, together — a thundering    */
+/* herd arriving exactly when the server is least able to take it,   */
+/* and a failed attempt re-synchronised the herd for the next round. */
+/*                                                                  */
+/* None of this can affect a consultation: the socket is a           */
+/* convenience and the exam never needs it. It affects whether the   */
+/* server survives its own restart.                                  */
+/* ═══════════════════════════════════════════════════════════════ */
+
+test("reconnect delay grows and is capped", () => {
+  const sb = makeSandbox();
+  sb.cloudWsResetBackoff();
+  const seen = [];
+  for (let i = 0; i < 12; i++) seen.push(sb.cloudWsNextDelay());
+  assert.ok(seen.every((d) => d > 0 && isFinite(d)), "every delay must be a real number: " + seen);
+  const cap = sb.CLOUD_WS_BACKOFF_MAX * 1.5;   /* ceiling plus the jitter band */
+  assert.ok(Math.max(...seen) <= cap,
+    "the backoff must be capped — a device that waits an hour never comes back: " + Math.max(...seen));
+  /* Growth: the last few are far above the first, even with jitter. */
+  assert.ok(seen[10] > seen[0] * 4,
+    "the delay must actually back off, not stay flat: " + seen[0] + " -> " + seen[10]);
+});
+
+test("two devices do not reconnect at the same moment", () => {
+  /* The whole point. With a fixed delay every client returns together. */
+  const a = makeSandbox(), b = makeSandbox();
+  a.cloudWsResetBackoff(); b.cloudWsResetBackoff();
+  let identical = 0;
+  for (let i = 0; i < 40; i++) {
+    if (a.cloudWsNextDelay() === b.cloudWsNextDelay()) identical++;
+    a.cloudWsResetBackoff(); b.cloudWsResetBackoff();
+  }
+  assert.ok(identical < 8,
+    identical + "/40 reconnects landed on the identical millisecond — the jitter is not working");
+});
+
+test("a successful connection resets the backoff", () => {
+  const sb = makeSandbox();
+  sb.cloudWsResetBackoff();
+  for (let i = 0; i < 8; i++) sb.cloudWsNextDelay();     /* long outage */
+  const longDelay = sb.cloudWsNextDelay();
+  sb.cloudWsResetBackoff();                             /* what onopen does */
+  const afterReset = sb.cloudWsNextDelay();
+  assert.ok(afterReset < longDelay / 4,
+    "after a good connection an ordinary blip must reconnect promptly again, not keep the " +
+    "outage's delay (" + afterReset + " vs " + longDelay + ")");
+});
+
+test("the fixed 8-second reconnect is gone", () => {
+  /* Comments are stripped first. The note above cloudConnectRealtime quotes
+     the old `setTimeout(cloudConnectRealtime, 8000)` on purpose — explaining
+     why a bug was wrong must not be indistinguishable from committing it. */
+  const src = fs.readFileSync(path.join(REPO, "js/cloud-sync.js"), "utf8")
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/(^|[^:])\/\/.*$/gm, "$1");
+  assert.ok(!/setTimeout\(cloudConnectRealtime,\s*\d+\)/.test(src),
+    "a constant reconnect delay is back in cloud-sync.js — every client will return in lockstep");
+  assert.ok(/cloudWsNextDelay\(\)/.test(src), "onclose must use the jittered delay");
+});

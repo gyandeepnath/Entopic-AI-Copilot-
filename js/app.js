@@ -737,6 +737,7 @@ function homeSecAdmin() {
           '</div>' + meter + '</div>';
       })() : "") +
       ((typeof ageBracketScreen === "function") ? ageBracketScreen() : "") +
+      ((typeof performanceScreen === "function") ? performanceScreen() : "") +
       ((typeof archiveScreen === "function") ? archiveScreen() : "") +
       ((typeof redFlagScreen === "function") ? redFlagScreen() : "") +
       ((typeof thresholdScreen === "function") ? thresholdScreen() : "") +

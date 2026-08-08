@@ -170,6 +170,93 @@ function redFlagScreen() {
 }
 
 /* ═══════════════════════════════════════════════════════════════ */
+/* PERFORMANCE SCREEN  (Phase 7, step 10 — observability)           */
+/*                                                                  */
+/* Observability scored 3/10 because an engineer asked "why is this  */
+/* device slow?" had nothing to read. js/perf-metrics.js records the */
+/* timings; this is where a human sees them.                        */
+/*                                                                  */
+/* Written for the founder, not for an SRE: the question it answers  */
+/* is "is this laptop keeping up?", and the number that matters is   */
+/* the SLOW one, because the median is what a device does when       */
+/* nothing is wrong and the p95 is what it does when something is.   */
+/* ═══════════════════════════════════════════════════════════════ */
+
+/* What each operation means in the room, in the founder's language. */
+var PERF_OP_LABELS = {
+  engine_run:         "Working out the differential",
+  do_save:            "Saving the open visit",
+  load_visits:        "Reading all visit records",
+  load_patients:      "Reading the patient list",
+  get_patient_visits: "Opening a patient's chart",
+  save_visits:        "Writing all visit records",
+  save_patients:      "Writing the patient list",
+  first_paint:        "Time for the app to appear"
+};
+
+/* Above this, a clinician notices. Not a hard limit and not a clinical
+   threshold — a display cue, so it lives here in the UI rather than in
+   knowledge/clinical-thresholds.js, which is for reviewable clinical numbers
+   only and must not be diluted with interface preferences. */
+var PERF_SLOW_MS = 400;
+
+function performanceScreen() {
+  if (typeof perfReport !== "function") return "";
+  var rows = perfReport();
+
+  var body;
+  if (!rows.length) {
+    body = '<div style="font-size:.6rem;color:var(--sv)">Nothing recorded yet — ' +
+      'timings appear once you have opened a patient and run an exam in this session.</div>';
+  } else {
+    body = '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:.6rem">' +
+      '<tr style="text-align:left;color:var(--sv)">' +
+        '<th style="padding:3px 6px 3px 0">what</th>' +
+        '<th style="padding:3px 6px">usually</th>' +
+        '<th style="padding:3px 6px">slowest 1 in 20</th>' +
+        '<th style="padding:3px 6px">worst seen</th>' +
+        '<th style="padding:3px 6px">times</th></tr>' +
+      rows.map(function (r) {
+        var slow = r.p95 >= PERF_SLOW_MS;
+        var label = PERF_OP_LABELS[r.op] || r.op;
+        return '<tr style="border-top:1px solid var(--ms)">' +
+          '<td style="padding:3px 6px 3px 0">' + esc(label) +
+            (r.unknown_op ? ' <span style="color:#c0392b">(unrecognised)</span>' : '') + '</td>' +
+          '<td style="padding:3px 6px">' + esc(r.p50.toFixed(1)) + ' ms</td>' +
+          '<td style="padding:3px 6px;color:' + (slow ? "#c0392b" : "inherit") + '">' +
+            esc(r.p95.toFixed(1)) + ' ms</td>' +
+          '<td style="padding:3px 6px;color:var(--sv)">' + esc(r.worst.toFixed(1)) + ' ms</td>' +
+          '<td style="padding:3px 6px;color:var(--sv)">' + esc(String(r.total_recorded)) + '</td>' +
+        '</tr>';
+      }).join("") +
+    '</table></div>';
+  }
+
+  return '<div class="home-settings" style="margin-top:8px">' +
+    '<div class="home-settings-title">⏱ How fast is this device?</div>' +
+    '<div class="home-settings-desc">' +
+      'Measured on <b>this</b> computer while you work, not on a developer\'s machine. ' +
+      'Kept in memory only — the last ' + esc(String(typeof PERF_RING_SIZE !== "undefined" ? PERF_RING_SIZE : 64)) +
+      ' of each, cleared when you close the tab, and included in a backup export so a ' +
+      'slow device can be diagnosed from the file rather than from a description. ' +
+      '<b>Durations only</b> — no patient, no finding, no diagnosis is recorded here.' +
+      '<br><span style="color:var(--sv)">Read the "slowest 1 in 20" column: the usual figure is ' +
+      'what happens when nothing is wrong.</span>' +
+    '</div>' + body +
+    '<div style="margin-top:6px">' +
+      '<button class="btn btn-s" style="font-size:.6rem" onclick="perfUiReset()">Clear and start fresh</button>' +
+      '<span style="font-size:.54rem;color:var(--sv);margin-left:8px">' +
+        'Clear, reproduce the slowness, then look again — the numbers then describe only that.</span>' +
+    '</div>' +
+  '</div>';
+}
+
+function perfUiReset() {
+  if (typeof perfReset === "function") perfReset();
+  if (typeof renderHome === "function") renderHome();
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
 /* ARCHIVE SCREEN  (backend audit BE-10)                            */
 /*                                                                  */
 /* The clinic's only route out of the storage ceiling. Written to    */
@@ -190,7 +277,12 @@ function archiveScreen() {
   return '<div class="home-settings" style="margin-top:8px">' +
     '<div class="home-settings-title">🗄 Archive older records</div>' +
     '<div class="home-settings-desc">' +
-      'This browser can hold roughly 3,000 patients before it stops saving. Archiving moves ' +
+      /* MEASURED: ~1,900 visits / ~5 MB (tools/bench/storage-bench.js). This
+         said "roughly 3,000 patients", which was an estimate made before the
+         benchmark existed and was wrong in the direction that matters — it
+         told a clinic it had years of headroom when it had months. */
+      'This browser can hold roughly <b>1,900 visits</b> before it stops saving — for a busy ' +
+      'practice that is months, not years. Archiving moves ' +
       'completed visits older than your retention floor into a file <b>you keep</b>, and leaves ' +
       'a marker in each chart showing the date, the leading impression, and where the rest went.' +
       '<br><b>Nothing is destroyed.</b> Importing the file restores those visits in full. ' +

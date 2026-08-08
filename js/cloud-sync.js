@@ -368,7 +368,39 @@ function cloudCreateClinic(name, cb) {
 }
 
 
-/* ── realtime: minimal Phoenix-protocol client ── */
+/* ── realtime: minimal Phoenix-protocol client ──
+
+   RECONNECT BACKOFF WITH JITTER (Phase 7, reliability item 12).
+
+   This used to be `setTimeout(cloudConnectRealtime, 8000)` — a fixed delay,
+   identical on every device. When the realtime server restarts or a shared
+   network drops, EVERY connected clinic sees `onclose` within the same second
+   and then reconnects in lockstep, eight seconds later, forever. That is a
+   thundering herd: the server is hit by its entire client base simultaneously,
+   which is exactly when it is least able to cope, and a failed reconnect
+   re-synchronises the herd for the next attempt instead of spreading it.
+
+   Now: exponential backoff from 2 s to a 2-minute ceiling, multiplied by a
+   random factor in [0.5, 1.5) so no two devices land together. The delay
+   resets to the floor on a successful join, so an ordinary blip still
+   reconnects quickly and only a genuinely unavailable server backs off.
+
+   None of this affects a consultation: the socket is a convenience, the
+   polling fallback below covers it, and the exam never needs either. */
+var CLOUD_WS_BACKOFF_MIN = 2000;
+var CLOUD_WS_BACKOFF_MAX = 120000;
+var _wsBackoff = CLOUD_WS_BACKOFF_MIN;
+
+function cloudWsNextDelay() {
+  var base = _wsBackoff;
+  _wsBackoff = Math.min(CLOUD_WS_BACKOFF_MAX, Math.round(_wsBackoff * 2));
+  /* Full jitter around the base, never below half of it — spreads the herd
+     without letting a device hammer at near-zero delay. */
+  return Math.round(base * (0.5 + Math.random()));
+}
+
+function cloudWsResetBackoff() { _wsBackoff = CLOUD_WS_BACKOFF_MIN; }
+
 function cloudConnectRealtime() {
   if (!cloudSignedIn() || typeof WebSocket === "undefined") return;
   var wsUrl = CLOUD_CONFIG.url.replace(/^http/, "ws") +
@@ -377,6 +409,10 @@ function cloudConnectRealtime() {
   var hb = null, refN = 1;
 
   CLOUD.ws.onopen = function () {
+    /* The connection stood up: forget the backoff so an ordinary blip
+       reconnects promptly next time and only a persistently unavailable
+       server gets progressively longer waits. */
+    cloudWsResetBackoff();
     CLOUD.ws.send(JSON.stringify({
       topic: "realtime:entopic", event: "phx_join", ref: String(refN++), join_ref: "1",
       payload: {
@@ -412,8 +448,8 @@ function cloudConnectRealtime() {
   CLOUD.ws.onclose = function () {
     CLOUD.wsOk = false;
     if (hb) clearInterval(hb);
-    /* reconnect with a gentle backoff while signed in */
-    if (cloudSignedIn()) setTimeout(cloudConnectRealtime, 8000);
+    /* Jittered exponential backoff — see the note above cloudConnectRealtime. */
+    if (cloudSignedIn()) setTimeout(cloudConnectRealtime, cloudWsNextDelay());
   };
   CLOUD.ws.onerror = function () { CLOUD.wsOk = false; };
 }

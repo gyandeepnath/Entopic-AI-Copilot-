@@ -131,17 +131,31 @@ copying is *slower than re-parsing*. There is no fast-and-safe version of this
 cache.
 
 **And the size it optimised is unreachable.** localStorage exhausts at ~1,900
-visits (measured, same bench). Re-measured after removal:
+visits (measured, same bench). Re-measured after removal — **median, with the
+p95 tail alongside**:
 
-| visits | store | `loadVisits` | `saveVisits` |
-|---|---|---|---|
-| 500 | 1.3 MB | 10 ms | 23 ms |
-| **1,900 (ceiling)** | **5.0 MB** | **39 ms** | **180 ms** |
-| 5,000 (unreachable today) | 13.1 MB | 189 ms | 2,552 ms |
+| visits | store | `loadVisits` | `saveVisits` | `saveVisits` p95 |
+|---|---|---|---|---|
+| 500 | 1.3 MB | 9 ms | 22 ms | 28 ms |
+| **1,900 (ceiling)** | **5.0 MB** | **37 ms** | **90 ms** | **140 ms** |
+| 5,000 (unreachable today) | 13.1 MB | 133 ms | 250–600 ms | **745–2,513 ms** |
+
+> **Correction.** An earlier revision of this table gave `saveVisits` at 5,000
+> as **2,552 ms** and `getPatientVisits` as **1,492 ms**, and the 1,900-visit
+> save as 180 ms. Those were wrong. The benchmark totalled N iterations and
+> divided, so a single garbage-collection pause moved the whole figure, and the
+> outlier run was quoted to the founder as a measurement. `ms()` now times each
+> iteration separately and reports the median and p95 — which is what Phase 7's
+> own principle ("predictability is more important than benchmarks") required
+> in the first place.
 
 At every store size the product can actually hold, an uncached read is tens of
 milliseconds. The cache bought nothing real in exchange for the storage layer
 being able to lie about what is on disk.
+
+The 5,000-visit row is the interesting one, and its story is **not** "slow" but
+**unpredictable**: a median around 250–600 ms with a p95 into the seconds. That
+variance, not the median, is the argument for incremental save.
 
 **What it did leave behind, and what stays:** it exposed a latent bug —
 `migrationsRun` took its rollback snapshot by reference, so a migration
@@ -156,12 +170,14 @@ reappears without the reasoning being re-read.
 
 ### What remains hot
 
-**`saveVisits` is the single bottleneck** — 180 ms at the 1,900-visit ceiling,
-2.5 s at 5,000 (a size only reachable once archival or the backend is in play).
-It is irreducible in the current design: every save re-serialises the whole
-store, and `JSON.stringify` is most of it. The fix is incremental save — write
-only the changed record — which is ~60 h and is item 1 in the roadmap. Unlike
-the parse cache, it is sound: it never hands out a shared mutable view.
+**`saveVisits` is the single bottleneck** — 90 ms median / 140 ms p95 at the
+1,900-visit ceiling, which is fine, and 250–600 ms median with a p95 into the
+seconds at 5,000, which is not. It is irreducible in the current design: every
+save re-serialises the whole store, and `JSON.stringify` is most of it. The fix
+is incremental save — write only the changed record — which is ~60 h and is
+item 1 in the roadmap. Unlike the parse cache, it is sound: it never hands out
+a shared mutable view. **It changes the on-disk layout, so it needs the
+founder's go-ahead before it is built.**
 
 ### Complexity
 
@@ -313,20 +329,35 @@ records on the device.
 
 ## 8. Observability — the weakest dimension
 
-| question | can an engineer answer it today? |
-|---|---|
-| Why is this device slow? | **No.** No timing instrumentation anywhere. |
-| Why did sync stop? | Barely — one overwritten `lastError` string. |
-| Is memory growing? | No. |
-| How long does the engine take here? | No. |
-| Is this clinic near the storage wall? | Yes — `storageUsage()`, surfaced. |
-| Did backups run? | Yes. |
-| What happened before the crash? | Only what the audit log caught. |
+| question | before | now |
+|---|---|---|
+| Why is this device slow? | **No.** No timing instrumentation anywhere. | **Yes** — `js/perf-metrics.js`, surfaced in Account → "How fast is this device?" |
+| How long does the engine take *here*? | No. | **Yes** — `engine_run`, median and p95 |
+| How long does a save actually take on this laptop? | No. | **Yes** — `do_save` end to end |
+| Did the app take 12 seconds to appear again? | No. | **Yes** — `first_paint` every boot |
+| Why did sync stop? | Barely — one overwritten `lastError` string. | Unchanged — still the gap |
+| Is memory growing? | No. | Unchanged |
+| Is this clinic near the storage wall? | Yes — `storageUsage()`, surfaced. | Yes |
+| Did backups run? | Yes. | Yes |
+| What happened before the crash? | Only what the audit log caught. | Unchanged |
 
-**Recommended, in order:** a bounded ring of timing samples for the five
-operations measured above, exported with the backup (~24 h); a sync event log
-(~24 h); a health panel showing storage headroom, queue depth, last sync, and
-backup age (~32 h). **Eighty hours takes diagnosis from guesswork to reading.**
+**Built (2026-08-08):** a bounded ring — 64 samples per operation, median and
+p95 — over the engine run, the five storage calls, `doSave` end to end, and
+first paint. It is surfaced in the Account screen in the founder's language
+("Opening a patient's chart", not `get_patient_visits`) and rides along in a
+backup export, so a clinic reporting "it has got slow" can send the file they
+already know how to make.
+
+Two properties are pinned by `tests/perf-metrics.test.js` rather than intended:
+it records **durations and counts only** — no patient id, no token, no
+condition name, and a structural test fails if `perfRecord` ever grows a third
+parameter, because this payload leaves the device — and it **cannot change what
+it measures**: the wrapped return value survives, a thrown error is rethrown
+untouched and still timed, and `storage.js` works unchanged when the module is
+absent.
+
+**Still open:** a sync event log (~24 h) and a combined health panel showing
+queue depth, last sync and backup age (~32 h).
 
 ---
 
@@ -346,13 +377,18 @@ solo-founder product usually achieves.
 | **Reliability** | **9** | Every chaos scenario degrades safely. Refusing to overwrite unreadable data is better than most commercial EMRs. |
 | **Recoverability** | **8** | Automatic snapshots, verified archival, migration rollback, quarantined corrupt bytes, three vault doors. |
 | **Fault tolerance** | **9** | The server can be gone indefinitely and a consultation is unaffected. |
-| **Observability** | **3** | No timing instrumentation at all. The one dimension where nothing exists. |
+| **Observability** | **6** | Was **3** — nothing existed. A bounded timing ring now covers the engine, all five storage calls, the whole autosave and first paint, with median/p95, surfaced in the UI and carried in backups. Sync diagnostics and a combined health panel are still missing. |
 | **Scalability** | **5** | Server scales; the device does not, and the device is authoritative. |
 | **Cloud readiness** | **7** | Correct isolation and indexes; no monitoring, no autoscaling story. |
 | **Enterprise readiness** | **4** | No SLA instrumentation, no capacity dashboards, no on-call. |
 | **Offline-first excellence** | **9** | Was 6 this morning: the 12.6 s stall was an offline-first defect nobody had measured. Now genuinely excellent — 64 ms to interactive with no network. |
 
-**Overall: 7.0 / 10** — up from an honest 6.1 before this phase's two fixes.
+| **Reliability** *(revised)* | **9** | Unchanged in score, but two defects found after this table was first written — a migration able to write outside its rollback snapshot, and a documented snapshot-restore path that no code implemented — were fixed. See `tools/stress/attack.js`. |
+
+**Overall: 7.2 / 10** — up from an honest 6.1 before this phase's fixes.
+Observability 3 → 6 is the whole of the change; nothing else moved, and the two
+weakest scores (enterprise readiness 4, storage/scalability 5) are unchanged
+because nothing has been done about them yet.
 
 ---
 

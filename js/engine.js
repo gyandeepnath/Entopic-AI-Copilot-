@@ -1876,6 +1876,15 @@ function logEngineRun(data) {
 /* ═══════════════════════════════════════════════════════════════ */
 
 function runDiagnosticEngine() {
+  /* Timed — this is the number that must stay flat as the knowledge base
+     grows, and the only way to know it has on a real device is to record it.
+     perfTime is optional; without it this is a plain call. */
+  return (typeof perfTime === "function")
+    ? perfTime("engine_run", _runDiagnosticEngine)
+    : _runDiagnosticEngine();
+}
+
+function _runDiagnosticEngine() {
 
   /* Guard: check if visit data exists */
   if (!V || !V.symptoms) return;

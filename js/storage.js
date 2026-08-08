@@ -29,6 +29,19 @@ function _vaultOnFor(key) {
          typeof vaultIsProtected === "function" && vaultIsProtected(key);
 }
 
+/* ── Timing hook (js/perf-metrics.js) ──
+   Records how long the measured storage calls actually take ON THIS DEVICE,
+   which is the thing the Phase 7 benchmark could not tell anyone: its figures
+   came from a developer machine, not the laptop in the consulting room.
+
+   Optional by construction. storage.js is loaded on its own by several test
+   harnesses and must not acquire a hard dependency on an instrumentation
+   module — so when perfTime is absent this is exactly the original call, and
+   measurement can never be the reason a save fails. */
+function _perf(op, fn) {
+  return (typeof perfTime === "function") ? perfTime(op, fn) : fn();
+}
+
 /* ── WHY THERE IS NO PARSE CACHE HERE ANY MORE ──
    (Removed deliberately. Read this before adding one back.)
 
@@ -345,20 +358,20 @@ function saveUsers(users) {
 
 /* Patients */
 function loadPatients() {
-  return loadStore("patients", []);
+  return _perf("load_patients", function () { return loadStore("patients", []); });
 }
 
 function savePatients(patients) {
-  return saveStore("patients", patients) !== false;
+  return _perf("save_patients", function () { return saveStore("patients", patients) !== false; });
 }
 
 /* Visits */
 function loadVisits() {
-  return loadStore("visits", []);
+  return _perf("load_visits", function () { return loadStore("visits", []); });
 }
 
 function saveVisits(visits) {
-  return saveStore("visits", visits) !== false;
+  return _perf("save_visits", function () { return saveStore("visits", visits) !== false; });
 }
 
 /* API Key — a billable credential, so it is vault-wrapped like the cloud
@@ -512,6 +525,9 @@ function getPatientAudit(patientId) {
  * Get all visits for a specific patient, sorted newest first
  */
 function getPatientVisits(patientId) {
+  return _perf("get_patient_visits", function () { return _getPatientVisits(patientId); });
+}
+function _getPatientVisits(patientId) {
   var visits = loadVisits();
   return visits
     .filter(function(v) { return v.patient_id === patientId; })
@@ -581,6 +597,11 @@ function setVisitSeenStamp(stamp) { VISIT_SEEN_STAMP = stamp || null; }
    The same applied to a locked vault, a quota-exhausted device, and a
    visit whose id is no longer in the store at all. */
 function doSave() {
+  /* The whole autosave, timed as one operation: this is what a clinician
+     actually waits for, and it is two reads and two writes, not one. */
+  return _perf("do_save", _doSave);
+}
+function _doSave() {
   if (!CV) return { ok: false, visit_written: false, patient_written: false,
                     visit_found: false, reason: "no visit is open" };
 
