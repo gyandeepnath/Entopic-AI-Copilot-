@@ -24,8 +24,38 @@
   form-action 'self';">
 <title>Entopic — Clinical Vision Assessment</title>
 
-<!-- Fonts -->
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=JetBrains+Mono:wght@400;500&family=Fraunces:opsz,wght@9..144,400;9..144,500&display=swap" rel="stylesheet">
+<!-- Fonts — loaded NON-BLOCKING, and this is a correctness fix, not a tweak.
+
+     MEASURED (Chromium, no network, tools/bench + a Playwright probe):
+
+       as shipped, render-blocking : first paint 12,600 ms, load 12,986 ms
+       with the request failing fast: first paint     64 ms, load    573 ms
+       penalty on an offline device: 12.4 SECONDS
+
+     A render-blocking stylesheet from a third-party host stalls first paint
+     until the request times out. On a clinic laptop with no internet — the
+     deployment this product exists for, and the one ADR-006 calls sacred —
+     that is twelve seconds of blank screen before the sign-in box appears.
+     The diagnostic engine was network-free; the PAGE was not.
+
+     media="print" makes the browser fetch it at low priority without blocking
+     render; onload promotes it to all media once it arrives. Offline it simply
+     never arrives, and the fallback stack in css/entopic.css (system-ui /
+     Georgia / Consolas) is what the clinician sees — a slightly different
+     typeface instead of a twelve-second stall.
+
+     The <noscript> copy keeps the fonts for a browser with JavaScript off,
+     where nothing else works anyway but the page should still look right.
+
+     PROPER FIX, not done here because this container has no network to fetch
+     them with: self-host the three families under fonts/ and drop the external
+     origin entirely. That also removes two hosts from the CSP and one more
+     third party from the privacy story. ~4 hours. -->
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" media="print" onload="this.media='all';this.onload=null"
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=JetBrains+Mono:wght@400;500&family=Fraunces:opsz,wght@9..144,400;9..144,500&display=swap">
+<noscript><link rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=JetBrains+Mono:wght@400;500&family=Fraunces:opsz,wght@9..144,400;9..144,500&display=swap"></noscript>
 
 <!-- Styles -->
 <link rel="stylesheet" href="css/entopic.css">
