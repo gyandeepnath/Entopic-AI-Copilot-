@@ -26,7 +26,16 @@ const { createEngine } = require("../tools/lib/load-engine");
 
 const ROOT = path.resolve(__dirname, "..");
 const read = (f) => fs.readFileSync(path.join(ROOT, f), "utf8");
-const ENGINE_SRC = read("js/engine.js");
+/* Every js/ file on the diagnostic path, concatenated — NOT js/engine.js
+   alone. When stage 8 moved into js/engine-exclusions.js this scanner stopped
+   seeing scoreThreshold("exclusion_high_scorer") and reported the threshold as
+   dead: a reviewer would have been told a live clinical number does nothing.
+   Deriving the list from the real load order means the next split cannot
+   blind it either. */
+const ENGINE_SRC = require("../tools/lib/kb-load-order").engineOrder()
+  .filter((f) => f.startsWith("js/"))
+  .map(read)
+  .join("\n");
 
 
 /* ═══ 1. THE TABLE AND THE ENGINE CANNOT DRIFT APART ═══ */

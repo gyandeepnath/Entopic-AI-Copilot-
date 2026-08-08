@@ -6,6 +6,126 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-08-08 — I tried to break it on purpose. Six things broke. All six are fixed.
+
+You asked me to stress it to extremes and break things deliberately so the
+hidden flaws come out. I built an adversarial harness — `node
+tools/stress/attack.js`, 46 attacks — that feeds the real code the worst input
+I could construct from everything the seven audits had taught me about where
+the seams are. It is not a test suite; a test asks "does it do the right
+thing", this asks "what does it take to make it do the wrong thing quietly".
+
+**Twelve attacks landed on the first run. Six were real defects. Six were my
+attacks being wrong** — and I've said which is which below, because an attack
+that manufactures a false alarm wastes your attention just as badly as a bug
+that hides.
+
+### 1. The speed-up I shipped yesterday could make the app lie about saving
+
+This is the serious one, and it was my own code from the previous session.
+
+Yesterday I made reading records ~20,000× faster by remembering the last read
+instead of re-reading. The catch was that it handed back **the same copy**
+everyone else was holding. So:
+
+> you save a visit → the save **fails** (the device is full) → the app
+> correctly puts up the red "THIS DEVICE HAS STOPPED SAVING" banner → and then
+> every check of *what actually got saved* still sees the unsaved visit,
+> because it's reading the copy in memory, not the disk.
+
+That is precisely the moment this product must not be wrong. I've **removed the
+speed-up.** I checked whether it could be made safe — handing back a *copy*
+each time — and measured that: copying is **slower than just re-reading**
+(753 ms vs 645 ms). There is no clever version.
+
+And the size it was optimising can't actually happen. The browser runs out of
+room at ~1,900 visits, and at that size a plain re-read is **39 ms**. It was
+buying nothing real in exchange for the storage layer being able to lie.
+
+What you'll notice: at a full clinic (1,900 visits) saving takes **180 ms**
+instead of 47 ms. Not perceptible in use. The proper fixes for save speed —
+writing only the record that changed, rather than all of them — are still on
+the list and don't have this flaw.
+
+### 2. One stray line of JavaScript could silently delete most of a diagnosis
+
+The worst finding, and it had nothing to do with clinical logic.
+
+The engine used ordinary lookup tables to hold "which conditions rule out which
+others". A quirk of JavaScript means such a table will answer **any** question
+if a single global property exists anywhere on the page — from a browser
+extension, a future library, one sloppy line. When I planted one, the engine
+took a correct differential of **four conditions and returned one unrelated
+one**. Same patient, same input. Nothing thrown, nothing logged, no way for you
+to know.
+
+Fixed structurally: those tables now cannot inherit anything. The same class of
+bug would also have bitten if a clinician had ever named a personal condition
+something like `constructor` — that's closed too.
+
+I also **split the exclusion stage into its own file**
+(`js/engine-exclusions.js`). It's the only stage that *removes* a possible
+diagnosis, and it deserves to be readable on its own rather than buried in the
+middle of a 2,300-line file.
+
+### 3. Records could be destroyed by a migration with no way back
+
+Migrations are the code that rewrites every record when the format changes.
+They take an "undo" snapshot first — but only of the stores they *declare*. A
+migration that quietly wrote a store it hadn't declared wrote outside the
+snapshot, and the undo was a **silent no-op**. My test migration deleted every
+patient and the rollback restored nothing.
+
+Now: writing an undeclared store is **refused** and the whole run rolled back.
+
+### 4. "Restore from the pre-migration snapshot" was an instruction nobody could follow
+
+While testing the above I found the snapshots were being written, and listed,
+and referred to in error messages — *and there was no code anywhere that could
+put one back.* The recovery path for the most destructive operation in the
+product was a sentence advising you to do something impossible.
+
+There's now a real one (`migrationSnapshotRestore`). It restores every store
+the snapshot holds, refuses to write over a damaged store, and — this matters —
+**puts the migration ledger back too**, so an undone migration counts as
+pending again rather than being skipped forever while your records sit in the
+old format.
+
+### 5. Two smaller ones
+
+- Damage in the **middle** of a large record store is caught, and writing over
+  it stays blocked (confirmed, not assumed).
+- The threshold checker only ever read one engine file, so moving code between
+  files could have made a live clinical number look dead. It now follows the
+  real load order.
+
+### What did NOT break — and I tried hard
+
+- **Red flags fired every time**: on their own; buried under reassuring normal
+  findings; with the record full of garbage; with a hostile clinician-authored
+  condition built specifically to suppress them; and inside a knowledge base
+  inflated fifty-fold.
+- Every registered token fired at once (an impossible patient) — sane
+  differential, correctly ordered, alerts intact.
+- 10,000 findings and 10,000 symptoms on one visit — no hang, no crash.
+- `Infinity`, `NaN`, 1e400 in measurements; dates in the year 275760; a
+  megabyte of free text; regular-expression bombs — no nonsense number ever
+  reached the screen.
+- The same record scored **identically 20 runs in a row**.
+- Archiving never lost a visit, never archived a patient's only visit, never
+  overwrote a live record, and rejected every forged or tampered archive file.
+
+**Six of my twelve "failures" were my own mistakes.** The most instructive: I
+asserted a hypopyon red flag by inventing a field name that doesn't exist, got
+no alert, and briefly had a critical safety failure that was pure fiction — the
+real input path works, and always did. I've left that noted in the harness so
+the next person doesn't repeat it.
+
+1,070 tests pass. The app runs offline; I checked it in a real browser rather
+than assuming.
+
+---
+
 ## 2026-08-08 — The app took 12 seconds to appear offline. It now takes 64 ms.
 
 **This is the one that matters, and six rounds of audits missed it — including
@@ -37,6 +157,12 @@ external file to the page.
 
 **The app is dramatically faster with a large record set.**
 
+> **⚠ SUPERSEDED the same day — see the entry above.** The speed-up described
+> here was **removed** after the stress harness showed it could make the app
+> report a record as saved when the save had failed. The measurements below are
+> accurate; the change they justified was withdrawn. Left in place rather than
+> deleted, because you may have read it and acted on it.
+
 I measured the storage layer properly with a benchmark you can re-run
 (`node tools/bench/storage-bench.js`). At 9,000 visits:
 
@@ -48,8 +174,10 @@ I measured the storage layer properly with a benchmark you can re-run
 | saving | 962 ms | 267 ms |
 
 The cause: **every single read re-parsed the entire clinic.** Just saving one
-visit did it twice. The fix remembers the last parse and re-uses it, and
-notices immediately if another browser tab changes anything.
+visit did it twice. The fix remembered the last parse and re-used it, and
+noticed immediately if another browser tab changed anything. *(This is the part
+that was withdrawn — re-using the parse meant re-using the same copy, which is
+how a failed save could still read back as saved.)*
 
 That change also uncovered a genuine bug that had been sitting there: the
 migration system took its "undo" snapshot in a way that pointed at the live

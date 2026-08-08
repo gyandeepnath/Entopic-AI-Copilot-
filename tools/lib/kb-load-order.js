@@ -43,6 +43,7 @@ const KB_FILES = [
 const ENGINE_TAIL = [
   "js/data-model.js",
   "js/medication-checker.js",       /* defines getMedicationTokens (engine source 10) */
+  "js/engine-exclusions.js",        /* pipeline stage 8 — engine.js calls applyExclusions() */
   "js/engine.js",
   "js/engine-diff.js",              /* records "what changed" — engine.js calls it if present */
   "js/engine-replay.js"             /* deterministic replay — must share the engine's realm */

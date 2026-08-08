@@ -1,7 +1,7 @@
 # Entopic — System Architecture & Scaling Blueprint
 
 **Document version:** 1.1
-**Covers build:** Entopic v1.5.0, KB v1.3.1 — 119 loaded files (96 in `js/`, 23 in
+**Covers build:** Entopic v1.5.0, KB v1.3.1 — 120 loaded files (97 in `js/`, 23 in
 `knowledge/`), 394 conditions across 9 domains, 88 test files.
 **Counts last verified:** 2026-08-01, regenerated from `index.html` and the repo.
 **Purpose:** A ground-truth teardown of everything in the current system, followed by a target architecture that keeps the same UI and concept but rebuilds the foundations for scale, onboarding, a stable backend, an independent continuously-looping diagnostic engine, and a trustworthy evidence-based knowledge base.
@@ -118,6 +118,8 @@ A thin CRUD layer over `localStorage`, namespaced with the `entopic_` prefix, st
 - **Anonymized encounter builder:** `buildAnonymizedEncounter()` strips PII and retains age bracket, sex, symptom/finding/diagnosis tokens, a coarse `treatment_category` (via keyword bucketing in `categorizeTreatment`), referral type, and completeness — queued locally on visit completion **if registry opt-in is set**. This is the seed of the clinical-validation pipeline that Part II formalizes.
 
 **Structural note:** all visits for all patients live in one array under one key. Every save rewrites the entire array. This is O(n) per save and shares a single 5 MB budget across the whole clinic — fine for a demo, a wall for onboarding.
+
+> **`loadStore()` returns a fresh parse on every call, and must keep doing so.** A parse cache that returned the *shared* parsed object was added and removed on 2026-08-08: it made a write that had **failed on quota** still read back as though it had persisted, because the caller's array was the cache's array (`tools/stress/attack.js` A1). The safe variant is slower than no cache at all — `structuredClone` 753 ms vs `JSON.parse` 645 ms at 9,000 visits — and the store size it optimised is unreachable, since localStorage exhausts at ~1,900 visits where an uncached read is ~39 ms. Every storage guarantee in the codebase depends on *reading tells you what is on disk*; `tests/storage-read-isolation.test.js` pins it. The sound fixes for save cost are incremental save and per-patient visit keys, neither of which hands out a shared mutable view.
 
 ## 4a. Two seams added on 2026-08-01
 
@@ -245,7 +247,9 @@ This is a clean, sensible assembly step. It is the natural place to later insert
 
 **Stage 7 — Scoring (`scoreCondition`).** For each condition on an active route (or gated): +3 per matched required token, +1 per supportive, −3 per contradicting, ±0.5 temporal. Normalizes against max-possible, then applies multiplicative penalties (missing required ×0.7 then ×0.5; any contradiction ×0.6; <2 total tokens ×0.5), caps to [0,1], and **forces 0 if no required token matched**. Gated conditions get a ×1.3 boost.
 
-**Stage 8 — Exclusions (`applyExclusions`).** Intended to drop conditions that a high-scoring condition rules out. **This is currently broken** — see §10.
+**Stage 8 — Exclusions (`applyExclusions`).** Drops conditions that a high-scoring condition rules out. Urgent conditions are never suppressed here.
+
+> **Moved out of `engine.js` into `js/engine-exclusions.js` (2026-08-08).** It is the only stage that *removes* a clinical possibility, and it was found returning wrong differentials: its lookup tables were plain objects, so a single property on `Object.prototype` — from any script on the page — answered every lookup and the stage struck out most of a correct differential (measured: 4 correct conditions → 1 unrelated, silently). Found by `tools/stress/attack.js` attack E7. The tables are now `Object.create(null)` here and throughout `knowledge/loader.js` (`kbMap()`), and an exclusion rule must be an actual array to be applied. `js/engine-exclusions.js` must load **before** `js/engine.js`.
 
 **Stage 9 — Evidence (`generateEvidence`).** For each condition, builds the human-readable trail: which tokens **matched**, which required tokens are **missing**, which are **contradicted**, plus suggested tests and a confidence band. This transparent trail is the differentiator (and, as you've noted, the anchoring-bias risk to manage).
 
@@ -257,7 +261,7 @@ This is a clean, sensible assembly step. It is the natural place to later insert
 
 Finally, results are sorted (urgent floats up when score >0.2), the top 8 become `V.dxList` with a reasoning string, and alerts/nudges are written back to `V`.
 
-**Assessment of the engine.** The architecture is sound and the intent is right: deterministic, evidence-carrying, safety-gated, workflow-aware. The weaknesses are specific and fixable (§10): universal scoring constants, a broken exclusion matcher, single-list competition, and dependence on an unmanaged token vocabulary.
+**Assessment of the engine.** The architecture is sound and the intent is right: deterministic, evidence-carrying, safety-gated, workflow-aware. The weaknesses are specific and fixable (§10): universal scoring constants, single-list competition, and dependence on an unmanaged token vocabulary. *(The broken exclusion matcher listed here previously is fixed — see §10 gap 2.)*
 
 ## 7. The interpretive layer (`claude.js`)
 
@@ -457,6 +461,39 @@ a count; `assignNextCase()` generates from the KB at launch. Completion counts
 distinct conditions, so repetition cannot finish the work. Storage is local and
 shaped 1:1 onto a future table, so multi-device cohorts port without a rewrite.
 
+## 9d. The adversarial harness (`tools/stress/attack.js`)
+
+`node tools/stress/attack.js` — 46 attacks, run separately from the test suite
+and deliberately not part of it.
+
+The distinction is the point. `node --test` asks *does it do the right thing*;
+this asks *what does it take to make it do the wrong thing quietly*. It feeds
+the real modules — no reimplementations, no mocks of the thing under test, only
+of the browser around it — the worst input constructible from what the seven
+audits established about where the seams are: prototype pollution, quota
+exhaustion mid-clinic, mid-store corruption, dates at the edges of representable
+time, `Infinity`/`NaN` in measurements, 10,000 findings on one visit, every
+registered token fired at once, regex bombs, forged archive files, and
+migrations that delete everything.
+
+Three rules it follows:
+
+1. **A crash is an acceptable outcome for garbage input; a silent wrong answer
+   is not.** A thrown error a clinician sees beats a differential computed from
+   a corrupted record.
+2. **Every attack states what MUST hold, not what currently does.** An attack
+   that passes because it asserts the bug is worse than no attack.
+3. **Findings get promoted into `tests/` once fixed**, so the suite keeps them
+   fixed and this file stays free to break something new.
+
+Its first run (2026-08-08) landed twelve attacks: **six real defects** — the
+parse cache making a failed write readable (§4), inherited properties read as
+exclusion rules (§6 stage 8), a migration writing outside its rollback snapshot,
+a documented snapshot-restore path that no code implemented, mid-store
+corruption, and a threshold scanner blinded by a file split — and **six wrong
+attacks**, including one that asserted a red-flag failure by inventing a field
+name that does not exist. That ratio is why rule 2 is written down.
+
 ## 10. Honest assessment — strengths and the concrete gaps
 
 ### Strengths worth protecting
@@ -469,7 +506,7 @@ shaped 1:1 onto a future table, so multi-device cohorts port without a rewrite.
 ### Gaps that must be fixed for "scalable + trustworthy" (in priority order)
 
 1. **No canonical token registry (root cause).** Five token producers (dictionary, finding-map, KB conditions, free-text regex, measurement auto-derivation) with nothing reconciling spelling, existence, type, or reachability. **Audit: the KB references 512 distinct tokens; only 183 are defined in the dictionary** (Appendix B). Some undefined tokens are legitimately non-lexical (measurement/test tokens), but nothing distinguishes those from typos or dead tokens. This is the direct cause of token collision, undeclared tokens, and unreachable required tokens.
-2. **Exclusions silently no-op (verifiable bug).** `applyExclusions` compares snake_case exclusion strings (`"acute_angle_closure"`) by substring against display names (`"Acute Angle Closure Crisis"` → `"acute angle closure crisis"`). Underscores never match spaces, so exclusion rules essentially never fire. Comorbidity suppression is not actually running today.
+2. **Exclusions silently no-op (verifiable bug).** ~~`applyExclusions` compares snake_case exclusion strings (`"acute_angle_closure"`) by substring against display names (`"Acute Angle Closure Crisis"` → `"acute angle closure crisis"`). Underscores never match spaces, so exclusion rules essentially never fire.~~ **FIXED.** Both sides are normalised to snake_case before comparison (`_exclNormName`), and `tests/engine-exclusions.test.js` proves the rules fire — including that a high-scoring POAG still cannot suppress Acute Angle Closure Crisis, because urgent conditions are exempt. A *second*, unrelated defect in the same stage — inherited object properties being read as exclusion rules — was found on 2026-08-08 and fixed by moving the stage to `js/engine-exclusions.js` with null-prototype tables (see §6, stage 8).
 3. ~~**ICD codes referenced but never populated.**~~ **RESOLVED** — all 394 conditions now carry an ICD-10 code (`knowledge/icd-map.js`, provisional until clinician sign-off).
 4. **Single-list competition.** One ranked differential forces independent, co-existing problems (dry eye + cataract + glaucoma-suspect + convergence insufficiency) to compete for one top slot. This under-serves the common real patient and is the central conceptual limitation.
 5. **Universal scoring constants.** Flat +3/+1/−3 across all domains and all tokens — no notion that a given sign is highly specific for one condition but weakly supportive for another. (Your own noted weakness.)
@@ -645,9 +682,9 @@ Each phase is independently shippable and independently valuable; none requires 
 
 Generated by `node tools/sync-docs.js` from the `<script>` order in
 `index.html`, which IS the dependency graph in a build-step-free app.
-119 loaded files.
+120 loaded files.
 
-**Root** — `index.html` (659), `css/entopic.css` (2604)
+**Root** — `index.html` (663), `css/entopic.css` (2604)
 
 **`/knowledge`** — 23 files, loaded first, in this order:
 
@@ -673,9 +710,9 @@ Generated by `node tools/sync-docs.js` from the `<script>` order in
 - `common-conditions.js` (98)
 - `age-classification.js` (135)
 - `clinical-scales.js` (206)
-- `loader.js` (385)
+- `loader.js` (417)
 
-**`/js`** — 96 files, in load order:
+**`/js`** — 97 files, in load order:
 
 - `dom-escape.js` (67)
 - `build-info.js` (78)
@@ -702,9 +739,9 @@ Generated by `node tools/sync-docs.js` from the `<script>` order in
 - `research-corpus.js` (464)
 - `insights.js` (278)
 - `feedback.js` (257)
-- `storage.js` (974)
+- `storage.js` (963)
 - `storage-backup.js` (511)
-- `storage-migrations.js` (297)
+- `storage-migrations.js` (421)
 - `storage-autobackup.js` (210)
 - `audit-clinical.js` (146)
 - `storage-archive.js` (415)
@@ -719,7 +756,8 @@ Generated by `node tools/sync-docs.js` from the `<script>` order in
 - `clinic-mode.js` (231)
 - `roles.js` (370)
 - `clinical-validators.js` (109)
-- `engine.js` (2298)
+- `engine-exclusions.js` (94)
+- `engine.js` (2263)
 - `engine-diff.js` (310)
 - `engine-replay.js` (442)
 - `overlay-impact.js` (170)

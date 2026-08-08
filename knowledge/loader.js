@@ -184,12 +184,12 @@ var KB_META = {
 /* All unique routes used across the knowledge base                */
 /* ═══════════════════════════════════════════════════════════════ */
 
-var KB_ROUTES = {};
+var KB_ROUTES = kbMap();   /* null prototype — see kbMap() below */
 
 /* (Re)built inside rebuildKbIndexes() below, so a KB that is grown or
    reloaded at runtime refreshes this alongside the performance indexes. */
 function rebuildRouteRegistry() {
-  KB_ROUTES = {};
+  KB_ROUTES = kbMap();
   for (var i = 0; i < KNOWLEDGE_ALL.length; i++) {
     var route = KNOWLEDGE_ALL[i].route;
     if (!KB_ROUTES[route]) {
@@ -209,9 +209,10 @@ var KB_TOKEN_STATS = {};
 
 /* (Re)built inside rebuildKbIndexes() below. */
 function rebuildTokenStats() {
-  var allReq = {};
-  var allSup = {};
-  var allCon = {};
+  /* Token-keyed — null prototypes, see kbMap() below. */
+  var allReq = kbMap();
+  var allSup = kbMap();
+  var allCon = kbMap();
 
   for (var i = 0; i < KNOWLEDGE_ALL.length; i++) {
     var c = KNOWLEDGE_ALL[i];
@@ -258,18 +259,46 @@ function rebuildTokenStats() {
 /* knowledge bases can refresh them.                                */
 /* ═══════════════════════════════════════════════════════════════ */
 
-var KB_ROUTE_INDEX = {};       /* route → conditions[] */
-var KB_REQ_FIRST_INDEX = {};   /* first required token → conditions[] */
-var KB_REQ_TOKEN_INDEX = {};   /* ANY required token → conditions[] */
-var KB_NOREQ_CONDS = [];       /* conditions with no required token (rare) */
-var KB_NAME_INDEX = {};        /* condition name → condition (O(1) lookup) */
+/* ── WHY EVERY INDEX BELOW HAS A NULL PROTOTYPE ──
+   (Added 2026-08-08 after tools/stress/attack.js, attack E7.)
+
+   These maps are keyed by DATA — route names, token names, condition names —
+   and a plain `{}` inherits every property of Object.prototype. Two things
+   go wrong, and the first one was demonstrated, not theorised:
+
+     1. Any property on Object.prototype answers a lookup. With a single
+        stray global (`Object.prototype.x = "yes"` — one sloppy script, one
+        polyfill, one browser extension), KB_EXCLUSION_MAP[anything] became
+        truthy and the exclusion stage deleted three quarters of a real
+        differential. Same clinical input, different diagnosis, no error.
+
+     2. A condition NAMED like a built-in collides. Clinicians author their
+        own conditions in this product; a condition called "constructor" or
+        "toString" would otherwise be indexed into a prototype slot, and one
+        called "__proto__" would rewrite the map's prototype instead of
+        being stored in it.
+
+   Object.create(null) removes both by construction, which is worth more
+   than a `hasOwnProperty` guard on every read that someone will eventually
+   forget. These objects have no inherited methods, so never call
+   `.hasOwnProperty()` on one — use Object.prototype.hasOwnProperty.call().
+
+   `kbMap()` rather than a bare Object.create(null) at each site so this
+   decision has one name to search for. */
+function kbMap() { return Object.create(null); }
+
+var KB_ROUTE_INDEX = kbMap();       /* route → conditions[] */
+var KB_REQ_FIRST_INDEX = kbMap();   /* first required token → conditions[] */
+var KB_REQ_TOKEN_INDEX = kbMap();   /* ANY required token → conditions[] */
+var KB_NOREQ_CONDS = [];            /* conditions with no required token (rare) */
+var KB_NAME_INDEX = kbMap();        /* condition name → condition (O(1) lookup) */
 
 function rebuildKbIndexes() {
-  KB_ROUTE_INDEX = {};
-  KB_REQ_FIRST_INDEX = {};
-  KB_REQ_TOKEN_INDEX = {};
+  KB_ROUTE_INDEX = kbMap();
+  KB_REQ_FIRST_INDEX = kbMap();
+  KB_REQ_TOKEN_INDEX = kbMap();
   KB_NOREQ_CONDS = [];
-  KB_NAME_INDEX = {};
+  KB_NAME_INDEX = kbMap();
   for (var i = 0; i < KNOWLEDGE_ALL.length; i++) {
     var c = KNOWLEDGE_ALL[i];
     KB_NAME_INDEX[c.name] = c;
@@ -361,11 +390,14 @@ function conditionsRequiringToken(token) {
 /* Builds a map: conditionName → [conditions it excludes]          */
 /* ═══════════════════════════════════════════════════════════════ */
 
-var KB_EXCLUSION_MAP = {};
+/* Null prototype — see kbMap() above. This map in particular: it is keyed by
+   condition NAME and read with a truthiness test, which is exactly how a
+   polluted prototype turned into deleted differentials. */
+var KB_EXCLUSION_MAP = kbMap();
 
 /* (Re)built inside rebuildKbIndexes(). */
 function rebuildExclusionMap() {
-  KB_EXCLUSION_MAP = {};
+  KB_EXCLUSION_MAP = kbMap();
   for (var i = 0; i < KNOWLEDGE_ALL.length; i++) {
     var c = KNOWLEDGE_ALL[i];
     if (c.exclusions && c.exclusions.length > 0) {

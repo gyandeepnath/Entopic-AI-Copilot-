@@ -162,19 +162,28 @@ function migrationsRun(opts) {
   /* Snapshot BEFORE anything runs. This is what makes the run reversible even
      for a migration whose own `down` is null.
 
-     DEEP COPIED, and that word is load-bearing. loadStore returns a shared
-     object (see the parse cache in storage.js), so a snapshot holding the same
+     DEEP COPIED, and that word is load-bearing. A snapshot holding the same
      reference the migration is about to mutate is not a snapshot at all — it
-     changes as the migration changes it, and the rollback restores the damage.
-     Caught by tests/backend-integrity.test.js the moment the cache landed.
+     changes as the migration changes it, and the rollback then restores the
+     damage. loadStore() returns a fresh parse today, so the copy is arguably
+     redundant; it stays because the correctness of every rollback in this
+     file depends on it and it must not rest on how loadStore happens to be
+     implemented this month.
 
-     A snapshot that aliases live data was always fragile; the cache only made
-     it fail loudly. */
+     Covers exactly the stores in each migration's `stores` list — which is
+     why writing an undeclared store is refused below. */
   var snapshot = {};
   keys.forEach(function (k) { snapshot[k] = _migClone(loadStore(k, null)); });
   var snapKey = MIGRATION_SNAPSHOT_PREFIX + Date.now();
   if (!opts.skipSnapshot && typeof saveStore === "function") {
-    if (saveStore(snapKey, { at: new Date().toISOString(), stores: snapshot }) === false) {
+    /* The LEDGER goes in the snapshot too, not just the records.
+       Restoring records alone would leave the data as it was before the
+       migration while the ledger still said the migration had run — so it
+       would never run again, and old-format records would be handed to code
+       that expects the new format. The snapshot has to capture BOTH halves
+       of the state for the restore to be a real undo. */
+    if (saveStore(snapKey, { at: new Date().toISOString(), stores: snapshot,
+                             ledger: _migClone(migrationLedger()) }) === false) {
       return { ok: false, ran: [], skipped: pending.length, rolled_back: false,
                reason: "could not write a pre-migration snapshot; refusing to migrate without one" };
     }
@@ -209,6 +218,39 @@ function migrationsRun(opts) {
                reason: "migration " + m.id + " failed: " + ((e && e.message) || e) +
                        " — every store was restored from the snapshot" };
     }
+    /* ── A migration may only write what it DECLARED ──
+       (Found 2026-08-08 by tools/stress/attack.js, attack D2.)
+
+       `snapshot` above covers exactly the stores listed in each migration's
+       `stores`. This loop used to write whatever keys `up()` happened to
+       return. So a migration that declared nothing — or that declared
+       "visits" and also returned "patients" — wrote a store that was NOT in
+       the pre-migration snapshot, and rollback() then had nothing to restore
+       it from. The attack that found this returned {visits: [], patients: []}
+       from a migration with no `stores` at all: every record was destroyed
+       and the rollback was a silent no-op.
+
+       Refusing is the only safe answer. A migration returning an undeclared
+       store is a programming error, and the alternative — snapshotting it
+       retroactively, after `up` has already run — snapshots the damage. */
+    var declared = {};
+    (m.stores || []).forEach(function (s) { declared[s] = true; });
+    var undeclared = Object.keys(after).filter(function (s) {
+      return !Object.prototype.hasOwnProperty.call(declared, s);
+    });
+    if (undeclared.length) {
+      rollback();
+      if (typeof logAudit === "function") {
+        try { logAudit("migration_failed", "Migration " + m.id + " tried to write store(s) it " +
+          "did not declare (" + undeclared.join(", ") + "). Nothing was written and the run was " +
+          "rolled back.", {}); } catch (e2) {}
+      }
+      return { ok: false, ran: ran, skipped: pending.length - ran.length, rolled_back: true,
+               reason: "migration " + m.id + " returned store(s) it did not declare in `stores` (" +
+                       undeclared.join(", ") + "); an undeclared store is outside the " +
+                       "pre-migration snapshot and could not be undone, so nothing was written" };
+    }
+
     /* Write each store the migration returned. A refused write is a failure:
        carrying on would leave half the migration applied. */
     var wroteAll = true;
@@ -285,12 +327,94 @@ function migrationSnapshots() {
   return out.sort(function (a, b) { return b.at.localeCompare(a.at); });
 }
 
+/* ═══════════════════════════════════════════════════════════════ */
+/* RESTORE FROM A PRE-MIGRATION SNAPSHOT                           */
+/*                                                                  */
+/* (Added 2026-08-08 after tools/stress/attack.js, attacks D1/D2.)  */
+/*                                                                  */
+/* This existed only as a sentence. migrationsRollback() refuses a  */
+/* one-way migration with "restore from the pre-migration snapshot  */
+/* or a backup instead", migrationsRun() returns the snapshot key,  */
+/* migrationSnapshots() lists them — and no code anywhere could put */
+/* one back. The recovery path for the most destructive operation   */
+/* in the product was an instruction to do something impossible,    */
+/* addressed to an optometrist.                                     */
+/*                                                                  */
+/* Every store the snapshot holds is restored, and NOTHING else is  */
+/* touched: a store that was not part of the migration is not part  */
+/* of the recovery either.                                          */
+/* ═══════════════════════════════════════════════════════════════ */
+function migrationSnapshotRestore(snapKey) {
+  if (!snapKey) return { ok: false, restored: [], reason: "no snapshot was named" };
+
+  /* Accept either form — migrationsRun() returns the bare store key
+     ("premigration_1234"), migrationSnapshots() lists the prefixed
+     localStorage key. Getting this wrong at 2am should not be fatal. */
+  var key = (snapKey.indexOf(STORE_PREFIX) === 0) ? snapKey.slice(STORE_PREFIX.length) : snapKey;
+
+  var snap = loadStore(key, null);
+  if (!snap || !snap.stores || typeof snap.stores !== "object") {
+    return { ok: false, restored: [],
+             reason: "snapshot " + key + " is missing or unreadable; use a backup export instead" };
+  }
+
+  /* Refuse rather than half-restore. A store that cannot be written (damaged,
+     or a locked vault) must stop the whole restore, because a clinic left with
+     visits from before the migration and patients from after it is in a worse
+     state than either. */
+  var names = Object.keys(snap.stores).filter(function (s) {
+    return snap.stores[s] !== null && snap.stores[s] !== undefined;
+  });
+  var blocked = names.filter(function (s) {
+    return typeof storageIsCorrupt === "function" && storageIsCorrupt(s);
+  });
+  if (blocked.length) {
+    return { ok: false, restored: [],
+             reason: "cannot restore over damaged store(s): " + blocked.join(", ") +
+                     "; writing is blocked there so the damaged data stays recoverable" };
+  }
+
+  var restored = [], failed = [];
+  names.forEach(function (s) {
+    if (saveStore(s, _migClone(snap.stores[s])) === false) failed.push(s);
+    else restored.push(s);
+  });
+
+  if (failed.length) {
+    return { ok: false, restored: restored, failed: failed,
+             reason: "restored " + (restored.join(", ") || "nothing") + " but store(s) " +
+                     failed.join(", ") + " refused the write; this device is now PART restored — " +
+                     "export a backup and do not see patients on it until it is resolved" };
+  }
+
+  /* Put the ledger back to what it was when the snapshot was taken, so the
+     migrations undone above are pending again rather than silently skipped.
+     Only when the snapshot carries one — older snapshots predate this. */
+  var ledgerRestored = false;
+  if (snap.ledger && Array.isArray(snap.ledger.applied)) {
+    _migrationLedgerWrite(_migClone(snap.ledger));
+    ledgerRestored = true;
+  }
+
+  if (typeof logAudit === "function") {
+    try { logAudit("migration_snapshot_restored", "Store(s) " + restored.join(", ") +
+      " were restored from pre-migration snapshot " + key + " (taken " + (snap.at || "unknown") +
+      "). " + (ledgerRestored
+        ? "The migration ledger was restored with them, so those migrations are pending again."
+        : "This snapshot predates ledger capture — check migrationLedger() by hand; a migration " +
+          "may still be recorded as applied although its effect is now undone."), {}); } catch (e) {}
+  }
+  return { ok: true, restored: restored, at: snap.at || "",
+           ledger_restored: ledgerRestored, reason: "" };
+}
+
 if (typeof module !== "undefined" && module.exports) {
   module.exports = {
     STORE_MIGRATIONS: STORE_MIGRATIONS,
     MIGRATION_LEDGER_STORE: MIGRATION_LEDGER_STORE,
     migrationLedger: migrationLedger, migrationApplied: migrationApplied,
     migrationPending: migrationPending, migrationsRun: migrationsRun,
-    migrationsRollback: migrationsRollback, migrationSnapshots: migrationSnapshots
+    migrationsRollback: migrationsRollback, migrationSnapshots: migrationSnapshots,
+    migrationSnapshotRestore: migrationSnapshotRestore
   };
 }

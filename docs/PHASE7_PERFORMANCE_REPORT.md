@@ -106,33 +106,69 @@ did it twice per keystroke-save. Measured scaling was **1.47× worse than
 linear**, because `JSON.parse` degrades on multi-megabyte strings and the
 garbage it produces triggers collection.
 
-**The fix** is a parse cache keyed on the raw string, re-read every call — so a
-write from another tab changes the bytes and invalidates it automatically,
-which is the case a naive cache gets wrong. String comparison is O(n) but two
-orders of magnitude cheaper than parsing.
+**The fix was a parse cache** keyed on the raw string, re-read every call — so
+a write from another tab changed the bytes and invalidated it automatically,
+which is the case a naive cache gets wrong.
 
-It changed a contract (`loadStore` now returns a shared object), so 15 tests
-pin the staleness cases. **It also exposed a latent bug**: `migrationsRun` took
-its rollback snapshot by reference, so a migration mutating in place mutated
-its own snapshot and the rollback restored the damage. A snapshot that aliases
-live data was always fragile; the cache made it fail loudly.
+### ⚠ WITHDRAWN, 2026-08-08 — the "after" column above no longer applies
+
+The cache was **removed the same day**. The adversarial harness
+(`tools/stress/attack.js`, attack A1) demonstrated the cost of the contract
+change it required:
+
+> `loadStore()` returned the SHARED parsed object. So after a write failed on
+> quota, `loadVisits()` still returned the visit that never reached disk —
+> because the caller's array *was* the cache's array. The storage layer could
+> report a record as readable that it had just refused to persist, at the exact
+> moment the UI was telling the clinician the device had stopped saving.
+
+The original note here — "no such caller exists today (checked)" — was wrong.
+The failed-write path is such a caller, and it is the one that matters most.
+
+**The safe variant was measured and is not viable.** Returning a copy per read
+costs `structuredClone` **753 ms** vs `JSON.parse` **645 ms** at 9,000 visits:
+copying is *slower than re-parsing*. There is no fast-and-safe version of this
+cache.
+
+**And the size it optimised is unreachable.** localStorage exhausts at ~1,900
+visits (measured, same bench). Re-measured after removal:
+
+| visits | store | `loadVisits` | `saveVisits` |
+|---|---|---|---|
+| 500 | 1.3 MB | 10 ms | 23 ms |
+| **1,900 (ceiling)** | **5.0 MB** | **39 ms** | **180 ms** |
+| 5,000 (unreachable today) | 13.1 MB | 189 ms | 2,552 ms |
+
+At every store size the product can actually hold, an uncached read is tens of
+milliseconds. The cache bought nothing real in exchange for the storage layer
+being able to lie about what is on disk.
+
+**What it did leave behind, and what stays:** it exposed a latent bug —
+`migrationsRun` took its rollback snapshot by reference, so a migration
+mutating in place mutated its own snapshot and the rollback restored the
+damage. That fix (`_migClone`) is correct independently and remains. The
+benchmark remains and is still the measurement of record.
+
+`tests/storage-read-isolation.test.js` (18 tests) replaces
+`storage-cache.test.js` and pins the opposite property: **a read reflects the
+bytes on disk and nothing else.** Two of them fail the build if a parse cache
+reappears without the reasoning being re-read.
 
 ### What remains hot
 
-**`saveVisits` at 267 ms / 9,000 visits is now the single bottleneck**, and it
-is irreducible in the current design: every save re-serialises the whole store.
-`JSON.stringify` is most of it. The fix is incremental save — write only the
-changed record — which is ~60 h and is item 1 in the roadmap.
-
-At the scale any real clinic operates today (1,500 visits) it is **36.8 ms**,
-which is imperceptible in a form-entry workflow.
+**`saveVisits` is the single bottleneck** — 180 ms at the 1,900-visit ceiling,
+2.5 s at 5,000 (a size only reachable once archival or the backend is in play).
+It is irreducible in the current design: every save re-serialises the whole
+store, and `JSON.stringify` is most of it. The fix is incremental save — write
+only the changed record — which is ~60 h and is item 1 in the roadmap. Unlike
+the parse cache, it is sound: it never hands out a shared mutable view.
 
 ### Complexity
 
 | operation | complexity | note |
 |---|---|---|
 | engine run | O(active routes × tokens) | independent of records — the important one |
-| `loadVisits` (warm) | O(n) string compare | was O(n) parse |
+| `loadVisits` | O(n) parse | a fresh parse per read, deliberately |
 | `getPatientVisits` | O(n) filter | an index would make it O(k) |
 | `saveStore` | O(n) serialise | the remaining wall |
 | cloud pull | O(n/500) requests | keyset-paginated |
@@ -152,12 +188,12 @@ which is imperceptible in a form-entry workflow.
 | 1 month, tab never closed | ~12–15 MB | same |
 
 Every accumulating structure is explicitly bounded: audit log 2,000 entries,
-`ENGINE_LOG` 10, run-diff ring 30, tombstones 5,000, snapshots 7, parse cache
-one entry per store (~20). **No unbounded collection found.**
+`ENGINE_LOG` 10, run-diff ring 30, tombstones 5,000, snapshots 7.
+**No unbounded collection found.**
 
-The one long-lived reference worth naming is the parse cache holding the
-parsed clinic — that is the point of it, and it is exactly one copy of data
-already in memory as a string.
+Removing the parse cache also removed the one long-lived reference worth
+naming — a retained copy of the whole parsed clinic. Reads are now transient
+and collectable, so the resting figures above are, if anything, conservative.
 
 **Leak risk: low.** Not *verified* over a multi-day session, which would need a
 real device and a week; recorded as a gap rather than claimed as clean.

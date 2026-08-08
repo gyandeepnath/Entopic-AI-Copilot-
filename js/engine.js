@@ -146,7 +146,9 @@ function collectTokens() {
     for (var i = 0; i < vals.length; i++) {
       var s = (vals[i] || "").toLowerCase();
       if (!s || s === "clear" || s === "white and quiet" || s === "wnl" || s === "normal") continue;
+      /* Own keys only — an inherited one would become a slit-lamp keyword. */
       for (var kw in map) {
+        if (!Object.prototype.hasOwnProperty.call(map, kw)) continue;
         var idx = s.indexOf(kw);
         if (idx >= 0 && !slNegatedAt(s, idx)) add(map[kw]);
       }
@@ -1111,7 +1113,11 @@ var CONTEXT_ONLY_TOKENS = {
   recent_viral_history: 1, history_trauma_or_infection: 1
 };
 
-function isContextOnlyToken(t) { return !!CONTEXT_ONLY_TOKENS[t]; }
+/* Own property only — an inherited one answering here would make EVERY token
+   context-only at once, draining every condition's evidence (kbMap(), loader.js). */
+function isContextOnlyToken(t) {
+  return Object.prototype.hasOwnProperty.call(CONTEXT_ONLY_TOKENS, t) && !!CONTEXT_ONLY_TOKENS[t];
+}
 
 function scoreCondition(condition, tokens, tokenSet) {
 
@@ -1244,56 +1250,10 @@ function scoreCondition(condition, tokens, tokenSet) {
 
 /* ═══════════════════════════════════════════════════════════════ */
 /* STAGE 8: EXCLUSION RULES                                        */
-/* Remove conditions that are clinically incompatible with the     */
-/* current presentation                                            */
+/* Lives in js/engine-exclusions.js — applyExclusions(). It is the  */
+/* only stage that DELETES a clinical possibility, so it is its own */
+/* file with its own tests rather than fifty lines buried here.     */
 /* ═══════════════════════════════════════════════════════════════ */
-
-function applyExclusions(results, tokens) {
-  /* Build a set of high-scoring condition names */
-  var highScorers = {};
-  for (var i = 0; i < results.length; i++) {
-    if (results[i].score >= scoreThreshold("exclusion_high_scorer", 0.5)) {
-      highScorers[results[i].name] = true;
-    }
-  }
-
-  /* Exclusion strings are snake_case (e.g. "acute_angle_closure") while
-     condition names are display strings ("Acute Angle Closure Crisis").
-     Normalize both sides to snake_case before comparing — raw substring
-     comparison between the two formats never matches. */
-  function normName(name) {
-    return String(name).toLowerCase()
-      .replace(/[^a-z0-9]+/g, "_")
-      .replace(/^_+|_+$/g, "");
-  }
-
-  /* Filter out excluded conditions */
-  return results.filter(function(r) {
-    /* SAFETY: urgent conditions are never suppressed by exclusion logic.
-       A high-scoring chronic condition must not hide an emergency from
-       the differential. Red flags stay visible; the clinician decides. */
-    if (r.urgent) return true;
-
-    var rNorm = normName(r.name);
-
-    /* Check if any high-scoring condition excludes this one */
-    for (var condName in highScorers) {
-      if (condName === r.name) continue; /* a condition never excludes itself */
-      if (typeof KB_EXCLUSION_MAP !== "undefined" && KB_EXCLUSION_MAP[condName]) {
-        var exclusions = KB_EXCLUSION_MAP[condName];
-        /* Normalized substring match: "acute_angle_closure" matches
-           "acute_angle_closure_crisis" */
-        for (var ei = 0; ei < exclusions.length; ei++) {
-          if (rNorm.indexOf(normName(exclusions[ei])) >= 0) {
-            r._excludedBy = condName;
-            return false;
-          }
-        }
-      }
-    }
-    return true;
-  });
-}
 
 
 /* ═══════════════════════════════════════════════════════════════ */
@@ -1670,11 +1630,14 @@ var NEXT_TEST_TOKEN_STEP = {
 var NEXT_TEST_LABELS = null;
 function buildNextTestLabels() {
   if (NEXT_TEST_LABELS) return NEXT_TEST_LABELS;
-  NEXT_TEST_LABELS = {};
+  NEXT_TEST_LABELS = Object.create(null);
   if (typeof FINDING_TOKEN_MAP === "undefined") return NEXT_TEST_LABELS;
+  /* Own keys / real token lists only — an inherited one would name a
+     finding that does not exist. */
   for (var name in FINDING_TOKEN_MAP) {
+    if (!Object.prototype.hasOwnProperty.call(FINDING_TOKEN_MAP, name)) continue;
     var toks = FINDING_TOKEN_MAP[name];
-    if (!toks.length) continue;
+    if (!Array.isArray(toks) || !toks.length) continue;
     var own = toks[toks.length - 1];
     if (!NEXT_TEST_LABELS[own]) NEXT_TEST_LABELS[own] = name;
   }
@@ -1696,7 +1659,7 @@ var NEXT_TEST_SKIP = {
 /* A finding is only worth suggesting if the clinician can actually enter it —
    i.e. it is reachable (has a producing input source) in the token registry. */
 function isEnterableToken(t) {
-  if (NEXT_TEST_SKIP[t]) return false;
+  if (Object.prototype.hasOwnProperty.call(NEXT_TEST_SKIP, t) && NEXT_TEST_SKIP[t]) return false;
   if (typeof TOKEN_REGISTRY === "undefined") return true;
   var e = TOKEN_REGISTRY[t];
   return !!(e && e.reachable !== false);
@@ -1735,7 +1698,7 @@ function computeNextTests(results, tokens) {
      supportive + contradicting features, not already present and enterable.
      Track, per token, which focus conditions it would CONFIRM vs argue
      AGAINST (by focus index). */
-  var cand = {};
+  var cand = Object.create(null);   /* token-keyed — see kbMap(), loader.js */
   for (var f = 0; f < focus.length; f++) {
     var c = findCondition(focus[f].name);
     if (!c) continue;
@@ -1954,7 +1917,9 @@ function runDiagnosticEngine() {
   var results = [];
 
   /* If decision tree gates fired, prioritize gated conditions */
-  var gatedNames = {};
+  /* Object.create(null) throughout this stage — `gatedNames`, `seen` and
+     `activeRoute` are data-keyed (kbMap(), loader.js). */
+  var gatedNames = Object.create(null);
   for (var gi = 0; gi < gates.length; gi++) {
     for (var gci = 0; gci < gates[gi].conditions.length; gci++) {
       gatedNames[gates[gi].conditions[gci]] = gates[gi].reason;
@@ -2001,8 +1966,8 @@ function runDiagnosticEngine() {
   }
 
   if (typeof KB_REQ_TOKEN_INDEX !== "undefined") {
-    var seen = {};
-    var activeRoute = {};
+    var seen = Object.create(null);
+    var activeRoute = Object.create(null);
     for (var ar = 0; ar < routes.length; ar++) activeRoute[routes[ar]] = true;
 
     /* Candidates = conditions that require at least one PRESENT token and

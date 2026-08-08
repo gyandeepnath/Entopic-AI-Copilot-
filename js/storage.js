@@ -29,11 +29,39 @@ function _vaultOnFor(key) {
          typeof vaultIsProtected === "function" && vaultIsProtected(key);
 }
 
-/* key -> { raw, parsed }. Bounded by the number of stores (about 20), not by
-   the amount of data, so it cannot grow without limit. */
-var _PARSE_CACHE = {};
-function _parseCacheDrop(key) { if (_PARSE_CACHE[key]) delete _PARSE_CACHE[key]; }
-function storageCacheClear() { _PARSE_CACHE = {}; }
+/* ── WHY THERE IS NO PARSE CACHE HERE ANY MORE ──
+   (Removed deliberately. Read this before adding one back.)
+
+   A cache keyed on the raw string, handing back the SHARED parsed object,
+   lived here briefly and was measured at 284 ms -> 0.012 ms on loadVisits().
+   The adversarial harness (tools/stress/attack.js, attack A1) then showed
+   what it cost:
+
+       save a visit -> the write fails on quota -> loadVisits() STILL
+       RETURNS IT, because the caller's array is the cache's array.
+
+   That is the one moment this product must not be wrong. The clinician is
+   being told "this device has stopped saving"; every check of what actually
+   persisted was reading the unsaved value instead. The same aliasing meant
+   an edit that was never saved read back as though it were stored (A2, A3),
+   and one reader could see another reader's uncommitted mutation (A7).
+
+   The safe version was measured too, and it is not safe AND fast — it is
+   just slow: returning a copy costs structuredClone 753 ms vs JSON.parse
+   645 ms at 9,000 visits. Copying is SLOWER than re-parsing.
+
+   And the size it was optimising cannot occur. localStorage exhausts at
+   ~1,900 visits (measured, tools/bench/storage-bench.js); at 4.96 MB an
+   uncached parse is ~30 ms. The cache was buying nothing at any store size
+   this product can actually hold, in exchange for the storage layer being
+   able to lie about what is on disk.
+
+   The real fixes for save cost at scale are an incremental save (write only
+   the record that changed) and per-patient visit keys. Both are sound
+   because neither hands out a shared mutable view of the store.
+
+   loadStore() therefore returns a FRESH parse on every call, and the whole
+   codebase may go on assuming that reading tells you what is on disk. */
 
 function loadStore(key, fallback) {
   if (_vaultOnFor(key)) {
@@ -48,38 +76,7 @@ function loadStore(key, fallback) {
   }
   try {
     var raw = localStorage.getItem(STORE_PREFIX + key);
-    if (raw === null) { storageNoteReadOk(key); _parseCacheDrop(key); return fallback; }
-
-    /* ── PARSE CACHE (Phase 7, BE-15) ──
-       MEASURED, not assumed. Benchmark before this existed
-       (tools/bench/storage-bench.js, 9,000 visits / 23.5 MB):
-
-           loadVisits        284 ms
-           getPatientVisits  245 ms   ← a full parse to filter for one patient
-           getLastVisit      239 ms   ← another full parse
-           saveVisits        962 ms   ← loadVisits + serialise
-
-       doSave() alone calls loadVisits() and loadPatients() once each and then
-       writes both, so a single keystroke-save paid for two full parses of the
-       entire clinic. The scaling factor measured 1.47x worse than linear,
-       because JSON.parse on a multi-megabyte string degrades and the garbage
-       it produces triggers collection.
-
-       The cache is keyed on the RAW STRING, and the raw string is re-read from
-       localStorage on every call. So a write from another tab — the one case a
-       naive cache gets wrong — changes the bytes and invalidates it
-       automatically. Comparing two strings is O(n) but roughly two orders of
-       magnitude cheaper than parsing one.
-
-       ── THE CONTRACT CHANGE, STATED PLAINLY ──
-       loadStore() now returns a SHARED object rather than a fresh copy. The
-       codebase's pattern is read → mutate → save, which is unaffected: the
-       mutation lands in the cache and the save persists it. What is no longer
-       safe is mutating WITHOUT saving and expecting the next read to be clean.
-       No such caller exists today (checked), and tests/storage-cache.test.js
-       pins the behaviour that matters. */
-    var cached = _PARSE_CACHE[key];
-    if (cached && cached.raw === raw) { storageNoteReadOk(key); return cached.parsed; }
+    if (raw === null) { storageNoteReadOk(key); return fallback; }
 
     var parsed = JSON.parse(raw);
     /* Ciphertext found while the vault is off/unavailable — do NOT hand back
@@ -93,7 +90,6 @@ function loadStore(key, fallback) {
       return fallback;
     }
     storageNoteReadOk(key);
-    _PARSE_CACHE[key] = { raw: raw, parsed: parsed };
     return parsed;
   } catch (e) {
     /* CORRUPT, not empty. This distinction is the whole point:
@@ -132,8 +128,6 @@ var STORE_CORRUPT = {};   /* key -> {at, reason, bytes, quarantine} while unread
 
 function storageNoteCorrupt(key, raw, reason) {
   if (STORE_CORRUPT[key]) return STORE_CORRUPT[key];
-  /* Never serve a cached parse of a store we have since found damaged. */
-  _parseCacheDrop(key);
 
   /* Quarantine the damaged bytes under a separate key so that even a
      later successful write cannot erase the only remaining copy. */
@@ -239,10 +233,6 @@ function saveStore(key, data) {
   try {
     var json = JSON.stringify(data);
     localStorage.setItem(STORE_PREFIX + key, json);
-    /* Write-through. Without this the next read re-parses what we just
-       serialised — and saveVisits(loadVisits()) would pay for a parse it does
-       not need. */
-    _PARSE_CACHE[key] = { raw: json, parsed: data };
     /* Queue for cloud backup/sync when signed in (async, never blocks;
        see cloud-sync.js). No-op when offline/signed out/disabled. */
     if (typeof cloudEnqueue === "function") cloudEnqueue(key);
@@ -330,7 +320,6 @@ function storageQuotaWatch() {
 
 function removeStore(key) {
   try {
-    _parseCacheDrop(key);
     localStorage.removeItem(STORE_PREFIX + key);
     if (typeof mirrorRemove === "function") mirrorRemove(key);
   } catch (e) {
