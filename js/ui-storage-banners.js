@@ -135,6 +135,26 @@
       "Store it wherever you keep your backups, not only in Downloads.");
   });
 
+  /* ── Records are sitting unencrypted (security audit SEC-1) ──
+
+     Raised once per session, not once ever. A prompt that can be dismissed
+     forever is one that will be, and the condition it describes does not go
+     away by itself. It states the NUMBER of exposed records rather than
+     talking about "security", because the number is the argument. */
+  evOn("vault:offer", function (ev) {
+    var n = (ev && ev.patients) || 0, v = (ev && ev.visits) || 0;
+    if (!n && !v) return;                 /* nothing at stake yet; do not nag */
+    var el = banner("vaultOfferBanner",
+      "position:fixed;left:0;right:0;bottom:0;z-index:9997;" +
+      "background:#7a4a12;color:#fff;padding:9px 14px;font-size:.7rem;line-height:1.45;" +
+      "box-shadow:0 -2px 10px rgba(0,0,0,.2)");
+    el.innerHTML =
+      "<b>" + n + " patient record(s) and " + v + " visit(s) on this device are not encrypted.</b> " +
+      "Anyone with this computer can read them. Turning encryption on takes a minute and " +
+      "does not change how you work — Account &rarr; Admin &rarr; <b>Record encryption</b>. " +
+      '<span style="cursor:pointer;text-decoration:underline" onclick="this.closest(\'div\').remove()">Not now</span>';
+  });
+
   /* ── Sync brought in changes from another device ──
      cloud-sync.js used to call renderHome() by name, which made the
      synchronisation layer depend on a specific screen of the UI. It now says

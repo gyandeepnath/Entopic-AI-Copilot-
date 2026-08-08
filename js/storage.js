@@ -29,6 +29,12 @@ function _vaultOnFor(key) {
          typeof vaultIsProtected === "function" && vaultIsProtected(key);
 }
 
+/* key -> { raw, parsed }. Bounded by the number of stores (about 20), not by
+   the amount of data, so it cannot grow without limit. */
+var _PARSE_CACHE = {};
+function _parseCacheDrop(key) { if (_PARSE_CACHE[key]) delete _PARSE_CACHE[key]; }
+function storageCacheClear() { _PARSE_CACHE = {}; }
+
 function loadStore(key, fallback) {
   if (_vaultOnFor(key)) {
     if (!vaultUnlocked()) {
@@ -42,7 +48,39 @@ function loadStore(key, fallback) {
   }
   try {
     var raw = localStorage.getItem(STORE_PREFIX + key);
-    if (raw === null) { storageNoteReadOk(key); return fallback; }
+    if (raw === null) { storageNoteReadOk(key); _parseCacheDrop(key); return fallback; }
+
+    /* ── PARSE CACHE (Phase 7, BE-15) ──
+       MEASURED, not assumed. Benchmark before this existed
+       (tools/bench/storage-bench.js, 9,000 visits / 23.5 MB):
+
+           loadVisits        284 ms
+           getPatientVisits  245 ms   ← a full parse to filter for one patient
+           getLastVisit      239 ms   ← another full parse
+           saveVisits        962 ms   ← loadVisits + serialise
+
+       doSave() alone calls loadVisits() and loadPatients() once each and then
+       writes both, so a single keystroke-save paid for two full parses of the
+       entire clinic. The scaling factor measured 1.47x worse than linear,
+       because JSON.parse on a multi-megabyte string degrades and the garbage
+       it produces triggers collection.
+
+       The cache is keyed on the RAW STRING, and the raw string is re-read from
+       localStorage on every call. So a write from another tab — the one case a
+       naive cache gets wrong — changes the bytes and invalidates it
+       automatically. Comparing two strings is O(n) but roughly two orders of
+       magnitude cheaper than parsing one.
+
+       ── THE CONTRACT CHANGE, STATED PLAINLY ──
+       loadStore() now returns a SHARED object rather than a fresh copy. The
+       codebase's pattern is read → mutate → save, which is unaffected: the
+       mutation lands in the cache and the save persists it. What is no longer
+       safe is mutating WITHOUT saving and expecting the next read to be clean.
+       No such caller exists today (checked), and tests/storage-cache.test.js
+       pins the behaviour that matters. */
+    var cached = _PARSE_CACHE[key];
+    if (cached && cached.raw === raw) { storageNoteReadOk(key); return cached.parsed; }
+
     var parsed = JSON.parse(raw);
     /* Ciphertext found while the vault is off/unavailable — do NOT hand back
        an envelope object as if it were records. */
@@ -55,6 +93,7 @@ function loadStore(key, fallback) {
       return fallback;
     }
     storageNoteReadOk(key);
+    _PARSE_CACHE[key] = { raw: raw, parsed: parsed };
     return parsed;
   } catch (e) {
     /* CORRUPT, not empty. This distinction is the whole point:
@@ -93,6 +132,8 @@ var STORE_CORRUPT = {};   /* key -> {at, reason, bytes, quarantine} while unread
 
 function storageNoteCorrupt(key, raw, reason) {
   if (STORE_CORRUPT[key]) return STORE_CORRUPT[key];
+  /* Never serve a cached parse of a store we have since found damaged. */
+  _parseCacheDrop(key);
 
   /* Quarantine the damaged bytes under a separate key so that even a
      later successful write cannot erase the only remaining copy. */
@@ -196,7 +237,12 @@ function saveStore(key, data) {
     try { mirrorStore(key, data); } catch (e) { /* mirror is best-effort */ }
   }
   try {
-    localStorage.setItem(STORE_PREFIX + key, JSON.stringify(data));
+    var json = JSON.stringify(data);
+    localStorage.setItem(STORE_PREFIX + key, json);
+    /* Write-through. Without this the next read re-parses what we just
+       serialised — and saveVisits(loadVisits()) would pay for a parse it does
+       not need. */
+    _PARSE_CACHE[key] = { raw: json, parsed: data };
     /* Queue for cloud backup/sync when signed in (async, never blocks;
        see cloud-sync.js). No-op when offline/signed out/disabled. */
     if (typeof cloudEnqueue === "function") cloudEnqueue(key);
@@ -284,6 +330,7 @@ function storageQuotaWatch() {
 
 function removeStore(key) {
   try {
+    _parseCacheDrop(key);
     localStorage.removeItem(STORE_PREFIX + key);
     if (typeof mirrorRemove === "function") mirrorRemove(key);
   } catch (e) {

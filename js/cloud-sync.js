@@ -291,6 +291,56 @@ function cloudSignOut() {
   cloudStop();
 }
 
+/* ── SIGN OUT EVERYWHERE  (security audit SEC-4) ──
+
+   Signing out above clears THIS device. The refresh token issued to any other
+   device stays valid until it expires on its own — so a stolen laptop, a
+   borrowed phone, or a session left open on a shared terminal remained able to
+   pull the whole clinic's records from the SERVER, with no device needed.
+
+   Containment was: change the account password in the Supabase dashboard, and
+   hope. That is not a control a clinic can be asked to operate at 9 a.m.
+
+   Supabase's logout endpoint takes a scope. `global` revokes every refresh
+   token issued to this user, on every device, immediately.
+
+   Deliberately reports what happened rather than assuming success: a
+   revocation the clinician believes worked and did not is worse than none,
+   because they will stop looking for the device. */
+function cloudSignOutEverywhere(cb) {
+  cb = cb || function () {};
+  if (!cloudSignedIn()) {
+    cloudSignOut();
+    cb(null, { local_only: true,
+      reason: "This device was not signed in to the cloud, so there was nothing to revoke." });
+    return;
+  }
+  cloudApi("/auth/v1/logout?scope=global", { method: "POST", _retried: true }, function (err) {
+    /* Clear locally WHATEVER the server said. If the call failed we may have
+       revoked nothing, but leaving this device signed in as well would be
+       strictly worse. */
+    var wasClinic = CLOUD.clinicId;
+    cloudSignOut();
+    if (typeof logAudit === "function") {
+      try {
+        logAudit(err ? "sessions_revoke_failed" : "sessions_revoked_everywhere",
+          err ? ("A sign-out-everywhere was attempted and the server did not confirm it: " +
+                 (err.message || err) + ". Other devices may still be signed in.")
+              : "Every session for this account was revoked, on all devices.",
+          {});
+      } catch (e) {}
+    }
+    if (err) {
+      cb(err, { local_only: true, clinic_id: wasClinic,
+        reason: "This device is signed out, but the server did not confirm that other " +
+                "devices were. Change the account password as well." });
+      return;
+    }
+    cb(null, { revoked: true,
+      reason: "Every device signed in to this account has been signed out." });
+  });
+}
+
 /* ── clinic membership ── */
 function cloudResolveClinic(cb) {
   cloudApi("/rest/v1/clinic_members?select=clinic_id,role&limit=1", {}, function (err, rows) {

@@ -244,7 +244,14 @@ function doSetup() {
     CU = user;
     if (typeof roleSessionReset === "function") roleSessionReset();
     if (typeof setActiveRole === "function") setActiveRole(role);
-    showHomePage();
+
+    /* Offer encryption now (SEC-1) — the only moment it is free: no records to
+       convert, and the person is already choosing secrets. FIRST account only;
+       a second user must not be asked to encrypt somebody else's records. */
+    var first = users.length === 1;
+    var offer = (first && typeof vaultUiOfferAtSetup === "function")
+      ? vaultUiOfferAtSetup() : Promise.resolve(false);
+    offer.catch(function () { return false; }).then(function () { showHomePage(); });
   }).catch(function () {
     alert("Could not create the account on this browser.");
   });
@@ -1895,6 +1902,15 @@ function esc(s) { return escHtml(s); }
   /* Automatic on-device backup (BE-18). Deferred inside autobackupStart, so it
      is never on the critical path of the first paint or of opening a record. */
   if (typeof autobackupStart === "function") { try { autobackupStart(); } catch (e) {} }
+
+  /* Records unencrypted? Say so, once per session (SEC-1). Deferred. */
+  setTimeout(function () {
+    try {
+      if (typeof vaultUiShouldOffer !== "function" || !vaultUiShouldOffer()) return;
+      if (typeof evEmit !== "function" || typeof vaultUiExposure !== "function") return;
+      evEmit("vault:offer", vaultUiExposure());
+    } catch (e) {}
+  }, 5000);
 
   /* Load API key */
   API_KEY = loadApiKey();

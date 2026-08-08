@@ -147,6 +147,81 @@ if (typeof document !== "undefined") {
   };
 
 
+  /* ── ENCRYPTION ON BY DEFAULT  (security audit SEC-1) ──
+
+     The strongest control in the product was opt-in, which means it was a
+     feature nobody used. A clinic that never opened the admin panel stored
+     every patient record in plaintext localStorage, and nothing said so.
+
+     It cannot simply be switched on: encryption needs a passphrase, and a
+     passphrase needs a human. So "on by default" is implemented as the two
+     things software CAN do —
+
+       1. offer it at the moment a clinic is created, before there is any
+          patient data to migrate and while the person is already choosing
+          secrets;
+       2. keep saying so, plainly and without a dismiss-forever, for as long
+          as real records are sitting unencrypted.
+
+     A prompt that can be permanently dismissed is a prompt that will be, so
+     this one comes back each session and states how many records are exposed
+     rather than talking about "security". */
+  window.vaultUiShouldOffer = function () {
+    if (typeof vaultHasCrypto !== "function" || !vaultHasCrypto()) return false;
+    if (typeof vaultEnabled === "function" && vaultEnabled()) return false;
+    return true;
+  };
+
+  /* How much is actually at stake right now — the number the banner shows. */
+  window.vaultUiExposure = function () {
+    var p = 0, v = 0;
+    try { p = (typeof loadPatients === "function") ? loadPatients().length : 0; } catch (e) {}
+    try { v = (typeof loadVisits === "function") ? loadVisits().length : 0; } catch (e) {}
+    return { patients: p, visits: v };
+  };
+
+  /* Offered during clinic setup. Returns a promise so the caller can wait for
+     the passphrase before moving on, and resolves false if declined — nothing
+     is forced, because a clinic locked out of its own records on day one is a
+     worse outcome than one that turns encryption on in week two. */
+  window.vaultUiOfferAtSetup = function () {
+    if (!window.vaultUiShouldOffer()) return Promise.resolve(false);
+    if (!window.confirm(
+      "Encrypt this device's patient records?\n\n" +
+      "STRONGLY RECOMMENDED, and easiest right now — there are no records to " +
+      "convert yet.\n\n" +
+      "Without it, anyone with this computer can read every patient record in " +
+      "it. With it, a lost or stolen machine is unreadable.\n\n" +
+      "You will choose a passphrase, and be given a recovery code to write " +
+      "down. Set up encryption now?")) {
+      if (typeof logAudit === "function") {
+        try { logAudit("vault_declined_at_setup",
+          "Record encryption was offered when the clinic was created and declined. " +
+          "Patient records on this device are stored in the clear.", {}); } catch (e) {}
+      }
+      return Promise.resolve(false);
+    }
+    var pass = window.prompt(
+      "Choose a passphrase for this device's records.\n\n" +
+      "At least 10 characters. Everyone who uses this computer will need it.\n" +
+      "Write it down somewhere safe — and you will also get a recovery code.", "");
+    if (pass === null || String(pass).length < 10) {
+      window.alert("No passphrase set — records will be stored unencrypted for now.\n\n" +
+        "You can turn encryption on at any time: Admin → Record encryption.");
+      return Promise.resolve(false);
+    }
+    return vaultEnable(pass).then(function (res) {
+      vaultUiPresentRecovery(res.recoveryCode);
+      window.alert("Encryption is ON. Patient records on this device are now unreadable " +
+        "without the passphrase or the recovery code.");
+      return true;
+    }).catch(function (e) {
+      window.alert("Could not turn encryption on: " + ((e && e.message) || e) +
+        "\n\nRecords are stored unencrypted. Try again from Admin → Record encryption.");
+      return false;
+    });
+  };
+
   /* ── Admin card ───────────────────────────────────────────────── */
   window.vaultAdminCard = function () {
     if (typeof isAdmin !== "function" || !isAdmin()) return "";

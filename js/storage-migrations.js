@@ -90,6 +90,14 @@ var STORE_MIGRATIONS = [
 
 /* ── The ledger: which migrations this device has applied ── */
 
+/* A migration must never share a reference with the live store — see the
+   snapshot comment in migrationsRun(). Plain JSON, because every store is
+   plain JSON by construction. */
+function _migClone(v) {
+  if (v === null || v === undefined) return v;
+  try { return JSON.parse(JSON.stringify(v)); } catch (e) { return v; }
+}
+
 function migrationLedger() {
   if (typeof loadStore !== "function") return { version: null, applied: [] };
   var l = loadStore(MIGRATION_LEDGER_STORE, null);
@@ -152,9 +160,18 @@ function migrationsRun(opts) {
   }
 
   /* Snapshot BEFORE anything runs. This is what makes the run reversible even
-     for a migration whose own `down` is null. */
+     for a migration whose own `down` is null.
+
+     DEEP COPIED, and that word is load-bearing. loadStore returns a shared
+     object (see the parse cache in storage.js), so a snapshot holding the same
+     reference the migration is about to mutate is not a snapshot at all — it
+     changes as the migration changes it, and the rollback restores the damage.
+     Caught by tests/backend-integrity.test.js the moment the cache landed.
+
+     A snapshot that aliases live data was always fragile; the cache only made
+     it fail loudly. */
   var snapshot = {};
-  keys.forEach(function (k) { snapshot[k] = loadStore(k, null); });
+  keys.forEach(function (k) { snapshot[k] = _migClone(loadStore(k, null)); });
   var snapKey = MIGRATION_SNAPSHOT_PREFIX + Date.now();
   if (!opts.skipSnapshot && typeof saveStore === "function") {
     if (saveStore(snapKey, { at: new Date().toISOString(), stores: snapshot }) === false) {
@@ -174,8 +191,10 @@ function migrationsRun(opts) {
   var ledger = migrationLedger();
   for (var mi = 0; mi < pending.length; mi++) {
     var m = pending[mi];
+    /* The migration gets its OWN copy too, so a step that throws part-way
+       through cannot leave half its mutations in the live store. */
     var before = {};
-    (m.stores || []).forEach(function (s) { before[s] = loadStore(s, null); });
+    (m.stores || []).forEach(function (s) { before[s] = _migClone(loadStore(s, null)); });
     var after;
     try {
       after = m.up(before);
@@ -238,7 +257,7 @@ function migrationsRollback(toId) {
   for (var k = 0; k < toUndo.length; k++) {
     var mm = toUndo[k];
     var before = {};
-    (mm.stores || []).forEach(function (s) { before[s] = loadStore(s, null); });
+    (mm.stores || []).forEach(function (s) { before[s] = _migClone(loadStore(s, null)); });
     var after;
     try { after = mm.down(before); } catch (e) {
       return { ok: false, undone: undone, reason: "undo of " + mm.id + " failed: " + ((e && e.message) || e) };
