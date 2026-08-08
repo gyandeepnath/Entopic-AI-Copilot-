@@ -1,0 +1,435 @@
+# Phase 8 — Verification & Validation Report
+
+**Date:** 2026-08-08
+**Scope of this document:** what has been *proven*, what has been *partially
+verified*, and what remains *unknown*. Nothing here is described as tested
+because a test file exists; every claim below names the evidence.
+
+**Re-runnable:**
+
+```
+node --test                          # 1,142 tests
+node tools/stress/attack.js          # 46 adversarial attacks
+node tools/audit-test-quality.js     # false-confidence scan
+node tools/mutation-test.js --target engine    # does the suite notice a bug?
+```
+
+---
+
+## 1. Executive quality summary
+
+Entopic has an unusually strong test suite for a solo-founder product, and a
+specific, measurable blind spot.
+
+**What the evidence supports.** The storage layer, the offline path, corruption
+recovery, concurrent writers, the vault, archival and migration are genuinely
+well covered, and covered *behaviourally* — the tests run the real modules
+against real failure conditions rather than asserting that functions exist. The
+adversarial harness (46 attacks) finds nothing. Two independent audits
+performed for this phase — a mechanical false-confidence scan and mutation
+testing — both come back better than I expected.
+
+**The blind spot, stated precisely.** The clinical alert tests almost all ask
+*"does this fire when it should?"* and almost none ask *"does it stay silent
+when it should?"*. Mutation testing proved this is not theoretical: changing
+one `&&` to `||` in the red-flag rules made an urgent alert fire for a patient
+reporting **floaters alone**, with wording naming a symptom they never
+reported — and the entire 1,126-test suite still passed. That is now fixed and
+covered.
+
+**The honest headline.** The suite is good at proving the software does what it
+should. It is weaker at proving it does *not* do what it should not. In a
+clinical decision-support tool those are not equally important — a false alarm
+that trains a clinician to dismiss alerts is how a real red flag gets missed.
+
+**What is NOT proven, and cannot be by any test here: that the clinical
+knowledge is correct.** 394 conditions, 48 thresholds and 18 red-flag rules
+remain `UNVERIFIED` pending the founder's review. Every test in this repository
+holds the engine to what the knowledge base *says*. None can tell you whether
+what it says is right.
+
+---
+
+## 2. Test inventory
+
+91 files, 1,142 tests. Rather than reproduce a table of file names — which
+would be a count, not evidence — here is the inventory by **risk covered**,
+with the gaps named.
+
+| Subsystem | Files | Coverage quality | Gap |
+|---|---|---|---|
+| Storage / persistence | 8 | **Strong** — behavioural, includes quota, corruption, refused writes, read isolation | — |
+| Per-visit storage (new) | 1 | **Strong** — 18 tests incl. failed conversion, missing record, both restore directions | Long-run behaviour on a real device unverified |
+| Offline / corruption recovery | 3 | **Strong** — mirror seeding, quarantine, damaged-store write refusal | Power-failure mid-write is simulated, not real |
+| Concurrent writers | 1 | **Strong** — now behavioural on both storage layouts | Three-plus simultaneous tabs untested |
+| Vault / encryption at rest | 1 (45 tests) | **Strong** — real crypto, asserts bytes on disk | Key rotation under load unverified |
+| Migration | 2 | **Strong** — rollback, undeclared stores, snapshot restore | Only synthetic migrations; zero real ones have shipped |
+| Cloud sync | 3 | **Moderate** — merge/conflict/PHI logic is unit-tested | **Network paths never execute in CI**; no live-server contract test |
+| Diagnostic engine | 12 | **Moderate** — golden vignettes, scale, determinism, exclusions | **Negative cases were the gap** (§4); clinical truth unverifiable here |
+| Red flags | 3 | **Strong for firing**, now covered for silence | Wording is `NEEDS_CLINICAL_REVIEW` |
+| Security boundaries | 5 | **Moderate** — roles, PHI gate, file-store, escaping | No authz test against a live backend |
+| Student / faculty | 4 | **Moderate** — competency, OSCE, simulation, quiz | Cross-role data visibility not adversarially tested |
+| Performance | 2 + bench | **Measured**, not asserted | Budgets are observed, not enforced in CI |
+
+---
+
+## 3. False-confidence audit (`node tools/audit-test-quality.js`)
+
+A mechanical scan for the specific ways a test passes whether or not the
+feature works.
+
+**Result: 2 findings that could pass while the feature is broken, out of
+1,117 scanned tests.** That is a genuinely good number and I did not expect it.
+
+| Pattern | Count | Assessment |
+|---|---|---|
+| No assertion at all | 1 | `token-registry.test.js:19` — relies on `execFileSync` throwing. Sound in effect, clearer with an explicit assertion. **Low.** |
+| Assertion that cannot fail | 1 | `engine-golden.test.js:246` — a "does not crash" test. Legitimate as a smoke check. **Low.** |
+| Timing-dependent | 2 | Both explicitly labelled PERFORMANCE with generous margins. **Accepted**, see §7. |
+| Unmessaged assertions | 2 | Cosmetic — a failure reads `false !== true`. **Low.** |
+| **Source-scraping** | **74** | **The structural finding.** See below. |
+| Shared file-level fixture | 26 | Order-dependence risk; no order-dependent failure observed in 5 repeat runs (§7). |
+
+### The source-scraping finding
+
+**74 tests (6.6%) assert against the *text* of production code** rather than
+its behaviour — regexes over `js/*.js` looking for an identifier or an
+ordering.
+
+This is not automatically wrong: a load-order requirement, or "the conflict
+check must run *before* the data is replaced", can only be expressed that way,
+because preserving *after* the replacement preserves the wrong version and
+still looks correct at runtime.
+
+But it has a real cost, and it was paid during this phase. The concurrent-writer
+test scraped `doSave()`'s source for the order of two identifiers. The
+per-visit storage split moved that logic into `_doSaveApply` — **the behaviour
+was completely intact and the test failed anyway.** A test that fails on a
+refactor and would pass on a reintroduced bug trains whoever comes next to
+adjust the regex until it goes green.
+
+**Action taken:** that test was replaced with a behavioural one that runs two
+writers against the real storage layer on *both* storage layouts, plus a single
+narrow source check for the ordering fact that genuinely only exists in source.
+
+**Recommendation:** convert source scrapes to behavioural tests wherever the
+behaviour is observable. Roughly 40 of the 74 are convertible. This is test
+debt, not a defect — logged in §11.
+
+---
+
+## 4. Mutation testing — the decisive evidence
+
+*"Could the test pass while the feature is broken?"* is the only question that
+matters, and it is the only one a green build cannot answer. So the production
+code was broken on purpose, one change at a time, and the tests re-run against
+each broken version.
+
+### Method, and why the raw number is a lie
+
+A mutation score that counts **equivalent mutants** is misleading. Many changes
+compile, run, and produce byte-identical output — no test could catch them and
+none should.
+
+The first engine run scored **8%** (2 killed of 24). Reporting that would have
+been a false alarm. Each survivor was re-run against 12 clinical probe cases:
+**21 of 22 changed no clinical output whatsoever.** Removing the zero-token
+guard, removing an urgent-route `break`, and loosening the context-only lookup
+all left every probe byte-identical.
+
+| target | mutants | killed | real holes | equivalent | score (filtered) |
+|---|---|---|---|---|---|
+| **engine** | 24 | 2 | **1** | 21 | **67%** (2 of 3) |
+| storage | 18 | 7 | not probed | — | 39% raw (lower bound) |
+
+The engine sample is small — 24 mutants, only 3 of them meaningful — so 67% has
+wide error bars. It is reported as what it is: one real hole found, not a
+confidence interval.
+
+### The real hole, and its clinical meaning
+
+```js
+// js/engine.js:1348
+if (tokens.indexOf("flashes") >= 0 && tokens.indexOf("floaters") >= 0) {
+    alerts.push({ m: "Flashes + floaters — rule out retinal tear / detachment", l: "urgent" });
+```
+
+Changed to `||`, **the whole suite still passed.** With that defect in
+production, a patient reporting **floaters alone** receives an urgent banner
+reading *"Flashes + floaters"* — naming a symptom they do not have.
+
+Why nothing caught it: every alert test asked whether the alert fires. None
+asked whether it stays silent.
+
+**Fixed and covered.** `tests/alert-specificity.test.js` (15 tests) asserts the
+conjunction, the general property that *no alert may name a finding the record
+does not contain*, and silence on six routine presentations — with the red-flag
+firing tests alongside, so the file cannot be satisfied by making the engine
+quieter. **Verified by re-applying the mutant: three tests fail, and pass again
+when it is reverted.**
+
+### A limitation of the tool, stated
+
+The `removed-condition` operator prefixes `false && `, which does **not**
+disable a condition containing a top-level `||` — JavaScript binds `&&` tighter,
+so `if (false && !v || !v.id)` still guards. Two `visit-store.js` survivors were
+reported this way before it was noticed; both were hand-checked and found
+equivalent by construction. The operator now skips such lines. **Storage's 39%
+predates that fix and should be treated as a lower bound, not a measurement.**
+
+---
+
+## 5. Clinical verification — what can and cannot be proven
+
+This is the section where confidence must be withheld.
+
+**Provable here, and proven:**
+
+- The engine is **deterministic**: the same record produces byte-identical
+  output across 20 consecutive runs, and across a knowledge base inflated 100×.
+- Red flags fire on their triggers; alone, buried under reassuring normal
+  findings, with the record full of garbage, against a hostile
+  clinician-authored condition built to suppress them, and inside a 50× KB.
+- Red flags **stay silent** on six routine presentations (new).
+- No input produces a non-finite probability or leaks `NaN`/`undefined` into
+  clinician-facing text — verified against `Infinity`, `NaN`, `1e400`, dates in
+  the year 275760, a megabyte of free text and regex bombs.
+- The differential is ordered, with the urgent sort nudge bounded to its
+  declared 0.08 and applying only across the urgent boundary.
+
+**Not provable here, and not claimed:**
+
+- **Whether any condition, threshold or alert is clinically correct.** 394 of
+  394 conditions, 48 thresholds and 18 red-flag rules are `UNVERIFIED`. The
+  tests hold the engine to what the knowledge base says; they cannot judge it.
+- **Sensitivity and specificity are unmeasured**, because there is no labelled
+  dataset. Phase 8 asks for false-positive and false-negative analysis; without
+  ground truth, the honest answer is that the false-positive *direction* is now
+  tested structurally (§4) and the *rates* are unknown.
+- **The boundary matrix in §7 of the brief is partially built.** Threshold,
+  just-below and just-above cases exist for IOP, C/D and Van Herick via
+  `clinical-thresholds.test.js`; they do not exist for every pathway, and
+  inventing the missing expectations would be fabricating clinical content.
+  Logged as test debt, marked as requiring the founder.
+
+---
+
+## 6. Data integrity, offline, sync, migration, security
+
+| Area | Evidence | Verdict |
+|---|---|---|
+| Create/read/update/delete | Behavioural tests on the real storage layer | **Proven** |
+| Corrupted record | Truncated, wrong-shape, mid-store damage → reads as corrupt, writes blocked, bytes quarantined | **Proven** |
+| Interrupted write | Quota failure mid-clinic → reported, not swallowed; unsaved data not readable | **Proven** |
+| Concurrent modification | Two writers on both layouts; overwritten version preserved, clinician told, audited | **Proven** |
+| Large datasets | 5,000 visits benchmarked; 10,000 findings and every registered token at once | **Proven** |
+| Migration + rollback | Undeclared-store refusal, snapshot restore incl. ledger, throwing migration | **Proven** for synthetic migrations |
+| Offline operation | Full exam verified in a real offline browser; engine loads no network module | **Proven** |
+| Sync failure paths | Merge, conflict, tombstones, PHI gate, pagination — unit level | **Partial** — see below |
+| Encryption at rest | Real crypto; asserts the actual bytes on disk contain no clinical text | **Proven** |
+| Secret handling | API key vault-wrapped; LLM payload pinned to age + sex only | **Proven** |
+
+**The synchronisation gap is the significant one.** Every sync test is a unit
+test against stubbed `fetch`. **No test has ever executed against a live
+server.** Authorization (row-level security), tenant isolation, and API contract
+conformance are asserted in SQL and in documentation — they have never been
+*executed*. Phase 8 §12 asks for contract testing; there is none.
+
+That is the largest untested surface in the product, and it is untested because
+it needs infrastructure that does not exist yet, not because it was overlooked.
+
+---
+
+## 7. Flaky-test audit
+
+The suite was run **5 times consecutively**, and the two timing-dependent tests
+plus the randomness-using test were run individually 10 times each.
+
+**Result: zero flaky tests observed.** 1,142 tests passed on every run.
+
+- The two `PERFORMANCE:` tests carry generous margins (engine work bounded well
+  below its measured cost). They are retained, not quarantined: they are the
+  only automated guard against a scaling regression.
+- The reconnect-jitter test uses `Math.random()` deliberately — it asserts a
+  *statistical* property (40 samples, fewer than 8 collisions) with a margin
+  wide enough that a genuine failure means the jitter is gone, not that the
+  dice were unkind.
+- 26 files build one fixture at module level. No order-dependent failure was
+  observed, but the risk is real and is logged as test debt.
+
+---
+
+## 8. Quality scorecard
+
+Scored against *what a clinical record system needs before it holds real
+patients*, not against what a solo-founder product usually achieves.
+
+| Dimension | Score | Justification |
+|---|---|---|
+| Unit testing | **8** | Broad, behavioural, meaningful assertions. 2 weak tests in 1,117. |
+| Integration testing | **7** | Real modules composed in sandboxes; no live backend. |
+| End-to-end testing | **5** | Browser probes are hand-run, not automated. No scripted patient journey in CI. |
+| **Clinical validation** | **3** | Engine behaviour is well pinned; **clinical truth is entirely unverified** — 394/394 conditions unreviewed. This score cannot rise without the founder. |
+| Security testing | **6** | Encryption, PHI gate, roles and escaping tested; authorization never executed against a server. |
+| Data integrity | **9** | The strongest dimension. Corruption, quota, concurrency, migration, archival all behaviourally proven. |
+| Offline testing | **9** | Verified in a real offline browser, including a 300-visit storage conversion. |
+| Synchronization | **5** | Logic unit-tested; **no live path ever executed**. |
+| Migration testing | **7** | Rollback and snapshot restore proven — on synthetic migrations only. |
+| Failure injection | **8** | 46 adversarial attacks; quota, corruption, hostile input, forged files. |
+| Performance validation | **6** | Measured and re-runnable; budgets not enforced by CI. |
+| Regression protection | **7** | Every defect found this phase has a test. Source scrapes weaken it. |
+| Test maintainability | **6** | 74 source-scraping tests are the drag. |
+| Test reliability | **9** | Zero flakes in 5 full runs. |
+| **Release confidence** | **5** | Adequate for a supervised pilot; not for unsupervised commercial use. |
+| **Overall verification maturity** | **6.5** | Strong engineering verification; clinical validation barely started. |
+
+---
+
+## 9. Release gates
+
+A release **must not proceed** if any of the following fails.
+
+| Severity | Definition | Blocks release? |
+|---|---|---|
+| **BLOCKER** | Patient data can be lost, corrupted or silently altered; a red flag fails to fire; PHI leaves the device without consent | **Yes — always** |
+| **CRITICAL** | A clinical output is wrong or misleading; encryption, authorization or audit is defeated; a migration is not reversible | **Yes** |
+| **HIGH** | A workflow cannot be completed; a failure is silent; a recovery path does not work | **Yes** |
+| **MEDIUM** | Degraded behaviour with a working manual route | No — fix within one release |
+| **LOW** | Cosmetic, wording, non-clinical | No |
+| **INFORMATIONAL** | Test debt, documentation | No |
+
+**Mandatory gate, every release:**
+
+```
+node --test                       must be 0 failures
+node tools/stress/attack.js       must be 0 broken
+node tools/audit.js               must be 0 FAIL
+node tools/audit-test-quality.js  serious findings must not increase
+```
+
+**Before any release that touches the engine or the knowledge base:**
+`node tools/mutation-test.js --target engine` — every **real hole** (equivalent
+mutants excluded) must be closed or explicitly accepted in writing.
+
+**Never gated on:** total test count, or coverage percentage. Both are
+trivially inflatable and neither is evidence.
+
+---
+
+## 10. Critical defect register
+
+Defects found **during this phase**, all fixed unless stated.
+
+| ID | Sev | Subsystem | Defect | Found by | Status |
+|---|---|---|---|---|---|
+| V8-1 | **CRITICAL** | Vault | Enabling encryption left every per-visit record in plaintext on disk while reporting the device encrypted, and made those records unreadable | Browser probe during the storage split | **Fixed**, 7 regression tests |
+| V8-2 | **HIGH** | Engine | Flashes+floaters alert would fire on either symptom alone, naming a finding the patient did not report | **Mutation testing** | **Fixed**, 15 tests |
+| V8-3 | HIGH | Migrations | A migration writing an undeclared store wrote outside the rollback snapshot; undo was a silent no-op | Stress harness | **Fixed** |
+| V8-4 | HIGH | Migrations | The documented "restore from the pre-migration snapshot" path had no implementation | Stress harness | **Fixed** |
+| V8-5 | HIGH | Storage | The parse cache made a quota-failed write readable as though persisted | Stress harness | **Fixed** (cache removed) |
+| V8-6 | HIGH | Engine | Inherited object properties were read as clinical exclusion rules — 4 correct conditions became 1 unrelated one | Stress harness | **Fixed** |
+| V8-7 | MEDIUM | Tests | The concurrent-writer test scraped source and broke on a refactor while behaviour was intact | This audit | **Fixed** (behavioural) |
+| V8-8 | MEDIUM | Tooling | The benchmark reported a mean, so one GC pause was quoted to the founder as a measurement | Founder challenge | **Fixed** (median + p95) |
+| V8-9 | LOW | UI | The archive screen stated a storage ceiling ~60% higher than measured | This audit | **Fixed** |
+
+---
+
+## 11. Test debt register
+
+Not defects. Work that should happen, ranked.
+
+| # | Item | Why | Effort |
+|---|---|---|---|
+| 1 | **Live-backend contract tests** | The largest untested surface: authorization and tenant isolation have never executed | 40 h + infrastructure |
+| 2 | **Automated end-to-end patient journey** | Browser verification is hand-run; a scripted registration→exam→diagnosis→save→reload→follow-up would catch integration breaks | 24 h |
+| 3 | Convert ~40 source scrapes to behavioural tests | They break on refactors and can pass on real bugs | 24 h |
+| 4 | Boundary matrix for every clinical pathway | §7 of the brief; **needs the founder** for expected outcomes | founder-gated |
+| 5 | Widen mutation testing to the whole engine | 24 mutants is a sample, not coverage | 16 h |
+| 6 | Per-file fixture isolation (26 files) | Removes order-dependence risk | 12 h |
+| 7 | Cross-role visibility adversarial tests | Student/faculty boundaries asserted, not attacked | 16 h |
+| 8 | Performance budgets enforced in CI | Currently measured, not gated | 8 h |
+
+---
+
+## 12. The final questions, answered bluntly
+
+**Can we prove Entopic is functioning correctly?**
+We can prove it functions **as specified**. We cannot prove the specification is
+clinically correct, because no clinician has verified it.
+
+**Where are we relying on assumptions rather than evidence?**
+Three places. Synchronization correctness against a real server. Authorization
+and tenant isolation. And every clinical value in the knowledge base.
+
+**What remains clinically unvalidated?**
+All of it: 394 conditions, 48 thresholds, 18 red-flag rules, and the wording of
+every alert.
+
+**What remains technically unvalidated?**
+Live sync, live authorization, multi-day sessions, real power failure, and
+behaviour on a genuinely low-end clinic device.
+
+**What could still fail despite the tests?**
+A clinically wrong rule that the engine executes perfectly. The tests would all
+pass.
+
+**The single most dangerous untested pathway?**
+**Cloud synchronization against a live server.** It is the only path that can
+move one clinic's records to another clinic, and it has never run outside a
+stub.
+
+**The highest-risk regression?**
+A change to the knowledge base or scoring that quietly alters a differential.
+Golden vignettes cover a handful of presentations out of a very large space.
+
+**Would you approve a pilot deployment?**
+**Yes — supervised, with a named clinician reviewing every output, on
+non-critical cases, with cloud sync off.** The offline path and the storage
+layer are genuinely solid.
+
+**Would you approve handling real patient records?**
+**Yes for local, encrypted, single-device use with backups.** **No with cloud
+sync on**, until §11 item 1 exists.
+
+**Would you approve a commercial release?**
+**No.** Not because the engineering is weak — it is better than most products at
+this stage — but because a clinical decision-support tool whose clinical content
+has never been reviewed by a clinician cannot be sold. That is a
+clinical-governance blocker, not a testing one.
+
+**What evidence would still be required?**
+1. Founder sign-off on the conditions, thresholds and red-flag wording.
+2. Live-backend authorization and tenant-isolation tests.
+3. An automated end-to-end patient journey.
+4. A validation set with known outcomes, to give sensitivity and specificity
+   any meaning at all.
+
+---
+
+## 13. Exit criteria
+
+| Criterion | Status |
+|---|---|
+| Existing tests audited | **Done** — mechanically, all 1,117; hand-checked for every finding |
+| Critical uncovered behaviours identified | **Done** — §3, §4, §6 |
+| Critical tests added | **Done** — 15 new tests in this phase (`alert-specificity`), on top of the 37 added with the storage change immediately before it |
+| Clinical reasoning has adversarial coverage | **Done** — 46 attacks + mutation testing |
+| Patient-data integrity tested | **Done** |
+| Offline behaviour tested | **Done** |
+| Synchronization failure tested | **Partial** — unit level only; **live paths never executed** |
+| Migration safety tested | **Done** for synthetic migrations |
+| Security boundaries tested | **Partial** — local proven, server-side never executed |
+| Major workflows have end-to-end coverage | **NOT DONE** — hand-run browser probes only |
+| Student/faculty verification | **Partial** — functional, not adversarial |
+| Weak/misleading tests identified | **Done** — 74 source scrapes, 2 serious |
+| Flaky tests addressed | **Done** — zero observed in 5 full runs |
+| Release gates defined | **Done** — §9 |
+| Critical regression suite exists | **Done** — the four gate commands |
+| All relevant tests pass | **Done** — 1,142 / 0 failures |
+| Remaining uncertainty documented | **Done** — §5, §11, §12 |
+
+**Phase 8 is complete except for two criteria, named rather than glossed:**
+end-to-end workflow automation, and any execution against a live backend. Both
+are in §11 with effort estimates.
+
+**Entopic is not "fully tested", and this document does not claim it is.**

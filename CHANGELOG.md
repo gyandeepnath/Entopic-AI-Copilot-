@@ -6,6 +6,69 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-08-08 — Phase 8: I broke the code on purpose to see if the tests would notice
+
+You have 1,142 tests. That proves the tests pass. It does not prove they would
+*catch a bug*. So I built two things to find out, and both are re-runnable:
+
+    node tools/audit-test-quality.js    looks for tests that pass either way
+    node tools/mutation-test.js         breaks the code deliberately
+
+### The finding that matters
+
+I changed one `&&` to `||` in the red-flag rules — the line that says "flashes
+AND floaters". **Every single one of your 1,126 tests still passed.**
+
+With that one-character bug in place, a patient reporting **floaters only**
+gets an urgent red banner reading *"Flashes + floaters — rule out retinal tear
+/ detachment"* — naming a symptom they never mentioned.
+
+Why nothing caught it: every alert test you have asks *"does the alarm go off
+when it should?"* Almost none asks *"does it stay quiet when it should?"* That
+second question is the one that matters for trust. An alarm that describes
+things the patient doesn't have is exactly how a clinician learns to stop
+reading alarms — and then misses a real one.
+
+Fixed, with 15 new tests. And I proved they work by putting the bug back: three
+of them fail, and pass again when it's removed.
+
+### What else the audits found
+
+**Good news, honestly.** Out of 1,117 tests scanned, only **2** could pass while
+the feature is broken, and both are harmless. That is a better result than I
+expected and better than most codebases I would expect to see.
+
+**One structural weakness.** 74 tests (about 7%) check the *text* of the code
+rather than what it does. That sounds pedantic until it bites — and it bit this
+week: when I moved the save logic during the storage change, one of those tests
+failed even though the behaviour was perfect. A test that breaks when nothing
+is wrong teaches people to silence it. I converted the worst offender and logged
+the rest.
+
+**No flaky tests.** I ran the whole suite five times and the timing-sensitive
+ones ten times each. Zero failures.
+
+### The blunt answers
+
+You asked me to be blunt, so:
+
+- **Can I prove Entopic works correctly?** I can prove it does what it was told
+  to do. I cannot prove what it was told is clinically right — because nobody
+  has checked. That is still 394 conditions waiting on you.
+- **Most dangerous untested thing?** Cloud sync against a real server. It is
+  the only path that could move one clinic's records to another, and it has
+  never run outside a test stub.
+- **Would I pilot it?** Yes — supervised, a clinician reading every output, on
+  non-urgent cases, with cloud sync off. The offline side is genuinely solid.
+- **Real patient records?** Yes for one encrypted device with backups. No with
+  cloud sync on.
+- **Commercial release?** **No** — and not because of the engineering. Because
+  a clinical tool whose clinical content has never been reviewed by a clinician
+  cannot be sold. That is a governance blocker, and it is yours to clear.
+
+The full detail is in `docs/PHASE8_VERIFICATION_REPORT.md`, including a release
+checklist you can hand to anyone.
+
 ## 2026-08-08 — Saving is now ~100x faster, and archiving watches for you
 
 Both of the things you approved. And one serious bug I found while testing
