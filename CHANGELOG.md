@@ -6,6 +6,35 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-08-08 — A full patient journey now runs itself, start to finish
+
+Until now, every automated test checked one piece in isolation, and the only
+test of the *whole workflow* was me driving a browser by hand. That's a real
+gap: pieces that each work alone can still break where they join.
+
+There's now an automated test (`tools/e2e/patient-journey.js`) that performs a
+complete clinic visit in a real browser, exactly as it happens on a device:
+
+  register a patient → do the exam → get the differential → a red flag appears
+  and fires → record the diagnosis → save → complete the visit → **close and
+  reopen the app** → find the patient again → start a follow-up
+
+24 checks, all passing, and it runs fully offline (the only thing it ever tries
+to fetch is the cosmetic fonts, which it doesn't need). Two checks matter most:
+
+- **A completed visit survives closing and reopening the app** — the whole
+  point of a record system, now proven end to end rather than assumed.
+- **On a follow-up, the patient's history carries forward but no examination
+  finding does.** Last visit's diabetes and family history appear; last visit's
+  IOP reading, RAPD finding, and diagnosis do NOT. That's a core safety rule —
+  a stale measurement presented as today's would be dangerous — and it's now
+  verified through the real save/reload/follow-up chain, not just in a unit
+  test.
+
+This closes one of the two things I'd flagged as not-yet-done in the Phase 8
+report. The other — testing against a live cloud server — still needs
+infrastructure that doesn't exist yet.
+
 ## 2026-08-08 — Storage mutation testing: two more gaps, and a tool that lied to me twice
 
 I turned the "break it on purpose" testing onto the storage layer — the part
