@@ -2,7 +2,7 @@
 
 **Document version:** 1.1
 **Covers build:** Entopic v1.5.0, KB v1.3.1 — 123 loaded files (100 in `js/`, 23 in
-`knowledge/`), 394 conditions across 9 domains, 91 test files.
+`knowledge/`), 394 conditions across 9 domains, 94 test files.
 **Counts last verified:** 2026-08-01, regenerated from `index.html` and the repo.
 **Purpose:** A ground-truth teardown of everything in the current system, followed by a target architecture that keeps the same UI and concept but rebuilds the foundations for scale, onboarding, a stable backend, an independent continuously-looping diagnostic engine, and a trustworthy evidence-based knowledge base.
 **Standing constraint:** Entopic is advisory decision-support. Every diagnostic output requires clinical correlation. Nothing here changes that contract.

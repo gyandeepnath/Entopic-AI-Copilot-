@@ -340,7 +340,7 @@ patients*, not against what a solo-founder product usually achieves.
 |---|---|---|
 | Unit testing | **8** | Broad, behavioural, meaningful assertions. 2 weak tests in 1,117. |
 | Integration testing | **7** | Real modules composed in sandboxes; no live backend. |
-| End-to-end testing | **7** | Was 5. `tools/e2e/patient-journey.js` now drives the FULL journey — register → examine → reason → save → complete → **reload** → retrieve → follow-up — in a real offline browser, 24 assertions incl. the carry-forward invariants. Not in the `node --test` gate (browserless), so run before release. |
+| End-to-end testing | **7** | Was 5. `tools/e2e/patient-journey.js` now drives the FULL journey — register → examine → reason → save → complete → **reload** → retrieve → follow-up — in a real offline browser, 29 assertions across two journeys (adult + paediatric referral) incl. the carry-forward invariants. Not in the `node --test` gate (browserless), so run before release. |
 | **Clinical validation** | **3** | Engine behaviour is well pinned; **clinical truth is entirely unverified** — 394/394 conditions unreviewed. This score cannot rise without the founder. |
 | Security testing | **6** | Encryption, PHI gate, roles and escaping tested; authorization never executed against a server. |
 | Data integrity | **9** | The strongest dimension. Corruption, quota, concurrency, migration, archival all behaviourally proven. |
@@ -421,7 +421,7 @@ Not defects. Work that should happen, ranked.
 | # | Item | Why | Effort |
 |---|---|---|---|
 | 1 | **Live-backend contract tests** | The largest untested surface: authorization and tenant isolation have never executed | 40 h + infrastructure |
-| 2 | ~~Automated end-to-end patient journey~~ | **DONE** — `tools/e2e/patient-journey.js`. Remaining: wire it into a browser-capable CI stage so it runs unattended, and add a second journey for a paediatric / red-flag-referral presentation | 8 h |
+| 2 | ~~Automated end-to-end patient journey~~ | **DONE** — `tools/e2e/patient-journey.js`. Remaining: wire it into a browser-capable CI stage so it runs unattended, and the paediatric red-flag-referral journey is done too | 4 h (CI wiring only) |
 | 3 | Convert ~40 source scrapes to behavioural tests | They break on refactors and can pass on real bugs | 24 h |
 | 4 | Boundary matrix for every clinical pathway | §7 of the brief; **needs the founder** for expected outcomes | founder-gated |
 | 5 | Widen mutation testing beyond the current samples | engine (120 mutants) and storage (40) are probed; the vault, sync-merge and archive logic are not yet — each needs its own probe scenarios | 20 h |
@@ -499,7 +499,7 @@ clinical-governance blocker, not a testing one.
 | Synchronization failure tested | **Partial** — unit level only; **live paths never executed** |
 | Migration safety tested | **Done** for synthetic migrations |
 | Security boundaries tested | **Partial** — local proven, server-side never executed |
-| Major workflows have end-to-end coverage | **DONE** — `tools/e2e/patient-journey.js`, a real-browser journey with a real reload (24 assertions). Runs outside the browserless `node --test` gate; run before release |
+| Major workflows have end-to-end coverage | **DONE** — `tools/e2e/patient-journey.js`, two real-browser journeys with reloads (29 assertions: adult dry-eye/RAPD + paediatric leukocoria referral). Runs outside the browserless `node --test` gate; run before release |
 | Student/faculty verification | **Partial** — functional, not adversarial |
 | Weak/misleading tests identified | **Done** — 74 source scrapes, 2 serious |
 | Flaky tests addressed | **Done** — zero observed in 5 full runs |

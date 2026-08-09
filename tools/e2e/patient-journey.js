@@ -198,6 +198,45 @@ function check(name, cond, detail) {
   check("the previous final diagnosis did NOT carry forward", followUp.finalDxCarried === "",
     "carried final_dx: " + followUp.finalDxCarried);
 
+  console.log("\n── second journey: paediatric red-flag referral ──");
+
+  /* A different clinical path entirely: a young child with leukocoria — the
+     retinoblastoma red flag — through to an urgent referral, a save, and a
+     reload. Paediatric patients and the referral workflow are both on the
+     Phase 8 clinical edge-case matrix and neither is exercised above. */
+  const paed = await page.evaluate(() => {
+    newPatient();
+    P.age = "3";
+    V.fun.findings = ["Leukocoria (white pupillary reflex)"];
+    runDiagnosticEngine();
+    const urgent = V.alerts.filter((a) => a.l === "urgent").map((a) => a.m);
+    V.final_dx = "Leukocoria OD — urgent paediatric ophthalmology referral";
+    V.plan = { mgmt: "same-day referral", referral: "paediatric ophthalmology, urgent" };
+    const ds = doSave();
+    completeVisit();
+    return { cp: CP, cv: CV, urgent, doSaveOk: ds.ok };
+  });
+  check("leukocoria in a child fires an urgent alert",
+    paed.urgent.some((m) => /leukocoria/i.test(m)), JSON.stringify(paed.urgent));
+  check("the paediatric referral visit saves and completes", paed.doSaveOk === true);
+
+  await page.reload({ waitUntil: "load" });
+  await page.waitForTimeout(400);
+  await signIn();
+
+  const paedReload = await page.evaluate((ids) => {
+    const v = getPatientVisits(ids.cp).find((x) => x.id === ids.cv);
+    return { there: !!v, status: v && v.status,
+             referral: v && v.data && v.data.plan && v.data.plan.referral,
+             dx: v && v.data && v.data.final_dx };
+  }, { cp: paed.cp, cv: paed.cv });
+  check("the paediatric referral survives a reload",
+    paedReload.there && paedReload.status === "completed");
+  check("the urgent referral plan persisted", /urgent/i.test(paedReload.referral || ""),
+    paedReload.referral);
+  check("the paediatric diagnosis persisted", /Leukocoria/.test(paedReload.dx || ""),
+    paedReload.dx);
+
   console.log("\n── offline integrity ──");
   check("no network request except the non-blocking font stylesheet", netHits.length === 0,
     netHits.slice(0, 3).join(", "));
