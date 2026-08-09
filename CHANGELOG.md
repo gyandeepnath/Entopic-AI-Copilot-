@@ -6,6 +6,45 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-08-08 — Storage mutation testing: two more gaps, and a tool that lied to me twice
+
+I turned the "break it on purpose" testing onto the storage layer — the part
+that holds your patient records. It found two gaps, both now fixed. But the
+more useful story is about the tool.
+
+### The tool told me everything was fine. Twice. It was wrong both times.
+
+My mutation tool has a filter that decides whether a deliberately-introduced
+bug actually matters (many don't — some code changes genuinely change nothing).
+For the storage layer, that filter reported a perfect score: no real problems.
+
+I didn't believe it, and checked by hand. It had missed two real gaps, because
+the filter simply never exercised the code paths where they lived. I fixed the
+filter, re-ran, got another perfect score — and found *another* miss the same
+way. The filter's "round-trip" check ended by re-reading the records, which
+happened to wipe the very warning flag the bug raised, hiding it.
+
+I'm telling you this because it's the whole point of how I try to work: **a
+green checkmark is not proof.** A tool that only checks what it thinks to check
+will happily report success over a real problem. The fix isn't to trust the
+tool more — it's to keep hand-checking until the tool earns the trust.
+
+### The two gaps (both low severity, both closed)
+
+- A save landing at the exact instant after opening a patient's chart could
+  have been wrongly refused, with a scary "cannot read records" banner, on a
+  perfectly healthy device. This was a latent gap in a safety guard, not
+  something you'd have hit today — but it's the kind of thing that becomes a
+  real bug after an unrelated edit, so it now has a test.
+- A rarely-used internal path for adding a new visit wasn't checked at all.
+
+Neither could have affected your data as the code stands. Both are now pinned
+so they can't quietly break later.
+
+1,164 tests pass. Storage mutation testing scores 100% — and this time I've
+hand-verified enough of the survivors to actually mean it. Detail and the
+honest write-up of the tool's two misses are in the Phase 8 report.
+
 ## 2026-08-08 — More mutation testing: two more real gaps, one false alarm I caught myself
 
 I widened the "break the code on purpose" testing from 24 deliberate bugs to

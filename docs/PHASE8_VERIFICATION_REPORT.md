@@ -8,10 +8,11 @@ because a test file exists; every claim below names the evidence.
 **Re-runnable:**
 
 ```
-node --test                          # 1,162 tests
+node --test                          # 1,164 tests
 node tools/stress/attack.js          # 46 adversarial attacks
 node tools/audit-test-quality.js     # false-confidence scan
 node tools/mutation-test.js --target engine    # does the suite notice a bug?
+node tools/mutation-test.js --target storage   # …and the same for the storage layer
 ```
 
 ---
@@ -52,14 +53,14 @@ what it says is right.
 
 ## 2. Test inventory
 
-93 files, 1,162 tests. Rather than reproduce a table of file names — which
+93 files, 1,164 tests. Rather than reproduce a table of file names — which
 would be a count, not evidence — here is the inventory by **risk covered**,
 with the gaps named.
 
 | Subsystem | Files | Coverage quality | Gap |
 |---|---|---|---|
 | Storage / persistence | 8 | **Strong** — behavioural, includes quota, corruption, refused writes, read isolation | — |
-| Per-visit storage (new) | 1 | **Strong** — 18 tests incl. failed conversion, missing record, both restore directions | Long-run behaviour on a real device unverified |
+| Per-visit storage (new) | 1 | **Strong** — 21 tests incl. failed conversion, missing record, both restore directions, spurious-corruption guard | Long-run behaviour on a real device unverified |
 | Offline / corruption recovery | 3 | **Strong** — mirror seeding, quarantine, damaged-store write refusal | Power-failure mid-write is simulated, not real |
 | Concurrent writers | 1 | **Strong** — now behavioural on both storage layouts | Three-plus simultaneous tabs untested |
 | Vault / encryption at rest | 1 (45 tests) | **Strong** — real crypto, asserts bytes on disk | Key rotation under load unverified |
@@ -137,14 +138,45 @@ been a false alarm. Each survivor was re-run against 12 clinical probe cases:
 guard, removing an urgent-route `break`, and loosening the context-only lookup
 all left every probe byte-identical.
 
-| target | mutants | killed | real holes | equivalent | score (filtered) |
+| target | mutants | killed | real holes found & fixed | equivalent | score (filtered) |
 |---|---|---|---|---|---|
-| **engine** | 24 | 2 | **1** | 21 | **67%** (2 of 3) |
-| storage | 18 | 7 | not probed | — | 39% raw (lower bound) |
+| **engine** | 120 | 59 | **2** | 59 | **all meaningful mutants now killed** |
+| **storage** | 40 | 14 | **2** | 26 | **100%** (14 of 14) once probed |
 
-The engine sample is small — 24 mutants, only 3 of them meaningful — so 67% has
-wide error bars. It is reported as what it is: one real hole found, not a
-confidence interval.
+The engine figures are the wider run (§ below). Storage is now **probed too**,
+and that story is the most instructive one in this whole phase — see next.
+
+### The storage probe reported a false 100% *twice*, and I caught it by hand both times
+
+This is worth telling plainly, because it is the same lesson three times over
+and it is the reason this report keeps its confidence low.
+
+A mutation probe classifies a survivor as "equivalent" (harmless) only if none
+of its **scenarios** show a behavioural change — exactly as a test subset only
+catches what it runs. When I first built the storage probe it reported **100%,
+zero real holes**. I did not believe it, and hand-checked the survivors:
+
+- **V8-13.** Flipping `if (at < 0)` — the branch that adds a *new* visit to the
+  index — made `visitRecordSave` **crash on a brand-new visit**, and the probe
+  had no scenario that added one. (Currently unreached in production: `doSave`
+  always loads the record first. But it is public, documented, defensive code.)
+- **V8-14.** Flipping `&&`→`||` in the corruption guard made a **healthy chart
+  read spuriously flag the visit index as corrupt** — which blocks writes and
+  shows the clinician a red "cannot read records" banner on a device where
+  nothing is wrong. The probe missed it because its round-trip ended with a
+  clean `loadVisits()`, and `storageNoteReadOk` *clears* the flag on the next
+  clean read — so the probe masked the very bug it was meant to find. The
+  observable consequence is a **save refused immediately after opening a
+  chart**, and the test now checks exactly that ordering.
+
+Both are fixed, both with a test proven to kill the mutant, and **the probe was
+strengthened both times** (a new-record scenario; a corruption check with no
+masking read). The re-run after each fix is honest only because the probe was
+made honest first.
+
+The takeaway, stated for whoever runs this next: **a mutation score of 100% is
+evidence the probe's scenarios are complete, not proof the code is.** Treat a
+clean survivor list as a prompt to hand-check the survivors, not a certificate.
 
 ### The real hole, and its clinical meaning
 
@@ -211,8 +243,10 @@ the record:
    subset is now the full clinical-engine surface (15 files), and the two real
    holes above survived even *that*.
 
-**Storage's 39% predates the precedence fix and has no probe filtering; it is a
-lower bound, not a measurement.** Adding a storage probe is test debt (§11).
+**Storage is now probed** (six scenarios: round-trip, do-save, new-record,
+corrupt-index, missing-record, quota, corrupt-patients) — see the storage
+subsection above for the two real holes it surfaced and the false 100% it
+reported twice before it was strong enough to trust.
 
 ---
 
@@ -282,7 +316,7 @@ it needs infrastructure that does not exist yet, not because it was overlooked.
 The suite was run **5 times consecutively**, and the two timing-dependent tests
 plus the randomness-using test were run individually 10 times each.
 
-**Result: zero flaky tests observed.** 1,162 tests passed on every run.
+**Result: zero flaky tests observed.** 1,164 tests passed on every run.
 
 - The two `PERFORMANCE:` tests carry generous margins (engine work bounded well
   below its measured cost). They are retained, not quarantined: they are the
@@ -371,6 +405,9 @@ Defects found **during this phase**, all fixed unless stated.
 | V8-10 | MEDIUM | Engine | The hand-written "Hypopyon present — URGENT referral" alert could be deleted and only a *generic derived* alert ("Hypopyon Uveitis, match 76") would remain — an urgent alert still fired, so no safety failure, but the specific deterministic wording was gone and every test still passed | **Mutation testing (wider run)** | **Fixed**, `red-flag-wording.test.js` (11 tests) pins all 10 hand-written urgent alerts by exact, non-derived wording |
 | V8-11 | LOW | Engine | The entire family-history block could be disabled and the full suite still passed — a device could ignore every recorded family history (glaucoma, RD, diabetes) with a green build | **Mutation testing (wider run)** | **Fixed**, `engine-history.test.js` (9 tests) |
 | V8-12 | INFO | Tooling | The mutation tester's engine subset omitted `engine-reachability.test.js`, manufacturing a FALSE hole (the route-activation loop, caught decisively by that file). An incomplete subset invents holes that do not exist — the same false confidence, inverted | This audit, self-review | **Fixed** — subset is now the full clinical-engine surface |
+| V8-13 | LOW | Storage | `visitRecordSave`'s "add a new visit to the index" branch was untested; a mutation crashed it and the visit was never indexed. Currently unreached in production (`doSave` always loads the record first) but public, documented, defensive code | **Storage mutation testing** | **Fixed**, `visit-store.test.js` |
+| V8-14 | MEDIUM | Storage | A mutation of the corruption guard made a **healthy chart read** spuriously flag the visit index as corrupt — which would block writes and alarm the clinician (a save refused right after opening a chart). The guard's correctness was untested | **Storage mutation testing** | **Fixed**, `visit-store.test.js` — checks the flag with no masking read |
+| V8-15 | INFO | Tooling | The storage mutation probe reported a false **100%** twice (no scenario added a new visit; the round-trip's trailing clean read masked the corruption flag). A probe is only as complete as its scenarios | This audit, self-review | **Fixed** — probe gained a new-record scenario and an unmasked corruption check |
 
 ---
 
@@ -384,7 +421,7 @@ Not defects. Work that should happen, ranked.
 | 2 | **Automated end-to-end patient journey** | Browser verification is hand-run; a scripted registration→exam→diagnosis→save→reload→follow-up would catch integration breaks | 24 h |
 | 3 | Convert ~40 source scrapes to behavioural tests | They break on refactors and can pass on real bugs | 24 h |
 | 4 | Boundary matrix for every clinical pathway | §7 of the brief; **needs the founder** for expected outcomes | founder-gated |
-| 5 | Widen mutation testing to the whole engine | 24 mutants is a sample, not coverage | 16 h |
+| 5 | Widen mutation testing beyond the current samples | engine (120 mutants) and storage (40) are probed; the vault, sync-merge and archive logic are not yet — each needs its own probe scenarios | 20 h |
 | 6 | Per-file fixture isolation (26 files) | Removes order-dependence risk | 12 h |
 | 7 | Cross-role visibility adversarial tests | Student/faculty boundaries asserted, not attacked | 16 h |
 | 8 | Performance budgets enforced in CI | Currently measured, not gated | 8 h |
@@ -465,7 +502,7 @@ clinical-governance blocker, not a testing one.
 | Flaky tests addressed | **Done** — zero observed in 5 full runs |
 | Release gates defined | **Done** — §9 |
 | Critical regression suite exists | **Done** — the four gate commands |
-| All relevant tests pass | **Done** — 1,162 / 0 failures |
+| All relevant tests pass | **Done** — 1,164 / 0 failures |
 | Remaining uncertainty documented | **Done** — §5, §11, §12 |
 
 **Phase 8 is complete except for two criteria, named rather than glossed:**

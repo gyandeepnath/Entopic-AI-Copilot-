@@ -204,6 +204,49 @@ test("the same is true when reading ONE patient's chart", () => {
 
 /* ═══ 3. THE COLLECTION API STILL BEHAVES ═══ */
 
+test("a normal read never marks the store corrupt", () => {
+  /* FOUND BY MUTATION TESTING (storage target). The guard that raises
+     corruption only when records are actually MISSING —
+
+       if (missing.length && typeof storageNoteCorrupt === "function")
+
+     — becomes, under `&&`→`||`, "fire whenever storageNoteCorrupt exists",
+     which is always. A perfectly healthy chart read then flags the index as
+     corrupt, which BLOCKS ALL WRITES and shows the clinician a red "cannot
+     read records" banner on a device where nothing is wrong. An availability
+     failure manufactured out of a routine read.
+
+     Both read paths carry the guard (visitStoreForPatient and
+     visitStoreLoadAll); this exercises both. */
+  const c = sandbox();
+  seed(c, [visit("a", "p1", ago(1)), visit("b", "p1", ago(30)), visit("c", "p2", ago(5))]);
+  c.run("visitStoreSplitNow()");
+
+  /* Check IMMEDIATELY after a chart read, with NO intervening index read.
+     A trailing loadVisits() would call storageNoteReadOk and clear a spurious
+     flag before this line saw it — masking exactly the bug under test. That
+     masking is real: the flag flickers, and the moment that matters is a WRITE
+     landing while it is set. */
+  c.run('getPatientVisits("p1");');
+  assert.strictEqual(c.run('storageIsCorrupt("visit_index")'), false,
+    "opening a patient's chart flagged the visit index as corrupt on a healthy device");
+
+  /* The consequence, stated as the clinician would meet it: a save right after
+     opening a chart must not be refused. */
+  c.run('getPatientVisits("p1");');
+  assert.strictEqual(c.run('saveVisits(loadVisits())'), true,
+    "a save immediately after opening a chart was REFUSED — a routine read wrongly marked " +
+    "the store corrupt, which blocks writes and alarms the clinician when nothing is wrong");
+
+  /* The whole-collection read path carries the same guard. */
+  const c2 = sandbox();
+  seed(c2, [visit("a", "p1", ago(1)), visit("b", "p2", ago(5))]);
+  c2.run("visitStoreSplitNow()");
+  c2.run('loadVisits();');
+  assert.strictEqual(c2.run('storageIsCorrupt("visit_index")'), false,
+    "a healthy loadVisits() flagged the visit index as corrupt");
+});
+
 test("getPatientVisits returns only that patient, newest first", () => {
   const c = sandbox();
   seed(c, [
@@ -233,6 +276,32 @@ test("saveVisits removing a visit removes its record too", () => {
     "an orphan record was left behind, consuming room and recoverable by nothing");
   assert.strictEqual(c.run('storageIsCorrupt("visit_index")'), false,
     "a legitimate removal must not read as corruption");
+});
+
+test("visitRecordSave indexes a brand-new visit, not just an existing one", () => {
+  /* FOUND BY MUTATION TESTING (storage target). Flipping `if (at < 0)` to
+     `if (at > 0)` — the branch that adds a NEW visit to the index — was
+     reported as an equivalent mutant by the storage probe, because no
+     scenario exercised it. Hand-checked, it is a real hole: with the mutation,
+     visitRecordSave on a new id crashes and the visit is never indexed.
+
+     In production this branch is currently unreached — doSave always loads the
+     record first, so `at` is never -1 — but visitRecordSave is a public,
+     documented function whose contract includes adding a visit, and defensive
+     code that is never tested is defensive code that rots. */
+  const c = sandbox();
+  seed(c, [visit("v1", "p1", ago(1))]);
+  c.run("visitStoreSplitNow()");
+
+  const ok = c.run(`visitRecordSave({ id: "vNEW", patient_id: "p1", date: "${ago(0)}",
+    status: "completed", data: { id: "vNEW", final_dx: "a new visit" } })`);
+  assert.strictEqual(ok, true, "visitRecordSave returned false for a valid new visit");
+
+  assert.strictEqual(c.run("loadVisits().length"), 2, "the new visit was not added");
+  assert.ok(c.run('(visitIndexLoad()||[]).some(function(e){return e.id==="vNEW";})'),
+    "the new visit's record was written but never indexed — it is invisible to loadVisits");
+  assert.strictEqual(c.run('getPatientVisits("p1").length'), 2,
+    "the new visit does not appear in the patient's chart");
 });
 
 test("saving one visit does not rewrite the index unless an indexed field changed", () => {

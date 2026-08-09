@@ -242,10 +242,153 @@ const tested = killed + survivors.length;
    So each survivor is re-run against clinical probe cases. If the output moves,
    it is a REAL HOLE: production could contain that defect with a green build.
    If nothing moves, it is noise and is reported separately. */
-const probeSurvivors = (TARGET === "engine") && !process.argv.includes("--no-probe");
+const probeSurvivors = (TARGET === "engine" || TARGET === "storage") &&
+                       !process.argv.includes("--no-probe");
 const realHoles = [], equivalent = [];
 
-if (probeSurvivors && survivors.length) {
+/* ── STORAGE PROBE ──
+   Parallel to the engine probe: run a battery of storage OPERATIONS against
+   baseline and against each mutant, and classify a survivor as a real hole
+   only if an observable outcome changed. Each scenario runs in its OWN fresh
+   sandbox because several of them corrupt or exhaust the store on purpose and
+   must not bleed into the next. The signatures are exactly the things a
+   clinician's data safety depends on: what reads back, whether corruption is
+   caught, whether a refused write stays refused. */
+if (probeSurvivors && TARGET === "storage" && survivors.length) {
+  console.log("\nchecking which survivors change storage behaviour…");
+  const vm = require("vm");
+
+  function makeCtx(overrideFile, overrideSrc, budget) {
+    const mem = {};
+    let used = () => Object.keys(mem).reduce((n, k) => n + k.length + mem[k].length, 0);
+    const ctx = {
+      localStorage: {
+        get length() { return Object.keys(mem).length; },
+        key: (i) => Object.keys(mem)[i] ?? null,
+        getItem: (k) => (Object.prototype.hasOwnProperty.call(mem, k) ? mem[k] : null),
+        setItem: (k, v) => {
+          v = String(v);
+          if (budget && used() - (mem[k] ? mem[k].length : 0) + v.length > budget) {
+            const e = new Error("quota"); e.name = "QuotaExceededError"; throw e;
+          }
+          mem[k] = v;
+        },
+        removeItem: (k) => { delete mem[k]; }
+      },
+      console: { log() {}, warn() {}, info() {}, error() {} },
+      JSON, Math, String, Number, Array, Object, Date, RegExp, Set, Promise, Error,
+      parseInt, parseFloat, isNaN, isFinite, Boolean,
+      setTimeout: (fn) => { try { fn(); } catch (e) {} return 0; }, clearTimeout: () => {},
+      module: { exports: {} }, evEmit: () => {}, lsSet: (k, v) => { try { mem[k] = String(v); return true; } catch (e) { return false; } },
+      alert: () => {}, logAudit: () => {}
+    };
+    vm.createContext(ctx);
+    for (const f of ["js/data-classification.js", "js/storage.js", "js/visit-store.js"]) {
+      const s = (f === overrideFile) ? overrideSrc : fs.readFileSync(path.join(ROOT, f), "utf8");
+      vm.runInContext(s, ctx, { filename: f });
+    }
+    vm.runInContext("logAudit = function () {};", ctx);
+    return ctx;
+  }
+  const SEED = `saveVisits([
+    {id:"v1",patient_id:"p1",date:"2026-03-01",status:"completed",updated:"2026-03-01",data:{id:"v1",final_dx:"A"}},
+    {id:"v2",patient_id:"p1",date:"2026-01-01",status:"completed",updated:"2026-01-01",data:{id:"v2",final_dx:"B"}},
+    {id:"v3",patient_id:"p2",date:"2026-02-01",status:"completed",updated:"2026-02-01",data:{id:"v3",final_dx:"C"}}]);
+    savePatients([{id:"p1",first_name:"Ann",updated:"2026-01-01"},{id:"p2",first_name:"Bob",updated:"2026-01-01"}]);`;
+
+  /* Each scenario: a fresh ctx (optionally with a budget), a script, and a
+     signature expression. Named so a real hole says which behaviour moved. */
+  const SCENARIOS = {
+    "round-trip": { run: (c) => {
+      const r = (e) => vm.runInContext(e, c);
+      r(SEED); r("visitStoreSplitNow();");
+      const n = r("loadVisits().length");
+      const pv1 = r('getPatientVisits("p1").map(function(v){return v.id;}).join(",")');
+      const last1 = r('(getLastVisit("p1")||{}).id'), last2 = r('(getLastVisit("p2")||{}).id');
+      /* Corruption is checked IMMEDIATELY after a chart read, with NO
+         intervening index read. storageNoteReadOk clears the flag on the next
+         clean read, so a trailing loadVisits() would MASK a &&->|| mutation
+         (line 230) that spuriously flags corruption on a healthy read. The
+         probe first missed exactly this, reporting 100% falsely. The
+         observable consequence is a write refused right after opening a chart. */
+      r('getPatientVisits("p1");');
+      const corruptAfterChart = r('storageIsCorrupt("visit_index")');
+      r('getPatientVisits("p1");');
+      const writeAfterChart = r('saveVisits(loadVisits())');
+      return "n=" + n + " pv1=" + pv1 + " last1=" + last1 + " last2=" + last2 +
+             " corruptAfterChart=" + corruptAfterChart + " writeAfterChart=" + writeAfterChart; } },
+    "do-save": { run: (c) => {
+      const r = (e) => vm.runInContext(e, c);
+      r(SEED); r("visitStoreSplitNow();");
+      r('CP="p1";CV="v1";P={id:"p1",first_name:"Ann"};V={id:"v1",final_dx:"A",cc:"typed here"};setVisitSeenStamp(null);');
+      const ds = r("doSave()");
+      return "ok=" + ds.ok + " reason=" + (ds.reason||"") +
+             " saved=" + r('(getPatientVisits("p1").filter(function(v){return v.id==="v1";})[0]||{data:{}}).data.cc'); } },
+    /* Adds a BRAND-NEW visit through visitRecordSave — the at<0 index branch.
+       This scenario was ADDED after the probe's first run reported 100% while
+       a hand-check found a real hole here: a probe that never exercises a
+       branch cannot classify a mutation of it, exactly as an incomplete test
+       subset cannot (V8-12). */
+    "new-record": { run: (c) => {
+      const r = (e) => vm.runInContext(e, c);
+      r(SEED); r("visitStoreSplitNow();");
+      let ok; try { ok = r('visitRecordSave({id:"vNEW",patient_id:"p1",date:"2026-06-01",status:"completed",data:{id:"vNEW"}})'); }
+      catch (e) { ok = "THREW"; }
+      return "ok=" + ok + " n=" + r("loadVisits().length") +
+             " indexed=" + r('(visitIndexLoad()||[]).some(function(e){return e.id==="vNEW";})') +
+             " inChart=" + r('getPatientVisits("p1").some(function(v){return v.id==="vNEW";})'); } },
+    "corrupt-index": { run: (c) => {
+      const r = (e) => vm.runInContext(e, c);
+      r(SEED); r("visitStoreSplitNow();");
+      r('localStorage.setItem("entopic_visit_index","[{bad");'); r("loadVisits();");
+      return "corrupt=" + r('storageIsCorrupt("visit_index")') +
+             " n=" + r("loadVisits().length") +
+             " writeRefused=" + r('saveVisits([{id:"x",patient_id:"p1",data:{}}])'); } },
+    "missing-record": { run: (c) => {
+      const r = (e) => vm.runInContext(e, c);
+      r(SEED); r("visitStoreSplitNow();");
+      r('localStorage.removeItem("entopic_visit_v2");');
+      const n = r("loadVisits().length");
+      return "n=" + n + " corrupt=" + r('storageIsCorrupt("visit_index")'); } },
+    "quota": { budget: 2600, run: (c) => {
+      const r = (e) => vm.runInContext(e, c);
+      let seeded; try { seeded = r('saveVisits([{id:"v1",patient_id:"p1",date:"2026-01-01",status:"completed",data:{id:"v1"}}]);'); } catch (e) { seeded = "threw"; }
+      let ok; try { ok = r('saveVisits(loadVisits().concat([{id:"big",patient_id:"p1",data:{pad:"x".repeat(50000)}}]));'); } catch (e) { ok = "threw"; }
+      return "seeded=" + seeded + " oversize=" + ok + " n=" + r("loadVisits().length") +
+             " failFlag=" + (r("storageWriteFailure()") ? "set" : "null"); } },
+    "corrupt-patients": { run: (c) => {
+      const r = (e) => vm.runInContext(e, c);
+      r(SEED);
+      r('localStorage.setItem("entopic_patients","{not a list");'); r("loadPatients();");
+      return "corrupt=" + r('storageIsCorrupt("patients")') + " n=" + r("loadPatients().length"); } }
+  };
+
+  function sigFor(overrideFile, overrideSrc) {
+    const out = {};
+    for (const k of Object.keys(SCENARIOS)) {
+      const sc = SCENARIOS[k];
+      try {
+        const ctx = makeCtx(overrideFile, overrideSrc, sc.budget);
+        out[k] = sc.run(ctx);
+      } catch (e) { out[k] = "THREW:" + (e.message || e); }
+    }
+    return out;
+  }
+
+  const baseSig = sigFor(null, null);
+  for (const s of survivors) {
+    const L = originals[s.file].split("\n");
+    L[s.line] = L[s.line].replace(s.from, s.to);
+    let mutSig;
+    try { mutSig = sigFor(s.file, L.join("\n")); }
+    catch (e) { realHoles.push({ ...s, why: "the mutant fails to load and no test noticed" }); continue; }
+    const moved = Object.keys(baseSig).filter((k) => baseSig[k] !== mutSig[k]);
+    if (moved.length) realHoles.push({ ...s, why: "changes: " + moved.join(", ") });
+    else equivalent.push(s);
+  }
+}
+
+if (probeSurvivors && TARGET === "engine" && survivors.length) {
   console.log("\nchecking which survivors change clinical output…");
   const vm = require("vm");
   const { LOAD_ORDER } = require(path.join(ROOT, "tools/lib/load-engine"));
