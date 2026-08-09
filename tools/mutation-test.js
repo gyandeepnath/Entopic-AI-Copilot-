@@ -47,10 +47,23 @@ const TARGET = arg("target", "engine");
 const TARGETS = {
   engine: {
     files: ["js/engine.js", "js/engine-exclusions.js"],
+    /* EVERY engine-behaviour test, not a hand-picked subset.
+
+       The first version of this list omitted engine-reachability.test.js, and
+       the omission produced a FALSE HOLE: disabling the route-activation loop
+       (engine.js ~1022) was reported as a survivor because none of the chosen
+       tests exercised it — yet engine-reachability catches it decisively. A
+       mutation tool that runs an incomplete subset manufactures holes that do
+       not exist, which is the same false confidence, inverted. The subset is
+       now the full clinical-engine surface. Slower per mutant; honest. */
     tests: ["tests/engine-golden.test.js", "tests/engine-exclusions.test.js",
-            "tests/derived-alerts.test.js", "tests/engine-problem-foci.test.js",
-            "tests/clinical-contradictions.test.js", "tests/engine-structured-fields.test.js",
-            "tests/red-flags.test.js", "tests/evidence-gate.test.js"]
+            "tests/engine-reachability.test.js", "tests/engine-new-conditions.test.js",
+            "tests/engine-structured-fields.test.js", "tests/engine-problem-foci.test.js",
+            "tests/engine-freetext.test.js", "tests/engine-next-tests.test.js",
+            "tests/common-conditions.test.js", "tests/derived-alerts.test.js",
+            "tests/clinical-contradictions.test.js", "tests/evidence-gate.test.js",
+            "tests/red-flags.test.js", "tests/red-flag-wording.test.js",
+            "tests/alert-specificity.test.js", "tests/engine-history.test.js"]
   },
   storage: {
     files: ["js/storage.js", "js/visit-store.js"],

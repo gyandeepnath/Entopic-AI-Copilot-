@@ -6,6 +6,44 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-08-08 — More mutation testing: two more real gaps, one false alarm I caught myself
+
+I widened the "break the code on purpose" testing from 24 deliberate bugs to
+120. The suite caught **59 of 60** that actually mattered — a 98% score, which
+is genuinely strong. But three things came out of it worth telling you about.
+
+### Two more real gaps, both now closed
+
+**The hypopyon alert could be deleted and no test would notice.** This one is
+subtle and I want to be precise: an urgent alert *still fired* if you deleted
+it, so a patient with a hypopyon would still be flagged — no safety failure.
+But the specific, clear wording *"Hypopyon present — URGENT referral"* would be
+silently replaced by a generic differential line, *"Hypopyon Uveitis, match
+76"*, which reads like a probability, not an instruction. The 17 hand-written
+red-flag alerts are your deterministic safety layer; each now has a test pinning
+its exact wording.
+
+**The engine could ignore every family history a clinician enters** — of
+glaucoma, retinal detachment, diabetes — and every test still passed. The
+effect is small (family history nudges the weighting, it's not a red flag),
+which is exactly why it slipped through. Now tested.
+
+### The false alarm — and why I'm telling you
+
+My mutation tool first reported a *third* gap. When I checked it by hand, it was
+wrong: the tool wasn't running one of the relevant test files, so it "found" a
+hole that a test actually catches perfectly well. A tool that invents problems
+that don't exist is its own kind of dishonesty, so I fixed the tool to run the
+complete set of engine tests, and re-checked. The two gaps above are real and
+survived even the corrected, stricter check.
+
+I'm flagging this because it's the same discipline I've been applying to the
+product: a confident wrong answer is worse than an honest "I don't know." That
+applies to my own tools too.
+
+1,162 tests pass. The full detail, including the corrected mutation numbers and
+an updated defect register, is in `docs/PHASE8_VERIFICATION_REPORT.md`.
+
 ## 2026-08-08 — Phase 8: I broke the code on purpose to see if the tests would notice
 
 You have 1,142 tests. That proves the tests pass. It does not prove they would

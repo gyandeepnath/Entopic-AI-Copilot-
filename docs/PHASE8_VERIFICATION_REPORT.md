@@ -8,7 +8,7 @@ because a test file exists; every claim below names the evidence.
 **Re-runnable:**
 
 ```
-node --test                          # 1,142 tests
+node --test                          # 1,162 tests
 node tools/stress/attack.js          # 46 adversarial attacks
 node tools/audit-test-quality.js     # false-confidence scan
 node tools/mutation-test.js --target engine    # does the suite notice a bug?
@@ -52,7 +52,7 @@ what it says is right.
 
 ## 2. Test inventory
 
-91 files, 1,142 tests. Rather than reproduce a table of file names — which
+93 files, 1,162 tests. Rather than reproduce a table of file names — which
 would be a count, not evidence — here is the inventory by **risk covered**,
 with the gaps named.
 
@@ -66,7 +66,7 @@ with the gaps named.
 | Migration | 2 | **Strong** — rollback, undeclared stores, snapshot restore | Only synthetic migrations; zero real ones have shipped |
 | Cloud sync | 3 | **Moderate** — merge/conflict/PHI logic is unit-tested | **Network paths never execute in CI**; no live-server contract test |
 | Diagnostic engine | 12 | **Moderate** — golden vignettes, scale, determinism, exclusions | **Negative cases were the gap** (§4); clinical truth unverifiable here |
-| Red flags | 3 | **Strong for firing**, now covered for silence | Wording is `NEEDS_CLINICAL_REVIEW` |
+| Red flags | 4 | **Strong** — firing, silence (`alert-specificity`), and per-alert exact wording (`red-flag-wording`) | Wording is `NEEDS_CLINICAL_REVIEW` |
 | Security boundaries | 5 | **Moderate** — roles, PHI gate, file-store, escaping | No authz test against a live backend |
 | Student / faculty | 4 | **Moderate** — competency, OSCE, simulation, quiz | Cross-role data visibility not adversarially tested |
 | Performance | 2 + bench | **Measured**, not asserted | Budgets are observed, not enforced in CI |
@@ -168,14 +168,51 @@ firing tests alongside, so the file cannot be satisfied by making the engine
 quieter. **Verified by re-applying the mutant: three tests fail, and pass again
 when it is reverted.**
 
-### A limitation of the tool, stated
+### The wider run, and two more real holes
 
-The `removed-condition` operator prefixes `false && `, which does **not**
-disable a condition containing a top-level `||` — JavaScript binds `&&` tighter,
-so `if (false && !v || !v.id)` still guards. Two `visit-store.js` survivors were
-reported this way before it was noticed; both were hand-checked and found
-equivalent by construction. The operator now skips such lines. **Storage's 39%
-predates that fix and should be treated as a lower bound, not a measurement.**
+The 24-mutant sample above was widened to **120 mutants** across `engine.js` and
+`engine-exclusions.js`. Progression, all against the equivalent-mutant filter:
+
+| run | subset | filtered score | real holes |
+|---|---|---|---|
+| initial 120 | 8 files (incomplete) | 94% | 3 — one of which was **false** (§ limitations) |
+| after fixes | 15 files | 98% (59 of 60) | 1 — family history, uncovered at that moment |
+| after `engine-history` added to the subset | 15 files | **all 60 meaningful mutants killed** | 0 |
+
+The two genuine holes — both fixed, both with a test **proven to kill its
+mutant** (apply → the new test fails; revert → it passes):
+
+- **V8-10 (hypopyon wording).** The hand-written *"Hypopyon present — URGENT
+  referral"* alert could be deleted and only a generic **derived** alert
+  (*"Hypopyon Uveitis — urgent condition in the differential, match 76"*) would
+  remain. An urgent alert still fired, so this is a **specificity** hole, not a
+  missed red flag — but the golden test matched `/hypopyon/i` and a different,
+  generic, probabilistic alert satisfied it while the deterministic safety
+  wording was gone. `red-flag-wording.test.js` now pins all **10** hand-written
+  urgent alerts by their exact, **non-derived** wording.
+- **V8-11 (family history).** The entire family-history block could be disabled
+  and the full suite passed — a device could ignore every recorded family
+  history with a green build. `engine-history.test.js` now asserts each flag's
+  token and a measurable differential change.
+
+### Two limitations of the tool, both found by self-review and fixed
+
+An analysis tool that is confidently wrong is worse than none, so both are on
+the record:
+
+1. **Precedence.** The `removed-condition` operator prefixes `false && `, which
+   does not disable a condition with a top-level `||` (JavaScript binds `&&`
+   tighter). Two `visit-store.js` survivors were equivalent by construction;
+   the operator now skips such lines.
+2. **Incomplete subset (V8-12).** The engine subset first omitted
+   `engine-reachability.test.js`, so disabling the route-activation loop was
+   reported as a **false hole** — that file catches it decisively. A mutation
+   run against an incomplete subset manufactures holes that do not exist. The
+   subset is now the full clinical-engine surface (15 files), and the two real
+   holes above survived even *that*.
+
+**Storage's 39% predates the precedence fix and has no probe filtering; it is a
+lower bound, not a measurement.** Adding a storage probe is test debt (§11).
 
 ---
 
@@ -245,7 +282,7 @@ it needs infrastructure that does not exist yet, not because it was overlooked.
 The suite was run **5 times consecutively**, and the two timing-dependent tests
 plus the randomness-using test were run individually 10 times each.
 
-**Result: zero flaky tests observed.** 1,142 tests passed on every run.
+**Result: zero flaky tests observed.** 1,162 tests passed on every run.
 
 - The two `PERFORMANCE:` tests carry generous margins (engine work bounded well
   below its measured cost). They are retained, not quarantined: they are the
@@ -331,6 +368,9 @@ Defects found **during this phase**, all fixed unless stated.
 | V8-7 | MEDIUM | Tests | The concurrent-writer test scraped source and broke on a refactor while behaviour was intact | This audit | **Fixed** (behavioural) |
 | V8-8 | MEDIUM | Tooling | The benchmark reported a mean, so one GC pause was quoted to the founder as a measurement | Founder challenge | **Fixed** (median + p95) |
 | V8-9 | LOW | UI | The archive screen stated a storage ceiling ~60% higher than measured | This audit | **Fixed** |
+| V8-10 | MEDIUM | Engine | The hand-written "Hypopyon present — URGENT referral" alert could be deleted and only a *generic derived* alert ("Hypopyon Uveitis, match 76") would remain — an urgent alert still fired, so no safety failure, but the specific deterministic wording was gone and every test still passed | **Mutation testing (wider run)** | **Fixed**, `red-flag-wording.test.js` (11 tests) pins all 10 hand-written urgent alerts by exact, non-derived wording |
+| V8-11 | LOW | Engine | The entire family-history block could be disabled and the full suite still passed — a device could ignore every recorded family history (glaucoma, RD, diabetes) with a green build | **Mutation testing (wider run)** | **Fixed**, `engine-history.test.js` (9 tests) |
+| V8-12 | INFO | Tooling | The mutation tester's engine subset omitted `engine-reachability.test.js`, manufacturing a FALSE hole (the route-activation loop, caught decisively by that file). An incomplete subset invents holes that do not exist — the same false confidence, inverted | This audit, self-review | **Fixed** — subset is now the full clinical-engine surface |
 
 ---
 
@@ -425,7 +465,7 @@ clinical-governance blocker, not a testing one.
 | Flaky tests addressed | **Done** — zero observed in 5 full runs |
 | Release gates defined | **Done** — §9 |
 | Critical regression suite exists | **Done** — the four gate commands |
-| All relevant tests pass | **Done** — 1,142 / 0 failures |
+| All relevant tests pass | **Done** — 1,162 / 0 failures |
 | Remaining uncertainty documented | **Done** — §5, §11, §12 |
 
 **Phase 8 is complete except for two criteria, named rather than glossed:**
