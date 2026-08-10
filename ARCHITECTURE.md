@@ -1,8 +1,8 @@
 # Entopic — System Architecture & Scaling Blueprint
 
 **Document version:** 1.1
-**Covers build:** Entopic v1.5.0, KB v1.3.1 — 125 loaded files (102 in `js/`, 23 in
-`knowledge/`), 394 conditions across 9 domains, 94 test files.
+**Covers build:** Entopic v1.5.0, KB v1.3.1 — 126 loaded files (103 in `js/`, 23 in
+`knowledge/`), 394 conditions across 9 domains, 95 test files.
 **Counts last verified:** 2026-08-01, regenerated from `index.html` and the repo.
 **Purpose:** A ground-truth teardown of everything in the current system, followed by a target architecture that keeps the same UI and concept but rebuilds the foundations for scale, onboarding, a stable backend, an independent continuously-looping diagnostic engine, and a trustworthy evidence-based knowledge base.
 **Standing constraint:** Entopic is advisory decision-support. Every diagnostic output requires clinical correlation. Nothing here changes that contract.
@@ -494,6 +494,70 @@ corruption, and a threshold scanner blinded by a file split — and **six wrong
 attacks**, including one that asserted a red-flag failure by inventing a field
 name that does not exist. That ratio is why rule 2 is written down.
 
+## 9e. The competency layer (`competency.js`, `ui-competency.js`)
+
+Added Phase 10. `competency.js` had existed since Phase 2 with sixteen passing
+tests and **zero call sites** — a fully-tested feature nobody could reach. A
+student could not record evidence and a supervisor could not sign anything off;
+the Teaching tab showed a `Coming with shared accounts` badge instead.
+
+**Why that dependency was wrong.** Reviewing logbooks *across accounts* does
+need the backend. Supervising a student does not — it happens at the chair, on
+one machine, and that is where the judgement is freshest. Phase 10 shipped the
+on-device path and narrowed the "coming soon" claim to the part that is
+genuinely blocked (cross-account review).
+
+| File | Owns |
+|---|---|
+| `competency.js` | the framework, evidence claims, sign-off, progress, feedback dimensions, longitudinal trend, the logbook export |
+| `ui-competency.js` | the Study and Teaching surfaces, the claim form, the structured sign-off form, framework import/template |
+
+**Invariants this layer must keep**
+
+1. **The framework ships EMPTY, and stays empty.** Entopic contains no
+   competency content, no pass mark, no weighting, no minimum case count and no
+   progression rule. Those are institutional, they differ by university and
+   regulator, and a fabricated one would be worse than none: a programme would
+   map its teaching to it and assess students against a standard nobody
+   accredited it against. Faculty import their own. Locked by
+   `tests/competency.test.js` and re-asserted over the UI in
+   `tests/competency-education.test.js`.
+2. **Simulated work can never read as real clinical experience.** Entopic
+   produces simulated cases and practice patients; a logbook that could not tell
+   those from a real patient would let a student present them to an examining
+   body as clinical experience. Every claim records `simulated` at claim time
+   (not by looking the visit up later, which archiving would break), the logbook
+   labels each entry `encounter_type` in words and reports `encounter_counts`,
+   and `competencyVisitIsSimulated()` **fails towards simulated** when it cannot
+   identify the encounter.
+3. **Whether simulated evidence counts is the department's decision, not
+   Entopic's.** `competency_sim_policy` is a stored boolean, default `false`.
+   The default is conservative because the failure modes are asymmetric:
+   under-counting understates progress visibly and is correctable, over-counting
+   asserts a competence nobody assessed on a patient. The logbook records which
+   rule produced its numbers, and the policy travels in backups (restored with a
+   `typeof` check, because `false` is a real setting).
+4. **A claim references a visit; it never copies one.** No visit id, patient
+   reference or clinical detail reaches the logbook — it must not become a
+   second, unprotected store of patient data.
+5. **The supervise gate is UI convenience, not a security boundary.** ADR-010:
+   authorization is not server-enforced. A signed competency is currently
+   trustworthy because a supervisor was standing there, not because the software
+   prevented anything. Both files say so in-line.
+6. **Unsigned evidence is a claim, not an achievement**, and the two are never
+   merged. A supervisor may agree a *lower* level than claimed; both are kept,
+   because that gap is the substance of the assessment.
+
+**Feedback is structured so it can accumulate.** One free-text box per sign-off
+is how feedback becomes "Good" — useless to the student and invisible to the
+department. Seven configurable dimensions (`COMPETENCY_FEEDBACK_DEFAULT`,
+replaceable wholesale by a department) each carry a three-point rating; three
+points deliberately, because a longer scale invites false precision on a
+thirty-second judgement and collects everything in the middle.
+`competencyFeedbackTrend()` reports a direction only from four or more ratings
+and calls a concern *recurring* only at two or more — one bad afternoon is not a
+persistent gap, and a label applied that loosely gets ignored.
+
 ## 10. Honest assessment — strengths and the concrete gaps
 
 ### Strengths worth protecting
@@ -682,9 +746,9 @@ Each phase is independently shippable and independently valuable; none requires 
 
 Generated by `node tools/sync-docs.js` from the `<script>` order in
 `index.html`, which IS the dependency graph in a build-step-free app.
-125 loaded files.
+126 loaded files.
 
-**Root** — `index.html` (691), `css/entopic.css` (2604)
+**Root** — `index.html` (696), `css/entopic.css` (2604)
 
 **`/knowledge`** — 23 files, loaded first, in this order:
 
@@ -712,13 +776,13 @@ Generated by `node tools/sync-docs.js` from the `<script>` order in
 - `clinical-scales.js` (206)
 - `loader.js` (417)
 
-**`/js`** — 102 files, in load order:
+**`/js`** — 103 files, in load order:
 
 - `dom-escape.js` (67)
 - `build-info.js` (78)
 - `browser-io.js` (101)
 - `kb-authoring.js` (312)
-- `data-classification.js` (267)
+- `data-classification.js` (285)
 - `events.js` (86)
 - `data-model.js` (1275)
 - `wnl-templates.js` (67)
@@ -732,7 +796,7 @@ Generated by `node tools/sync-docs.js` from the `<script>` order in
 - `kb-signoffs.js` (287)
 - `kb-review.js` (241)
 - `cloud-crypto.js` (265)
-- `cloud-sync.js` (555)
+- `cloud-sync.js` (605)
 - `cloud-replication.js` (416)
 - `clinical-record.js` (591)
 - `consent.js` (231)
@@ -741,7 +805,7 @@ Generated by `node tools/sync-docs.js` from the `<script>` order in
 - `feedback.js` (257)
 - `storage.js` (1030)
 - `visit-store.js` (423)
-- `storage-backup.js` (547)
+- `storage-backup.js` (560)
 - `storage-migrations.js` (421)
 - `storage-autobackup.js` (210)
 - `audit-clinical.js` (146)
@@ -750,13 +814,14 @@ Generated by `node tools/sync-docs.js` from the `<script>` order in
 - `visit-history.js` (212)
 - `clinical-contradictions.js` (229)
 - `kb-overlay.js` (423)
-- `competency.js` (311)
+- `competency.js` (559)
 - `ui-trends.js` (88)
 - `ui-storage-banners.js` (259)
 - `age-brackets.js` (136)
 - `auth-crypto.js` (167)
 - `clinic-mode.js` (231)
-- `roles.js` (370)
+- `roles.js` (379)
+- `ui-competency.js` (547)
 - `clinical-validators.js` (109)
 - `perf-metrics.js` (178)
 - `engine-exclusions.js` (94)
@@ -799,7 +864,7 @@ Generated by `node tools/sync-docs.js` from the `<script>` order in
 - `ui-feedback.js` (247)
 - `ui-deployment.js` (422)
 - `ui-vault.js` (438)
-- `ui-chart.js` (348)
+- `ui-chart.js` (359)
 - `file-store.js` (436)
 - `ui-attach.js` (184)
 - `speech.js` (307)
@@ -814,7 +879,7 @@ Generated by `node tools/sync-docs.js` from the `<script>` order in
 - `investigations-ui.js` (294)
 - `ui-patient-list.js` (69)
 - `ui-a11y.js` (192)
-- `app.js` (1995)
+- `app.js` (2005)
 - `error-boundary.js` (162)
 
 ---

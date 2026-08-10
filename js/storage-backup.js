@@ -505,6 +505,19 @@ function _importDecoded(data) {
     if (data.competencies && typeof data.competencies === "object") {
       saveStore("competencies", data.competencies);
     }
+    /* The feedback axes the department assesses on. Restored BEFORE the log
+       below, so that ratings arriving with the sign-offs refer to dimensions
+       that already exist rather than reading as orphaned. */
+    if (Array.isArray(data.competency_feedback_dims) && data.competency_feedback_dims.length) {
+      saveStore("competency_feedback_dims", data.competency_feedback_dims);
+    }
+    /* The simulated-encounter rule, restored BEFORE the evidence it governs.
+       An explicit typeof check, not a truthiness one: `false` is a real,
+       deliberate setting here and the conservative default, so treating it as
+       "absent" would silently re-score every restored logbook. */
+    if (typeof data.competency_sim_policy === "boolean") {
+      saveStore("competency_sim_policy", data.competency_sim_policy);
+    }
     if (Array.isArray(data.competency_log)) {
       var haveLog = loadStore("competency_log", []) || [];
       var seenIds = {};

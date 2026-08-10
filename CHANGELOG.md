@@ -6,6 +6,150 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-08-10 — Phase 10: a whole feature was finished, tested, and unreachable.
+
+Full report: `docs/PHASE10_EDUCATION_REPORT.md`.
+
+### What I found
+
+Entopic has had a complete competency and supervisor sign-off system since
+Phase 2. It works. It has sixteen passing tests. **Nothing in the app has ever
+called it.**
+
+A student could not record that an encounter demonstrated a skill. A supervisor
+could not sign anything off. The Teaching tab showed a grey "Coming with shared
+accounts" badge where the feature should have been, saying it was waiting on the
+cloud backend.
+
+That reason was only half right. Reviewing students' logbooks *across separate
+accounts and sites* does need the backend. But **supervising a student doesn't**
+— that happens at the chair, with you standing next to them, on one machine. No
+network involved, and it's the moment your judgement is sharpest. That half was
+buildable the whole time, so I built it.
+
+The uncomfortable part: the test suite was green throughout. Sixteen tests
+checked that the functions behave correctly; none checked that anything calls
+them. **A feature can be entirely correct and entirely absent at the same time**,
+and a test count can't tell you which you have.
+
+### Then my own first fix shipped broken too
+
+I wired the sign-off queue to a permission called `supervise` — which turned out
+not to exist in the permissions table. An undeclared permission silently means
+"no", so the queue was invisible to everyone, faculty included. I'd made the
+same class of mistake I'd just written up.
+
+The unit tests passed, because they fake the permission check. Running the real
+page in a real browser caught it on the first try. That browser run is now a
+permanent part of the project (`tools/e2e/competency-journey.js`), because it
+caught something no unit test could.
+
+### The part that matters most for safety
+
+Entopic can generate **simulated cases** and **practice patients**. A logbook
+that couldn't tell those apart from real patients would let a student hand an
+examining body simulated work as clinical experience — a misrepresentation the
+software itself would have caused.
+
+So:
+
+- Every entry records whether it was simulated **at the moment it's created**,
+  not by looking the visit up later (the visit may be archived by then).
+- The exported logbook labels each entry in words — `SIMULATED — not a real
+  patient` — and states the real/simulated split in its header.
+- The claim form warns the student *before* they fill it in, not after.
+- When it can't tell, it **assumes simulated**. Mislabelling real work is an
+  annoyance; mislabelling simulated work is a false claim of clinical
+  experience in front of an examiner.
+- By default, simulated work is recorded and shown but **does not** count
+  towards a competency being met — because under-counting is visible and
+  correctable, while over-counting asserts a competence nobody assessed on a
+  patient.
+
+That last one is a **switch, not a rule**. Whether simulation is acceptable
+evidence is your programme's decision, not mine, so it's a setting a course lead
+turns on — and the logbook records which rule produced its numbers.
+
+### What I deliberately did NOT build
+
+No competency list. No pass mark. No weightings. No minimum case counts. No
+progression rule. Those are institutional, they differ by university and
+regulator, and inventing them would be worse than having none — a programme
+would map its teaching to a standard nobody accredited.
+
+Faculty import their real framework as a JSON file. There's a downloadable
+**blank template** with an empty items list, and the app *refuses to import it*
+until a human has filled it in. That refusal is deliberate: a template
+pre-filled with plausible-looking competencies is exactly how a made-up standard
+gets adopted by accident.
+
+### Feedback that adds up over time
+
+A single free-text box per sign-off is how feedback becomes "Good" — which tells
+a student nothing and shows a department nothing. Now a supervisor rates seven
+separate dimensions, notes one strength and one thing to work on, and the
+student sees the **pattern across every encounter**: which axes are recurring
+concerns, which are improving, and every action they've been asked to take.
+
+It calls something a *recurring* concern only when it's been flagged more than
+once — one bad afternoon isn't a persistent gap, and a label used that loosely
+gets ignored. It won't claim a trend from fewer than four ratings.
+
+A supervisor can agree a **lower** level than the student claimed, and the app
+says plainly that this is the assessment, not a rejection. Both are kept, so the
+student can see the gap between their self-assessment and yours. That gap is the
+whole point of supervised training.
+
+### Four smaller bugs, found by writing the tests
+
+- **Improvement actions could come back in the wrong order.** Timestamps only go
+  down to the millisecond, so two sign-offs made in quick succession tied — and
+  the "newest first" list the student reads was then in arbitrary order. Now
+  tie-broken by creation order.
+- **An empty permission check** sat in the sign-off function: it looked like a
+  guard and enforced nothing. Replaced with a comment stating the honest
+  position, because a fake guard is worse than none.
+- **A storage type that was declared but never checked.** I added a `boolean`
+  type for the new setting; it would have silently accepted *any* value. Now
+  implemented, with a test that every declared type is genuinely enforced.
+- **One of my own tests couldn't fail.** The security test for the sign-off
+  button passed whether or not the escaping was there. I rewrote it and then
+  *removed the escaping to confirm the test goes red* before restoring it.
+
+### Verified, not assumed
+
+1,214 unit tests pass. 35 browser checks on the real page pass, including:
+import a framework → reload → claim evidence by clicking → confirm a student is
+denied the sign-off queue → supervisor rates seven dimensions → student sees the
+action → simulated work signed off does **not** count → the exported logbook
+labels both entries correctly and leaks no visit id. The 46-attack adversarial
+harness and the 29-check patient journey both still pass.
+
+### Five things I need you to confirm
+
+None of these blocks anything — I picked a defensible default for each and made
+every one a setting. But they're yours to decide, not mine:
+
+1. Should a **clinician** be able to sign off competencies, or only faculty? I
+   allowed both, because on placement the supervisor is a practising optometrist.
+2. Should **simulated** work count towards competencies? Off by default.
+3. Are the **seven feedback dimensions** right for your programme?
+4. Is a **three-point** rating scale right, or does your assessment use five?
+5. Should *recurring* need **two** flags, or more?
+
+### Still true, still not fixed
+
+Permission checks are UI-only — they hide a control, they don't prevent an
+action (ADR-010). Until the backend enforces it, a signed competency is
+trustworthy because a supervisor was physically there. That's the biggest
+remaining gap in this area and it's backend work.
+
+And no student or supervisor has actually used any of this yet. It's verified
+against its specification, not against a real teaching clinic — which is a
+different and better kind of evidence.
+
+---
+
 ## 2026-08-08 — Phase 9: the interface audit. One security hole, two accessibility blockers, one dishonest badge.
 
 I audited the whole interface layer by running it in a real browser rather than

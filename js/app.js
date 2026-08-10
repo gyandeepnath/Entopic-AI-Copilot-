@@ -532,6 +532,8 @@ function homeSecStudy() {
       '<button class="btn btn-p" onclick="seedExampleCases()" style="font-size:.62rem">Load example cases</button> ' +
       '<button class="btn btn-s" onclick="showCasebook()" style="font-size:.62rem">Open casebook</button>' +
     '</div>' +
+    /* Competency logbook: progress, longitudinal feedback, logbook export. */
+    ((typeof competencyStudyCard === "function") ? competencyStudyCard() : "") +
     (typeof analyticsRoleCard === "function" ? analyticsRoleCard() : "") +
     homeCardKB();
 }
@@ -586,10 +588,15 @@ function homeSecTeaching() {
     /* teaching analytics */
     (typeof analyticsRoleCard === "function" ? analyticsRoleCard() : "") +
 
-    /* student logbooks — honest about the dependency */
+    /* Competency framework + the at-the-chair sign-off queue. Reviewing across
+       ACCOUNTS still needs the backend; supervising a student on this device
+       never did, which is why this stopped being a "coming soon" badge. */
+    ((typeof competencyTeachingCard === "function") ? competencyTeachingCard() : "") +
+
+    /* cross-account logbooks — honest about the dependency that is real */
     '<div class="home-settings" style="margin-top:8px">' +
-      '<div class="home-settings-title">🎓 Student logbooks</div>' +
-      '<div class="home-settings-desc">Follow trainees\' reasoned cases across accounts once shared cloud accounts are enabled (backend Phase 2).</div>' +
+      '<div class="home-settings-title">🎓 Logbooks across accounts</div>' +
+      '<div class="home-settings-desc">Sign-off on this device works now (above). Following trainees\' logbooks across separate accounts and sites needs shared cloud accounts (backend Phase 2).</div>' +
       '<span class="soon-badge">Coming with shared accounts</span>' +
     '</div>';
 }

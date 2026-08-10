@@ -275,12 +275,23 @@ function viewPastVisit(vid) {
     host.addEventListener("click", function (e) { if (e.target === host) host.style.display = "none"; });
     document.body.appendChild(host);
   }
+  /* Competency evidence. Returns "" unless a framework has been imported, so a
+     practitioner who will never use competencies never sees it. The simulated
+     flag is resolved HERE, where both the visit and its patient are in hand —
+     ui-competency must not have to guess. */
+  var claim = "";
+  if (typeof competencyClaimCard === "function") {
+    var pt = null, pl = loadPatients();
+    for (var q = 0; q < pl.length; q++) if (pl[q].id === v.patient_id) { pt = pl[q]; break; }
+    claim = competencyClaimCard(v.id, competencyVisitIsSimulated(v, pt));
+  }
+
   host.innerHTML = '<div class="engine-map-box" style="max-width:720px">' +
     '<div class="engine-map-head"><b>Past visit — read only</b>' +
     '<span style="font-size:.6rem;color:var(--sv);margin-left:8px">' + esc((v.date || "").slice(0, 10)) + ' · ' + (v.visit_type === "follow_up" ? "Follow-up" : "Initial") + '</span>' +
     '<span style="flex:1"></span>' +
     '<button class="engine-map-x" onclick="document.getElementById(\'pastVisitOverlay\').style.display=\'none\'">✕</button></div>' +
-    '<div style="padding:16px;overflow:auto">' + fullVisitHTML(v) + '</div></div>';
+    '<div style="padding:16px;overflow:auto">' + fullVisitHTML(v) + claim + '</div></div>';
   host.style.display = "flex";
 }
 

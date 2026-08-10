@@ -73,6 +73,13 @@ const DATA_CLASSIFICATION = {
   /* Whether this device prompts when it runs out of room, and when it last did
      (js/storage-archive-auto.js). No clinical content. */
   archive_auto:    { class: "operational", encrypt: false, mirror: true,  backup: true  },
+  /* Feedback axes a department assesses on (Phase 10). Not student data, but
+     losing it orphans the ratings already recorded against those axes. */
+  competency_feedback_dims: { class: "legal", encrypt: false, mirror: true, backup: true },
+  /* Whether simulated encounters count towards a competency (Phase 10). One
+     boolean, but restoring a student's evidence without it re-scores them
+     against a different rule than the one they were assessed under. */
+  competency_sim_policy: { class: "legal", encrypt: false, mirror: true, backup: true },
   /* The per-visit index (js/visit-store.js). PHI even though it carries no
      examination content: a list of who attended on which date identifies
      people by itself, so encrypting the records and leaving the attendance
@@ -171,10 +178,35 @@ test("every classified store says why it is protected the way it is", () => {
 });
 
 test("every classified store declares a shape", () => {
+  /* This list must stay in step with dataShapeOk(). A shape declared here but
+     not implemented there passes every value silently — a declaration that
+     checks nothing, which is worse than an absent one because it reads as
+     protection. The next test holds the two together. */
   const bad = PROD.dataStoreKeys().filter(
-    (k) => !["array", "object", "string"].includes(PROD.DATA_STORES[k].shape));
+    (k) => !["array", "object", "string", "boolean"].includes(PROD.DATA_STORES[k].shape));
   assert.deepStrictEqual(bad, [],
     "a store with no declared shape cannot be checked for corruption:\n  " + bad.join("\n  "));
+});
+
+test("every declared shape is actually enforced by dataShapeOk", () => {
+  /* A value of each shape, and a value that is NOT of that shape. If a shape
+     name is declared but unimplemented, dataShapeOk falls through to `return
+     true` and the second assertion catches it. */
+  const probes = {
+    array:   { ok: [1],        no: { a: 1 } },
+    object:  { ok: { a: 1 },   no: [1] },
+    string:  { ok: "x",        no: 7 },
+    boolean: { ok: true,       no: "true" }
+  };
+  const shapes = [...new Set(PROD.dataStoreKeys().map((k) => PROD.DATA_STORES[k].shape))];
+  for (const shape of shapes) {
+    const key = PROD.dataStoreKeys().find((k) => PROD.DATA_STORES[k].shape === shape);
+    assert.ok(probes[shape], `shape "${shape}" (declared by ${key}) has no probe in this test`);
+    assert.strictEqual(PROD.dataShapeOk(key, probes[shape].ok), true,
+      `dataShapeOk rejected a valid "${shape}" for ${key}`);
+    assert.strictEqual(PROD.dataShapeOk(key, probes[shape].no), false,
+      `dataShapeOk ACCEPTED a non-"${shape}" for ${key} — the shape is declared but not enforced`);
+  }
 });
 
 test("the mirror and the backup derive their lists instead of re-hardcoding them", () => {

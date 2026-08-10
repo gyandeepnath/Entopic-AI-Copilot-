@@ -318,12 +318,20 @@ var ALWAYS_ON = {
 };
 
 /* Which capabilities each live role surfaces in its UI. */
+/* `supervise` gates the competency sign-off queue (js/ui-competency.js).
+   Clinician as well as faculty, because on a practice-based placement the
+   person standing next to the student is a registered optometrist, not
+   university staff — restricting it to faculty would hide the control from the
+   people who actually do the supervising.
+
+   NOT a security boundary (ADR-010): it decides what a screen shows, not what
+   the data layer permits. Server-enforced authorization is still outstanding. */
 var ROLE_CAPS = {
-  student:    { patients: 1, soap_note: 1, rx_print: 0, coding: 0, kb_authoring: 0, casebook_publish: 0, analytics: 1 },
-  clinician:  { patients: 1, soap_note: 1, rx_print: 1, coding: 1, kb_authoring: 0, casebook_publish: 0, analytics: 1 },
-  faculty:    { patients: 1, soap_note: 1, rx_print: 1, coding: 0, kb_authoring: 1, casebook_publish: 1, analytics: 1 },
-  researcher: { patients: 0, soap_note: 0, rx_print: 0, coding: 0, kb_authoring: 0, casebook_publish: 0, analytics: 1, research_export: 1 },
-  technician: { patients: 0, soap_note: 0, rx_print: 0, coding: 0, kb_authoring: 0, casebook_publish: 0, analytics: 0, investigations: 1 }
+  student:    { patients: 1, soap_note: 1, rx_print: 0, coding: 0, kb_authoring: 0, casebook_publish: 0, analytics: 1, supervise: 0 },
+  clinician:  { patients: 1, soap_note: 1, rx_print: 1, coding: 1, kb_authoring: 0, casebook_publish: 0, analytics: 1, supervise: 1 },
+  faculty:    { patients: 1, soap_note: 1, rx_print: 1, coding: 0, kb_authoring: 1, casebook_publish: 1, analytics: 1, supervise: 1 },
+  researcher: { patients: 0, soap_note: 0, rx_print: 0, coding: 0, kb_authoring: 0, casebook_publish: 0, analytics: 1, research_export: 1, supervise: 0 },
+  technician: { patients: 0, soap_note: 0, rx_print: 0, coding: 0, kb_authoring: 0, casebook_publish: 0, analytics: 0, investigations: 1, supervise: 0 }
 };
 
 /* Capabilities that a paid tier unlocks (absent = free). */
@@ -359,6 +367,7 @@ if (typeof module !== "undefined" && module.exports) {
     roleSessionReset: roleSessionReset,
     getTier: getTier, tierLabel: tierLabel, canSave: canSave, saveCap: saveCap,
     can: can, roleShowsCap: roleShowsCap, tierUnlocksCap: tierUnlocksCap,
+    ROLE_CAPS: ROLE_CAPS, TIER_LOCKS: TIER_LOCKS,
     adminHash: adminHash, adminCheckCredentials: adminCheckCredentials,
     adminVerify: adminVerify, adminSetPassword: adminSetPassword,
     adminUsingLegacyCredential: adminUsingLegacyCredential,

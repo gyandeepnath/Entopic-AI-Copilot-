@@ -584,6 +584,11 @@
 <script src="js/auth-crypto.js"></script>
 <script src="js/clinic-mode.js"></script>
 <script src="js/roles.js"></script>
+<!-- Competency UI. js/competency.js had sixteen passing tests and zero call
+     sites — a student could not record evidence and a supervisor could not
+     sign anything off. Loads after competency.js (the logic) and roles.js
+     (can("supervise")); dom-escape.js and browser-io.js are already above. -->
+<script src="js/ui-competency.js"></script>
 <script src="js/clinical-validators.js"></script>
 <!-- Timing ring (Phase 7, step 10). Loads before everything it measures.
      Durations and counts only — never a patient id, a token or free text. -->

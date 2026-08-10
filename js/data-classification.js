@@ -33,8 +33,8 @@
 /*  encrypt  the record vault encrypts it at rest                    */
 /*  mirror   copied to the IndexedDB safety mirror                   */
 /*  backup   included in the exported backup file                    */
-/*  shape    "array" | "object" | "string" — a value of the wrong    */
-/*           shape is corrupt even when it parses                    */
+/*  shape    "array" | "object" | "string" | "boolean" — a value of  */
+/*           the wrong shape is corrupt even when it parses          */
 /*  why      one line: why this row is set the way it is             */
 /*                                                                  */
 /* Load order: FIRST of the js/ modules — storage-mirror.js,         */
@@ -174,6 +174,23 @@ var DATA_STORES = {
     why: "Students' evidence and supervisors' sign-offs. This is assessment evidence an " +
          "examining body may demand years later; it holds no patient identifiers by design."
   },
+  /* The feedback axes a department chooses to assess on. Not clinical content
+     and not student data — but if it is lost, every historical sign-off's
+     ratings refer to dimensions that no longer exist and become unreadable. */
+  competency_feedback_dims: {
+    class: "legal", encrypt: false, mirror: true, backup: true, shape: "array",
+    why: "The dimensions a department assesses students on. Losing it orphans the ratings in " +
+         "every sign-off already recorded against them."
+  },
+  /* Whether the programme accepts simulated/practice encounters as evidence.
+     One boolean, but it changes what "met" means in every logbook this device
+     produces — so it is exported with them, not left behind. */
+  competency_sim_policy: {
+    class: "legal", encrypt: false, mirror: true, backup: true, shape: "boolean",
+    why: "The department's decision on whether simulated encounters count towards a competency. " +
+         "Restoring the evidence without it would silently re-score every student against a " +
+         "different rule than the one they were assessed under."
+  },
   age_brackets: {
     class: "legal", encrypt: false, mirror: true, backup: true, shape: "object",
     why: "The founder's per-condition decisions about which age band a condition belongs to. " +
@@ -251,6 +268,7 @@ function dataShapeOk(key, parsed) {
   if (spec.shape === "array") return Array.isArray(parsed);
   if (spec.shape === "string") return typeof parsed === "string";
   if (spec.shape === "object") return parsed !== null && typeof parsed === "object" && !Array.isArray(parsed);
+  if (spec.shape === "boolean") return parsed === true || parsed === false;
   return true;
 }
 
