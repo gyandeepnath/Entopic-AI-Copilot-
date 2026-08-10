@@ -442,3 +442,108 @@ for (const targetSplit of [false, true]) {
       "the restore left the index disagreeing with the records");
   });
 }
+
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* BATCH "NEWEST VISIT PER PATIENT"  (Phase 9 performance fix)      */
+/*                                                                  */
+/* The home screen built one row per patient and each row called    */
+/* getLastVisit(), which re-parsed the whole visit index and then   */
+/* read a full visit record. MEASURED in a real browser:            */
+/*                                                                  */
+/*   patients   renderHome   of which getLastVisit                  */
+/*         50        6 ms         2.7 ms  (45%)                     */
+/*        200       47 ms        38.2 ms  (81%)                     */
+/*        500      254 ms       242.8 ms  (95%)                     */
+/*                                                                  */
+/* Ten times the patients cost forty-two times the render, on the   */
+/* screen a clinician returns to all day. After the batch lookup:   */
+/* 254 ms -> 16.3 ms at 500 patients, and near-linear.              */
+/*                                                                  */
+/* The risk in a change like this is that the fast path and the     */
+/* slow path disagree — a row showing the wrong visit status is a   */
+/* clinical misstatement, not a cosmetic one. So the tests below    */
+/* pin EQUIVALENCE with the original per-patient lookup, not just   */
+/* that the batch function returns something.                       */
+/* ═══════════════════════════════════════════════════════════════ */
+
+function multiPatientClinic(c) {
+  seed(c, [
+    /* pA: newest is IN PROGRESS, older one completed */
+    visit("a1", "pA", ago(300), { status: "completed" }),
+    visit("a2", "pA", ago(2), { status: "in_progress" }),
+    /* pB: newest is COMPLETED, older one in progress */
+    visit("b1", "pB", ago(200), { status: "in_progress" }),
+    visit("b2", "pB", ago(1), { status: "completed" }),
+    /* pC: a single visit */
+    visit("c1", "pC", ago(50), { status: "completed" })
+    /* pD deliberately has no visits at all */
+  ]);
+}
+
+test("the batch lookup agrees with getLastVisit for every patient", () => {
+  const c = sandbox();
+  multiPatientClinic(c);
+  c.run("visitStoreSplitNow()");
+
+  const batch = c.run("visitStoreLastIndexByPatient()");
+  for (const pid of ["pA", "pB", "pC"]) {
+    const single = c.run(`(getLastVisit(${JSON.stringify(pid)}) || {}).id`);
+    const fromBatch = batch[pid] && batch[pid].id;
+    assert.strictEqual(fromBatch, single,
+      pid + ": the batch lookup and getLastVisit disagree about the newest visit — " +
+      "a patient row would show the wrong status");
+  }
+});
+
+test("the batch lookup carries the STATUS the row renders", () => {
+  /* The row only needs status, which is why the batch reads the index and no
+     visit records at all. If status were missing the row would silently show
+     every patient as not-yet-completed. */
+  const c = sandbox();
+  multiPatientClinic(c);
+  c.run("visitStoreSplitNow()");
+  const batch = c.run("visitStoreLastIndexByPatient()");
+  assert.strictEqual(batch.pA.status, "in_progress", "pA's newest visit is in progress");
+  assert.strictEqual(batch.pB.status, "completed", "pB's newest visit is completed");
+  assert.strictEqual(batch.pC.status, "completed");
+});
+
+test("a patient with no visits is absent from the batch, not undefined-shaped", () => {
+  const c = sandbox();
+  multiPatientClinic(c);
+  c.run("visitStoreSplitNow()");
+  const batch = c.run("visitStoreLastIndexByPatient()");
+  assert.ok(!("pD" in batch), "a patient with no visits must simply not be in the map");
+});
+
+test("the batch lookup works on a device that has NOT split yet", () => {
+  /* Same fallback contract as every other accessor here: a device mid-upgrade,
+     or one restored from an older backup, must still render its home screen. */
+  const c = sandbox();
+  multiPatientClinic(c);
+  assert.strictEqual(c.run("visitStoreSplit()"), false, "setup: not split");
+  const batch = c.run("visitStoreLastIndexByPatient()");
+  assert.strictEqual(batch.pA && batch.pA.id, "a2");
+  assert.strictEqual(batch.pB && batch.pB.status, "completed");
+});
+
+test("the batch lookup reads the index ONCE regardless of patient count", () => {
+  /* The whole point. Counting reads of the index key proves the fix is
+     structural rather than incidentally faster on a small fixture. */
+  const c = sandbox();
+  multiPatientClinic(c);
+  c.run("visitStoreSplitNow()");
+  c.run(`
+    __reads = 0;
+    var _origGet = localStorage.getItem.bind(localStorage);
+    localStorage.getItem = function (k) {
+      if (k === "entopic_visit_index") __reads++;
+      return _origGet(k);
+    };
+    visitStoreLastIndexByPatient();
+  `);
+  const reads = c.run("__reads");
+  assert.strictEqual(reads, 1,
+    "the visit index was read " + reads + " times for one batch lookup; it must be read once");
+});

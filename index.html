@@ -666,6 +666,12 @@
 <script src="js/certificates-ui.js"></script>
 <script src="js/investigations.js"></script>
 <script src="js/investigations-ui.js"></script>
+<!-- Accessibility bridge: associates labels with controls and makes
+     already-clickable elements keyboard-operable. Changes no pixels.
+     Loads before app.js so the first render is covered. -->
+<!-- Patient-list rows + the practice/real split, split out of app.js. -->
+<script src="js/ui-patient-list.js"></script>
+<script src="js/ui-a11y.js"></script>
 <script src="js/app.js"></script>
 <script src="js/error-boundary.js"></script>
 <!-- Time to interactive on THIS device. The 12.6 s offline stall was invisible

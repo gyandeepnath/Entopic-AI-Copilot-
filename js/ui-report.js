@@ -42,8 +42,10 @@ function pgRpt() {
   h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:.68rem">';
   h += '<div><b>Name:</b> ' + escH(nm.trim()) + '</div>';
   h += '<div><b>MRN:</b> ' + escH(P.mrn) + '</div>';
-  h += '<div><b>Age:</b> ' + (P.age || "—") + '</div>';
-  h += '<div><b>Sex:</b> ' + (P.sex || "—") + '</div>';
+  /* escH on age/sex too — see the note in updateHdr (js/app.js). A report is
+     printed, exported and sent onward, so an unescaped field here travels. */
+  h += '<div><b>Age:</b> ' + escH(P.age || "—") + '</div>';
+  h += '<div><b>Sex:</b> ' + escH(P.sex || "—") + '</div>';
   if (P.occupation) h += '<div><b>Occupation:</b> ' + escH(P.occupation) + '</div>';
   h += '</div></div>';
 
@@ -331,7 +333,8 @@ function pgRxP() {
   /* Patient info */
   h += '<table style="width:100%;margin-bottom:14px;font-size:.74rem"><tr>';
   h += '<td><b>Patient:</b> ' + escH(nm.trim()) + '</td>';
-  h += '<td><b>Age/Sex:</b> ' + (P.age || "—") + '/' + (P.sex ? P.sex.charAt(0) : "—") + '</td>';
+  h += '<td><b>Age/Sex:</b> ' + escH(P.age || "—") + '/' +
+       escH(P.sex ? String(P.sex).charAt(0) : "—") + '</td>';
   /* The EXAM date, not the day this page happened to be rendered (RX-3).
      Re-printing a year-old refraction must not stamp it with today's date. */
   var _examDate = "";

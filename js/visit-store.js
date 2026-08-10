@@ -250,6 +250,53 @@ function visitStoreLastFor(patientId) {
   return best ? visitRecordLoad(best.id) : null;
 }
 
+/* Newest visit per patient for EVERY patient, from ONE pass over the index.
+
+   MEASURED PROBLEM (Phase 9). The home screen builds one row per patient and
+   each row called getLastVisit(patient), which re-reads and re-parses the whole
+   visit index and then reads a full visit record. That is O(patients x index)
+   plus one record read per row — quadratic on the screen a clinician returns to
+   all day:
+
+       patients   renderHome   of which getLastVisit
+             50        6 ms          2.7 ms   (45%)
+            200       47 ms         38.2 ms   (81%)
+            500      254 ms        242.8 ms   (95%)
+
+   Ten times the patients cost forty-two times the render.
+
+   This returns the newest INDEX ENTRY per patient — not the visit record —
+   because a list row needs only date/status/id, all of which the index already
+   carries. So the record reads disappear entirely rather than merely being
+   batched. Callers that genuinely need clinical content still use
+   visitStoreLastFor() and pay for exactly the one record they open.
+
+   Archived stubs are included deliberately: an archived visit is still the
+   patient's most recent encounter, and a chart that skipped it would show a
+   stale "last seen" date. */
+function visitStoreLastIndexByPatient() {
+  var out = Object.create(null);
+  var idx = visitIndexLoad();
+  if (idx === null) {
+    /* Pre-split device: fall back to the collection, still one pass. */
+    var all = visitStoreLoadAll();
+    for (var j = 0; j < all.length; j++) {
+      var w = all[j];
+      if (!w || !w.patient_id) continue;
+      var curW = out[w.patient_id];
+      if (!curW || String(w.date || "") > String(curW.date || "")) out[w.patient_id] = visitIndexEntry(w);
+    }
+    return out;
+  }
+  for (var i = 0; i < idx.length; i++) {
+    var e = idx[i];
+    if (!e || !e.patient_id) continue;
+    var cur = out[e.patient_id];
+    if (!cur || String(e.date || "") > String(cur.date || "")) out[e.patient_id] = e;
+  }
+  return out;
+}
+
 /* How many visits this device holds, without reading any of them. */
 function visitStoreCount() {
   var idx = visitIndexLoad();
@@ -368,6 +415,7 @@ if (typeof module !== "undefined" && module.exports) {
     visitRecordSave: visitRecordSave, visitRecordRemove: visitRecordRemove,
     visitStoreLoadAll: visitStoreLoadAll, visitStoreSaveAll: visitStoreSaveAll,
     visitStoreForPatient: visitStoreForPatient, visitStoreLastFor: visitStoreLastFor,
+    visitStoreLastIndexByPatient: visitStoreLastIndexByPatient,
     visitStoreCount: visitStoreCount, visitStoreSplit: visitStoreSplit,
     visitStoreSplitNow: visitStoreSplitNow, visitStoreDropLegacy: visitStoreDropLegacy
   };

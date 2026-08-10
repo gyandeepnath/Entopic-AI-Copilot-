@@ -65,3 +65,76 @@ test("esc handles null/undefined/numbers without throwing", () => {
 test("escH remains a full escaper too (headers/labels)", () => {
   assert.strictEqual(escH('a<b>"&'), "a&lt;b&gt;&quot;&amp;");
 });
+
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* EVERY PATIENT FIELD THAT REACHES innerHTML IS ESCAPED           */
+/*                                                                  */
+/* Phase 9 found a proven XSS: `age` and `sex` were interpolated    */
+/* into innerHTML unescaped in three places — the exam header and   */
+/* two report surfaces — while name, MRN, occupation and the chief  */
+/* complaint beside them were escaped.                              */
+/*                                                                  */
+/* Demonstrated in a real browser: a record whose age was           */
+/*   5"><img src=x onerror="...">                                   */
+/* executed script in the app's own context, which is where every   */
+/* patient record and the unlocked vault live.                      */
+/*                                                                  */
+/* WHY IT LOOKED SAFE, AND WHY THAT REASONING WAS WRONG             */
+/*                                                                  */
+/* age is <input type="number"> and sex is a <select>, so a         */
+/* clinician cannot TYPE markup into them. But the input is not the */
+/* only way a value arrives: a restored backup, an imported file    */
+/* and a synced record from another device all assign these fields  */
+/* directly, and none of those paths validates field TYPES (checked */
+/* — validateBackup verifies counts and shape, not scalars).        */
+/*                                                                  */
+/* So the rule this pins is deliberately blunt: it does not matter  */
+/* how constrained a field's INPUT is; if it reaches innerHTML it   */
+/* is escaped. Rendering is the last layer that can be certain.     */
+/* ═══════════════════════════════════════════════════════════════ */
+
+const PAYLOAD = '5"><img src=x onerror="window.__x=1">';
+
+test("esc/escH neutralise the attribute-breakout payload used in the exploit", () => {
+  for (const fn of [esc, escH]) {
+    const out = fn(PAYLOAD);
+    assert.ok(!/<img/.test(out), "the tag survived escaping: " + out);
+    assert.ok(out.indexOf('"') < 0 || !/onerror=/.test(out.replace(/&quot;/g, "")),
+      "an event handler survived escaping: " + out);
+  }
+});
+
+test("the exam header escapes age and sex, not only name and MRN", () => {
+  /* Source-level, because updateHdr writes straight to innerHTML and the
+     behavioural proof lives in the browser probe. Kept narrow: it asserts
+     that the two fields are wrapped, not how the string is assembled. */
+  const src = fs.readFileSync(path.resolve(__dirname, "..", "js", "app.js"), "utf8");
+  const fn = /function updateHdr\(\)[\s\S]*?\n}/.exec(src);
+  assert.ok(fn, "updateHdr not found");
+  const body = fn[0];
+  assert.ok(/escH\(P\.age\)/.test(body),
+    "P.age reaches innerHTML unescaped in updateHdr — proven XSS in Phase 9");
+  assert.ok(/escH\(String\(P\.sex\)/.test(body) || /escH\(P\.sex/.test(body),
+    "P.sex reaches innerHTML unescaped in updateHdr");
+});
+
+test("the clinical report escapes age and sex on every surface", () => {
+  /* A report is printed, exported and sent onward, so an unescaped field
+     here does not stay on this device. */
+  const src = fs.readFileSync(path.resolve(__dirname, "..", "js", "ui-report.js"), "utf8");
+  const bad = [];
+  src.split("\n").forEach((line, i) => {
+    if (!/innerHTML|h \+=/.test(line)) return;
+    if (!/P\.(age|sex)\b/.test(line)) return;
+    /* every P.age / P.sex occurrence on a markup line must be preceded by an escaper */
+    for (const m of line.matchAll(/P\.(age|sex)\b/g)) {
+      const before = line.slice(Math.max(0, m.index - 16), m.index);
+      if (!/\b(escH|esc)\s*\(\s*(String\(\s*)?$/.test(before) && !/escH\([^)]*$/.test(before)) {
+        bad.push((i + 1) + ": " + line.trim().slice(0, 90));
+      }
+    }
+  });
+  assert.deepStrictEqual(bad, [],
+    "unescaped patient age/sex in the report:\n  " + bad.join("\n  "));
+});

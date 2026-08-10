@@ -403,32 +403,9 @@ function homeSecResearch() {
     homeCardKB();
 }
 
-/* ── Practice vs real record segregation ──────────────────────────
-   Student "practice exams" are learning artifacts. They must NEVER show
-   in the Clinician Patients tab or count in clinical stats — only in the
-   student's own Study workspace. These helpers are the single source of
-   that split. */
-function realPatients()     { return loadPatients().filter(function (p) { return !p.practice; }); }
-function practicePatients() { return loadPatients().filter(function (p) { return !!p.practice; }); }
-function realVisitIds() {
-  var real = {}; var ps = realPatients();
-  for (var i = 0; i < ps.length; i++) real[ps[i].id] = true;
-  return real;
-}
-
-/* One patient row (shared by the Patients tab and the Study tab's practice
-   list). Practice records carry a visible chip everywhere. */
-function patientRowHtml(pt) {
-  var nm = (pt.first_name || "New") + " " + (pt.last_name || "Patient");
-  var lastV = getLastVisit(pt.id);
-  var status = lastV && lastV.status === "completed"
-    ? '<span style="color:var(--sl);font-size:.54rem;font-weight:600"> ✓</span>'
-    : '<span style="color:var(--md);font-size:.54rem"> ●</span>';
-  return '<div class="p-row" onclick="openPatient(\'' + pt.id + '\')">' +
-    '<div><b>' + escH(nm) + '</b>' + (pt.practice ? ' <span class="practice-chip">practice</span>' : '') + status + '</div>' +
-    '<span style="font-family:var(--mono);color:var(--sv);font-size:.6rem">' + escH(pt.mrn || "") + '</span>' +
-  '</div>';
-}
+/* Patient-list rendering and the practice/real split now live in
+   js/ui-patient-list.js — see that file for the clinical rule about practice
+   records never appearing in the clinician Patients tab. */
 
 /* ── Reusable cards ── */
 function homeCardCasebook() {
@@ -476,9 +453,12 @@ function homeSecPatients() {
   if (patients.length === 0) {
     rows = '<div class="p-empty">No patients yet. Click "New Patient" to begin.</div>';
   } else {
+    /* ONE index pass for the whole list, not one per row. */
+    var _lastByPatient = (typeof visitStoreLastIndexByPatient === "function")
+      ? visitStoreLastIndexByPatient() : null;
     var sorted = patients.slice().reverse();
     for (var i = 0; i < sorted.length; i++) {
-      rows += patientRowHtml(sorted[i]);
+      rows += patientRowHtml(sorted[i], _lastByPatient);
     }
   }
 
@@ -1432,8 +1412,11 @@ function goHome() {
 function updateHdr() {
   var nm = P.first_name ? (P.first_name + " " + P.last_name) : "New Patient";
   var info = "<b>" + escH(nm) + "</b>";
-  if (P.age) info += ", " + P.age + "y";
-  if (P.sex) info += "/" + P.sex.charAt(0);
+  /* age/sex escaped like every other patient field — PROVEN exploitable in
+     Phase 9 via an imported/synced record (typed inputs constrain typing, not
+     assignment). Pinned by tests/escaping.test.js. */
+  if (P.age) info += ", " + escH(P.age) + "y";
+  if (P.sex) info += "/" + escH(String(P.sex).charAt(0));
   info += " &nbsp; MRN: " + escH(P.mrn);
   if (P.practice) info += ' <span class="practice-chip">PRACTICE</span>';
 

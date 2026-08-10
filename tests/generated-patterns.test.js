@@ -55,7 +55,12 @@ const HOST_GLOBALS = new Set([
   "alert", "confirm", "prompt", "fetch", "atob", "btoa",
   "setTimeout", "clearTimeout", "setInterval", "clearInterval",
   "requestAnimationFrame", "cancelAnimationFrame",
-  "structuredClone", "queueMicrotask", "reportError"
+  "structuredClone", "queueMicrotask", "reportError",
+  /* Browser APIs that are legitimately feature-detected because an older or
+     restricted environment may not have them. MutationObserver drives the
+     accessibility bridge (js/ui-a11y.js); without it the page still works,
+     it simply does not re-wire controls added after load. */
+  "MutationObserver", "IntersectionObserver", "ResizeObserver"
 ]);
 
 /* Every name defined at global scope anywhere in the load path. */
