@@ -6,6 +6,80 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-08-08 — Phase 9: the interface audit. One security hole, two accessibility blockers, one dishonest badge.
+
+I audited the whole interface layer by running it in a real browser rather than
+reading the code. Five real problems, all fixed. Two of my own first readings
+were wrong and I've left the corrections in, because they're the useful part.
+
+### The one that could have misled you clinically
+
+The sync badge said **"Live sync (encrypted) · last 09:13:38"** while records
+were sitting on the device unsent. I measured it: one patient and one visit
+demonstrably not sent, badge still green and reassuring, with a timestamp that
+implies everything is up to date.
+
+If you closed your laptop looking at that, you'd reasonably believe the day's
+work was safely off the device. It wasn't. The mistake in the code was treating
+*a live connection* as *an empty outbox* — but sends are delayed, can fail, and
+are skipped entirely when you're offline, and in every one of those cases the
+badge stayed green.
+
+It now says **"⏳ 2 record(s) NOT yet sent"** and turns amber. A fully synced
+clinic still reads clean green — a warning that's always on is a warning nobody
+reads.
+
+### A real security hole in patient records
+
+Patient **age** and **sex** were being written into the page without being made
+safe, while the name and MRN right next to them were. I proved it was
+exploitable: a record with a booby-trapped age field ran code inside the app —
+where every patient record and your unlocked encryption live.
+
+You could never have typed that in; the age box only accepts numbers. But a
+**restored backup, an imported file, or a record synced from another device**
+sets those fields directly, and nothing checked them. Fixed in all three places
+it appeared, including the printed report.
+
+### The exam was unusable by keyboard
+
+Two accessibility problems, both serious:
+
+- **Every form field was invisible to a screen reader.** Each has a visible
+  label on screen, but it wasn't connected to its box, so the reader just said
+  "edit text" — no way to know if it was the patient's name or their eye
+  pressure.
+- **The 22-step exam navigation could not be reached by keyboard at all.**
+  Anyone who can't use a mouse — including clinicians with a hand injury —
+  simply could not move between exam steps.
+
+Both fixed, and **nothing looks different**. Not one colour, size or position
+changed. Clicking a label now also focuses its box, which helps everyone.
+
+I should be straight with you: this is now correct *mechanically*, but I have
+not tested it with an actual screen reader. That's the biggest thing in this
+report I can't yet vouch for.
+
+### The patient list was getting slow
+
+Opening the home screen took **254 milliseconds with 500 patients** — and it got
+disproportionately worse as you added more (10× the patients cost 42× the time).
+Now **16 ms**, and it scales properly. Same information, same appearance.
+
+### Two things I got wrong
+
+I initially thought the app was leaking memory across a working day — the raw
+numbers looked alarming. Forcing a proper cleanup showed most of it was just
+garbage waiting to be collected. **The app is stable across a full day**; 1,000
+screen redraws left it flat.
+
+I also flagged the diagnosis panel as broken on tablets. It isn't — it's a
+deliberate slide-out drawer, and I confirmed the red-flag alerts are still
+reachable there.
+
+1,177 tests pass. Full detail in `docs/PHASE9_FRONTEND_REPORT.md`, including
+what I still can't verify.
+
 ## 2026-08-08 — A full patient journey now runs itself, start to finish
 
 Until now, every automated test checked one piece in isolation, and the only

@@ -894,8 +894,11 @@ function pickRole(id) {
 function renderCloudCard() {
   if (typeof cloudStatus !== "function") return "";
   var s = cloudStatus();
-  var dot = { live: "#2e7d32", polling: "#b8860b", signedout: "#888",
-              noclinic: "#b8860b", disabled: "#888",
+  /* `pending` is amber, not green: records exist on this device that have not
+     reached the server. A green dot beside "N record(s) NOT yet sent" would
+     contradict its own label, and the dot is what gets read at a glance. */
+  var dot = { live: "#2e7d32", polling: "#b8860b", pending: "#b8860b",
+              signedout: "#888", noclinic: "#b8860b", disabled: "#888",
               phi_off: "#c0392b", phi_nokey: "#b8860b" }[s.state] || "#888";
   var body = "";
 

@@ -281,3 +281,105 @@ test("the fixed 8-second reconnect is gone", () => {
     "a constant reconnect delay is back in cloud-sync.js — every client will return in lockstep");
   assert.ok(/cloudWsNextDelay\(\)/.test(src), "onclose must use the jittered delay");
 });
+
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* THE BADGE MUST NOT SAY "SYNCED" WHILE RECORDS ARE NOT           */
+/*                                                                  */
+/* Phase 9's offline-UI audit names this the high-priority clinical */
+/* safety question: can a clinician believe their data is safely    */
+/* synchronised when it is not?                                     */
+/*                                                                  */
+/* It could. Measured in a browser: with the socket up and PHI      */
+/* armed, the badge read                                            */
+/*                                                                  */
+/*   "Live sync (encrypted) · last 09:13:38"                        */
+/*                                                                  */
+/* while one patient and one visit were demonstrably unsent. The    */
+/* "last <time>" made it worse by implying both recency AND         */
+/* completeness. A clinician closing their laptop on that badge     */
+/* would reasonably believe the day's work was off the device.      */
+/*                                                                  */
+/* A live socket is not an empty outbox. Pushes are debounced, can  */
+/* fail against the server, and are skipped entirely while signed   */
+/* out or offline — in every case wsOk stays true and the records    */
+/* simply wait.                                                     */
+/* ═══════════════════════════════════════════════════════════════ */
+
+function syncedSandbox(opts) {
+  const sb = makeSandbox(opts);
+  sb.CLOUD.session = { access_token: "t", user_id: "u", email: "dr@clinic.test" };
+  sb.CLOUD.clinicId = "c1";
+  sb.CLOUD.wsOk = true;
+  sb.cloudEnabled = () => true;
+  sb.phiConsentGiven = () => true;
+  sb.phiKeyReady = () => true;
+  return sb;
+}
+
+const STAMP = "2026-08-08T10:00:00.000Z";
+
+test("a record that has never been pushed is reported as NOT sent", () => {
+  const sb = syncedSandbox({
+    patients: [{ id: "p1", first_name: "Ann", updated: STAMP }],   /* no _cloud_updated */
+    visits: []
+  });
+  const s = sb.cloudStatus();
+  assert.ok(s.pending > 0,
+    "the status reported nothing pending while a record had never been pushed");
+  assert.ok(/NOT yet sent/i.test(s.label),
+    "the label must say plainly that records have not been sent: " + s.label);
+  assert.notStrictEqual(s.state, "live",
+    "state must not read as a clean 'live' while records are outstanding");
+});
+
+test("a fully synced clinic reads as live, with no warning", () => {
+  /* The other half. A badge that always warns is a badge nobody reads, and it
+     would make the warning above worthless. */
+  const sb = syncedSandbox({
+    patients: [{ id: "p1", first_name: "Ann", updated: STAMP, _cloud_updated: STAMP }],
+    visits: [{ id: "v1", patient_id: "p1", updated: STAMP, _cloud_updated: STAMP, data: {} }]
+  });
+  const s = sb.cloudStatus();
+  assert.strictEqual(s.pending, 0, "a fully synced clinic reported pending records");
+  assert.strictEqual(s.state, "live");
+  assert.ok(!/NOT yet sent/i.test(s.label), "spurious warning on a synced clinic: " + s.label);
+});
+
+test("editing a synced record makes it pending again immediately", () => {
+  /* The realistic case: the clinician types, so `updated` moves past
+     `_cloud_updated` and the record is outstanding until the next drain. */
+  const sb = syncedSandbox({
+    patients: [{ id: "p1", first_name: "Ann", updated: STAMP, _cloud_updated: STAMP }],
+    visits: [{ id: "v1", patient_id: "p1", updated: STAMP, _cloud_updated: STAMP, data: {} }]
+  });
+  assert.strictEqual(sb.cloudStatus().pending, 0, "setup: starts clean");
+
+  const vs = sb.loadVisits();
+  vs[0].updated = "2026-08-08T11:00:00.000Z";
+  sb.saveVisits(vs);
+
+  const s = sb.cloudStatus();
+  assert.strictEqual(s.pending, 1, "an edited record was not counted as outstanding");
+  assert.strictEqual(s.state, "pending");
+});
+
+test("the pending count uses the SAME test the push path uses", () => {
+  /* Two different notions of "outstanding" would mean the badge and the outbox
+     could disagree about whether patient data is safe. There must be one. */
+  const src = fs.readFileSync(path.join(REPO, "js/cloud-sync.js"), "utf8");
+  const fn = /function cloudPendingCount\(\)[\s\S]*?\n}/.exec(src);
+  assert.ok(fn, "cloudPendingCount not found");
+  assert.ok(/cloudIsDirtyRecord/.test(fn[0]),
+    "the badge must count with cloudIsDirtyRecord — the same predicate the drain " +
+    "uses — or the number shown can disagree with what is actually queued");
+});
+
+test("an unreadable store makes the badge cautious, never crashes it", () => {
+  const sb = syncedSandbox({ patients: [], visits: [] });
+  sb.loadPatients = () => { throw new Error("store damaged"); };
+  let s;
+  assert.doesNotThrow(() => { s = sb.cloudStatus(); },
+    "a damaged store must not break the status badge");
+  assert.strictEqual(s.pending, 0, "unknown must not be reported as a positive count");
+});

@@ -536,14 +536,64 @@ function cloudStatus() {
     return { state: "phi_nokey", label: "Signed in — enter clinic passphrase to sync patient data", email: CLOUD.session.email };
   }
   var conflicts = (CLOUD.conflicts || []).length;
+
+  /* ── RECORDS STILL WAITING TO REACH THE SERVER ──
+     (Phase 9, the offline-UI clinical-safety question.)
+
+     This label used to read "Live sync (encrypted) · last 09:13:38" while
+     records were demonstrably unsynced — measured in a browser: one patient
+     and one visit dirty, badge still green and reassuring. A clinician
+     reading that would reasonably believe the day's work was safely off the
+     device. It was not, and the "last <time>" made it worse by implying
+     recency AND completeness.
+
+     A socket being up is not the same as an outbox being empty. Pushes are
+     debounced, can fail against the server, and are skipped entirely while
+     signed out or offline — in every one of those cases wsOk can be true and
+     the dirty flags simply stay set until the next drain.
+
+     So the count is computed from the records themselves rather than trusted
+     from a flag, using the same per-record test the drain uses. It is only
+     ever read while the sync card is on screen (renderCloudCard, home
+     screen), not on the typing path. */
+  var pending = cloudPendingCount();
+
   return {
-    state: CLOUD.wsOk ? "live" : "polling",
+    state: pending.total > 0 ? "pending" : (CLOUD.wsOk ? "live" : "polling"),
     label: (CLOUD.wsOk ? "Live sync (encrypted)" : "Sync (polling, encrypted)") +
       (CLOUD.lastSync ? " · last " + CLOUD.lastSync.slice(11, 19) : "") +
+      (pending.total ? " · ⏳ " + pending.total + " record(s) NOT yet sent" : "") +
       (conflicts ? " · ⚠ " + conflicts + " conflict(s)" : ""),
     email: CLOUD.session.email,
-    conflicts: conflicts
+    conflicts: conflicts,
+    pending: pending.total,
+    pending_detail: pending
   };
+}
+
+/* How many local records have not reached the server yet.
+
+   Uses cloudIsDirtyRecord — the SAME test the push path uses to decide what to
+   send — so the number a clinician reads can never disagree with what the
+   outbox actually considers outstanding. Anything else would be a second
+   source of truth about whether patient data is safe, which is the exact class
+   of bug this exists to close.
+
+   Returns zeroes rather than throwing if the stores are unreadable: a status
+   badge must never be the thing that breaks a clinical screen. */
+function cloudPendingCount() {
+  var out = { patients: 0, visits: 0, total: 0 };
+  if (typeof cloudIsDirtyRecord !== "function") return out;
+  try {
+    if (typeof loadPatients === "function") {
+      out.patients = loadPatients().filter(cloudIsDirtyRecord).length;
+    }
+    if (typeof loadVisits === "function") {
+      out.visits = loadVisits().filter(cloudIsDirtyRecord).length;
+    }
+  } catch (e) { return { patients: 0, visits: 0, total: 0, unknown: true }; }
+  out.total = out.patients + out.visits;
+  return out;
 }
 
 /* boot: restore session and start quietly (never blocks the app) */
