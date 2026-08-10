@@ -198,18 +198,30 @@ function competencyProgressCard(student) {
   }).join("");
 
   var simLine = simTotal
-    ? ' <span style="color:var(--md)">' + simTotal + ' signed-off entr' +
-      (simTotal === 1 ? "y is" : "ies are") + ' simulated' +
-      (competencySimulationCounts() ? " (counting, by your department's setting)." : " and do not count.") +
+    ? ' <span style="color:var(--md)">' +
+      (simTotal === 1
+        ? "1 signed-off entry is simulated"
+        : simTotal + " signed-off entries are simulated") +
+      (competencySimulationCounts()
+        ? ", and your department has chosen that simulated work counts."
+        : (simTotal === 1 ? ", so it does not count." : ", so they do not count.")) +
       '</span>'
     : "";
+
+  /* Only the four buckets that PARTITION the framework go in the headline, and
+     only the non-zero ones — "0 awaiting sign-off" is noise, and a line whose
+     numbers do not add up to the total is worse than a shorter one. */
+  var parts = [];
+  if (sum.in_progress)    parts.push(sum.in_progress + " in progress");
+  if (sum.awaiting_only)  parts.push(sum.awaiting_only + " awaiting sign-off");
+  if (sum.simulated_only) parts.push(sum.simulated_only + " simulated only");
+  if (sum.not_started)    parts.push(sum.not_started + " not started");
 
   return '<div class="home-settings" style="margin-top:8px">' +
     '<div class="home-settings-title">🎯 My competencies</div>' +
     '<div class="home-settings-desc">' +
-      '<b>' + sum.met + '</b> of <b>' + sum.total + '</b> met · ' +
-      sum.in_progress + ' in progress · ' + sum.pending_signoff + ' awaiting sign-off · ' +
-      sum.not_started + ' not started. ' +
+      '<b>' + sum.met + '</b> of <b>' + sum.total + '</b> met' +
+      (parts.length ? ' · ' + parts.join(" · ") : '') + '. ' +
       '<span style="color:var(--sv)">Only evidence a supervisor has accepted counts.</span>' + simLine +
     '</div>' + rows +
     '<button class="btn btn-s" style="font-size:.6rem;margin-top:6px" ' +
@@ -234,11 +246,21 @@ function competencyFeedbackCard(student) {
   }
 
   var tRows = trend.map(function (t) {
-    var tag = t.recurring ? '<span style="color:var(--md);font-weight:600"> · recurring</span>' : "";
+    /* Three separate facts, and running them together with "·" made them read
+       as one contradictory sentence ("Needs attention · too few to say ·
+       recurring"). The direction is only stated when there IS one; otherwise
+       the row says how much evidence it rests on, which is the honest answer
+       to "why does this not say improving or declining?". */
+    var direction = (t.trend === "too few to say" || t.trend === "no evidence")
+      ? "from " + t.rated + " sign-off" + (t.rated === 1 ? "" : "s")
+      : t.trend + " over " + t.rated;
+    var tag = t.recurring
+      ? '<span style="color:var(--md);font-weight:600"> · flagged ' + t.concerns + '×</span>'
+      : "";
     return '<div style="display:flex;gap:6px;font-size:.6rem;padding:2px 0">' +
       '<span style="flex:1">' + escHtml(t.label) + '</span>' +
       '<span style="color:var(--sv);font-size:.55rem">' + escHtml(ratingLabel(t.latest)) +
-        ' · ' + escHtml(t.trend) + tag + '</span></div>';
+        ' · ' + escHtml(direction) + tag + '</span></div>';
   }).join("");
 
   var aRows = actions.map(function (a) {
@@ -293,8 +315,10 @@ function competencyReviewCard() {
       '<div style="font-size:.62rem"><b>' + escHtml(item ? item.label : c.competency_id) + '</b>' +
         ' <span style="color:var(--sv)">— ' + escHtml(c.student_name || c.student || "unnamed") + '</span>' +
         (c.simulated ? ' <span class="practice-chip">simulated</span>' : '') + '</div>' +
-      '<div style="font-size:.56rem;color:var(--sv)">claims ' + escHtml(c.level_claimed) +
-        ' · ' + escHtml(c.supervision) + ' · ' + escHtml(String(c.claimed_at).slice(0, 10)) + '</div>' +
+      '<div style="font-size:.56rem;color:var(--sv)">claims <b>' +
+        escHtml(competencyLevelLabel(c.level_claimed)) + '</b> · ' +
+        escHtml(competencySupervisionLabel(c.supervision)) + ' · ' +
+        escHtml(String(c.claimed_at).slice(0, 10)) + '</div>' +
       (c.reflection ? '<div style="font-size:.58rem;margin-top:3px"><i>' +
         escHtml(c.reflection) + '</i></div>' : "") +
       '<button class="btn btn-s" style="font-size:.58rem;margin-top:4px" onclick="competencyUiOpen(\'' +
@@ -344,7 +368,8 @@ function competencyUiOpen(claimId) {
     '<div style="border:1px solid var(--fg);border-radius:var(--r);padding:8px;margin-top:8px">' +
     '<div style="font-size:.62rem;margin-bottom:4px"><b>Signing off:</b> ' +
       escHtml(claim.student_name || claim.student || "unnamed") + ' — claims <b>' +
-      escHtml(claim.level_claimed) + '</b>' +
+      escHtml(competencyLevelLabel(claim.level_claimed)) + '</b>, ' +
+      escHtml(competencySupervisionLabel(claim.supervision).toLowerCase()) +
       (claim.simulated ? ' · <b style="color:var(--md)">SIMULATED CASE</b>' : '') + '</div>' +
     dimRows +
     '<div class="fi"><label for="cmpAgree">Level you agree</label>' +

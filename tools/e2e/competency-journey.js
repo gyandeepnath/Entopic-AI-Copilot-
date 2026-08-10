@@ -222,7 +222,10 @@ const FRAMEWORK = {
   ok("signed-off simulated work does NOT mark the competency met", sim.met === false);
   ok("but the student can still see the work they did", sim.visible === 1);
   ok("and the screen says why it is not counting",
-    /simulated/i.test(sim.progressCard) && /do not count/i.test(sim.progressCard));
+    /simulated/i.test(sim.progressCard) &&
+    /does not count|do not count/i.test(sim.progressCard) &&
+    /simulated only/i.test(sim.progressCard),
+    sim.progressCard.slice(0, 300));
   ok("the exported logbook labels the simulated entry in words",
     sim.logbook.entries.some((e) => /SIMULATED/.test(e.encounter_type)));
   ok("the exported logbook labels the real entry as a real patient",

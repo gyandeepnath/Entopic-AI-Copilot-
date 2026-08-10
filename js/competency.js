@@ -471,19 +471,56 @@ function competencyProgress(student) {
   return out;
 }
 
+/* Ids are storage keys, not English. The raw record says "does · independent";
+   a supervisor reading a queue — and, more importantly, an examiner reading an
+   exported logbook — needs "Does · Performed independently". Falls back to the
+   id so a renamed or imported value never renders as a blank. */
+function _labelOf(list, id) {
+  for (var i = 0; i < list.length; i++) if (list[i].id === id) return list[i].label;
+  return String(id == null ? "" : id);
+}
+function competencyLevelLabel(id) { return _labelOf(COMPETENCY_LEVELS, id); }
+function competencySupervisionLabel(id) { return _labelOf(SUPERVISION_LEVELS, id); }
+
 function levelRank(id) {
   for (var i = 0; i < COMPETENCY_LEVELS.length; i++) if (COMPETENCY_LEVELS[i].id === id) return i + 1;
   return 0;
 }
 
+/* The four COMPETENCY buckets partition the framework exactly: every
+   competency lands in one and only one of met / in_progress / simulated_only /
+   not_started, and they sum to `total`. That is asserted by a test.
+
+   Before `simulated_only` existed, a competency whose only signed-off evidence
+   was simulated fell through every bucket — not met, no counting evidence, but
+   not "not started" either — and the student's screen read "1 of 8 met · 1 in
+   progress · 5 not started", which is seven. A summary that silently loses a
+   row is worse than one that admits an awkward category.
+
+   `pending_signoff` is deliberately NOT one of the four: it counts CLAIMS, not
+   competencies, so it cannot participate in the partition. It is reported
+   separately for that reason. */
 function competencySummary(student) {
   var p = competencyProgress(student);
+  var met = p.filter(function (x) { return x.met; });
+  var started = p.filter(function (x) { return !x.met && x.evidence_total > 0; });
   return {
     total: p.length,
-    met: p.filter(function (x) { return x.met; }).length,
-    in_progress: p.filter(function (x) { return !x.met && x.evidence_accepted > 0; }).length,
-    pending_signoff: p.reduce(function (n, x) { return n + x.evidence_pending; }, 0),
-    not_started: p.filter(function (x) { return x.evidence_total === 0; }).length
+    met: met.length,
+    in_progress: started.filter(function (x) { return x.evidence_accepted > 0; }).length,
+    /* Signed off, but only against simulated encounters, which this device is
+       not counting. Real work, correctly not credited — and visible, so the
+       student is never left wondering where it went. */
+    simulated_only: started.filter(function (x) {
+      return x.evidence_accepted === 0 && x.evidence_simulated > 0;
+    }).length,
+    /* Nothing accepted and nothing simulated: either untouched, or claimed and
+       still awaiting a supervisor. */
+    awaiting_only: started.filter(function (x) {
+      return x.evidence_accepted === 0 && x.evidence_simulated === 0;
+    }).length,
+    not_started: p.filter(function (x) { return x.evidence_total === 0; }).length,
+    pending_signoff: p.reduce(function (n, x) { return n + x.evidence_pending; }, 0)
   };
 }
 
@@ -504,6 +541,10 @@ function competencyLogbook(student) {
       domain: item ? item.domain : "",
       level_agreed: c.level_agreed || c.level_claimed,
       supervision: c.supervision,
+      /* Human-readable alongside the ids, because this file is read by an
+         examining body, not only by software. */
+      level_agreed_label: competencyLevelLabel(c.level_agreed || c.level_claimed),
+      supervision_label: competencySupervisionLabel(c.supervision),
       /* The single most important field in this file. An examining body
          reading a logbook is entitled to know which entries were real
          patients; `encounter_type` is spelled out in words rather than left
@@ -545,6 +586,8 @@ if (typeof module !== "undefined" && module.exports) {
     competencySignOff: competencySignOff, competencyPending: competencyPending,
     competencyProgress: competencyProgress, competencySummary: competencySummary,
     competencyLogbook: competencyLogbook, levelRank: levelRank,
+    competencyLevelLabel: competencyLevelLabel,
+    competencySupervisionLabel: competencySupervisionLabel,
     COMPETENCY_FEEDBACK_DEFAULT: COMPETENCY_FEEDBACK_DEFAULT,
     COMPETENCY_FEEDBACK_RATINGS: COMPETENCY_FEEDBACK_RATINGS,
     competencyFeedbackDimensions: competencyFeedbackDimensions,

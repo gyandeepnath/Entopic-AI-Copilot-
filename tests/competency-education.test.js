@@ -149,6 +149,33 @@ test("the logbook labels every entry as real or simulated, in words", () => {
   assert.strictEqual(real.simulated, false);
 });
 
+test("the logbook and the review queue print labels, not storage ids", () => {
+  /* An exported logbook is read by an examining body. "does · independent" is
+     what the record stores; it is not English, and a document that reads like
+     a database dump invites the reader to guess. */
+  const c = load(undefined, { ui: true, supervise: true });
+  c.competencyFrameworkSet(FRAMEWORK);
+  signed(c, "C1", { level: "does", supervision: "independent" }, { level: "does" });
+
+  const e = c.competencyLogbook("stu1").entries[0];
+  assert.strictEqual(e.level_agreed, "does", "the machine-readable id is still there");
+  assert.strictEqual(e.level_agreed_label, "Does");
+  assert.strictEqual(e.supervision_label, "Performed independently");
+
+  c.competencyClaim("C2", { level: "shows_how", supervision: "assisted" });
+  const queue = c.competencyReviewCard();
+  assert.match(queue, /claims <b>Shows how<\/b> · Performed with help/);
+  assert.ok(!/claims <b>shows_how/.test(queue), "no raw id may reach the screen");
+});
+
+test("an unknown level or supervision id falls back to itself, never to blank", () => {
+  const c = load();
+  assert.strictEqual(c.competencyLevelLabel("does"), "Does");
+  assert.strictEqual(c.competencyLevelLabel("invented_level"), "invented_level",
+    "a renamed or imported value must stay visible rather than disappearing");
+  assert.strictEqual(c.competencySupervisionLabel(""), "");
+});
+
 test("the logbook records which scoring rule produced its numbers", () => {
   const c = load();
   c.competencyFrameworkSet(FRAMEWORK);
@@ -180,6 +207,69 @@ test("the simulation policy is classified, mirrored, backed up and restored", ()
   assert.match(backup, /typeof data\.competency_sim_policy === "boolean"/,
     "restore must use a typeof check — `false` is a real setting here, and a truthiness " +
     "test would silently drop it and re-score every restored logbook");
+});
+
+
+test("the summary buckets partition the framework exactly", () => {
+  /* FOUND BY LOOKING AT A SCREENSHOT, not by reading the code. The student's
+     header read "1 of 8 met · 1 in progress · 5 not started" — which is seven.
+     A competency whose only signed-off evidence was simulated fell through
+     every bucket and simply vanished from the count. A summary that silently
+     loses a row is worse than one with an awkward extra category. */
+  const c = load();
+  c.competencyFrameworkSet({
+    name: "F", items: [
+      { id: "A", label: "met", level: "shows_how" },
+      { id: "B", label: "in progress", level: "does" },
+      { id: "C", label: "simulated only", level: "shows_how" },
+      { id: "D", label: "awaiting", level: "shows_how" },
+      { id: "E", label: "untouched", level: "shows_how" }
+    ]
+  });
+  signed(c, "A", { simulated: false }, { level: "shows_how" });   /* met */
+  signed(c, "B", { simulated: false }, { level: "knows" });       /* accepted, below target */
+  signed(c, "C", { simulated: true },  { level: "shows_how" });   /* simulated only */
+  c.competencyClaim("D", {});                                     /* awaiting sign-off */
+
+  const s = c.competencySummary("stu1");
+  assert.strictEqual(s.total, 5);
+  assert.strictEqual(s.met, 1);
+  assert.strictEqual(s.in_progress, 1);
+  assert.strictEqual(s.simulated_only, 1,
+    "signed-off simulated work must be its own visible category, not lost");
+  assert.strictEqual(s.awaiting_only, 1);
+  assert.strictEqual(s.not_started, 1);
+  assert.strictEqual(s.met + s.in_progress + s.simulated_only + s.awaiting_only + s.not_started,
+    s.total, "the four buckets must sum to the total — a student reads this as a whole");
+
+  assert.strictEqual(s.pending_signoff, 1,
+    "pending_signoff counts CLAIMS, not competencies, so it stays outside the partition");
+});
+
+test("the partition holds for an empty and an untouched framework", () => {
+  const c = load();
+  const empty = c.competencySummary("stu1");
+  assert.strictEqual(empty.total, 0);
+  assert.strictEqual(empty.met + empty.in_progress + empty.simulated_only +
+    empty.awaiting_only + empty.not_started, 0);
+
+  c.competencyFrameworkSet(FRAMEWORK);
+  const fresh = c.competencySummary("stu1");
+  assert.strictEqual(fresh.not_started, 2, "an untouched framework is entirely not-started");
+  assert.strictEqual(fresh.met + fresh.in_progress + fresh.simulated_only +
+    fresh.awaiting_only + fresh.not_started, fresh.total);
+});
+
+test("the progress header never prints a bucket that would not add up", () => {
+  const c = load(undefined, { ui: true });
+  c.competencyFrameworkSet(FRAMEWORK);
+  signed(c, "C1", { simulated: true }, { level: "shows_how" });
+  const html = c.competencyProgressCard();
+  assert.match(html, /simulated only/, "the simulated-only competency must be named in the header");
+  assert.ok(!/0 awaiting sign-off/.test(html), "an empty bucket is noise, not information");
+  assert.ok(!/entry is simulated, so they do not count/.test(html),
+    "singular and plural must agree — this read 'entry is simulated and do not count'");
+  assert.match(html, /1 signed-off entry is simulated, so it does not count/);
 });
 
 
@@ -507,8 +597,10 @@ test("the student surface says plainly that simulated entries are not counting",
   signed(c, "C1", { simulated: true }, { level: "shows_how" });
   const html = c.competencyProgressCard();
   assert.match(html, /simulated/i);
-  assert.match(html, /do not count/i,
+  assert.match(html, /does not count|do not count/i,
     "a student seeing '0 met' after signed-off work needs to know why");
+  assert.match(html, /1 simulated \(not counted\)/,
+    "and the row itself must say it, not only the header");
 });
 
 test("no pass mark, weighting or progression rule is invented anywhere", () => {
