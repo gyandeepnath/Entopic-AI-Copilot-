@@ -6,6 +6,43 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-08-14 (later) — Making the student's Study screen easy to understand.
+
+You asked for the student UI to be easier to understand. The Study tab had
+grown to **nine cards of equal weight**, stacked with no grouping and no obvious
+place to begin — scannable only if you read every one.
+
+**What changed (the interface is evolved, not replaced — all nine cards are
+still there):**
+
+- **Three named sections** now group the cards so the screen is scannable at a
+  glance:
+  - **Practise** — simulation, OSCE circuit, quiz, full practice exam
+  - **My progress** — competency logbook, feedback over time, analytics
+  - **Learn & reference** — study casebook, the full condition library
+- **One clear starting point.** A brand-new student (nothing practised yet) sees
+  a single prominent banner: *"New here? Start with a guided simulation"* with
+  one button that starts a guided case. It disappears the moment they have any
+  history, so it never nags a returning student — verified in a real browser
+  both ways.
+- Tightened a couple of the wordier card descriptions.
+
+I also **split the Study tab out of `app.js` into its own file**
+(`js/ui-study.js`). `app.js` had crossed the size line the project's own guard
+enforces — a file that big has more than one reason to change — so this is the
+same bounded extraction used before for the patient list and the competency UI.
+No behaviour changed; the screen renders identically, now from a file with one
+job.
+
+**Verified:** a new `tools/e2e/student-ui.js` signs up a real student, lands on
+the Study tab, and checks the three groups are present and in order, the
+starting-point banner shows for a new student and vanishes for a returning one,
+and the banner's button actually launches a guided simulation — 13 checks, all
+in a real browser. Full suite 1,227 pass; the other e2e journeys, the
+adversarial harness and the audit all still green.
+
+---
+
 ## 2026-08-14 — "Why is there a hemianopia in there without anything?" — the glass box was misrepresenting the engine.
 
 You entered almost nothing and found an occipital-stroke hemianopia sitting in

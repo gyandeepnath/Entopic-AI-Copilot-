@@ -438,9 +438,13 @@ test("the competency logic is actually reachable from the app", () => {
   assert.ok(html.indexOf("js/competency.js") < html.indexOf("js/ui-competency.js"),
     "the logic must load before its interface");
 
-  const app = read("js/app.js");
-  assert.match(app, /competencyStudyCard\(\)/, "the student surface must be rendered");
-  assert.match(app, /competencyTeachingCard\(\)/, "the supervisor surface must be rendered");
+  /* The student surface is rendered from ui-study.js (the Study tab was split
+     out of app.js); the teaching surface stays in app.js. Search both, so the
+     assertion tracks "is it called from the real UI" rather than "is it in one
+     specific file" — the latter breaks on a refactor without a real regression. */
+  const ui = read("js/app.js") + read("js/ui-study.js");
+  assert.match(ui, /competencyStudyCard\(\)/, "the student surface must be rendered");
+  assert.match(ui, /competencyTeachingCard\(\)/, "the supervisor surface must be rendered");
   assert.match(read("js/ui-chart.js"), /competencyClaimCard\(/,
     "a student must be able to claim evidence from a completed encounter");
 });
