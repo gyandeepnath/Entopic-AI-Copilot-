@@ -1068,6 +1068,21 @@ function selectRoutes(tokens) {
    many tokens its definition happens to list (the old normalize-by-own-
    maximum method let leaner definitions outscore richer ones on identical
    evidence). Calibration against real outcome data is future work. */
+/* ── THE DISPLAY FLOOR ──
+
+   A condition scoring below this is SCORED but not shown in the differential.
+   It was a local `var` inside the scoring pass, which meant the glass-box flow
+   map could not consult it and instead printed the top 5 of the raw scored
+   list with no marker at all. A clinician entering one symptom therefore saw
+   "Hemianopic Field Loss (Occipital Stroke) 7%" in the reasoning view and
+   reasonably concluded the engine was suggesting a stroke out of nowhere — it
+   was not; that entry is deliberately excluded from the differential.
+
+   Hoisted so there is exactly ONE definition. A second copy in the flow map
+   would drift, and a glass box that disagrees with the engine is worse than no
+   glass box. */
+var DX_FLOOR = 0.15;
+
 var SCORE_WEIGHTS = {
   req_share:  0.60,   /* fraction of required criteria matched (dominant) */
   sup_share:  0.25,   /* saturating credit for matched supportive tokens */
@@ -2091,7 +2106,6 @@ function _runDiagnosticEngine() {
      Keep anything that (a) clears a small confidence floor, or (b) was
      surfaced by the decision-tree safety gate (e.g. Retinal Detachment on
      flashes+floaters) — those must always be shown regardless of score. */
-  var DX_FLOOR = 0.15;
   var shownResults = results.filter(function (r) {
     return r.score >= DX_FLOOR || r._gateReason;
   });

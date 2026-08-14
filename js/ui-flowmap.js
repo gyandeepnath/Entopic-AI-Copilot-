@@ -548,20 +548,50 @@ function renderGateLayer() {
 /* Shows score breakdown for top conditions                        */
 /* ═══════════════════════════════════════════════════════════════ */
 
+/* ── WHY THIS LAYER MARKS THE FLOOR ──
+   Shows ENGINE_STATE.results — every condition SCORED, including rejected
+   candidates, because a glass box must show its working. But it used to print
+   a flat top-5 with no marker, so on one symptom "Occipital Stroke 7%" sat in
+   the list looking suggested when it is deliberately BELOW the display floor
+   (only one of its two required findings present). Hiding it would make the
+   box lie by omission; the fix is to say which side of the floor each is on. */
 function renderScoringLayer() {
   var results = ENGINE_STATE.results || [];
   if (results.length === 0) return '<div style="color:var(--sv)">No conditions scored</div>';
 
-  /* Show top 5 scored conditions with breakdown */
+  /* The engine owns the floor. Read it directly — no `|| 0.15` fallback,
+     because a fallback IS a second copy and it would drift silently the moment
+     the founder tuned the real one. engine.js loads first (index.html:600 vs
+     :640), so this is a guaranteed dependency, not a hopeful one. */
+  var floor = DX_FLOOR;
+  var inDx = results.filter(function (r) { return r.score >= floor || r._gateReason; });
+  var below = results.filter(function (r) { return !(r.score >= floor || r._gateReason); });
+
+  /* Always show everything that made the differential, then a few of the
+     near-misses. Previously this was a flat top-5, so on a rich encounter the
+     shown differential could be truncated, and on a sparse one the list was
+     padded with near-zero scores. */
+  var ordered = inDx.concat(below.slice(0, 4));
   var h = '';
-  var toShow = Math.min(results.length, 5);
+  var toShow = ordered.length;
 
   for (var i = 0; i < toShow; i++) {
-    var r = results[i];
+    var r = ordered[i];
     var sd = r._scoreDetail || {};
     var pct = (r.score * 100).toFixed(0);
+    var isBelow = below.indexOf(r) >= 0;
 
-    h += '<div style="display:flex;align-items:center;gap:4px;padding:2px 0;' + (i < toShow - 1 ? 'border-bottom:1px solid var(--fg);' : '') + '">';
+    /* The band header, printed once, where the list crosses the floor. */
+    if (isBelow && (i === 0 || below.indexOf(ordered[i - 1]) < 0)) {
+      h += '<div style="margin:4px 0 2px;padding-top:3px;border-top:1px dashed var(--md);' +
+           'font-size:.5rem;color:var(--md);text-transform:uppercase;letter-spacing:.4px">' +
+           'Considered and NOT in the differential — scored under ' +
+           Math.round(floor * 100) + '%</div>';
+    }
+
+    h += '<div style="display:flex;align-items:center;gap:4px;padding:2px 0;' +
+         (isBelow ? 'opacity:.6;' : '') +
+         (i < toShow - 1 ? 'border-bottom:1px solid var(--fg);' : '') + '">';
 
     /* Score bar */
     h += '<div style="width:30px;text-align:right;font-family:var(--mono);font-weight:600;font-size:.56rem">' + pct + '%</div>';
@@ -571,8 +601,18 @@ function renderScoringLayer() {
 
     /* Name + breakdown */
     h += '<div style="flex:1">';
-    h += '<span style="font-weight:500">' + r.name + '</span>';
+    /* escHtml, not raw. Every other interpolation in this file escapes; this
+       one did not, and condition names are NOT purely local — they arrive from
+       KB overlays and published bundles. See the header of js/dom-escape.js
+       for the same bug proven exploitable elsewhere. */
+    h += '<span style="font-weight:500">' + escHtml(r.name) + '</span>';
     h += '<span style="color:var(--sv)"> req:' + (sd.reqMatched || 0) + '/' + ((sd.reqMatched || 0) + (sd.reqMissing || 0)) + '</span>';
+    /* Say WHY in words. "req:1/2" is precise but it is notation, and the
+       missing half is the whole reason the condition is not being suggested. */
+    if (sd.reqMissing > 0) {
+      h += '<span style="color:var(--md)"> — ' + sd.reqMissing + ' required finding' +
+           (sd.reqMissing === 1 ? '' : 's') + ' absent</span>';
+    }
     h += '<span style="color:var(--sv)"> sup:' + (sd.supMatched || 0) + '</span>';
     if (sd.testsMatched) h += '<span style="color:var(--sv)"> tests:' + sd.testsMatched + '</span>';
     if (sd.conMatched > 0) h += '<span style="color:var(--md)"> con:-' + sd.conMatched + '</span>';
@@ -584,7 +624,9 @@ function renderScoringLayer() {
   }
 
   if (results.length > toShow) {
-    h += '<div style="font-size:.48rem;color:var(--sv);margin-top:2px">+' + (results.length - toShow) + ' more conditions scored</div>';
+    h += '<div style="font-size:.48rem;color:var(--sv);margin-top:2px">+' +
+         (results.length - toShow) + ' more scored below ' + Math.round(floor * 100) +
+         '%, none of them in the differential</div>';
   }
 
   return h;

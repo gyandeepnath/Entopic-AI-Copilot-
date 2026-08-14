@@ -6,6 +6,66 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-08-14 — "Why is there a hemianopia in there without anything?" — the glass box was misrepresenting the engine.
+
+You entered almost nothing and found an occipital-stroke hemianopia sitting in
+the reasoning view, and reasonably asked why the engine was suggesting a stroke
+out of nowhere.
+
+**It wasn't.** I checked the engine hard: the actual differential was correct.
+With one symptom ("half the vision is missing") it lists **Homonymous
+Hemianopia** and nothing else. The occipital-stroke entry is *deliberately
+excluded*, because it needs two hallmark findings and only one was present.
+
+The fault was in the **glass-box reasoning view**, not the diagnosis. That panel
+shows every condition the engine *scored* — which is correct and the whole point
+of a glass box; you should be able to ask "what did you consider and rule out?"
+But it printed the top five with **no line separating "in the differential" from
+"considered and rejected."** So a 7% also-ran sat there looking like a
+suggestion. That is a trust-destroying way to be transparent.
+
+**What I changed:**
+- The reasoning view now draws a clear divider: everything above it is in the
+  differential; everything below is labelled **"Considered and NOT in the
+  differential — scored under 15%"**, dimmed, with the reason in plain words
+  ("1 required finding absent") instead of the old "req:1/2" shorthand.
+- I did **not** hide the low scorers. Hiding them would make the glass box lie
+  by omission — the honest fix is to show the working *and* mark the line.
+
+**Two structural bugs that let this happen, both fixed:**
+- The display cut-off (15%) was defined *inside* the scoring code where the flow
+  map couldn't see it, so the flow map had no idea which conditions were being
+  shown to you and which weren't. It's now one shared value; a test proves the
+  number the screen prints is the engine's actual cut-off.
+- One condition name in that panel was being written to the screen **without
+  escaping** — the same class of hole I fixed elsewhere in Phase 9. Condition
+  names can arrive from imported knowledge-base files, so a booby-trapped name
+  could have run code. Now escaped, with a test that proves it.
+
+I audited the rest of the engine while I was in there: all **394** conditions
+are reachable, every required finding maps to something the app can actually
+produce, there are no orphaned tokens and no duplicate conditions. A blank exam
+produces an empty differential and nothing else — verified. **8 new tests**
+(`tests/flowmap-honesty.test.js`); full suite 1,227 pass.
+
+### Where the admin panel is, and how to get in
+
+Sign in (not create account) with:
+
+- **Username:** `entopic-admin`
+- **Password:** `Entopic-Admin-2026`
+
+An **Admin** tab then appears across the top. It holds: deployment-readiness
+checklist, on-device record encryption, backend connection, encrypted
+backup/restore, the clinical-review queues (age brackets, red-flag rules,
+thresholds — all awaiting your sign-off), knowledge-drift replay, the knowledge
+base editor, storage tools, and **Change admin password**.
+
+**Change that password immediately** — it is a shared default printed in this
+file, and it is a client-side convenience lock, not real security (that arrives
+with the backend). The panel already flags it as the default until you change
+it.
+
 ## 2026-08-10 — Phase 10: a whole feature was finished, tested, and unreachable.
 
 Full report: `docs/PHASE10_EDUCATION_REPORT.md`.
