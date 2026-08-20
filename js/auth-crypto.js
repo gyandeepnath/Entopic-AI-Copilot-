@@ -118,15 +118,73 @@ function authMakeCredentials(password) {
   });
 }
 
+/* Which algorithm was this credential actually hashed with?
+
+   `pw_algo` says so for anything written since it was introduced. For an older
+   record that predates the field, the two hashes are distinguishable by shape:
+   PBKDF2-SHA-256 gives 64 hex characters, and the fallback returns a base-36
+   string beginning with "w". Where neither is conclusive, assume PBKDF2 — the
+   strong path — because guessing "fallback" would send a real credential down
+   the weak comparison. */
+function authCredentialAlgo(user) {
+  if (user && user.pw_algo === "fallback-v1") return "fallback-v1";
+  if (user && user.pw_algo) return user.pw_algo;
+  var h = (user && typeof user.pw_hash === "string") ? user.pw_hash : "";
+  if (/^[0-9a-f]{64}$/.test(h)) return AUTH_HASH_VERSION;
+  if (/^w[0-9a-z]+$/.test(h)) return "fallback-v1";
+  return AUTH_HASH_VERSION;
+}
+
+/* Hash under a SPECIFIC algorithm rather than the strongest one available.
+
+   MEASURED PROBLEM (tools/stress/crypto.js, V2). Verification used to call
+   authHashPassword(), which always picks the strongest algorithm the CURRENT
+   browser offers. An account created on a device without WebCrypto is stored
+   under `fallback-v1`; open those same records in Chrome and verification
+   re-hashed with PBKDF2, the digests could not match, and the clinician was
+   locked out of their own patient records while typing the correct password.
+
+   Verification must reproduce the hash the credential was STORED with. The
+   upgrade to a stronger algorithm then happens after a SUCCESSFUL check, not
+   instead of one. */
+function authHashPasswordAs(password, salt, algo) {
+  if (algo === "fallback-v1") {
+    return Promise.resolve({ hash: authFallbackHash(password, salt), algo: "fallback-v1" });
+  }
+  return authHashPassword(password, salt);
+}
+
 /* Verify a password against a user record, migrating a legacy plaintext
-   record on the way. Resolves { ok, migrated, user }. */
+   record — and upgrading a weakly-hashed one — on the way.
+   Resolves { ok, migrated, user }. */
 function authVerifyUser(user, password) {
   if (!user) return Promise.resolve({ ok: false, migrated: false, user: user });
 
   /* Modern record. */
   if (user.pw_hash && user.pw_salt) {
-    return authHashPassword(password, user.pw_salt).then(function (r) {
-      return { ok: authSafeEqual(r.hash, user.pw_hash), migrated: false, user: user };
+    var algo = authCredentialAlgo(user);
+    return authHashPasswordAs(password, user.pw_salt, algo).then(function (r) {
+      /* A fallback hash must never satisfy a PBKDF2 credential: if this
+         browser cannot do PBKDF2, authHashPassword resolves to the fallback,
+         whose digest cannot equal the stored one. That denial is correct —
+         suppressing WebCrypto must not become a downgrade attack. */
+      if (!authSafeEqual(r.hash, user.pw_hash)) {
+        return { ok: false, migrated: false, user: user };
+      }
+      /* Correct password, weak stored hash, capable browser: re-hash it now.
+         The caller persists whenever `migrated` is true. */
+      if (algo === "fallback-v1" && authHasWebCrypto()) {
+        return authMakeCredentials(password).then(function (cred) {
+          user.pw_salt = cred.pw_salt;
+          user.pw_hash = cred.pw_hash;
+          user.pw_algo = cred.pw_algo;
+          return { ok: true, migrated: true, user: user };
+        }).catch(function () {
+          /* An upgrade that fails must not fail the LOGIN. */
+          return { ok: true, migrated: false, user: user };
+        });
+      }
+      return { ok: true, migrated: false, user: user };
     });
   }
 
@@ -159,6 +217,10 @@ function authPlaintextCount() {
 if (typeof module !== "undefined" && module.exports) {
   module.exports = {
     authHashPassword: authHashPassword,
+    authHashPasswordAs: authHashPasswordAs,
+    authCredentialAlgo: authCredentialAlgo,
+    authFallbackHash: authFallbackHash,
+    authHasWebCrypto: authHasWebCrypto,
     authSafeEqual: authSafeEqual,
     authMakeCredentials: authMakeCredentials,
     authVerifyUser: authVerifyUser

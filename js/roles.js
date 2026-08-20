@@ -207,9 +207,25 @@ function adminStoredCred() {
 function adminVerify(username, password) {
   if (username !== ADMIN_USERNAME) return Promise.resolve(false);
   var cred = adminStoredCred();
-  if (cred && cred.hash && cred.salt && typeof authHashPassword === "function") {
-    return authHashPassword(password, cred.salt)
-      .then(function (r) { return authSafeEqual(r.hash, cred.hash); });
+  if (cred && cred.hash && cred.salt && typeof authHashPasswordAs === "function") {
+    /* Hash under the algorithm the credential was STORED with, not the
+       strongest this browser offers. adminSetPassword records `algo`, and
+       verification used to ignore it: an admin credential created on a device
+       without WebCrypto could never be verified on one with it, locking the
+       founder out of the Admin panel with the correct password. Same defect as
+       authVerifyUser (tools/stress/crypto.js, V2). */
+    var algo = (typeof authCredentialAlgo === "function")
+      ? authCredentialAlgo({ pw_algo: cred.algo, pw_hash: cred.hash })
+      : cred.algo;
+    return authHashPasswordAs(password, cred.salt, algo).then(function (r) {
+      if (!authSafeEqual(r.hash, cred.hash)) return false;
+      /* Correct password under a weak hash on a capable browser: re-hash it. */
+      if (algo === "fallback-v1" && typeof authHasWebCrypto === "function" && authHasWebCrypto()) {
+        return adminSetPassword(password).then(function () { return true; },
+                                              function () { return true; });
+      }
+      return true;
+    });
   }
   /* No modern credential yet → verify against the legacy djb2, then upgrade. */
   if (adminHash(password) === adminPassHash()) {
