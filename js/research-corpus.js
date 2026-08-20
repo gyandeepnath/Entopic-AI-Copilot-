@@ -209,6 +209,106 @@ function corpusMonth(iso) {
   return /^\d{4}-\d{2}/.test(s) ? s.slice(0, 7) : "";
 }
 
+/* ── THE VOCABULARY GATE ──────────────────────────────────────────
+
+   MEASURED PROBLEM, found by tools/stress/privacy.js.
+
+   The de-identification defence was a whitelist of FIELDS: only the fields
+   named in corpusBuildRecord are kept, and the header above says the kept
+   content is "tokens and labels only, never free text".
+
+   That claim was not enforced. The field whitelist controls WHICH keys are
+   copied; it said nothing about their VALUES. A symptom entry, a slit-lamp
+   finding label and the referral destination were each copied verbatim, so a
+   string that never passed through the app's dropdowns — arriving from a
+   restored backup, a record synced from another device, or a future UI that
+   adds a free-text option — travelled intact into the corpus and out through
+   corpusExport(). The harness proved it: a marker planted in a finding label
+   came back in the export.
+
+   So values are now checked against the SAME vocabularies the UI offers, and
+   anything unrecognised is WITHHELD rather than copied.
+
+   The trade is deliberate and asymmetric. Withholding an unrecognised token
+   costs a little analytic fidelity, and the count of what was withheld is kept
+   on the record so denominators stay honest and the loss is visible. Copying
+   it risks publishing a patient. Only one of those is recoverable.
+
+   FAILS CLOSED. If a vocabulary is missing entirely (a load-order change), the
+   gate withholds everything of that kind rather than waving it through, and
+   sets `vocab_incomplete` so the cause is visible in the record instead of the
+   corpus mysteriously emptying. Analytics degrading is survivable; a silent
+   PHI leak is not. */
+
+var _corpusVocab = null;
+
+function corpusVocabulary() {
+  if (_corpusVocab) return _corpusVocab;
+  var sym = Object.create(null), find = Object.create(null), ref = Object.create(null);
+  var i, k, g, arr;
+
+  /* Symptoms: the tokens the symptom picker offers, plus every token the
+     engine itself recognises (so a legitimately expanded KB is not punished). */
+  if (typeof SYM_CATS !== "undefined" && SYM_CATS) {
+    for (g in SYM_CATS) {
+      if (!Object.prototype.hasOwnProperty.call(SYM_CATS, g)) continue;
+      for (k in SYM_CATS[g]) {
+        if (Object.prototype.hasOwnProperty.call(SYM_CATS[g], k)) sym[k] = true;
+      }
+    }
+  }
+  if (typeof TOKEN_REGISTRY !== "undefined" && TOKEN_REGISTRY) {
+    var reg = TOKEN_REGISTRY.tokens || TOKEN_REGISTRY;
+    for (k in reg) if (Object.prototype.hasOwnProperty.call(reg, k)) sym[k] = true;
+  }
+
+  /* Findings: every label the slit-lamp and fundus pickers offer. */
+  var groups = [];
+  if (typeof SL_FINDINGS !== "undefined" && SL_FINDINGS) groups.push(SL_FINDINGS);
+  if (typeof FUN_FINDINGS !== "undefined" && FUN_FINDINGS) groups.push(FUN_FINDINGS);
+  for (i = 0; i < groups.length; i++) {
+    for (g in groups[i]) {
+      if (!Object.prototype.hasOwnProperty.call(groups[i], g)) continue;
+      arr = groups[i][g];
+      if (!arr || !arr.length) continue;
+      for (var j = 0; j < arr.length; j++) {
+        if (typeof arr[j] === "string") find[arr[j]] = true;
+      }
+    }
+  }
+
+  /* Referral destinations: the routing categories the plan step offers. */
+  if (typeof REFERRAL_TARGETS !== "undefined" && REFERRAL_TARGETS) {
+    for (i = 0; i < REFERRAL_TARGETS.length; i++) ref[REFERRAL_TARGETS[i]] = true;
+  }
+
+  _corpusVocab = {
+    symptoms: sym, findings: find, referrals: ref,
+    /* Each vocabulary is either loaded or it is not; say which, rather than
+       letting an empty one look like a legitimately tiny list. */
+    haveSymptoms: Object.keys(sym).length > 0,
+    haveFindings: Object.keys(find).length > 0,
+    haveReferrals: Object.keys(ref).length > 0
+  };
+  return _corpusVocab;
+}
+
+/* Exposed so a restore/import that swaps the knowledge base can rebuild it. */
+function corpusResetVocabulary() { _corpusVocab = null; }
+
+/* Keep only values the vocabulary knows. Returns { kept, withheld }. */
+function corpusFilterKnown(values, allowed, available) {
+  var kept = [], withheld = 0;
+  var list = Array.isArray(values) ? values : [];
+  for (var i = 0; i < list.length; i++) {
+    var v = list[i];
+    if (typeof v !== "string" || !v) { if (v !== undefined && v !== null) withheld++; continue; }
+    if (available && allowed[v] === true) kept.push(v);
+    else withheld++;
+  }
+  return { kept: kept, withheld: withheld };
+}
+
 function corpusFindingLabels(list) {
   var out = [];
   for (var i = 0; i < (list || []).length; i++) {
@@ -226,13 +326,43 @@ function corpusBuildRecord(visit, patient, opts) {
   opts = opts || {};
   if (!visit || !patient) return null;
 
-  var dx = (visit.dxList || []).slice(0, 5).map(function (d) {
-    return { name: d.n, prob: (typeof d.prob === "number") ? +d.prob.toFixed(3) : null,
-             icd: d.icd || "", urgent: !!d.urgent };
-  });
-  var symptoms = (visit.symptoms || []).slice();
-  var findings = corpusFindingLabels(visit.sl && visit.sl.findings)
+  /* EVERY read below is shape-checked, not just truthiness-checked. This
+     function is called from doSave(); a `symptoms: "notanarray"` on a restored
+     or synced record used to throw here, and the throw propagated into the
+     clinical save. Secondary analytics must never be able to fail a patient
+     record. */
+  var vocab = corpusVocabulary();
+
+  var dxRaw = Array.isArray(visit.dxList) ? visit.dxList.slice(0, 5) : [];
+  var dx = [];
+  for (var di = 0; di < dxRaw.length; di++) {
+    var d = dxRaw[di];
+    if (!d || typeof d !== "object") continue;
+    dx.push({
+      name: (typeof d.n === "string") ? d.n : "",
+      prob: (typeof d.prob === "number" && isFinite(d.prob)) ? +d.prob.toFixed(3) : null,
+      /* The ICD-10-CM SHAPE, not merely "short and alphanumeric". The first
+         version of this check allowed any 1-12 alphanumerics, which a
+         twelve-letter free-text marker sailed straight through — caught by
+         tests/research-deidentification.test.js. Letter (I and U are not valid
+         ICD-10-CM first characters), two digits, optionally a dot and up to
+         four more. Verified against all 297 codes in the knowledge base: none
+         is rejected. */
+      icd: (typeof d.icd === "string" &&
+            /^[A-TV-Z][0-9][0-9AB](\.[0-9A-TV-Z]{1,4})?$/.test(d.icd)) ? d.icd : "",
+      urgent: !!d.urgent
+    });
+  }
+
+  var symF = corpusFilterKnown(visit.symptoms, vocab.symptoms, vocab.haveSymptoms);
+  var symptoms = symF.kept;
+
+  var findRaw = corpusFindingLabels(visit.sl && visit.sl.findings)
     .concat(corpusFindingLabels(visit.fun && visit.fun.findings));
+  var findF = corpusFilterKnown(findRaw, vocab.findings, vocab.haveFindings);
+  var findings = findF.kept;
+
+  var withheld = symF.withheld + findF.withheld;
 
   if (!dx.length && !symptoms.length && !findings.length) return null;
 
@@ -243,7 +373,16 @@ function corpusBuildRecord(visit, patient, opts) {
 
     /* Demographics, banded */
     age_band: corpusAgeBand(patient.age),
-    sex: patient.sex || "unknown",
+    /* A bounded set, not a pass-through: `sex` is a free-form string on the
+       patient record, and "unknown" is a safer answer than republishing
+       whatever was typed there. */
+    sex: (function () {
+      var v = String(patient.sex == null ? "" : patient.sex).trim();
+      if (!v) return "unknown";
+      var first = v.charAt(0).toUpperCase();
+      return (first === "M" || first === "F") ? first
+           : (/^O/i.test(v) ? "O" : "unknown");
+    })(),
     /* The visit DATE lives on the stored visit wrapper (visits[i].date), not
        on the exam data V — so reading visit.date off the live working copy
        yielded "" for every real capture, silently breaking every trend and
@@ -259,8 +398,26 @@ function corpusBuildRecord(visit, patient, opts) {
     findings: findings,
     dx: dx,
     urgent_alerts: (visit.alerts || []).filter(function (a) { return a && a.l === "urgent"; }).length,
-    referral: (visit.plan && visit.plan.ref_to) ? String(visit.plan.ref_to) : "",
-    referral_urgency: (visit.plan && visit.plan.ref_urgency) ? String(visit.plan.ref_urgency) : "",
+    /* Checked against REFERRAL_TARGETS / REFERRAL_URGENCIES: a value that
+       never came from the dropdown is withheld rather than copied out. */
+    referral: (function () {
+      var v = (visit.plan && typeof visit.plan.ref_to === "string") ? visit.plan.ref_to : "";
+      if (!v) return "";
+      return (vocab.haveReferrals && vocab.referrals[v] === true) ? v : "";
+    })(),
+    referral_urgency: (function () {
+      var v = (visit.plan && typeof visit.plan.ref_urgency === "string") ? visit.plan.ref_urgency : "";
+      if (!v) return "";
+      if (typeof REFERRAL_URGENCIES === "undefined" || !REFERRAL_URGENCIES) return "";
+      return (REFERRAL_URGENCIES.indexOf(v) >= 0) ? v : "";
+    })(),
+
+    /* Honest denominators: how many values the vocabulary gate withheld, and
+       whether it was working from a complete vocabulary at all. Without these
+       an analyst cannot tell "this patient had one symptom" from "this record
+       had four symptoms we refused to publish". */
+    withheld_values: withheld,
+    vocab_incomplete: !(vocab.haveSymptoms && vocab.haveFindings && vocab.haveReferrals),
 
     /* Provenance — without this the corpus cannot be analysed honestly,
        because a differential produced by KB 1.1 is not comparable with one

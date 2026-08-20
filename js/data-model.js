@@ -294,6 +294,36 @@ var TEMPORAL_COURSE = [
   { key: "variable",   label: "Variable" }
 ];
 
+/* ── REFERRAL DESTINATIONS AND URGENCY ──
+   Moved here from inline <option> markup in ui-pages-2.js. The research
+   corpus checks a stored referral against this list before letting it into a
+   de-identified export — a value that arrived from a restored backup or a
+   synced record never passed through the dropdown, and used to travel out as
+   free text (found by tools/stress/privacy.js). Having the list as data also
+   stops each label being written twice, which is how a list drifts.
+
+   These are ROUTING categories, not a clinical standard; the urgency wording
+   is the founder's to confirm and asserts no guideline timeframe. */
+var REFERRAL_TARGETS = [
+  "Ophthalmologist",
+  "Cornea specialist",
+  "Glaucoma specialist",
+  "Retina specialist",
+  "Neuro-ophthalmologist",
+  "Paediatric ophthalmologist",
+  "GP / Physician",
+  "Neurologist",
+  "Endocrinologist"
+];
+
+var REFERRAL_URGENCIES = [
+  "Routine",
+  "Soon (within 2 weeks)",
+  "Urgent (within 48 hours)",
+  "Emergency (same day)"
+];
+
+
 
 /* ═══════════════════════════════════════════════════════════════ */
 /* EXPANDED SYMPTOM CATEGORIES                                     */

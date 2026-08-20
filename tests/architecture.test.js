@@ -453,7 +453,16 @@ test("no NEW module exceeds the size at which one file stops having one job", ()
        split and the automatic-archive watcher. Both are five-line calls into
        modules that hold their own logic — app.js gained wiring, not
        responsibility, which is the growth this cap is meant to allow. */
-    "js/engine.js": 2300, "js/app.js": 2020, "js/data-model.js": 1300,
+    "js/engine.js": 2300, "js/app.js": 2020,
+    /* data-model.js raised 1300 -> 1320 for REFERRAL_TARGETS /
+       REFERRAL_URGENCIES. This file's one job IS the master schema and the
+       app's controlled vocabularies; two more vocabulary lists sit squarely
+       inside that job rather than giving it a second reason to change. They
+       moved here out of inline <option> markup so the research corpus has a
+       list to validate a stored referral against — without it, a value that
+       never passed through the dropdown reached a de-identified export as
+       free text (tools/stress/privacy.js, P12). */
+    "js/data-model.js": 1320,
     /* app.js raised 1950 -> 2000 for the stepHasData extraction, which made
        markDone reusable for any visit rather than only the open one. It is the
        known god module (Top-100 item 4); the cap exists to stop it growing

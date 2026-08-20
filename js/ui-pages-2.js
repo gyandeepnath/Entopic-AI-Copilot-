@@ -426,26 +426,25 @@ function pgPlan() {
 
     '<div class="dv"><span>Referral</span></div>' +
     '<div class="fg">' +
+      /* Both lists come from data-model.js (REFERRAL_TARGETS /
+         REFERRAL_URGENCIES) rather than being written out twice each as
+         markup. The research corpus checks a stored referral against the same
+         list, so a value that never passed through this dropdown — from a
+         restored backup or a synced record — cannot reach a de-identified
+         export as free text. */
       '<div class="fi"><label>Refer To</label>' +
         '<select oninput="V.plan.ref_to=this.value">' +
           '<option value="">None</option>' +
-          '<option' + (V.plan.ref_to === "Ophthalmologist" ? " selected" : "") + '>Ophthalmologist</option>' +
-          '<option' + (V.plan.ref_to === "Cornea specialist" ? " selected" : "") + '>Cornea specialist</option>' +
-          '<option' + (V.plan.ref_to === "Glaucoma specialist" ? " selected" : "") + '>Glaucoma specialist</option>' +
-          '<option' + (V.plan.ref_to === "Retina specialist" ? " selected" : "") + '>Retina specialist</option>' +
-          '<option' + (V.plan.ref_to === "Neuro-ophthalmologist" ? " selected" : "") + '>Neuro-ophthalmologist</option>' +
-          '<option' + (V.plan.ref_to === "Paediatric ophthalmologist" ? " selected" : "") + '>Paediatric ophthalmologist</option>' +
-          '<option' + (V.plan.ref_to === "GP / Physician" ? " selected" : "") + '>GP / Physician</option>' +
-          '<option' + (V.plan.ref_to === "Neurologist" ? " selected" : "") + '>Neurologist</option>' +
-          '<option' + (V.plan.ref_to === "Endocrinologist" ? " selected" : "") + '>Endocrinologist</option>' +
+          REFERRAL_TARGETS.map(function (t) {
+            return '<option' + (V.plan.ref_to === t ? ' selected' : '') + '>' + escH(t) + '</option>';
+          }).join('') +
         '</select></div>' +
       '<div class="fi"><label>Urgency</label>' +
         '<select oninput="V.plan.ref_urgency=this.value">' +
-          '<option value="">—</option>' +
-          '<option' + (V.plan.ref_urgency === "Routine" ? " selected" : "") + '>Routine</option>' +
-          '<option' + (V.plan.ref_urgency === "Soon (within 2 weeks)" ? " selected" : "") + '>Soon (within 2 weeks)</option>' +
-          '<option' + (V.plan.ref_urgency === "Urgent (within 48 hours)" ? " selected" : "") + '>Urgent (within 48 hours)</option>' +
-          '<option' + (V.plan.ref_urgency === "Emergency (same day)" ? " selected" : "") + '>Emergency (same day)</option>' +
+          '<option value="">\u2014</option>' +
+          REFERRAL_URGENCIES.map(function (u) {
+            return '<option' + (V.plan.ref_urgency === u ? ' selected' : '') + '>' + escH(u) + '</option>';
+          }).join('') +
         '</select></div>' +
     '</div>' +
 
