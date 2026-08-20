@@ -490,10 +490,13 @@ function renderRouteLayer() {
 
   var h = '<div style="display:flex;flex-wrap:wrap;gap:3px">';
   for (var i = 0; i < routes.length; i++) {
-    var r = routes[i];
-    var bg = routeColors[r] || "#e0e0e0";
-    h += '<span style="display:inline-block;padding:2px 8px;background:' + bg + ';border-radius:10px;font-size:.54rem;font-weight:600;color:var(--ink)">' +
-      r.toUpperCase() +
+    var r = String(routes[i] == null ? "" : routes[i]);
+    /* Own-property lookup, so a polluted prototype cannot supply the value
+       that gets written into a style attribute; and escaped, because a route
+       name reaches here from knowledge-base content. */
+    var bg = Object.prototype.hasOwnProperty.call(routeColors, r) ? routeColors[r] : "#e0e0e0";
+    h += '<span style="display:inline-block;padding:2px 8px;background:' + escHtml(bg) + ';border-radius:10px;font-size:.54rem;font-weight:600;color:var(--ink)">' +
+      escHtml(r.toUpperCase()) +
     '</span>';
   }
   h += '</div>';
@@ -507,7 +510,7 @@ function renderRouteLayer() {
         if (KNOWLEDGE_ALL[ki].route === routes[ri]) count++;
       }
       if (ri > 0) h += ' · ';
-      h += routes[ri] + ': ' + count + ' conditions';
+      h += escHtml(routes[ri]) + ': ' + count + ' conditions';
     }
     h += '</div>';
   }
@@ -713,7 +716,8 @@ function renderResultLayer() {
     h += '</div>';
 
     /* Name + score */
-    h += '<span style="flex:1;font-weight:500">' + d.n + '</span>';
+    /* escHtml: KB condition names arrive from overlays and published bundles. */
+    h += '<span style="flex:1;font-weight:500">' + escHtml(d.n) + '</span>';
     h += '<span style="font-family:var(--mono);font-weight:700;font-size:.6rem">' + pct + '%</span>';
 
     h += '</div>';

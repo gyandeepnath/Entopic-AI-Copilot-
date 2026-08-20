@@ -352,8 +352,10 @@ function pgDx() {
 
       /* Title row */
       h += '<div style="display:flex;justify-content:space-between;align-items:center">';
-      h += '<div><div style="font-weight:600;font-size:.8rem">' + d.n + '</div>';
-      h += '<div style="font-size:.52rem;color:var(--sv);font-family:var(--mono)">' + d.icd + ' · ' + d.cat + (d.domain ? ' · ' + d.domain : '') + '</div></div>';
+      /* escHtml on every KB-sourced value: names, codes and domains all come
+         from the knowledge base, which overlays and published bundles extend. */
+      h += '<div><div style="font-weight:600;font-size:.8rem">' + escH(d.n) + '</div>';
+      h += '<div style="font-size:.52rem;color:var(--sv);font-family:var(--mono)">' + escH(d.icd) + ' · ' + escH(d.cat) + (d.domain ? ' · ' + escH(d.domain) : '') + '</div></div>';
       h += '<div style="font-family:var(--mono);font-weight:600;font-size:.92rem">' + pct + '%</div>';
       h += '</div>';
 
@@ -482,7 +484,7 @@ function pgCode() {
     for (var ci = 0; ci < filtered.length; ci++) {
       var d = filtered[ci];
       var codeCell = d.icd
-        ? '<span style="font-family:var(--mono);font-weight:600" title="' + (d.icd_label || '') + '">' + d.icd + '</span>'
+        ? '<span style="font-family:var(--mono);font-weight:600" title="' + escH(d.icd_label || '') + '">' + escH(d.icd) + '</span>'
         : '<span style="color:var(--sv);font-style:italic" title="No default code mapped yet">— </span>';
       var flag = '';
       if (d.icd && d.icd_status === 'NEEDS_CLINICAL_REVIEW') {
@@ -492,7 +494,7 @@ function pgCode() {
       }
       h += '<div style="display:flex;gap:8px;padding:8px 0;border-bottom:1px solid var(--fg);font-size:.72rem;align-items:center">' +
         '<span style="min-width:60px">' + codeCell + '</span>' +
-        '<span style="flex:1">' + d.n + '</span>' +
+        '<span style="flex:1">' + escH(d.n) + '</span>' +
         flag +
         '<select style="font-size:.62rem;padding:2px 4px;border:1px solid var(--fg);border-radius:2px">' +
           '<option>OU</option><option>OD</option><option>OS</option><option>Unspecified</option>' +

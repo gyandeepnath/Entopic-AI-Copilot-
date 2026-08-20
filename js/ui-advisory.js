@@ -56,8 +56,20 @@ function renderAdvisory() {
   /* ═══ CLINICAL ALERTS (always visible — safety never hides) ═══ */
   if (V.alerts && V.alerts.length > 0) {
     h += '<div class="adv-sec">Clinical Alerts</div>';
+    /* Both halves are attacker-reachable. The MESSAGE is built from knowledge-
+       base text, and the LEVEL lands inside a class attribute — where an
+       unescaped quote breaks straight out into a new attribute. Alerts are
+       also the one surface that must never be suppressed, so a crafted alert
+       is the highest-value place in the app to inject.
+
+       The level is additionally constrained to the known set rather than only
+       escaped: a class is not free text, and an unknown value should render as
+       the neutral style rather than as itself. */
+    var ALERT_LEVELS = { urgent: 1, warn: 1, info: 1 };
     for (var ai = 0; ai < V.alerts.length; ai++) {
-      h += '<div class="alert-box ' + V.alerts[ai].l + '">' + V.alerts[ai].m + '</div>';
+      var _al = V.alerts[ai] || {};
+      var _lvl = Object.prototype.hasOwnProperty.call(ALERT_LEVELS, _al.l) ? _al.l : "info";
+      h += '<div class="alert-box ' + _lvl + '">' + escH(_al.m) + '</div>';
     }
   }
 
@@ -68,8 +80,10 @@ function renderAdvisory() {
       h += '<div class="adv-sec">Medication Alerts</div>';
       for (var mi = 0; mi < medAlerts.length; mi++) {
         var ma = medAlerts[mi];
-        h += '<div class="alert-box warn" style="font-size:.6rem"><b>' + ma.drug + '</b>: ' + ma.effect +
-          (ma.action ? '<br><span style="color:var(--sl)">' + ma.action + '</span>' : '') + '</div>';
+        /* Drug name, effect and action all come from the medications data file,
+           which a published bundle can extend. */
+        h += '<div class="alert-box warn" style="font-size:.6rem"><b>' + escH(ma.drug) + '</b>: ' + escH(ma.effect) +
+          (ma.action ? '<br><span style="color:var(--sl)">' + escH(ma.action) + '</span>' : '') + '</div>';
       }
       /* CS-10. Stating the limit is the safety feature. A clinician who sees a
          drug list produce alerts will reasonably infer that the ones it does
@@ -154,7 +168,7 @@ function renderAdvisory() {
   h += '<div class="dx-row" style="flex-direction:column;align-items:stretch;gap:3px;padding:6px 8px;border:1px solid var(--fg);border-radius:var(--r)' +
     (lead.urgent ? ';border-left:3px solid var(--ur,#c0392b)' : '') + '">';
   h += '<div style="display:flex;align-items:center;gap:6px">';
-  h += '<div class="dx-n" style="flex:1;font-weight:600">' + lead.n + (lead.urgent ? ' <span style="color:var(--ur,#c0392b);font-size:.5rem">· URGENT</span>' : '') + '</div>';
+  h += '<div class="dx-n" style="flex:1;font-weight:600">' + escHtml(lead.n) + (lead.urgent ? ' <span style="color:var(--ur,#c0392b);font-size:.5rem">· URGENT</span>' : '') + '</div>';
   h += '<div class="dx-pct" title="Match strength (0-100), not a probability">' + leadPct + '</div>';
   h += '</div>';
   if (leadConf) h += '<div style="font-size:.5rem;color:var(--sv)">' + leadConf + ' confidence · best match, not most likely</div>';
@@ -182,7 +196,7 @@ function renderAdvisory() {
           (foc.urgent ? ';border-left:2px solid var(--ur,#c0392b);padding-left:6px' : '') + '">';
         h += '<div style="display:flex;align-items:center;gap:6px"><div style="flex:1">' +
           '<div style="font-size:.5rem;text-transform:uppercase;letter-spacing:.04em;color:var(--sv)">' + foc.focus + (foc.urgent ? ' · URGENT' : '') + '</div>' +
-          '<div class="dx-n">' + foc.lead + '</div></div>' +
+          '<div class="dx-n">' + escHtml(foc.lead) + '</div></div>' +
           '<div class="dx-pct">' + (foc.confidence * 100).toFixed(0) + '%</div></div>';
         if (foc.candidates.length > 1) {
           var alts = [];
@@ -244,7 +258,14 @@ function renderAdvisory() {
         h += '<div class="dx-tie-note">= equal match — the engine cannot separate this from the one above</div>';
       }
       h += '<div style="display:flex;align-items:center;gap:6px"><div style="flex:1">' +
-        '<div class="dx-n">' + d.n + '</div><div class="dx-icd">' + d.icd + (d.domain ? ' · ' + d.domain : '') + '</div></div>';
+        /* escHtml, not raw. A condition NAME is not local content: it comes
+           from the knowledge base, which user-authored overlays and published
+           cloud bundles both extend. A crafted name executed code here —
+           proven in a browser, window.__xss set from the advisory panel, the
+           most-viewed clinical surface in the app. Same class as the Phase 9
+           P.age hole; see js/dom-escape.js. */
+        '<div class="dx-n">' + escHtml(d.n) + '</div><div class="dx-icd">' + escHtml(d.icd) +
+          (d.domain ? ' · ' + escHtml(d.domain) : '') + '</div></div>';
       h += '<div class="dx-bar"><div class="dx-bar-fill" style="width:' + pct + '%"></div></div>';
       h += '<div class="dx-pct" title="Match strength — how much of this condition\'s expected evidence is present. NOT a probability of having it.">' + pct + '</div></div>';
       /* Why it was force-surfaced. Shown ABOVE the evidence line and styled
