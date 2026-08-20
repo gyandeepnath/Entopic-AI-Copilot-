@@ -106,9 +106,33 @@ var MED_ALLERGY_CUES = ["allergic to", "allergy to", "allergy", "allergic",
 /* A positive cue cancels a negation that came earlier in the same clause. */
 var MED_POS_CUES = ["on", "taking", "takes", "started", "commenced", "continues", "using"];
 
+/* Abbreviations that contain a slash, expanded BEFORE clause splitting.
+
+   MEASURED PROBLEM (tools/stress/clinical.js, Y4). The splitter breaks on "/",
+   so "h/o prednisolone" became the clauses ["h", "o prednisolone"] and the
+   "h/o" past-use cue was destroyed by the split that was supposed to protect
+   it. A drug the notes recorded as HISTORY read as currently prescribed.
+
+   Expanded rather than removed from the split set, because "/" is also the
+   ordinary separator in a drug list ("aspirin/clopidogrel") and that split is
+   wanted. */
+var MED_SLASH_ABBREV = [
+  [/\bh\s*\/\s*o\b/g, " history of "],   /* history of */
+  [/\bs\s*\/\s*p\b/g, " status post "],  /* status post */
+  [/\bc\s*\/\s*o\b/g, " complains of "]  /* complains of */
+];
+
+function medExpandAbbrev(text) {
+  var t = String(text).toLowerCase();
+  for (var i = 0; i < MED_SLASH_ABBREV.length; i++) {
+    t = t.replace(MED_SLASH_ABBREV[i][0], MED_SLASH_ABBREV[i][1]);
+  }
+  return t;
+}
+
 /* Split into clauses, keeping it simple and predictable. */
 function medClauses(text) {
-  return String(text).toLowerCase().split(/[,;.\n\/]+/);
+  return medExpandAbbrev(text).split(/[,;.\n\/]+/);
 }
 
 /* Returns {at, end} for the first cue found, or null.
@@ -145,6 +169,26 @@ function medMentionStatus(text, alias) {
     var neg     = _medCueAt(before, MED_NEG_CUES);
     var past    = _medCueAt(before, MED_PAST_CUES);
     var pos     = _medCueAt(before, MED_POS_CUES);
+
+    /* A cue that TRAILS the drug name.
+
+       MEASURED PROBLEM (tools/stress/clinical.js, Y3). Cues were only ever
+       looked for BEFORE the drug, so "penicillin allergy" — the ordinary way
+       an allergy is written down — read as a current prescription. The app
+       both invented a drug exposure and lost the allergy.
+
+       Deliberately narrow, because the module's safety bias is that missing a
+       real exposure is worse than reporting one. A trailing cue is honoured
+       only when nothing AFTER the drug looks like it is actually being taken:
+       no dose, no positive cue. So "prednisolone allergy" is an allergy, while
+       "on prednisolone 5mg allergy to penicillin" stays a current steroid. */
+    var after = clause.slice(drugAt + (hit ? hit[0].length : 0));
+    var looksTaken = /\d\s*(mg|mcg|g|ml|%|units?|drops?|od|bd|tds|qds|nocte|daily)\b/.test(after) ||
+                     !!_medCueAt(after, MED_POS_CUES);
+    if (!looksTaken) {
+      if (!allergy) allergy = _medCueAt(after, MED_ALLERGY_CUES);
+      if (!past)    past    = _medCueAt(after, MED_PAST_CUES);
+    }
 
     /* A positive cue only cancels a negation if it sits AFTER the whole
        negation phrase. In "not on prednisolone" the "on" is part of "not on",

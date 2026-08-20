@@ -98,11 +98,36 @@ function scaleSuggestions(scale, visit) {
 
 /* ── Answers ─────────────────────────────────────────────────── */
 
+/* Copy only an object's OWN keys onto a null-prototype map.
+
+   MEASURED PROBLEM (tools/stress/clinical.js, X5). This function used to hand
+   back plain `{}` objects, which inherit Object.prototype. A polluted
+   prototype therefore answered questions nobody was asked: every required
+   input read back as `true`, scaleMissing() found nothing outstanding, the
+   incomplete guard was skipped, and the evaluator produced a CONFIDENT
+   PUBLISHED RISK FIGURE for a patient whose scale had never been filled in.
+   That is precisely the failure this module exists to prevent, arriving
+   through the back door.
+
+   It went unnoticed because the stress sandbox injected the host realm's
+   Object, so polluting `Object.prototype` left sandbox `{}` literals untouched
+   and the attack was vacuous. Fixing the harness made it fail immediately. */
+function scaleOwn(src) {
+  var out = Object.create(null);
+  if (src && typeof src === "object") {
+    for (var k in src) {
+      if (Object.prototype.hasOwnProperty.call(src, k)) out[k] = src[k];
+    }
+  }
+  return out;
+}
+
 function scaleAnswers(visit, scaleId) {
-  if (!visit) return { od: {}, os: {} };
-  visit.scales = visit.scales || {};
-  var a = visit.scales[scaleId] || {};
-  return { od: a.od || {}, os: a.os || {} };
+  if (!visit || typeof visit !== "object") return { od: scaleOwn(null), os: scaleOwn(null) };
+  if (!visit.scales || typeof visit.scales !== "object") visit.scales = {};
+  var a = visit.scales[scaleId];
+  if (!a || typeof a !== "object") a = {};
+  return { od: scaleOwn(a.od), os: scaleOwn(a.os) };
 }
 
 /* value must be true, false, or null/undefined to clear it. */

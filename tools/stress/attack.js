@@ -75,62 +75,20 @@ function mustEqual(a, b, why) { if (a !== b) throw new Error(why + " (got " + JS
 
 /* ── the browser, as hostile as we need it to be ────────────────── */
 /*
-   `budget` makes localStorage throw a real QuotaExceededError past N bytes,
-   which is the failure a clinic actually hits and the one every storage
+   Shared with the other harnesses via tools/stress/lib.js. It used to be a
+   copy living here, and that copy injected the HOST realm's Object/JSON/Array
+   into the sandbox. Doing so silently disarmed every prototype-pollution
+   attack in this file: an object literal built inside the sandbox inherits the
+   SANDBOX realm's Object.prototype, so polluting the injected host prototype
+   left it untouched, and the attack passed without ever reaching the code.
+   The shared version lets the sandbox use its own realm built-ins, which is
+   what a browser actually does.
+
+   `budget` still makes localStorage throw a real QuotaExceededError past N
+   bytes — the failure a clinic actually hits, and the one every storage
    guarantee in this codebase is written against.
 */
-function browser(opts) {
-  opts = opts || {};
-  const mem = {};
-  const audits = [], events = [], errors = [];
-  let budget = opts.budget || Infinity;
-
-  function used() {
-    let n = 0;
-    for (const k in mem) n += k.length + mem[k].length;
-    return n;
-  }
-  const ls = {
-    get length() { return Object.keys(mem).length; },
-    key: (i) => Object.keys(mem)[i] ?? null,
-    getItem: (k) => (Object.prototype.hasOwnProperty.call(mem, k) ? mem[k] : null),
-    setItem: (k, v) => {
-      v = String(v);
-      const after = used() - (mem[k] ? mem[k].length : 0) + v.length;
-      if (after > budget) {
-        const e = new Error("quota");
-        e.name = "QuotaExceededError";
-        throw e;
-      }
-      mem[k] = v;
-    },
-    removeItem: (k) => { delete mem[k]; }
-  };
-
-  const ctx = Object.assign({
-    localStorage: ls, _mem: mem, _audits: audits, _events: events, _errors: errors,
-    _setBudget: (n) => { budget = n; },
-    console: { log() {}, warn() {}, info() {}, error(...a) { errors.push(a.join(" ")); } },
-    JSON, Math, String, Number, Array, Object, Date, RegExp, Set, Map, Promise, Error,
-    parseInt, parseFloat, isNaN, isFinite, Boolean, encodeURIComponent, decodeURIComponent,
-    setTimeout: (fn) => { try { fn(); } catch (e) {} return 0; },
-    clearTimeout: () => {}, setInterval: () => 0, clearInterval: () => {},
-    module: { exports: {} },
-    logAudit: (a, d) => audits.push({ a, d }),
-    evEmit: (n, p) => events.push([n, p]),
-    lsSet: (k, v) => { try { ls.setItem(k, v); return true; } catch (e) { return false; } },
-    alert: () => {}
-  }, opts.extra || {});
-  vm.createContext(ctx);
-
-  const files = ["js/data-classification.js", "js/storage.js"].concat(opts.also || []);
-  for (const f of files) vm.runInContext(read(f), ctx, { filename: f });
-  /* storage.js declares its own logAudit, which shadows the stub above.
-     Put the capturing one back or every audit assertion silently passes. */
-  vm.runInContext("logAudit = function (a, d) { _audits.push({ a: a, d: d }); };", ctx);
-  ctx.run = (expr) => vm.runInContext(expr, ctx);
-  return ctx;
-}
+const { browser } = require("./lib");
 
 const DAY = 86400000;
 const ago = (days) => new Date(Date.now() - days * DAY).toISOString();

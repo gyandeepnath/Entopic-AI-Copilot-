@@ -259,7 +259,11 @@ function adminUsingLegacyCredential() {
 }
 
 function isAdmin() {
-  return typeof CU !== "undefined" && !!(CU && CU.admin === true);
+  /* An OWN `admin` property, not an inherited one: `CU.admin === true` was
+     satisfied by a polluted Object.prototype, which made any signed-in account
+     an administrator (tools/stress/pollution.js, Z1c). */
+  if (typeof CU === "undefined" || !CU || typeof CU !== "object") return false;
+  return Object.prototype.hasOwnProperty.call(CU, "admin") && CU.admin === true;
 }
 
 /* Ephemeral admin session user — never written into the users store, so
@@ -359,17 +363,39 @@ var TIER_LOCKS = {
   research_export:  ["institutional"]
 };
 
+/* OWN-PROPERTY lookups only.
+
+   MEASURED PROBLEM (tools/stress/pollution.js, Z1/Z1b/Z1c). Every gate here
+   asked `map[cap]` about a key that was usually absent, and an absent key on a
+   plain object falls through to Object.prototype. One polluted key therefore
+   granted the capability outright: a student obtained `supervise` — the
+   competency sign-off gate — and `kb_authoring`, and a polluted ALWAYS_ON key
+   short-circuited the tier check as well.
+
+   This is a UI-visibility gate, not a server-enforced boundary (ADR-010), so
+   the consequence is a control appearing where it should not rather than a
+   data breach. It is still wrong, it is cheap to close, and the same lookup
+   shape is what will guard the real thing once the backend enforces it.
+
+   The pollution has to come from somewhere — a crafted JSON payload in a
+   restored backup or a synced record — which is exactly the input this app
+   accepts, and why the other side of that door is already hardened. */
+function roleHas(map, key) {
+  return !!map && Object.prototype.hasOwnProperty.call(map, key) && !!map[key];
+}
+
 function roleShowsCap(cap) {
   if (isAdmin()) return true;             /* admin sees everything */
-  if (ALWAYS_ON[cap]) return true;
-  var caps = ROLE_CAPS[effectiveRole()] || {};
-  return !!caps[cap];
+  if (roleHas(ALWAYS_ON, cap)) return true;
+  var caps = ROLE_CAPS[effectiveRole()];
+  return roleHas(caps, cap);
 }
 function tierUnlocksCap(cap) {
   if (isAdmin()) return true;             /* admin unlocks everything */
-  if (ALWAYS_ON[cap]) return true;
+  if (roleHas(ALWAYS_ON, cap)) return true;
+  if (!Object.prototype.hasOwnProperty.call(TIER_LOCKS, cap)) return true;  /* free */
   var need = TIER_LOCKS[cap];
-  if (!need) return true;                 /* free */
+  if (!need || typeof need.indexOf !== "function") return true;
   return need.indexOf(getTier()) >= 0;
 }
 function can(cap) { return roleShowsCap(cap) && tierUnlocksCap(cap); }

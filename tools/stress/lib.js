@@ -106,11 +106,20 @@ function browser(opts) {
     _mem: mem, _audits: audits, _events: events, _errors: errors,
     _setBudget: (n) => { budget = n; },
     console: { log() {}, warn() {}, info() {}, error(...a) { errors.push(a.join(" ")); } },
-    JSON, Math, String, Number, Array, Object, Date, RegExp, Set, Map, WeakMap,
-    Promise, Error, TypeError, Symbol, ArrayBuffer, Uint8Array, Uint32Array, Int32Array,
-    DataView, TextEncoder, TextDecoder, BigInt,
-    parseInt, parseFloat, isNaN, isFinite, Boolean, Function,
-    encodeURIComponent, decodeURIComponent, btoa, atob, structuredClone,
+    /* DELIBERATELY NOT injecting Object/JSON/Array/… from the host realm.
+       A vm context already has its own standard built-ins, and injecting the
+       host's breaks realm identity: an object literal created INSIDE the
+       sandbox inherits the sandbox realm's Object.prototype, while the
+       injected `Object.prototype` belongs to the host. Polluting the latter
+       then leaves `{}` untouched, so every prototype-pollution attack passes
+       while proving nothing. Measured:
+
+         injected host Object : ({}).PWN === 1  ->  false   (attack is vacuous)
+         native realm         : ({}).PWN === 1  ->  true    (attack is real)
+
+       Only genuinely non-standard globals are supplied below — the things a
+       bare vm context does NOT have. */
+    TextEncoder, TextDecoder, btoa, atob, structuredClone,
     setTimeout: (fn) => { try { fn(); } catch (e) {} return 0; },
     clearTimeout: () => {}, setInterval: () => 0, clearInterval: () => {},
     queueMicrotask: (fn) => { try { fn(); } catch (e) {} },

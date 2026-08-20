@@ -137,7 +137,13 @@ var STORE_EXPECTED_ARRAY = (typeof dataStoresShaped === "function")
   ? dataStoresShaped("array")
   : ["users", "patients", "visits", "audit"];
 
-var STORE_CORRUPT = {};   /* key -> {at, reason, bytes, quarantine} while unreadable */
+/* Null-prototype: this map is consulted before every write, and it is asked
+   about keys that are usually ABSENT. On a plain object an absent key falls
+   through to Object.prototype, so one polluted key made a HEALTHY store report
+   as damaged — which blocks every save in the clinic and looks exactly like
+   data loss (tools/stress/pollution.js, Z5c). A null-prototype map has no
+   inherited keys to find. */
+var STORE_CORRUPT = Object.create(null);   /* key -> {at, reason, bytes, quarantine} while unreadable */
 
 function storageNoteCorrupt(key, raw, reason) {
   if (STORE_CORRUPT[key]) return STORE_CORRUPT[key];
