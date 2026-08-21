@@ -248,7 +248,13 @@ function cloudMergeRows(kind, rows) {
   var load = kind === "patients" ? loadPatients : loadVisits;
   var save = kind === "patients" ? savePatients : saveVisits;
   var local = load();
-  var byId = {};
+  /* Null-prototype index. Keyed by record id, and asked about ids that are
+     usually ABSENT — so on a plain object a record whose id is "__proto__",
+     "constructor" or "toString" made the lookup return something that is not
+     an index, and the merge crashed on the next line (tools/stress/sync.js,
+     AA9). A crash here aborts the whole batch, so ONE hostile id stopped every
+     legitimate record in it from syncing. */
+  var byId = Object.create(null);
   for (var i = 0; i < local.length; i++) byId[local[i].id] = i;
   var changed = 0;
   for (var r = 0; r < rows.length; r++) {
@@ -256,6 +262,19 @@ function cloudMergeRows(kind, rows) {
     if (!row || !row.id) continue;
     var rec = row.data || null;
     if (rec === null) continue;   /* undecryptable / empty — never store ciphertext as a record */
+    /* Shape check, not a truthiness check: `data` arrives as JSON from another
+       device and a string or a number here used to throw on the assignment
+       below, aborting the batch (AA12). */
+    if (typeof rec !== "object" || Array.isArray(rec)) continue;
+
+    /* IDENTITY MUST AGREE. The envelope id is what the row is addressed to;
+       rec.id is what the payload claims to be. When they disagree, the row is
+       not merely stale — it is wrong, and applying it writes one patient's
+       data into another patient's slot, which is the worst outcome in this
+       whole file. Refuse it and surface it rather than guessing which id is
+       the real one (AA10). */
+    if (rec.id && rec.id !== row.id) { cloudRecordConflict(kind, row.id); continue; }
+
     rec._cloud_updated = row.updated_at;
     /* never clobber the visit that is open in this exam right now */
     if (kind === "visits" && typeof CV !== "undefined" && CV && rec.id === CV) continue;
@@ -282,7 +301,10 @@ function cloudMergeRows(kind, rows) {
     else if (remoteNewer && localModified) { cloudRecordConflict(kind, row.id); }
     /* else: local is newer or unchanged — keep it */
   }
-  function rebuildIndex() { byId = {}; for (var k = 0; k < local.length; k++) byId[local[k].id] = k; }
+  function rebuildIndex() {
+    byId = Object.create(null);
+    for (var k = 0; k < local.length; k++) byId[local[k].id] = k;
+  }
   if (changed > 0) {
     CLOUD._suppress = true;
     try { save(local); } finally { CLOUD._suppress = false; }
