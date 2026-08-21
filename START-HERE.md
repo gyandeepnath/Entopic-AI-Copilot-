@@ -1,4 +1,4 @@
-# Entopic — package for exploring, 10 August 2026
+# Entopic — package for exploring, 21 August 2026
 
 ## Just want to look at it?
 
@@ -13,6 +13,55 @@ set, or the built-in default if you have not changed it.
 > Screenshots of everything below are in **`screenshots/`**.
 
 ---
+
+## New in this package — the hardest stress test yet
+
+I attacked eight areas that had **no adversarial testing at all** and found
+**24 real defects**. Four of them could have harmed a patient or published one.
+Full detail in `docs/PHASE11_STRESS_REPORT.md`; the plain-language version is at
+the top of `CHANGELOG.md`.
+
+The ones worth knowing about as the owner:
+
+- **A "de-identified" research export could carry free text out of the device.**
+  The protection listed which *fields* to copy but never checked what was *in*
+  them. Now checked against your own dropdown vocabularies.
+- **A published risk score could be produced for a patient nobody assessed**,
+  and the same trick could make any account an administrator or mark a healthy
+  device as "corrupt" (which stops every save in the clinic).
+- **A crafted condition name could run code inside the app** — including from
+  the red-flag alert box. Proven in a real browser, now closed.
+- **Garbage in the dry-eye questionnaire produced a confident "Severe Dry Eye"**,
+  and a negative value produced "Normal" — the direction that sends someone home.
+- **"Penicillin allergy" was read as the patient TAKING penicillin.**
+- **You could be locked out of your own records by using a better browser.**
+- **Saving a large clinic got 76× faster** once a benchmark that had been
+  measuring itself was fixed.
+
+**Two things I attacked hard and could not break:** red flags always reach the
+screen (44 checks, under every adverse condition I could create), and what you
+print is still safe — an unmeasured eye never prints as "plano".
+
+**Fifteen times my first finding was wrong**, and every one is written into the
+test that made the mistake. The worst: my first privacy run reported "all clear"
+while the code was withholding *everything* — the tests passed because there was
+nothing left to leak.
+
+### Checking it yourself
+
+```
+npm test                              1,313 unit tests
+node tools/stress/attack.js           the original 46 attacks
+node tools/stress/privacy.js          what leaves the device
+node tools/stress/crypto.js           who gets in
+node tools/stress/clinical.js         scales, medications, OSDI, dispensing
+node tools/stress/pollution.js        one whole class of security bug
+node tools/stress/sync.js             records arriving from another device
+node tools/e2e/accessibility.js       every screen, labels + keyboard
+```
+
+The browser ones (`xss`, `output`, `redflag-screen`, everything in `tools/e2e/`)
+need Chromium; the rest need only Node.
 
 ## New in this package — the education layer works now
 
