@@ -10,7 +10,7 @@ about pixels; measure before claiming; correct my own errors in writing.
 
 ## 1. The short version
 
-**22 real defects found and fixed**, across eight areas that had **no
+**24 real defects found and fixed**, across eight areas that had **no
 adversarial coverage at all** before this phase. Four of them could have harmed
 a patient or published one; three were security holes; one was a 76× performance
 loss hiding behind a benchmark that was measuring itself.
@@ -20,10 +20,22 @@ is recorded as one rather than quietly skipped.
 
 | Gate | Before | After |
 |---|---|---|
-| Unit tests (`node --test`) | 1,241 | **1,301** |
-| Adversarial attacks | 46 | **208** |
+| Unit tests (`node --test`) | 1,241 | **1,313** |
+| Adversarial attacks | 46 | **288** |
 | Browser-driven checks | 77 | **171** |
-| Stress harnesses | 1 | **10** |
+| Stress harnesses | 1 | **9** + shared lib |
+
+Final gate run, all green:
+
+```
+unit          1,313 pass / 0 fail
+attack           46 / 0     privacy      43 / 0     crypto     24 / 0
+clinical         47 / 0     pollution    16 / 0     sync       18 / 0
+xss              24 / 0     output       26 / 0     redflag    44 / 0
+patient-journey  29 / 0     competency   35 / 0     student-ui 13 / 0
+accessibility     0 unlabelled, 0 keyboard-unreachable
+audit             0 FAIL
+```
 
 ---
 
@@ -183,6 +195,19 @@ And the honest numbers finally show the per-visit store doing its job, which the
 old bench was hiding: `getPatientVisits` went from 170 ms to **5.3 ms** at 9,000
 visits.
 
+### 3.9 A student could be marked above 100%, and a bad score lost the report (2 defects)
+
+`osceMark` turns a station into four domain marks and a total a student reads as
+a statement about themselves. A domain whose numerator outran its denominator
+produced a mark **over 100%**, and the function **threw** on a malformed score
+object — losing the whole circuit's report. It runs over stored results and over
+a station closed by the bell, neither of which is guaranteed well formed.
+
+What held and is now pinned is the pedagogy rather than the arithmetic: safety
+is only *assessed* when the case carries a red flag, and it is scored
+*separately* from the diagnosis, so a student can name the wrong condition and
+still be credited for spotting the red flag.
+
 ---
 
 ## 4. Two areas stressed hard and found sound
@@ -196,6 +221,13 @@ still reaches the screen with the reasoning map hidden, the knowledge base
 emptied, a store corrupt, an empty differential, the record full of control
 characters, and buried under eight contradicting symptoms. The urgent box
 renders **above** the differential.
+
+**Accessibility survived everything added since Phase 9.** Phase 9 reported
+unlabelled 9 → 0 and keyboard-inaccessible 31 → 0, which was true of the app as
+it was then; `js/ui-a11y.js` fixes things at runtime, so a new surface is only
+covered if the bridge reaches it. Re-measured across all five screens including
+the competency cards and the regrouped Study tab: **0 unlabelled, 0
+keyboard-unreachable**. Now a permanent gate (`tools/e2e/accessibility.js`).
 
 **What leaves the clinic on paper.** 26 checks. An empty, whitespace, null or
 undefined sphere never prints as "plano" — while an explicitly entered zero
@@ -242,7 +274,7 @@ that does not run.**
 ### Engineering, not yet done
 6. **15 source files still have no test reference** — mostly `-ui.js` presentation modules (`assignments-ui`, `certificates-ui`, `investigations-ui`, `osce-ui`, `simulation-ui`, `module-links`, `ui-age-brackets`).
 7. **Simulation and OSCE scoring** have unit tests but no adversarial coverage; they produce student-facing marks.
-8. **Real screen-reader testing** is still the largest unverified Phase 9 claim. Labels and keyboard operability were verified functionally; no assistive technology has been used.
+8. **Real screen-reader testing** is still the largest unverified accessibility claim. The structural check is now a gate and passes on every screen, but a label that *exists* is not the same as one that *makes sense read aloud*. No assistive technology has been used against Entopic.
 9. **Print pagination** is unverified.
 10. **`storageUsage()` is still O(total bytes)** — now throttled rather than eliminated. An incremental running total would remove it entirely; the throttle was the low-risk fix.
 
