@@ -16,14 +16,39 @@ const vm = require("vm");
 const ROOT = path.resolve(__dirname, "..", "..");
 const read = (f) => fs.readFileSync(path.join(ROOT, f), "utf8");
 
-function sandbox() {
-  const mem = {};
+function sandbox(opts) {
+  opts = opts || {};
+  const mem = Object.create(null);
+  /* KEY ACCESS MUST BE O(1), AS IT IS IN A BROWSER.
+
+     This used to be `Object.keys(mem)[i]`, which rebuilds the whole key array
+     on every call. storageUsage() walks localStorage by index on every save,
+     so an O(n) key() turned an O(n) scan into O(n^2) and the whole benchmark
+     into O(n^3) — and the numbers it printed were the harness, not Entopic.
+
+     Measured, same code, same data, 2,000 visits:
+         O(n) key()  ->  visit-store split 443,971 ms   (7.4 minutes)
+         O(1) key()  ->  visit-store split       667 ms
+
+     I nearly reported the first figure as a startup defect. A benchmark whose
+     own storage is asymptotically unlike the real thing does not measure the
+     product; it measures itself. */
+  const keys = [];
   const ls = {
-    get length() { return Object.keys(mem).length; },
-    key: (i) => Object.keys(mem)[i] ?? null,
+    get length() { return keys.length; },
+    key: (i) => (i >= 0 && i < keys.length ? keys[i] : null),
     getItem: (k) => (Object.prototype.hasOwnProperty.call(mem, k) ? mem[k] : null),
-    setItem: (k, v) => { mem[k] = String(v); },
-    removeItem: (k) => { delete mem[k]; }
+    setItem: (k, v) => {
+      if (!Object.prototype.hasOwnProperty.call(mem, k)) keys.push(k);
+      mem[k] = String(v);
+    },
+    removeItem: (k) => {
+      if (Object.prototype.hasOwnProperty.call(mem, k)) {
+        delete mem[k];
+        const i = keys.indexOf(k);
+        if (i >= 0) keys.splice(i, 1);
+      }
+    }
   };
   const ctx = {
     localStorage: ls, _mem: mem,
@@ -37,6 +62,23 @@ function sandbox() {
   vm.createContext(ctx);
   vm.runInContext(read("js/data-classification.js"), ctx, { filename: "dc.js" });
   vm.runInContext(read("js/storage.js"), ctx, { filename: "storage.js" });
+
+  /* MEASURE WHAT SHIPS.
+
+     This harness used to load storage.js and stop. getPatientVisits and
+     getLastVisit both delegate to js/visit-store.js when it is present, and
+     fall back to scanning the whole `visits` array when it is not — so without
+     that file every figure in this table described the LEGACY path, not
+     Entopic. The per-visit store was the whole point of the Phase 8 storage
+     work, and the benchmark was quietly reporting as though it did not exist.
+
+     `withVisitStore: false` keeps the old behaviour available, because the
+     fallback is real code that still runs on a device mid-migration and its
+     cost is worth knowing. It is now a labelled comparison rather than an
+     accident. */
+  if (opts.withVisitStore !== false) {
+    vm.runInContext(read("js/visit-store.js"), ctx, { filename: "visit-store.js" });
+  }
   return ctx;
 }
 
@@ -97,6 +139,16 @@ function ms(fn, iterations) {
   return r;
 }
 
+/* With the store split there is no single `entopic_visits` blob any more, so
+   size has to be summed across the per-visit keys. */
+function totalVisitBytes(ctx) {
+  let total = 0;
+  for (const k in ctx._mem) {
+    if (k.indexOf("entopic_visit_") === 0 || k === "entopic_visits") total += ctx._mem[k].length;
+  }
+  return total;
+}
+
 function bench(n) {
   const ctx = sandbox();
   const visits = [], patients = [];
@@ -112,7 +164,18 @@ function bench(n) {
   ctx.__v = visits; ctx.__p = patients;
   vm.runInContext("saveVisits(__v); savePatients(__p);", ctx);
 
-  const bytes = ctx._mem["entopic_visits"].length + ctx._mem["entopic_patients"].length;
+  /* SPLIT, exactly as the app does on every boot (js/app.js, after
+     migrationsRun). Seeding through saveVisits() alone leaves the per-visit
+     index empty, and visitStoreForPatient then falls back to scanning the
+     whole array — so the table was reporting the pre-Phase-8 path while the
+     shipped app has been split since first launch. `split` records whether it
+     actually happened, so a silent failure cannot masquerade as a measurement. */
+  let split = { ok: false, migrated: 0 };
+  if (vm.runInContext("typeof visitStoreSplitNow === 'function'", ctx)) {
+    try { split = vm.runInContext("visitStoreSplitNow()", ctx); } catch (e) { split = { ok: false, reason: String(e) }; }
+  }
+
+  const bytes = (ctx._mem["entopic_visits"] || "").length + ctx._mem["entopic_patients"].length;
   const iters = n > 2000 ? 25 : 100;
 
   const lv = ms(() => vm.runInContext("loadVisits();", ctx), iters);
@@ -124,7 +187,9 @@ function bench(n) {
   return {
     n,
     bytes,
-    kb_per_visit: +(ctx._mem["entopic_visits"].length / n / 1024).toFixed(2),
+    kb_per_visit: +(((ctx._mem["entopic_visits"] || "").length || totalVisitBytes(ctx)) / n / 1024).toFixed(2),
+    split_ok: !!split.ok,
+    split_migrated: split.migrated || 0,
     loadVisits_ms: +lv.p50.toFixed(3),
     loadPatients_ms: +lp.p50.toFixed(3),
     getPatientVisits_ms: +gpv.p50.toFixed(3),

@@ -324,7 +324,31 @@ function storageUsage() {
   return { bytes: bytes, budget: STORAGE_BUDGET_BYTES, pct: Math.min(100, Math.round(100 * bytes / STORAGE_BUDGET_BYTES)) };
 }
 
-function storageQuotaWatch() {
+/* THROTTLED, because it is called from every write.
+
+   storageUsage() walks the whole of localStorage and reads every value. That
+   is cheap once (0.6 ms at 2,000 visits, measured) and expensive n times: a
+   bulk write — the per-visit split, an archive prune, deleting a patient —
+   pays it PER RECORD, which is what made saveVisits O(n x bytes) and reached
+   350 ms at 1,000 visits and ~30 s at 9,000 in tools/bench/storage-bench.js.
+
+   The ordinary clinical save is unaffected either way: since the visit store
+   was split, doSave() writes ONE record, not the whole array. This is about
+   the bulk paths, and about not doing work whose answer cannot have changed
+   meaningfully between two writes a millisecond apart.
+
+   Correctness is preserved: the warning is a graceful early warning at 80%,
+   not a limit. Delaying it by at most QUOTA_WATCH_MS costs nothing, and a
+   write that actually FAILS on quota is handled separately by the write path
+   itself, which does not depend on this. */
+var QUOTA_WATCH_MS = 400;
+var _quotaWatchedAt = 0;
+
+function storageQuotaWatch(force) {
+  var now = Date.now();
+  if (!force && _storageWarned) return;              /* already said it once */
+  if (!force && (now - _quotaWatchedAt) < QUOTA_WATCH_MS) return;
+  _quotaWatchedAt = now;
   var u = storageUsage();
   if (u.pct >= 80 && !_storageWarned) {
     _storageWarned = true;
