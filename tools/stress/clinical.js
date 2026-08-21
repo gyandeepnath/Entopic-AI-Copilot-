@@ -531,4 +531,123 @@ attack("AD5 hostile refraction values do not crash or produce a nonsense band", 
   }
 });
 
+/* ═══════════════════════════════════════════════════════════════ */
+G("AE. OSCE marking — a student is assessed on this");
+
+const OSCE_FILES = ["js/osce.js"];
+function osceCtx() {
+  return browser({ base: false, also: OSCE_FILES,
+    extra: { SIM: {}, OSCE: {}, assignCredit: () => {}, simCaseFor: () => null } });
+}
+function mark(score, theCase) {
+  const c = osceCtx();
+  c.__s = score; c.__c = theCase;
+  return JSON.parse(c.run("JSON.stringify(osceMark(__s, __c))"));
+}
+const BASE = { stepsWithFindings: 4, missedSteps: [], decisive: ["a", "b"],
+               decisiveFound: ["a", "b"], correct: true, guess: "X",
+               timedOut: false, seconds: 100 };
+
+attack("AE1 the declared weights sum to 1", () => {
+  const c = osceCtx();
+  const w = JSON.parse(c.run("JSON.stringify(OSCE_CONFIG.weights)"));
+  const sum = Object.keys(w).reduce((n, k) => n + w[k], 0);
+  must(Math.abs(sum - 1) < 1e-9,
+    "the marking weights sum to " + sum + ", so a perfect station cannot score 100%");
+});
+
+attack("AE2 a perfect station scores exactly 1 (positive control)", () => {
+  const r = mark(BASE, { condition: "X", urgent: false });
+  mustEqual(+r.total.toFixed(6), 1, "a flawless station did not score full marks");
+});
+
+attack("AE3 a station that went entirely wrong scores 0, not below", () => {
+  const r = mark({ stepsWithFindings: 4, missedSteps: ["a","b","c","d"],
+                   decisive: ["a","b"], decisiveFound: [], correct: false,
+                   guess: "", timedOut: true, seconds: 300 },
+                 { condition: "X", urgent: true });
+  must(r.total >= 0, "a mark below zero was produced: " + r.total);
+  mustEqual(r.diagnosis, 0, "a wrong diagnosis must score zero on that domain");
+});
+
+attack("AE4 a mark can never exceed 100%", () => {
+  /* decisiveFound is a list. If it ever carries a duplicate — or more entries
+     than `decisive` — the ratio exceeds 1 and the student is marked above
+     full. A mark over 100% on a practice OSCE is a bug a student will notice
+     and stop trusting the rest of the report over. */
+  const dupes = mark(Object.assign({}, BASE, {
+    decisive: ["a", "b"], decisiveFound: ["a", "a", "b", "b", "c"]
+  }), { condition: "X", urgent: true });
+  must(dupes.decisive <= 1,
+    "the decisive-findings domain scored " + dupes.decisive + " (above full marks)");
+  must(dupes.total <= 1,
+    "a station scored " + dupes.total + " — above 100%");
+});
+
+attack("AE5 more missed steps than there were steps cannot go negative", () => {
+  const r = mark(Object.assign({}, BASE, {
+    stepsWithFindings: 2, missedSteps: ["a","b","c","d","e"]
+  }), { condition: "X", urgent: false });
+  must(r.gathering >= 0, "the gathering domain went negative: " + r.gathering);
+  must(r.total >= 0, "the total went negative: " + r.total);
+});
+
+attack("AE6 safety is only ASSESSED on a case that carries a red flag", () => {
+  const nonUrgent = mark(BASE, { condition: "X", urgent: false });
+  const urgent = mark(BASE, { condition: "X", urgent: true });
+  mustEqual(nonUrgent.safetyApplies, false, "safety was assessed on a case with no red flag");
+  mustEqual(urgent.safetyApplies, true, "safety was NOT assessed on a red-flag case");
+});
+
+attack("AE7 missing the red flag on an urgent case costs marks", () => {
+  /* The single most important thing this circuit teaches. */
+  const found = mark(BASE, { condition: "X", urgent: true });
+  const missed = mark(Object.assign({}, BASE, { decisiveFound: [] }),
+                      { condition: "X", urgent: true });
+  must(missed.safety < found.safety,
+    "missing the finding that raises a red flag cost nothing on the safety domain");
+  must(missed.total < found.total, "and cost nothing overall");
+});
+
+attack("AE8 the diagnosis and safety domains are scored separately", () => {
+  /* A student must be able to name the wrong condition and still be credited
+     for spotting the red flag — and vice versa — or the circuit cannot teach
+     the difference. */
+  const rightDxMissedFlag = mark(Object.assign({}, BASE, { decisiveFound: [], correct: true }),
+                                 { condition: "X", urgent: true });
+  const wrongDxCaughtFlag = mark(Object.assign({}, BASE, { correct: false }),
+                                 { condition: "X", urgent: true });
+  mustEqual(rightDxMissedFlag.diagnosis, 1, "a correct diagnosis was not credited");
+  mustEqual(rightDxMissedFlag.safety < 1, true, "a missed red flag was not penalised");
+  mustEqual(wrongDxCaughtFlag.safety, 1, "catching the red flag was not credited");
+  mustEqual(wrongDxCaughtFlag.diagnosis, 0, "a wrong diagnosis was credited");
+});
+
+attack("AE9 a hostile score object does not crash the marking", () => {
+  const c = osceCtx();
+  const shapes = ['{}', '{ decisive: null, decisiveFound: null, missedSteps: null }',
+                  '{ stepsWithFindings: "x", missedSteps: [], decisive: [], decisiveFound: [] }',
+                  '{ stepsWithFindings: NaN, missedSteps: [], decisive: [], decisiveFound: [] }',
+                  '{ stepsWithFindings: -5, missedSteps: [], decisive: [], decisiveFound: [] }'];
+  for (const sh of shapes) {
+    let threw = null, out = null;
+    try { out = c.run(`JSON.stringify(osceMark(${sh}, { condition: "X", urgent: false }))`); }
+    catch (e) { threw = e; }
+    must(!threw, "osceMark threw on " + sh + ": " + threw);
+    if (out) {
+      const r = JSON.parse(out);
+      must(isFinite(r.total), "a non-finite mark was produced from " + sh + ": " + r.total);
+      must(r.total >= 0 && r.total <= 1, "an out-of-range mark from " + sh + ": " + r.total);
+    }
+  }
+});
+
+attack("AE10 the pass mark is labelled practice guidance, not certification", () => {
+  /* Entopic must not assert a certifying standard it has no authority to set. */
+  const src = require("fs").readFileSync(
+    require("path").resolve(__dirname, "..", "..", "js/osce.js"), "utf8");
+  must(/practice guidance only, not certification/i.test(src),
+    "the OSCE pass mark no longer states that it is not a certifying standard");
+});
+
 runAll("clinical").then((n) => process.exit(n ? 1 : 0));

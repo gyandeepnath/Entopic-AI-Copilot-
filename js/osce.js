@@ -124,20 +124,39 @@ function osceStopTimer() {
 }
 
 /* Mark one station against the schedule. */
+/* Every domain is a FRACTION and every fraction belongs in [0,1]. Clamping is
+   stated once here rather than trusted at each call site, because a mark is
+   what a student is told about themselves and an out-of-range one destroys
+   confidence in the whole report.
+
+   In the normal path `decisiveFound` is a filtered subset of `decisive`
+   (js/simulation.js), so it cannot exceed it — this is defensive, not a
+   response to an observed duplicate. It matters because osceMark is a pure
+   function that also runs over STORED results, and a replayed or restored
+   score is not guaranteed to have come from that filter. */
+function osceFrac(n, d, whenNoDenominator) {
+  if (!isFinite(d) || d <= 0) return whenNoDenominator;
+  if (!isFinite(n)) return 0;
+  var v = n / d;
+  return v < 0 ? 0 : (v > 1 ? 1 : v);
+}
+function osceLen(v) { return Array.isArray(v) ? v.length : 0; }
+
 function osceMark(score, theCase) {
   var w = OSCE_CONFIG.weights;
+  /* osceMark runs on stored results and on a station closed by the bell, so
+     neither argument is guaranteed to be well formed. It used to throw on an
+     empty score object, which loses the whole circuit's report. */
+  score = (score && typeof score === "object") ? score : {};
+  theCase = (theCase && typeof theCase === "object") ? theCase : {};
 
   /* Gathering = how much of what was THERE the candidate uncovered. It used to
      subtract sections opened, which penalised a candidate for examining a
      region that turned out normal — a negative finding is data, not waste. */
-  var gathering = score.stepsWithFindings
-    ? Math.min(1, (score.stepsWithFindings - score.missedSteps.length) / score.stepsWithFindings)
-    : 1;
-  gathering = Math.max(0, gathering);
+  var steps = Number(score.stepsWithFindings);
+  var gathering = osceFrac(steps - osceLen(score.missedSteps), steps, 1);
 
-  var decisive = score.decisive.length
-    ? score.decisiveFound.length / score.decisive.length
-    : 1;
+  var decisive = osceFrac(osceLen(score.decisiveFound), osceLen(score.decisive), 1);
 
   var diagnosis = score.correct ? 1 : 0;
 
@@ -152,6 +171,8 @@ function osceMark(score, theCase) {
 
   var total = w.gathering * gathering + w.decisive * decisive +
               w.diagnosis * diagnosis + w.safety * safety;
+  if (!isFinite(total)) total = 0;
+  total = Math.max(0, Math.min(1, total));
 
   return {
     station: theCase.condition,
