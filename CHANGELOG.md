@@ -6,6 +6,100 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-08-21 — Maximum-level stress testing: 22 real defects, and one benchmark that was lying to us.
+
+Full report: `docs/PHASE11_STRESS_REPORT.md`.
+
+You asked for everything that needs improvement to be stress tested as hard as
+possible and then improved. I built nine new adversarial harnesses and attacked
+eight areas that had **no adversarial coverage at all**. Twenty-two real defects
+came out. Four of them could have harmed a patient or published one.
+
+### The ones that mattered most
+
+**A "de-identified" research export could carry free text.** The protection was
+a list of which FIELDS get copied — it never checked what was IN them. A symptom
+or a slit-lamp finding that arrived from a restored backup or another device
+travelled out of the device intact. I proved it by planting a marker and finding
+it in the export. Values are now checked against the same lists your dropdowns
+offer; anything unrecognised is withheld, and the count is kept so your numbers
+stay honest.
+
+**A published risk score could be produced for a patient nobody assessed.** A
+crafted record could make every question in a clinical scale read as "answered
+yes", skipping the guard that refuses to score an incomplete scale — the exact
+failure that module exists to prevent. The same trick could make any signed-in
+account an administrator, give a student the competency sign-off power, and mark
+a perfectly healthy device as "corrupt" (which stops every save in the clinic).
+
+**A crafted condition name could run code inside the app** — where every patient
+record and your unlocked vault live. Six places, including the red-flag alert
+box, the one thing this app must never get wrong. Proven in a real browser.
+
+**Garbage in a dry-eye questionnaire produced a confident "Severe Dry Eye."** A
+single unreadable value made the score come out as nonsense and land in the
+worst band. A negative value came out as "Normal" — which is the direction that
+sends someone home.
+
+**"Penicillin allergy" was read as the patient TAKING penicillin.** The parser
+only looked for words like "allergy" BEFORE the drug name, so the ordinary way
+it is written down was misread — inventing an exposure and losing the allergy.
+
+**You could be locked out of your own records by using a better browser.** An
+account created on an older device could never be opened on a newer one, with
+the correct password. Same bug in the admin login.
+
+**One patient's data could be written into another patient's record** when
+syncing between devices.
+
+### The benchmark was measuring itself
+
+The storage benchmark never loaded the per-visit storage you already have, so
+every number it has ever shown you described the OLD code. Its own fake storage
+was also written in a way that gets slower as it fills, which a real browser
+does not — that alone made it look 600× worse than reality. **I nearly reported
+"your app will hang for 7 minutes on startup" as a real defect. It was 0.7
+seconds.**
+
+With the measurement fixed, a genuine problem appeared and is now fixed:
+
+| Saving a whole clinic's visits | before | after |
+|---|---|---|
+| 1,000 visits | 350 ms | **38 ms** |
+| 9,000 visits | 30 seconds | **0.4 seconds** |
+
+And the honest numbers finally show the per-visit storage doing its job:
+looking up one patient's visits went from 170 ms to **5 ms**.
+
+### Two things I attacked hard and could not break
+
+Worth saying, because "we tested it and it held" is a result:
+
+- **Red flags reach the screen.** 44 checks: every red-flag rule still paints a
+  visible alert with the reasoning map hidden, the knowledge base emptied, a
+  store corrupt, and buried under contradicting evidence. The urgent box is
+  always above the differential.
+- **What you print is safe.** An unmeasured eye still never prints as "plano",
+  a genuine plano still does, an unfillable prescription still says so, and the
+  report still frames the engine as advisory rather than as a diagnosis.
+
+### Fifteen times I was wrong
+
+Every one is written into the test that made the mistake, because a safety test
+that lies is worse than one that does not run. The worst: my first privacy run
+reported "all clear" while the code under test was withholding *everything* —
+the tests passed because there was nothing there to leak. There are now ten
+positive controls that make that impossible to repeat.
+
+### What still needs you
+
+Unchanged and still yours: **394 of 394 conditions are clinically unverified**,
+and 48 thresholds plus 18 red-flag rules are unverified. One new question: a
+part-finished dry-eye questionnaire can now report how many answers it actually
+has — whether it should refuse to show a severity below some number of answers
+is a clinical call, and I have not invented one.
+
+
 ## 2026-08-14 (later) — Making the student's Study screen easy to understand.
 
 You asked for the student UI to be easier to understand. The Study tab had

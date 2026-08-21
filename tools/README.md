@@ -45,3 +45,43 @@ A headless-Chromium smoke test (load the app, assert no console/page errors,
 KB + registry present, engine callable) is run manually during development via
 Playwright; it is intentionally kept out of CI to avoid a browser-download
 dependency.
+
+## Adversarial stress harnesses (`tools/stress/`)
+
+Run separately from `node --test`, which is browserless and asks "does it do
+the right thing". These ask the opposite: *what does it take to make it do the
+wrong thing quietly?*
+
+```
+node tools/stress/attack.js           46  storage, migrations, engine, red flags
+node tools/stress/privacy.js          43  what LEAVES the device
+node tools/stress/crypto.js           24  who GETS IN
+node tools/stress/clinical.js         37  scales, medications, OSDI, dispensing
+node tools/stress/pollution.js        16  prototype pollution, as a class
+node tools/stress/sync.js             18  records arriving from another device
+node tools/stress/xss.js              24  script injection (real browser)
+node tools/stress/output.js           26  what gets printed (real browser)
+node tools/stress/redflag-screen.js   44  red flags to painted pixels (real browser)
+```
+
+Add `--only=X1` to any of them to run a single attack.
+
+The last three drive a real Chromium, because the question is about pixels and
+execution, not about strings.
+
+**If you change the shared sandbox (`tools/stress/lib.js`), read its header
+first.** It deliberately does not inject the host realm's `Object`/`JSON`/
+`Array`; injecting them makes every prototype-pollution attack in the repo pass
+without reaching the code. `tests/prototype-pollution.test.js` guards that.
+
+### Measurement
+
+```
+node tools/bench/storage-bench.js     storage at 100 -> 9,000 visits
+node tools/audit-escaping.js          unescaped interpolations (advisory)
+node tools/audit-test-quality.js      tests that may pass while broken
+```
+
+The benchmark's fake `localStorage` keeps an O(1) key index on purpose. It used
+to rebuild the key array on every `key(i)` call, which is O(n) where a browser
+is O(1) — that alone made a 667 ms operation measure as 7.4 minutes.
