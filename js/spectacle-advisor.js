@@ -21,6 +21,19 @@ function saRx(eye, part) {
   return V.rx[k];
 }
 
+/* Screen hours, read safely. `V.hxS` is present on every blankVisit(), but a
+   visit that arrived from a restored backup or another device need not carry
+   it — and `V.hxS.vdu` on an absent hxS threw, taking the whole advisor panel
+   down with it (tools/stress/clinical.js, AD2). */
+function saVdu() {
+  var hxS = (typeof V !== "undefined" && V) ? V.hxS : null;
+  return (hxS && hxS.vdu !== undefined) ? (parseFloat(hxS.vdu) || 0) : 0;
+}
+
+function saAge() {
+  return (typeof P !== "undefined" && P) ? (parseInt(P.age, 10) || 0) : 0;
+}
+
 /* ═══════════════════════════════════════════════════════════════ */
 /* LENS INDEX RECOMMENDATION                                       */
 /* Based on highest sphere + cylinder power                        */
@@ -77,11 +90,11 @@ function recommendLensIndex() {
 /* ═══════════════════════════════════════════════════════════════ */
 
 function recommendLensDesign() {
-  var age = parseInt(P.age) || 0;
+  var age = saAge();
   var hasAdd = !!(saRx("od","add") || saRx("os","add"));
   var addVal = parseFloat(saRx("od","add")) || parseFloat(saRx("os","add")) || 0;
   var occ = (P.occupation || "").toLowerCase();
-  var vdu = parseFloat(V.hxS.vdu) || 0;
+  var vdu = saVdu();
 
   var recommendations = [];
 
@@ -159,7 +172,7 @@ function recommendLensDesign() {
 
 function recommendCoatings() {
   var coatings = [];
-  var vdu = parseFloat(V.hxS.vdu) || 0;
+  var vdu = saVdu();
   var occ = (P.occupation || "").toLowerCase();
 
   /* MAR — always recommended */

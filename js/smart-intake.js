@@ -223,28 +223,64 @@ function setOSDIScore(index, value) {
 /* Formula: (sum of scores × 25) / number of questions answered   */
 /* ═══════════════════════════════════════════════════════════════ */
 
+/* An OSDI item is answered on a 5-point scale: an integer 0-4 and nothing
+   else. Anything outside that is not an answer.
+
+   MEASURED PROBLEM (tools/stress/output.js). The old check was only "not null
+   and not undefined", so whatever a restored backup or a synced record carried
+   went straight into the arithmetic:
+
+     string scores  "4","3","2"  ->  0 + "4" concatenates  ->  score 3600
+     a NaN anywhere               ->  score NaN            ->  "Severe Dry Eye"
+     an object                    ->  score NaN            ->  "Severe Dry Eye"
+     1e9 in one item              ->  score 2,083,333,333  ->  "Severe Dry Eye"
+     -100 in one item             ->  score -208.3         ->  "Normal"
+
+   The last two are the dangerous shape: a NaN reached the severity ladder,
+   every `<=` comparison against NaN is false, and the final `else` branch
+   handed back SEVERE DRY EYE. Garbage in, confident diagnosis out. And a
+   negative score fell through to "Normal", which understates rather than
+   overstates — the direction that gets a patient sent home.
+
+   Unrecognised values are now NOT COUNTED at all, the same rule the research
+   corpus and the clinical scales already use: an unreadable answer is not an
+   answer, and it must not be silently read as a zero either. The count is
+   reported so a partially-answered questionnaire is visibly partial. */
+function osdiIsAnswer(v) {
+  return typeof v === "number" && isFinite(v) && v >= 0 && v <= 4 && Math.floor(v) === v;
+}
+
 function calculateOSDI() {
-  if (!V.osdi || !V.osdi.scores) {
-    return { complete: false, score: 0, severity: "", answered: 0 };
+  if (!V.osdi || !Array.isArray(V.osdi.scores)) {
+    return { complete: false, score: 0, severity: "", answered: 0, rejected: 0 };
   }
 
   var sum = 0;
   var answered = 0;
+  var rejected = 0;
 
   for (var i = 0; i < V.osdi.scores.length; i++) {
-    if (V.osdi.scores[i] !== null && V.osdi.scores[i] !== undefined) {
-      sum += V.osdi.scores[i];
-      answered++;
-    }
+    var v = V.osdi.scores[i];
+    if (v === null || v === undefined) continue;      /* simply not answered yet */
+    if (!osdiIsAnswer(v)) { rejected++; continue; }   /* present but not an OSDI answer */
+    sum += v;
+    answered++;
   }
 
   if (answered === 0) {
-    return { complete: false, score: 0, severity: "", answered: 0 };
+    return { complete: false, score: 0, severity: "", answered: 0, rejected: rejected };
   }
 
-  /* OSDI formula */
+  /* OSDI formula: (sum of scores x 25) / number of questions ANSWERED. */
   var score = (sum * 25) / answered;
   score = Math.round(score * 10) / 10;
+
+  /* Belt and braces. After the validation above this cannot be reached, and
+     that is exactly why it must refuse rather than fall through to the last
+     branch of the severity ladder if it ever is. */
+  if (!isFinite(score)) {
+    return { complete: false, score: 0, severity: "", answered: answered, rejected: rejected };
+  }
 
   var severity = "";
   if (score <= 12) severity = "Normal";
@@ -256,7 +292,11 @@ function calculateOSDI() {
     complete: answered === 12,
     score: score,
     severity: severity,
-    answered: answered
+    answered: answered,
+    /* How many stored values were present but were NOT valid OSDI answers.
+       A questionnaire scored from 3 of 12 items is a different statement from
+       one scored from 12, and a clinician has to be able to see which. */
+    rejected: rejected
   };
 }
 

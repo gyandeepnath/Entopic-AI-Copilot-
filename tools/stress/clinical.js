@@ -383,4 +383,152 @@ attack("Y11 an empty or missing medication history yields nothing, not a crash",
   }
 });
 
+/* ═══════════════════════════════════════════════════════════════ */
+G("AC. OSDI — a published questionnaire must not invent a severity");
+
+const INTAKE = ["js/smart-intake.js"];
+function osdi(scores) {
+  const c = browser({ base: false, also: INTAKE, extra: { V: {} } });
+  c.run(`V = { osdi: { scores: ${JSON.stringify(scores)} } };`);
+  return JSON.parse(c.run("JSON.stringify(calculateOSDI())"));
+}
+/* Values JSON cannot carry are set by expression instead. */
+function osdiExpr(expr) {
+  const c = browser({ base: false, also: INTAKE, extra: { V: {} } });
+  c.run(`V = { osdi: { scores: ${expr} } };`);
+  return JSON.parse(c.run("JSON.stringify(calculateOSDI())"));
+}
+
+attack("AC1 the published formula is applied correctly (positive control)", () => {
+  /* OSDI = (sum of scores x 25) / number of questions ANSWERED.
+     All twelve at 4 is the defined maximum, 100. All twelve at 0 is 0. */
+  const worst = osdi([4,4,4,4,4,4,4,4,4,4,4,4]);
+  mustEqual(worst.score, 100, "the maximum OSDI score must be 100");
+  mustEqual(worst.severity, "Severe Dry Eye", "100 must land in the top band");
+  mustEqual(worst.complete, true, "twelve answers is a complete questionnaire");
+
+  const best = osdi([0,0,0,0,0,0,0,0,0,0,0,0]);
+  mustEqual(best.score, 0, "the minimum OSDI score must be 0");
+  mustEqual(best.severity, "Normal", "0 must land in the normal band");
+});
+
+attack("AC2 the score is normalised by ANSWERED items, not by twelve", () => {
+  /* This is the whole point of the published formula: a partially completed
+     questionnaire is scaled, not deflated by counting blanks as zero. */
+  const partial = osdi([4,4,4,null,null,null,null,null,null,null,null,null]);
+  mustEqual(partial.answered, 3, "three items were answered");
+  mustEqual(partial.score, 100,
+    "three maximal answers must scale to 100, not be diluted to 25 by nine blanks");
+  mustEqual(partial.complete, false, "a partial questionnaire must not claim to be complete");
+});
+
+attack("AC3 a NaN never produces a diagnosis", () => {
+  /* THE DANGEROUS SHAPE. Every `<=` comparison against NaN is false, so a NaN
+     fell straight through the severity ladder to its final `else` — and handed
+     back SEVERE DRY EYE for a questionnaire full of garbage. */
+  const r = osdiExpr("[0,0,0,0,0,0,0,0,0,0,0,NaN]");
+  must(r.severity !== "Severe Dry Eye",
+    "a NaN in the answers produced a severe dry-eye result");
+  must(isFinite(r.score), "the score is not a finite number: " + r.score);
+  mustEqual(r.rejected, 1, "the unusable value must be counted as rejected");
+});
+
+attack("AC4 string answers are not concatenated into a nonsense score", () => {
+  /* `sum += "4"` concatenates: 0 + "4" + "3" + "2" became "0432", and
+     "0432" * 25 / 3 gave 3600 — labelled Severe. */
+  const r = osdi(["4","3","2",null,null,null,null,null,null,null,null,null]);
+  must(r.score <= 100, "a string answer produced an out-of-range score: " + r.score);
+  mustEqual(r.rejected, 3, "string answers must be rejected, not coerced");
+  mustEqual(r.answered, 0, "no valid answer was present, so nothing may be scored");
+});
+
+attack("AC5 an out-of-range answer cannot exist on a 0-4 scale", () => {
+  for (const bad of [[1e9,0,0,0,0,0,0,0,0,0,0,0], [-100,0,0,0,0,0,0,0,0,0,0,0],
+                     [5,0,0,0,0,0,0,0,0,0,0,0], [2.5,0,0,0,0,0,0,0,0,0,0,0]]) {
+    const r = osdi(bad);
+    must(r.score >= 0 && r.score <= 100,
+      "an OSDI score outside 0-100 was produced: " + r.score + " from " + JSON.stringify(bad));
+    mustEqual(r.rejected, 1, "the out-of-range value must be rejected: " + JSON.stringify(bad));
+  }
+});
+
+attack("AC6 a non-numeric answer cannot reach the arithmetic", () => {
+  for (const expr of ["[{},0,0,0,0,0,0,0,0,0,0,0]", "[true,false,0,0,0,0,0,0,0,0,0,0]",
+                      '[[],0,0,0,0,0,0,0,0,0,0,0]']) {
+    const r = osdiExpr(expr);
+    must(isFinite(r.score), "a non-numeric answer produced " + r.score + " from " + expr);
+    must(r.score >= 0 && r.score <= 100, "out of range from " + expr);
+  }
+});
+
+attack("AC7 no answers means no score and no severity", () => {
+  for (const r of [osdi([]), osdi([null,null,null]), osdiExpr("null"),
+                   osdiExpr('"notanarray"')]) {
+    mustEqual(r.answered, 0, "something was counted as answered");
+    mustEqual(r.severity, "", "a severity was stated with nothing to score");
+  }
+});
+
+attack("AC8 the number of rejected values is reported, not hidden", () => {
+  /* A questionnaire scored from 3 of 12 is a different statement from one
+     scored from 12, and a clinician has to be able to see which. */
+  const r = osdi([4,"x",3,null,999,2,null,null,null,null,null,null]);
+  mustEqual(r.answered, 3, "three real answers");
+  mustEqual(r.rejected, 2, "two unusable values must be reported");
+});
+
+
+/* ═══════════════════════════════════════════════════════════════ */
+G("AD. the spectacle advisor — no advice for an eye nobody measured");
+
+const SPEC = ["js/spectacle-advisor.js"];
+function specCtx(rx) {
+  return browser({ base: false, also: SPEC,
+    extra: { V: { rx: rx || {} }, P: { age: 40 } } });
+}
+
+attack("AD1 with NO refraction the advisor refuses to recommend", () => {
+  const c = specCtx({});
+  const out = c.run("renderSpectacleAdvisor()");
+  must(/Enter refraction/i.test(out),
+    "a dispensing recommendation was produced for a patient nobody refracted: " +
+    String(out).slice(0, 160));
+  must(!/CR-39|Polycarbonate|Hi-Index/i.test(out),
+    "a lens material was named with no prescription recorded");
+});
+
+attack("AD2 with a real refraction it DOES advise (positive control)", () => {
+  const c = specCtx({ od_sph: "-6.00", os_sph: "-6.00" });
+  const out = c.run("renderSpectacleAdvisor()");
+  must(/Hi-Index|Polycarbonate|CR-39/i.test(out),
+    "a high prescription produced no lens material recommendation");
+});
+
+attack("AD3 the recommendation tracks the power actually recorded", () => {
+  const low = specCtx({ od_sph: "-1.00", os_sph: "-1.00" }).run("JSON.stringify(recommendLensIndex())");
+  const high = specCtx({ od_sph: "-9.00", os_sph: "-9.00" }).run("JSON.stringify(recommendLensIndex())");
+  must(low !== high, "a -1.00 and a -9.00 produced the same lens recommendation");
+  must(/CR-39|1\.50/.test(low), "a low prescription should reach the standard-index band");
+});
+
+attack("AD4 an unrecorded second eye does not drag the recommendation down", () => {
+  /* Only the max power drives the material, so an unmeasured fellow eye must
+     not make a high prescription look low. */
+  const oneEye = specCtx({ od_sph: "-9.00" }).run("JSON.stringify(recommendLensIndex())");
+  must(/1\.67|1\.74|Hi-Index/i.test(oneEye),
+    "a -9.00 in one eye was advised as if it were low powered: " + oneEye);
+});
+
+attack("AD5 hostile refraction values do not crash or produce a nonsense band", () => {
+  for (const rx of [{ od_sph: "abc" }, { od_sph: null }, { od_sph: {} },
+                    { od_sph: "1e9" }, { od_sph: "-Infinity" }, { od_sph: "NaN" }]) {
+    const c = specCtx(rx);
+    let threw = null, out = null;
+    try { out = c.run("JSON.stringify(recommendLensIndex())"); } catch (e) { threw = e; }
+    must(!threw, "the advisor threw on " + JSON.stringify(rx) + ": " + threw);
+    must(typeof out === "string" && out.indexOf("index") >= 0,
+      "no recommendation shape returned for " + JSON.stringify(rx));
+  }
+});
+
 runAll("clinical").then((n) => process.exit(n ? 1 : 0));
