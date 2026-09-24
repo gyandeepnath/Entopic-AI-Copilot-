@@ -82,8 +82,8 @@ function ageBracketRows(pending) {
             var on = (cur || "") === o.id;
             return '<button class="btn ' + (on ? "btn-p" : "btn-s") + '" style="font-size:.54rem"' +
               ' title="' + esc(o.hint) + '"' +
-              ' onclick="ageBracketChoose(' + JSON.stringify(p.name).replace(/"/g, "&quot;") +
-              ',' + JSON.stringify(o.id) + ')">' + esc(o.label) + '</button>';
+              ' onclick="ageBracketChoose(\'' + escAttrJs(p.name) +
+              '\',\'' + escAttrJs(o.id) + '\')">' + esc(o.label) + '</button>';
           }).join("") +
         '</div>' +
       '</div>';

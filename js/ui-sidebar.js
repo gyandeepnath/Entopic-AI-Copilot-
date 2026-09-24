@@ -63,7 +63,7 @@ function renderSidebar() {
     var gid = "sbg_" + grp.cat.replace(/[^a-z0-9]+/gi, "_");
 
     h += '<div class="sb-cat' + (collapsed ? " collapsed" : "") + '"' +
-        ' onclick="sbToggleGroup(' + JSON.stringify(grp.cat).replace(/"/g, "&quot;") + ')">' +
+        ' onclick="sbToggleGroup(\'' + escAttrJs(grp.cat) + '\')">' +
       '<span class="sb-cat-arrow">▾</span>' + grp.cat +
       (collapsed && doneN < grp.steps.length ? '<span class="sb-cat-dot"></span>' : '') +
       '<span class="sb-cat-count">' + doneN + '/' + grp.steps.length + '</span>' +

@@ -6,6 +6,34 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-09-24 — Full audit, part 11: 249 buttons that did nothing
+
+- **Age-bracket review screen (admin):** every "which ages does this apply
+  to?" button, all 249 of them, was dead. The code put a quoted name inside
+  a double-quoted `onclick`, so the browser cut the attribute off halfway,
+  leaving `ageBracketChoose("Vernal Keratoconjunctivitis",`. Clicking did
+  nothing and showed no error. Fixed and checked in a real browser: before,
+  the click made no call; after, `ageBracketChoose("Vernal
+  Keratoconjunctivitis", "paediatric_age")` runs.
+- **The same broken pattern** existed in the sidebar group toggle and in the
+  simulation answer buttons. In the simulation buttons it was also an
+  injection hole: a condition name containing `&quot;` could run code, because
+  the browser decodes the entity before the handler runs. All three now use the
+  shared `escAttrJs` escaper.
+- **Simulation debrief data:** the record of the engine's top guesses saved
+  `d.score`, a field that doesn't exist, so it was always blank. It now saves
+  `d.prob`.
+- **New gate, `tools/e2e/handlers.js`:** this opens every screen for every
+  role, including admin tools and each exam step. It parses **every** `on…`
+  attribute with a real JavaScript parser and checks that each function it
+  calls exists. Result: 2,082 handlers, all valid. Run against the previous
+  commit, it fails on the dead buttons.
+- **XSS gate:** now also tests entity-encoded payloads (`&quot;`) and the
+  simulation answer list. It checks by parsing the handler, not by pattern
+  matching, so escaped text no longer triggers false alarms. 48 held, 0 broke.
+
+---
+
 ## 2026-09-24 — Full audit, part 10: what goes to the AI, and what comes back
 
 Only relevant if an AI key is configured (the engine never needs it).

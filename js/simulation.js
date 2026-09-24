@@ -390,7 +390,8 @@ function simSubmit(guess, confidence) {
     seconds: Math.round((Date.now() - SIM.started) / 1000),
     timedOut: !!(SIM.deadline && Date.now() > SIM.deadline),
     /* engine's own view at the moment of the answer, for the debrief */
-    engineTop: (V.dxList || []).slice(0, 5).map(function (d) { return { n: d.n, s: d.score }; })
+    /* dxList entries carry `prob`, not `score` — s was always undefined */
+    engineTop: (V.dxList || []).slice(0, 5).map(function (d) { return { n: d.n, s: d.prob }; })
   };
 
   /* Learning telemetry (local, per user, never clinical data). */

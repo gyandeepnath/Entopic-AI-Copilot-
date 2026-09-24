@@ -75,7 +75,12 @@ const PAYLOADS = {
   /* The hand-rolled `escHtml(x).replace(/'/g, "\\'")` escapes the quote but
      not the backslash, so a LEADING backslash turns its added \\' into an
      escaped backslash followed by a real quote. escAttrJs exists for this. */
-  jsStrBs: "\\');window.__xss=1;//"
+  jsStrBs: "\\');window.__xss=1;//",
+  /* An HTML ENTITY: attribute values are entity-decoded before the handler
+     runs, so escaping only the quote CHARACTER (JSON.stringify + a " →
+     &quot; swap) lets a name containing the text &quot; decode into a real
+     quote inside the handler. */
+  entity: "x&quot;);window.__xss=1;//"
 };
 
 (async () => {
@@ -350,6 +355,20 @@ const PAYLOADS = {
                            updated: new Date().toISOString(), data: { cc: "x", symptoms: [] } }]);
       window.HOME_TAB = "patients"; window.renderHome();
       if (window.openChart) window.openChart(J_);
+    } catch (e) { return { error: String(e) }; }
+    return {};
+  `));
+
+  await sweep("a hostile condition name in the simulation answer list (entity payload)", new Function("", `
+    var N_ = ${JSON.stringify(PAYLOADS.entity)};
+    try {
+      window.P = window.blankPatient("p1", "M1");
+      window.V = window.blankVisit();
+      window.V.dxList = [{ n: N_, prob: 0.5 }, { n: "Dry eye", prob: 0.4 }];
+      window.SIM.active = true;
+      window.SIM.theCase = { condition: N_, decisive: [], byStep: {} };
+      window.simOpenAnswerShortlist();
+      if (window.simSearchRender) window.simSearchRender("x");
     } catch (e) { return { error: String(e) }; }
     return {};
   `));

@@ -267,7 +267,7 @@ function simSearchRender(q) {
   out.innerHTML = hits.length
     ? hits.map(function (c) {
         return '<button class="btn btn-s" style="display:block;width:100%;text-align:left;font-size:.62rem;margin-bottom:3px"' +
-          ' onclick="simAnswer(' + JSON.stringify(c.name).replace(/"/g, "&quot;") + ')">' + esc(c.name) +
+          ' onclick="simAnswer(\'' + escAttrJs(c.name) + '\')">' + esc(c.name) +
           '<span style="color:var(--sv)"> · ' + esc(c.domain || "") + '</span></button>';
       }).join("")
     : '<div style="font-size:.58rem;color:var(--sv)">No match.</div>';
@@ -290,7 +290,7 @@ function simOpenAnswerShortlist() {
     '<div style="max-height:320px;overflow:auto;margin:8px 0">' +
       top.map(function (n) {
         return '<button class="btn btn-s" style="display:block;width:100%;text-align:left;font-size:.64rem;margin-bottom:4px"' +
-          ' onclick="simAnswer(' + JSON.stringify(n).replace(/"/g, "&quot;") + ')">' + esc(n) + '</button>';
+          ' onclick="simAnswer(\'' + escAttrJs(n) + '\')">' + esc(n) + '</button>';
       }).join("") +
     '</div>';
   simShowModal(h);
