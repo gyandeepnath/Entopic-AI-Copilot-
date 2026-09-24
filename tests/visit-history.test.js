@@ -197,3 +197,44 @@ test("the follow-up path uses the marked carry, not a blanket copy", () => {
   assert.ok(!/JSON\.parse\(JSON\.stringify\(prior\.data\[k\]\)\)/.test(src),
     "the old unmarked deep-copy must be gone");
 });
+
+
+/* ═══ A VISIT SAVED BY AN EARLIER BUILD OPENS AND CAN BE EXAMINED ═══
+   Opening a saved visit assigned its data straight to V. A visit saved before
+   a section existed made every exam page that reads that section throw; the
+   render guard swallowed it and the clinician got a stale panel on every step
+   (measured in a browser: VA, refraction, slit lamp, pupil, BV, fundus). */
+test("visitUpgradeShape adds missing sections and never touches recorded values", () => {
+  const vm = require("node:vm");
+  const ctx = { console };
+  vm.createContext(ctx);
+  vm.runInContext(fs.readFileSync(path.join(__dirname, "..", "js/data-model.js"), "utf8"), ctx);
+  vm.runInContext(fs.readFileSync(path.join(__dirname, "..", "js/visit-history.js"), "utf8"), ctx);
+  ctx.__v = { cc: "blurry left eye", symptoms: ["blur"], va: { od_un: "6/12" }, sl: null, iop: "15/16", fun: { od: { cd_v: "0.7" } } };
+  const v = vm.runInContext("visitUpgradeShape(__v)", ctx);
+  const blank = vm.runInContext("blankVisit()", ctx);
+  /* every template section exists and has the right container type */
+  for (const k of Object.keys(blank)) {
+    const t = blank[k];
+    if (t && typeof t === "object") {
+      assert.ok(v[k] && typeof v[k] === "object" && Array.isArray(v[k]) === Array.isArray(t), "section " + k + " missing or wrong type");
+    }
+  }
+  assert.ok(v.fun.os && typeof v.fun.os === "object", "a missing eye inside a present section is filled too");
+  /* recorded values survive, untouched */
+  assert.strictEqual(v.cc, "blurry left eye");
+  assert.strictEqual(v.va.od_un, "6/12");
+  assert.strictEqual(v.fun.od.cd_v, "0.7");
+  assert.strictEqual(v.symptoms.join(","), "blur");
+  /* a wrong-typed section is replaced, and the original KEPT */
+  assert.strictEqual(v._legacy_values.iop, "15/16", "a value that did not fit was discarded");
+  assert.ok(typeof v.iop === "object");
+  /* the same object is upgraded in place (the visits list holds it) */
+  assert.strictEqual(v, ctx.__v);
+  /* idempotent */
+  const once = JSON.stringify(v);
+  vm.runInContext("visitUpgradeShape(__v)", ctx);
+  assert.strictEqual(JSON.stringify(ctx.__v), once);
+  /* not an object at all → a blank visit, not a crash */
+  assert.ok(vm.runInContext("visitUpgradeShape(null)", ctx).symptoms);
+});

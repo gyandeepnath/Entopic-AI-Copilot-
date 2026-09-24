@@ -251,7 +251,11 @@ function startFollowUpVisit() {
 function continueInProgress() {
   var ip = _inProgressVisit();
   if (!ip) { startFollowUpVisit(); return; }
-  CV = ip.id; V = ip.data || blankVisit();
+  /* Brought up to the current shape: a visit saved by an earlier build
+     lacks sections added since, and every page reading one threw
+     (visitUpgradeShape, js/visit-history.js). */
+  CV = ip.id; V = (typeof visitUpgradeShape === "function") ? visitUpgradeShape(ip.data) : (ip.data || blankVisit());
+  ip.data = V;
   /* Remember the stamp this tab opened the visit at, so a save can notice
      another window having written it in between (see recDetectConflict). */
   if (typeof setVisitSeenStamp === "function") setVisitSeenStamp(ip.updated || ip.date);

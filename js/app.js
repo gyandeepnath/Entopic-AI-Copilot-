@@ -1321,7 +1321,8 @@ function openPatient(pid) {
   var last = visits.filter(function (v) { return v.patient_id === pid; })
     .sort(function (a, b) { return (b.date || "").localeCompare(a.date || ""); })[0];
   if (last && last.status === "in_progress") {
-    CV = last.id; V = last.data || blankVisit();
+    CV = last.id; V = (typeof visitUpgradeShape === "function") ? visitUpgradeShape(last.data) : (last.data || blankVisit());
+    last.data = V;
     if (typeof setVisitSeenStamp === "function") setVisitSeenStamp(last.updated || last.date);
   }
   else {

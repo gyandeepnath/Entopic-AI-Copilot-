@@ -6,6 +6,30 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-09-24 — Full audit, part 3: a visit from an older version could not be examined
+
+When you opened a saved visit, the app used its data exactly as saved. A visit
+saved **before a section existed** — by an earlier version, restored from an
+older backup, or synced from a device that hadn't updated — has no such section,
+and every exam page that reads it crashed. The crash was caught by the safety
+net that stops one broken panel taking down the app, so there was no obvious
+error: you just got a stale panel or a "something went wrong" banner on **every
+step** — VA, refraction, slit lamp, pupils, BV, fundus — and the report would
+not open. The patient could not be examined in that visit.
+
+Now a visit is brought up to date when it is opened: missing sections are
+added exactly as a new visit would have them, **nothing you recorded is ever
+changed**, and if a section held something unexpected (text where a set of
+fields belongs), the original is **kept** alongside rather than thrown away.
+
+Permanent check: `node tools/e2e/legacy-records.js` opens six kinds of
+old-shaped visit and walks every step, save and the report. It reads the app's
+own fault log — the first version of it listened only for browser errors and
+reported everything clean, because the safety net was hiding them. On the
+previous version it fails 7 of 10; now 10 of 10.
+
+---
+
 ## 2026-09-24 — Full audit, part 2: dropdowns that forgot, and an age that counted as evidence
 
 ### Seven dropdowns showed the wrong thing after you chose

@@ -200,8 +200,60 @@ function trendsAvailable(patientId) {
   return out;
 }
 
+/* ── A VISIT SAVED BY AN EARLIER BUILD ─────────────────────────────
+   Opening a saved visit assigned its data straight to V. A visit saved
+   before a section existed (orbit, modules, the expanded binocular block,
+   …) — or one restored from an older backup, or synced from a device on
+   an older version — has no such section, and every exam page that reads
+   it threw. The render guard caught the throw, so the clinician saw a
+   stale panel or a "something went wrong" banner on EVERY step: the visit
+   could not be examined at all. Measured: a visit saved as { cc } alone
+   failed on the VA, refraction, slit-lamp, pupil, BV and fundus pages.
+
+   So a visit is brought up to the current SHAPE when it is opened:
+     - a missing section or field is added from blankVisit();
+     - a recorded value is never overwritten;
+     - a section holding the wrong kind of value (a string where an object
+       belongs) is replaced by the empty section, and the original is KEPT
+       under _legacy_values so nothing a clinician wrote is ever discarded.
+   Defaults added this way are the same ones a brand-new visit starts with,
+   so a legacy visit behaves exactly like a new one on every untouched
+   section. Returns the visit (upgraded in place). */
+function _vuIsObj(x) { return !!x && typeof x === "object" && !Array.isArray(x); }
+function _vuClone(x) { return (x && typeof x === "object") ? JSON.parse(JSON.stringify(x)) : x; }
+
+function visitUpgradeShape(v) {
+  if (typeof blankVisit !== "function") return v;
+  if (!_vuIsObj(v)) return blankVisit();
+  var kept = null;
+  (function fill(target, tpl, path) {
+    for (var k in tpl) {
+      if (!Object.prototype.hasOwnProperty.call(tpl, k)) continue;
+      var t = tpl[k], cur = target[k];
+      if (cur === undefined || cur === null) {
+        if (t !== null) target[k] = _vuClone(t);
+        continue;
+      }
+      var wantObj = _vuIsObj(t), wantArr = Array.isArray(t);
+      if ((wantObj && !_vuIsObj(cur)) || (wantArr && !Array.isArray(cur))) {
+        kept = kept || {};
+        kept[path + k] = cur;
+        target[k] = _vuClone(t);
+        continue;
+      }
+      if (wantObj) fill(cur, t, path + k + ".");
+    }
+  })(v, blankVisit(), "");
+  if (kept) {
+    v._legacy_values = _vuIsObj(v._legacy_values) ? v._legacy_values : {};
+    for (var p in kept) if (!Object.prototype.hasOwnProperty.call(v._legacy_values, p)) v._legacy_values[p] = kept[p];
+  }
+  return v;
+}
+
 if (typeof module !== "undefined" && module.exports) {
   module.exports = {
+    visitUpgradeShape: visitUpgradeShape,
     CARRY_FIELDS: CARRY_FIELDS, CARRY_FLAGS: CARRY_FLAGS, CARRY_ARRAYS: CARRY_ARRAYS,
     TREND_METRICS: TREND_METRICS,
     carryForward: carryForward, isCarried: isCarried,
