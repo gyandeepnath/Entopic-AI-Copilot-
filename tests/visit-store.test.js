@@ -609,3 +609,40 @@ test("a refused OPTIONAL part is named; the records still restore; no false 'not
   /* the malformed null entries on either side no longer break the merge */
   assert.ok(b.run('JSON.stringify(loadStore("kb_overlays", []))').indexOf("ov1") >= 0);
 });
+
+
+/* ═══ DELETING A PATIENT  (full audit, 2026-09-24) ═══ */
+test("a refused write deletes NOTHING, and no deletion is reported or propagated", async () => {
+  const alerts = [], tombstones = [];
+  const b = sandbox({ also: ["js/storage-backup.js"],
+    extra: { prompt: () => "Ann Lee", alert: (m) => alerts.push(m), dlSaveAs: () => true,
+             cloudEnqueueDelete: (k, id) => tombstones.push(k + ":" + id) } });
+  b.run('savePatients([{ id: "p1", first_name: "Ann", last_name: "Lee" }]);');
+  seed(b, [visit("v1", "p1", ago(1))]);
+  b.run("var __sv = saveVisits; saveVisits = function () { return false; };");
+  const res = await b.run('deletePatient("p1")');
+  b.run("saveVisits = __sv;");
+  assert.strictEqual(res.ok, false);
+  assert.strictEqual(b.run("loadPatients().length"), 1, "the patient was removed although the visits were not");
+  assert.strictEqual(tombstones.length, 0, "deletion notices went to other devices for a delete that did not happen");
+  assert.ok(!b._audits.some((x) => x.a === "patient_deleted"), "the audit trail recorded a deletion that did not happen");
+});
+
+test("with the record vault on, the pre-delete snapshot is encrypted, not plain", async () => {
+  const files = [];
+  const b = sandbox({ also: ["js/storage-backup.js"],
+    extra: { prompt: () => "Ann Lee", alert: () => {},
+             vaultEnabled: () => true, vaultUnlocked: () => true,
+             vaultEncryptValue: (v) => Promise.resolve({ ct: "ENCRYPTED(" + Object.keys(v).length + ")" }) } });
+  b.run("downloadBackupFile = function (obj, suffix) { __files.push({ obj: obj, suffix: suffix }); };");
+  b.__files = files;
+  b.run('savePatients([{ id: "p1", first_name: "Ann", last_name: "Lee", phone: "0123 456 789" }]);');
+  seed(b, [visit("v1", "p1", ago(1))]);
+  const res = await b.run('deletePatient("p1")');
+  assert.strictEqual(res.ok, true);
+  assert.strictEqual(files.length, 1);
+  const json = JSON.stringify(files[0].obj);
+  assert.ok(files[0].obj.__backup_vault, "the snapshot was not marked as vault-encrypted");
+  assert.ok(json.indexOf("0123 456 789") < 0 && json.indexOf("Ann") < 0, "patient details written to Downloads in the clear");
+  assert.strictEqual(b.run("loadPatients().length"), 0);
+});

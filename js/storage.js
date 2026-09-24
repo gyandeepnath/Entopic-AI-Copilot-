@@ -932,43 +932,74 @@ function deletePatient(patientId) {
   }
 
   /* Snapshot before destroying. If this fails, stop: an unrecoverable delete
-     is exactly what this guards against. */
-  try {
-    downloadBackupFile({
-      __entopic_deleted_record: true,
-      note: "Snapshot taken immediately before this patient record was deleted. " +
-            "Restore by re-importing, or reconcile manually.",
-      deleted_at: new Date().toISOString(),
-      deleted_by: (typeof CU !== "undefined" && CU) ? (CU.name || CU.username || "") : "",
-      patient: pt,
-      visits: theirs
-    }, "-deleted-" + String(patientId));
-  } catch (e) {
+     is exactly what this guards against.
+
+     With the record vault on, the snapshot is ENCRYPTED with the device's
+     vault key, exactly as the restore's safety copy is: it holds the very
+     record the vault exists to protect, and it lands in the Downloads
+     folder. It used to be written in the clear whatever the vault said. */
+  var snapshot = {
+    __entopic_deleted_record: true,
+    note: "Snapshot taken immediately before this patient record was deleted. " +
+          "Restore by re-importing, or reconcile manually.",
+    deleted_at: new Date().toISOString(),
+    deleted_by: (typeof CU !== "undefined" && CU) ? (CU.name || CU.username || "") : "",
+    patient: pt,
+    visits: theirs
+  };
+  var suffix = "-deleted-" + String(patientId);
+  var vaultOn = (typeof vaultEnabled === "function" && vaultEnabled() &&
+                 typeof vaultUnlocked === "function" && vaultUnlocked() &&
+                 typeof vaultEncryptValue === "function");
+  var written = vaultOn
+    ? vaultEncryptValue(snapshot).then(function (env) {
+        downloadBackupFile({ __backup_vault: true, note: snapshot.note + " Encrypted with this device's vault key.",
+                             exported: snapshot.deleted_at, payload: env }, suffix + "-encrypted");
+      })
+    : new Promise(function (resolve) { resolve(downloadBackupFile(snapshot, suffix)); });
+
+  return written.then(function () {
+    return _deletePatientNow(patientId, label);
+  }, function (e) {
     if (typeof alert === "function") {
       alert("Could not save a snapshot of this record, so NOTHING was deleted.\n\n(" +
             ((e && e.message) || "unknown error") + ")");
     }
-    return;
-  }
+    return { ok: false, reason: "snapshot failed" };
+  });
+}
 
-  /* Remove all visits for this patient (capture ids so peers can be told). */
+/* The destructive half, run only once the snapshot exists. Every write is
+   checked: a refused visits write used to be ignored, and the patient was
+   removed anyway — leaving orphaned visits, an audit entry saying
+   "deleted", and deletion notices already sent to the clinic's other
+   devices. */
+function _deletePatientNow(patientId, label) {
   var visits = loadVisits();
   var goneVisits = visits.filter(function (v) { return v.patient_id === patientId; }).map(function (v) { return v.id; });
-  visits = visits.filter(function(v) { return v.patient_id !== patientId; });
-  saveVisits(visits);
+  var kept = visits.filter(function (v) { return v.patient_id !== patientId; });
+  if (saveVisits(kept) === false) {
+    if (typeof alert === "function") alert("The visits could not be removed, so NOTHING was deleted. The snapshot downloaded is not needed.");
+    return { ok: false, reason: "visit write refused" };
+  }
 
-  /* Remove patient */
   var patients = loadPatients();
-  patients = patients.filter(function(p) { return p.id !== patientId; });
-  savePatients(patients);
+  var remaining = patients.filter(function (p) { return p.id !== patientId; });
+  if (savePatients(remaining) === false) {
+    saveVisits(visits);   /* put the visits back: all or nothing */
+    if (typeof alert === "function") alert("The patient record could not be removed, so NOTHING was deleted.");
+    return { ok: false, reason: "patient write refused" };
+  }
 
   /* Propagate the deletes to peers as tombstones — without this the record
-     resurrects on the next cloud pull (DD finding H-6). No-op when offline. */
+     resurrects on the next cloud pull (DD finding H-6). No-op when offline.
+     Only now, when the local delete has actually happened. */
   if (typeof cloudEnqueueDelete === "function") {
     cloudEnqueueDelete("patients", patientId);
     goneVisits.forEach(function (vid) { cloudEnqueueDelete("visits", vid); });
   }
   if (typeof logAudit === "function") logAudit("patient_deleted", "Patient \"" + label + "\" and " + goneVisits.length + " visit(s) deleted (snapshot downloaded first)", { patient_id: patientId });
+  return { ok: true, visits_deleted: goneVisits.length };
 }
 
 

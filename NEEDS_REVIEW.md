@@ -184,6 +184,15 @@ and the option is now "optional … not shown to reduce digital eye strain". The
 "Anti-fatigue / blue light lens" suggestion (≥6 h/day) no longer promises
 strain reduction. Confirm, reword, or remove.
 
+### 🟦 No way to delete a patient record in the app — found 2026-09-24
+`deletePatient()` exists (typed-name confirmation, snapshot first, tombstones to
+other devices; hardened in this audit) but **no screen calls it**. A clinic that
+receives an erasure request, or registers a duplicate, cannot remove the record.
+Adding it is a product decision (who may delete; admin only?; retention rules
+for clinical records differ by jurisdiction and may *forbid* deletion for a
+number of years). Recommendation: admin-only, with the jurisdiction's retention
+rule shown in the confirmation.
+
 ---
 
 ## For later (architecture — needs a decision + possibly spend)

