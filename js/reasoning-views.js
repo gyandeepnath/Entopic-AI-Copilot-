@@ -489,7 +489,7 @@ function casebookSeedExamples(limit) {
     : ((typeof KNOWLEDGE_ALL !== "undefined") ? KNOWLEDGE_ALL.map(function (c) { return c.name; }) : []);
   if (limit) names = names.slice(0, limit);
   var list = casebookLoad();
-  var have = {};
+  var have = Object.create(null);
   for (var i = 0; i < list.length; i++) if (list[i].builtin) have[list[i].title] = true;
   var added = 0;
   for (var n = 0; n < names.length; n++) {
@@ -556,7 +556,7 @@ function casebookEntryTokens(entry) {
   if (o.fundus && o.fundus.findings) findings = findings.concat(o.fundus.findings);
 
   function uniqLower(arr) {
-    var seen = {}, out = [];
+    var seen = Object.create(null), out = [];
     for (var j = 0; j < arr.length; j++) {
       var v = String(arr[j] || "").toLowerCase().trim();
       if (v && !seen[v]) { seen[v] = 1; out.push(v); }

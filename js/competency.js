@@ -310,7 +310,7 @@ function competencyById(id) {
 
 function competencyDomains() {
   var f = competencyFramework();
-  var seen = {}, out = [];
+  var seen = Object.create(null), out = [];
   for (var i = 0; i < f.items.length; i++) {
     var d = f.items[i].domain || "Uncategorised";
     if (!seen[d]) { seen[d] = true; out.push(d); }

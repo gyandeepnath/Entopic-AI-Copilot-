@@ -166,7 +166,7 @@ var _corpusIndex = null;
 
 function corpusVidIndex(c) {
   if (_corpusIndex) return _corpusIndex;
-  var idx = {};
+  var idx = Object.create(null);
   for (var i = 0; i < c.detail.length; i++) idx[c.detail[i].vid] = i;
   _corpusIndex = idx;
   return idx;
@@ -490,7 +490,7 @@ function corpusCompact(c, force) {
   var overflow = c.detail.splice(0, c.detail.length - CORPUS_MAX_DETAIL);
   corpusInvalidateIndex();          /* positions all moved */
 
-  var byMonth = {};
+  var byMonth = Object.create(null);
   for (var i = 0; i < overflow.length; i++) {
     var r = overflow[i];
     var key = r.month + "|" + r.age_band + "|" + r.sex;
@@ -576,7 +576,7 @@ function corpusExport(exportSalt) {
 
   /* Re-key: map each device pseudonym to an export pseudonym. The mapping is
      built and discarded here; it is not written anywhere. */
-  var map = {};
+  var map = Object.create(null);
   var detail = c.detail.map(function (r) {
     if (!map[r.pid]) map[r.pid] = corpusPseudonym(r.pid, salt);
     var copy = JSON.parse(JSON.stringify(r));

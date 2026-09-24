@@ -92,7 +92,7 @@ var EXPORT_CASEBOOK_COLS = ["condition", "domain", "icd10", "urgent", "reviewed"
 
 /* Patient records (PII — clinician's own data). REAL records only. */
 function exportRecordsRows(patients, visits, leadDxFn) {
-  var byPatient = {};
+  var byPatient = Object.create(null);
   for (var v = 0; v < visits.length; v++) {
     var vi = visits[v]; if (!vi) continue;
     (byPatient[vi.patient_id] = byPatient[vi.patient_id] || []).push(vi);

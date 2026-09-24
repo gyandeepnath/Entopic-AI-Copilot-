@@ -88,7 +88,7 @@ function quizCandidates(scope) {
    then anywhere) — never invented, always unique. */
 function quizDistractors(cond, n, rng) {
   rng = rng || Math.random;
-  var seen = {}; seen[cond.name] = true;
+  var seen = Object.create(null); seen[cond.name] = true;
   var out = [];
   function take(pool) {
     pool = quizShuffle(pool, rng);

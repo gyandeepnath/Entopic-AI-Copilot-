@@ -780,7 +780,7 @@ function collectTokens(visit, patient) {
 /* ═══════════════════════════════════════════════════════════════ */
 
 function normalizeTokens(tokens) {
-  var seen = {};
+  var seen = Object.create(null);
   var result = [];
   for (var i = 0; i < tokens.length; i++) {
     if (!seen[tokens[i]]) {
@@ -1559,7 +1559,7 @@ function computeNudges(results, tokens, visit, patient) {
   var P = enginePatientView(patient);
   var nudges = [];
   var done = new Set(V.completed);
-  var added = {};
+  var added = Object.create(null);
 
   function addNudge(msg, target) {
     if (!added[target]) {

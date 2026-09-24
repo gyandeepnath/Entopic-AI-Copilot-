@@ -299,7 +299,7 @@ function simApplyRealism(theCase, mode) {
     return theCase;
   }
   /* Regroup by exam step — the finding set changed. */
-  var byStep = {};
+  var byStep = Object.create(null);
   out.present.forEach(function (t) {
     var st = simStepForToken(t);
     (byStep[st] = byStep[st] || []).push(t);

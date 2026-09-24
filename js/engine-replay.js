@@ -401,7 +401,7 @@ function replayRecent(opts) {
   visits = visits.slice(0, limit);
 
   var patients = (typeof loadPatients === "function") ? loadPatients() : [];
-  var byId = {};
+  var byId = Object.create(null);
   patients.forEach(function (p) { byId[p.id] = p; });
 
   var rows = [], drifted = 0, alertsLost = 0, notReplayable = 0;

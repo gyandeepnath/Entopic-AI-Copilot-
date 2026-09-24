@@ -39,7 +39,7 @@ function renderSidebar() {
      whether it contains the active step (a collapsed group is force-opened
      when the step inside it is the one being worked on). */
   var groups = [];
-  var byCat = {};
+  var byCat = Object.create(null);
   for (var gi = 0; gi < STEPS.length; gi++) {
     var gs = STEPS[gi];
     if (gs.opt && !(typeof moduleOn === "function" && moduleOn(gs.opt))) continue;

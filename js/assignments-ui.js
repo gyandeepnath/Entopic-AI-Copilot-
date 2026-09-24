@@ -22,7 +22,7 @@ var ASSIGN_SCOPES = [
 ];
 
 function assignDomainList() {
-  var seen = {}, out = [];
+  var seen = Object.create(null), out = [];
   if (typeof KNOWLEDGE_ALL !== "undefined") {
     KNOWLEDGE_ALL.forEach(function (c) {
       var d = c.domain || "Other";

@@ -20,7 +20,7 @@
 function anCount(arr, pred) { var n = 0; for (var i = 0; i < arr.length; i++) if (pred(arr[i])) n++; return n; }
 function anTop(map, n) {
   var out = [];
-  for (var k in map) if (map.hasOwnProperty(k)) out.push({ key: k, n: map[k] });
+  for (var k in map) if (Object.prototype.hasOwnProperty.call(map, k)) out.push({ key: k, n: map[k] });
   out.sort(function (a, b) { return b.n - a.n || (a.key < b.key ? -1 : 1); });
   return (n ? out.slice(0, n) : out);
 }
@@ -67,7 +67,7 @@ function analyticsCompute(data) {
   var practiceP = patients.length - realP;
 
   /* visits: completion, red-flags, diagnosis + domain distributions */
-  var dxMap = {}, domMap = {}, redFlagVisits = 0, completedVisits = 0, stepSum = 0;
+  var dxMap = Object.create(null), domMap = Object.create(null), redFlagVisits = 0, completedVisits = 0, stepSum = 0;
   for (var i = 0; i < visits.length; i++) {
     var v = visits[i];
     if (!v) continue;

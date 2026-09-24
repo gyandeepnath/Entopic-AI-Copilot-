@@ -232,7 +232,7 @@ function feedbackUnsynced() {
 }
 
 function feedbackMarkSynced(ids) {
-  var set = {};
+  var set = Object.create(null);
   for (var i = 0; i < (ids || []).length; i++) set[ids[i]] = true;
   var list = feedbackLoad();
   var n = 0;

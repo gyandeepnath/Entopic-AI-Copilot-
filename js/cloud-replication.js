@@ -100,7 +100,7 @@ function cloudTombstonesRestore() {
   if (!Array.isArray(saved) || !saved.length) return;
   /* Merge rather than replace: a delete performed THIS session before the
      vault unlocked must not be thrown away by the restore. */
-  var seen = {};
+  var seen = Object.create(null);
   CLOUD.tombstones.forEach(function (t) { seen[t.kind + ":" + t.id] = true; });
   saved.forEach(function (t) {
     if (!t || !t.kind || !t.id) return;
@@ -378,7 +378,7 @@ var CLOUD_PAGE_SIZE = 500;
 var CLOUD_MAX_PAGES = 200;          /* 100k rows; a stop, not a target */
 
 function cloudPullKind(kind, done) {
-  var acc = [], seen = {}, pages = 0, cursor = "";
+  var acc = [], seen = Object.create(null), pages = 0, cursor = "";
 
   function page() {
     /* H-6: only live rows; a soft-deleted row is handled by its tombstone,

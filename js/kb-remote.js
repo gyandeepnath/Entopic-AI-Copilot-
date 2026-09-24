@@ -57,7 +57,7 @@ var KB_REMOTE_SHIPPED_URGENT = (function () {
 function validateKbBundle(bundle) {
   var errors = [];
   var count = 0;
-  var seen = {};
+  var seen = Object.create(null);
 
   function isStrArray(a) {
     if (!a) return true; /* missing → defaulted on apply */

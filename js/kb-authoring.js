@@ -47,7 +47,7 @@ function kbNormalizeDraft(draft) {
     var arr = [];
     if (Array.isArray(v)) arr = v.slice();
     else if (typeof v === "string") arr = v.split(/[,\n]/);
-    var seen = {}, res = [];
+    var seen = Object.create(null), res = [];
     for (var i = 0; i < arr.length; i++) {
       var t = String(arr[i]).trim();
       if (!t) continue;
@@ -76,7 +76,7 @@ function kbJaccard(a, b) {
   if (!a.length && !b.length) return 0;
   var setB = {}, i, inter = 0;
   for (i = 0; i < b.length; i++) setB[b[i]] = true;
-  var seen = {};
+  var seen = Object.create(null);
   for (i = 0; i < a.length; i++) {
     if (setB[a[i]] && !seen[a[i]]) { inter++; seen[a[i]] = true; }
   }
@@ -201,14 +201,14 @@ function kbLintCondition(draft, ctx) {
     warn("urgent_no_req", "Urgent conditions should have a hallmark (required) token so the safety net can reliably surface them.");
 
   /* — exclusions — */
-  var byKey = {};
+  var byKey = Object.create(null);
   for (var j = 0; j < conditions.length; j++) if (conditions[j] && conditions[j].name) byKey[kbNameKey(conditions[j].name)] = conditions[j].name;
   c.exclusions.forEach(function (ex) {
     var exKey = kbNameKey(ex);
     if (exKey === thisKey) { warn("self_exclude", "This condition excludes itself (\"" + ex + "\") — removed at runtime, but check the intent."); return; }
     /* substring match mirrors the engine's exclusion matcher */
     var hit = false;
-    for (var kk in byKey) { if (byKey.hasOwnProperty(kk) && (kk.indexOf(exKey) >= 0 || exKey.indexOf(kk) >= 0)) { hit = true; break; } }
+    for (var kk in byKey) { if (Object.prototype.hasOwnProperty.call(byKey, kk) && (kk.indexOf(exKey) >= 0 || exKey.indexOf(kk) >= 0)) { hit = true; break; } }
     if (!hit) warn("dead_exclusion", "Exclusion \"" + ex + "\" doesn't match any condition in the KB, so it can never fire. Use the exact condition name or a snake_case fragment of it.");
   });
 
@@ -219,7 +219,7 @@ function kbLintCondition(draft, ctx) {
      spread of supportive features AND contradicting ones (what argues
      against it — this is what lets the engine rule the condition OUT).
      Targets: >=20 firing tokens, >=10 supportive, some contradicting. */
-  var firingSet = {};
+  var firingSet = Object.create(null);
   ["req", "sup", "con", "temporal", "tests"].forEach(function (f) {
     c[f].forEach(function (t) {
       var ti = tokenInfo[t];
@@ -253,7 +253,7 @@ function kbLintCondition(draft, ctx) {
    only via typed free-text. Used to warn when an authored condition needs a
    finding that has no click-to-enter path. */
 function kbClickableTokens() {
-  var set = {};
+  var set = Object.create(null);
   if (typeof SYM_CATS !== "undefined") for (var cat in SYM_CATS) for (var tok in SYM_CATS[cat]) set[tok] = true;
   function addFindings(o) { if (!o || typeof FINDING_TOKEN_MAP === "undefined") return; for (var k in o) (o[k] || []).forEach(function (f) { (FINDING_TOKEN_MAP[f] || []).forEach(function (t) { set[t] = true; }); }); }
   if (typeof SL_FINDINGS !== "undefined") addFindings(SL_FINDINGS);

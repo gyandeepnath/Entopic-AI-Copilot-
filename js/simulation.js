@@ -114,7 +114,7 @@ function simBuildCase(condName, opts) {
   }
 
   /* Group the ground truth by the step that would uncover it. */
-  var byStep = {};
+  var byStep = Object.create(null);
   present.forEach(function (t) {
     var st = simStepForToken(t);
     (byStep[st] = byStep[st] || []).push(t);

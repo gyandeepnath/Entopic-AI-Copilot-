@@ -119,7 +119,7 @@ function assignProgress(a, username) {
   if (pool > 0 && target > pool) target = pool;
   /* Distinct conditions attempted counts toward completion, so repeating one
      case does not finish the assignment. */
-  var seen = {};
+  var seen = Object.create(null);
   var correct = 0;
   subs.forEach(function (s) {
     if (s.condition) seen[s.condition] = seen[s.condition] || s.correct;
@@ -140,7 +140,7 @@ function assignProgress(a, username) {
 /* Faculty view: every student who has touched this assignment. */
 function assignCohortProgress(a) {
   var subs = assignSubmissions(a.id);
-  var byUser = {};
+  var byUser = Object.create(null);
   subs.forEach(function (s) { (byUser[s.username] = byUser[s.username] || []).push(s); });
   return Object.keys(byUser).map(function (u) {
     var p = assignProgress(a, u);
@@ -171,7 +171,7 @@ function assignPoolSize(a) {
 
 /* Which condition should this student do next for this assignment? */
 function assignNextCase(a, username) {
-  var done = {};
+  var done = Object.create(null);
   assignSubmissions(a.id, username).forEach(function (s) { if (s.condition) done[s.condition] = true; });
 
   if (a.scope === "list" && a.conditions.length) {

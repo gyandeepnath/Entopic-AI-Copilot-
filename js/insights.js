@@ -84,7 +84,7 @@ function insightPrevalence(corpus, filter) {
   for (var i = 0; i < detail.length; i++) {
     var dx = detail[i].dx || [];
     if (dx[0] && dx[0].name) lead[dx[0].name] = (lead[dx[0].name] || 0) + 1;
-    var seen = {};
+    var seen = Object.create(null);
     for (var j = 0; j < dx.length; j++) {
       var n = dx[j] && dx[j].name;
       if (!n || seen[n]) continue;
@@ -133,7 +133,7 @@ function insightKbSpread(detail) {
    so history is not lost when detail records are compacted. */
 function insightTrend(corpus, conditionName, filter) {
   var detail = insightSelect((corpus || {}).detail, filter);
-  var byMonth = {};
+  var byMonth = Object.create(null);
 
   function bucket(month) {
     if (!byMonth[month]) byMonth[month] = { month: month, n: 0, hits: 0 };
@@ -215,7 +215,7 @@ function insightCarePatterns(corpus, filter) {
   var detail = insightSelect((corpus || {}).detail, filter);
   var d = detail.length;
   var urgent = 0, referred = 0, urgentReferred = 0;
-  var byUrgency = {};
+  var byUrgency = Object.create(null);
 
   for (var i = 0; i < detail.length; i++) {
     var r = detail[i];

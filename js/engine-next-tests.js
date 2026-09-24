@@ -95,7 +95,7 @@ function nextTestTarget(token, relCond) {
 
 function computeNextTests(results, tokens) {
   if (!results || results.length < 2) return [];
-  var present = {};
+  var present = Object.create(null);
   for (var pi = 0; pi < tokens.length; pi++) present[tokens[pi]] = true;
 
   /* Focus = the leader plus close rivals actually in contention. Only worth
