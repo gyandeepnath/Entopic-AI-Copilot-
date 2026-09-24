@@ -964,70 +964,13 @@ function deletePatient(patientId) {
 }
 
 
-/* ═══════════════════════════════════════════════════════════════ */
-/* ANONYMIZED ENCOUNTER BUILDER                                    */
-/* Strips all PII, retains only clinical tokens for registry       */
-/* ═══════════════════════════════════════════════════════════════ */
-
-function buildAnonymizedEncounter() {
-  if (!V || !P) return null;
-
-  var enc = {
-    timestamp: new Date().toISOString(),
-    age_bracket: getAgeBracket(P.age),
-    sex: P.sex || "Unknown",
-
-    /* Symptom tokens (from selected symptoms) */
-    symptom_tokens: (V.symptoms || []).slice(),
-
-    /* Temporal pattern */
-    temporal: V.temporal || {},
-
-    /* Finding tokens (from slit lamp + fundus selections) */
-    finding_tokens: []
-      .concat(V.sl ? V.sl.findings : [])
-      .concat(V.fun ? V.fun.findings : []),
-
-    /* Diagnosis results */
-    diagnosis_tokens: (V.dxList || []).map(function(d) {
-      return { name: d.n, confidence: d.prob, route: d.cat };
-    }),
-
-    /* Treatment category */
-    treatment_category: categorizeTreatment(V.plan),
-
-    /* Referral */
-    referral_type: V.plan ? V.plan.ref_to : "",
-    referral_urgency: V.plan ? V.plan.ref_urgency : "",
-
-    /* Exam completeness */
-    steps_completed: (V.completed || []).length,
-    total_steps: STEPS.length
-  };
-
-  /* Store in local registry queue */
-  var queue = loadStore("registry_queue", []);
-  queue.push(enc);
-  saveStore("registry_queue", queue);
-
-  return enc;
-}
-
-/**
- * Categorize the treatment plan into broad categories
- * (for anonymized data — no specific drug names)
- */
-function categorizeTreatment(plan) {
-  if (!plan || !plan.mgmt) return "none";
-  var m = plan.mgmt.toLowerCase();
-  if (/tear|lubric|artificial/.test(m)) return "lubricants";
-  if (/warm compress|lid hygiene/.test(m)) return "lid_care";
-  if (/vision therapy|exercises/.test(m)) return "vision_therapy";
-  if (/refer/.test(m)) return "referral";
-  if (/spectacle|glasses|lens/.test(m)) return "optical_correction";
-  if (/monitor|review|follow/.test(m)) return "monitoring";
-  return "other";
-}
+/* The anonymised-encounter builder that lived here (buildAnonymizedEncounter
+   → registry_queue) was superseded by js/research-corpus.js, whose header
+   lists why: no consent gate, unbounded growth, no withdrawal, no
+   provenance. Nothing called it any more. Removed (full audit, 2026-09-24)
+   rather than left for someone to wire back in; the registry_queue store is
+   still declared in data-classification.js so any queue already on a device
+   is classified, backed up and removable. */
 
 
 /* ═══════════════════════════════════════════════════════════════ */

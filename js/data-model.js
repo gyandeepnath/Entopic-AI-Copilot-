@@ -1297,7 +1297,10 @@ function hofstetter(age) {
 /* ═══════════════════════════════════════════════════════════════ */
 
 function getAgeBracket(age) {
-  age = parseInt(age) || 0;
+  /* A blank age is unknown — `parseInt(age) || 0` filed it as "0-4". */
+  var raw = (age === null || age === undefined) ? "" : String(age).trim();
+  if (raw === "" || !isFinite(parseFloat(raw))) return "unknown";
+  age = parseFloat(raw);
   if (age < 5) return "0-4";
   if (age < 13) return "5-12";
   if (age < 18) return "13-17";

@@ -6,6 +6,26 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-09-24 — Full audit, part 6: age vs date of birth, and a dead privacy path
+
+- **Age and date of birth could disagree silently.** The engine reads only the
+  typed age; the date of birth was stored but never used. A stale age beside a
+  correct DOB quietly changed every age-based rule. Now: entering a DOB fills
+  an empty age; if both are present and differ by a year or more, the
+  contradiction checker says so; an impossible or future DOB is flagged. The
+  age is calculated from the calendar date itself — the usual shortcut reads
+  the date as midnight GMT, which makes someone seen on their birthday a year
+  too young anywhere west of Greenwich.
+- **The final prescription was never checked** for a cylinder with no axis
+  (or prism with no base) — only the subjective was. Since the final is what
+  now prints, both are checked.
+- **Removed an unused "anonymised encounter" builder** that had no consent
+  step, no size limit and no way to withdraw a patient. The research corpus
+  replaced it long ago, but it was still in the code for someone to wire back
+  in, and the architecture document still described it as active.
+
+---
+
 ## 2026-09-24 — Full audit, part 5: the report, the letter, and code-injection gaps
 
 ### The clinical report and referral letter

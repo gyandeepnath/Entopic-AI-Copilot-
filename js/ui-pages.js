@@ -129,7 +129,10 @@ function pgDemo() {
 
     '<div class="fi">' +
       '<label>DOB</label>' +
-      '<input type="date" value="' + esc(P.dob) + '" oninput="P.dob=this.value">' +
+      /* A DOB fills an EMPTY age (the engine reads only the age); it never
+         overwrites one — a disagreement is raised as a contradiction instead. */
+      '<input type="date" value="' + esc(P.dob) + '" oninput="P.dob=this.value;' +
+        'if(!String(P.age||\'\').trim()&&typeof ageFromDob===\'function\'&&ageFromDob(this.value)!==null&&ageFromDob(this.value)>=0){P.age=String(ageFromDob(this.value));renderMain();updateHdr();}">' +
     '</div>' +
 
     '<div class="fi">' +

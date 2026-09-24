@@ -45,6 +45,22 @@ function _cnum(x) {
 }
 function _cfilled(x) { return x !== undefined && x !== null && String(x).trim() !== ""; }
 
+/* Whole years between a "YYYY-MM-DD" date of birth and `on` (a Date; today
+   by default), or null if the DOB is not a real date. Parsed by its parts:
+   new Date("YYYY-MM-DD") is UTC midnight, which is the PREVIOUS day west of
+   Greenwich — a patient seen on their birthday would be a year too young. */
+function ageFromDob(dob, on) {
+  var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(dob || "").trim());
+  if (!m) return null;
+  var y = +m[1], mo = +m[2], d = +m[3];
+  var probe = new Date(y, mo - 1, d);
+  if (probe.getFullYear() !== y || probe.getMonth() !== mo - 1 || probe.getDate() !== d) return null;
+  on = on || new Date();
+  var age = on.getFullYear() - y;
+  if (on.getMonth() + 1 < mo || (on.getMonth() + 1 === mo && on.getDate() < d)) age--;
+  return age;
+}
+
 /* One finding. `certain` separates fact from opinion. */
 function _contra(id, level, message, certain, why) {
   return { id: id, level: level, message: message, certain: !!certain, why: why || "" };
@@ -59,11 +75,13 @@ function clinContradictions(V, P) {
   /* A cylinder needs an axis and an axis needs a cylinder. Either alone is
      not a prescription; it is one that will be dispensed wrongly, and each
      half looks perfectly normal to a per-field check. */
-  if (V.rx) {
+  /* Both the subjective AND the final prescription: the final is what the
+     printed prescription carries, and it was never checked. */
+  if (V.rx) [["", ""], ["fin_", "Final Rx "]].forEach(function (stage) {
     ["od", "os"].forEach(function (eye) {
-      var cyl = _cnum(V.rx[eye + "_cyl"]);
-      var ax = V.rx[eye + "_ax"];
-      var E = eye.toUpperCase();
+      var cyl = _cnum(V.rx[stage[0] + eye + "_cyl"]);
+      var ax = V.rx[stage[0] + eye + "_ax"];
+      var E = stage[1] + eye.toUpperCase();
       if (cyl !== null && cyl !== 0 && !_cfilled(ax)) {
         out.push(_contra("rx_cyl_no_axis", "error",
           E + ": cylinder " + cyl + " recorded with no axis. This cannot be dispensed.",
@@ -75,11 +93,30 @@ function clinContradictions(V, P) {
           true));
       }
       /* Prism without a base direction is the same defect in a different field. */
-      if (_cnum(V.rx[eye + "_prism"]) && !_cfilled(V.rx[eye + "_base"])) {
+      if (_cnum(V.rx[stage[0] + eye + "_prism"]) && !_cfilled(V.rx[stage[0] + eye + "_base"])) {
         out.push(_contra("rx_prism_no_base", "error",
           E + ": prism recorded with no base direction.", true));
       }
     });
+  });
+
+  /* Age and date of birth must agree. The engine reads only the AGE (every
+     age-based rule, the paediatric prompts), so a stale or mistyped age next
+     to a correct date of birth silently changes the differential. */
+  if (P && _cfilled(P.dob)) {
+    var dobAge = ageFromDob(P.dob);
+    if (dobAge === null) {
+      out.push(_contra("dob_invalid", "error", "The date of birth (" + P.dob + ") is not a valid date.", true));
+    } else if (dobAge < 0) {
+      out.push(_contra("dob_future", "error", "The date of birth (" + P.dob + ") is in the future.", true));
+    } else {
+      var rec = _cnum(P.age);
+      if (rec !== null && Math.abs(Math.floor(rec) - dobAge) >= 1) {
+        out.push(_contra("age_dob_mismatch", "error",
+          "Age is recorded as " + P.age + ", but the date of birth makes the patient " + dobAge +
+          ". The engine uses the age — correct whichever is wrong.", true));
+      }
+    }
   }
 
   /* A section asserted normal cannot also carry findings. Both statements are
@@ -222,6 +259,7 @@ function clinContradictionSummary(V, P) {
 
 if (typeof module !== "undefined" && module.exports) {
   module.exports = {
+    ageFromDob: ageFromDob,
     clinContradictions: clinContradictions,
     clinContradictionSummary: clinContradictionSummary
   };

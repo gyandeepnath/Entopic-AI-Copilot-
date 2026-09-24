@@ -211,3 +211,36 @@ test("an empty findings list is not a laterality problem", () => {
     C.clinContradictions({ sl: { findings: [] }, fun: {} }, null)
       .filter((x) => x.id === "finding_no_eye").length, 0);
 });
+
+
+/* ═══ FULL AUDIT, 2026-09-24 ═══ */
+
+test("ageFromDob counts whole years by calendar date, with no time-zone shift", () => {
+  const { ageFromDob } = require("../js/clinical-contradictions.js");
+  const on = new Date(2026, 8, 24);                      /* 24 Sep 2026, local */
+  assert.strictEqual(ageFromDob("2000-09-24", on), 26, "on the birthday itself");
+  assert.strictEqual(ageFromDob("2000-09-25", on), 25, "the day before the birthday");
+  assert.strictEqual(ageFromDob("2026-01-01", on), 0, "an infant");
+  assert.strictEqual(ageFromDob("2027-01-01", on), -1, "a future date is negative, for the caller to refuse");
+  assert.strictEqual(ageFromDob("2023-02-30", on), null, "not a real date");
+  assert.strictEqual(ageFromDob("", on), null);
+  assert.strictEqual(ageFromDob("24/09/2000", on), null, "only the <input type=date> format");
+});
+
+test("an age that disagrees with the date of birth is raised; a matching one is not", () => {
+  const { clinContradictions, ageFromDob } = require("../js/clinical-contradictions.js");
+  const dob = "1970-01-15";
+  const real = ageFromDob(dob);
+  const ids = (P) => clinContradictions({ rx: {} }, P).map((c) => c.id);
+  assert.ok(ids({ dob, age: String(real + 20) }).includes("age_dob_mismatch"));
+  assert.ok(!ids({ dob, age: String(real) }).includes("age_dob_mismatch"));
+  assert.ok(ids({ dob: "2999-01-01", age: "" }).includes("dob_future"));
+  assert.ok(ids({ dob: "2021-02-30", age: "" }).includes("dob_invalid"));
+});
+
+test("the FINAL prescription — the one that prints — is checked too", () => {
+  const { clinContradictions } = require("../js/clinical-contradictions.js");
+  const c = clinContradictions({ rx: { fin_od_sph: "-1.00", fin_od_cyl: "-0.75", fin_od_ax: "" } }, {});
+  assert.ok(c.some((x) => x.id === "rx_cyl_no_axis" && /Final Rx OD/.test(x.message)),
+    "a final-prescription cylinder with no axis went unflagged: " + JSON.stringify(c));
+});

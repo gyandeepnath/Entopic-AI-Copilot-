@@ -115,7 +115,7 @@ A thin CRUD layer over `localStorage`, namespaced with the `entopic_` prefix, st
 - **Autosave:** `doSave()` writes the current `V` into its visit record and merges `P` fields back into the patient record; driven by a timer in `app.js` (default 20 s) and on navigation. A "Saved" indicator flashes.
 - **Visit lifecycle:** visits carry `status` (`in_progress` → `completed`), timestamps, and helpers for "last visit" and "previous completed visit" (the hook for visit-to-visit comparison).
 - **Backup:** `exportAllData()` serializes everything to a downloadable JSON; `importData()` restores it (with a destructive "replace all" confirm).
-- **Anonymized encounter builder:** `buildAnonymizedEncounter()` strips PII and retains age bracket, sex, symptom/finding/diagnosis tokens, a coarse `treatment_category` (via keyword bucketing in `categorizeTreatment`), referral type, and completeness — queued locally on visit completion **if registry opt-in is set**. This is the seed of the clinical-validation pipeline that Part II formalizes.
+- **Anonymized encounter builder:** *(removed 2026-09-24)* `buildAnonymizedEncounter()` was never called, and had no consent gate, no bound and no withdrawal. The consented, pseudonymised, value-vetted research corpus in `js/research-corpus.js` replaced it; `registry_queue` stays declared in `js/data-classification.js` only so that any queue already on a device is classified and removable.
 
 **Structural note:** all visits for all patients live in one array under one key. Every save rewrites the entire array. This is O(n) per save and shares a single 5 MB budget across the whole clinic — fine for a demo, a wall for onboarding.
 
@@ -760,7 +760,7 @@ Supabase (already in your connected tooling) is a natural fit and gives you the 
 ### C.4 PII separation and the validation pipeline
 
 - **Split PII from clinical data.** Patient identifiers live in an encrypted, access-controlled table; clinical encounters reference patients by opaque ID. Analytics and the registry never touch PII. Your `blankPatient`/`blankVisit` split already models this — formalize it at the DB boundary.
-- **Consented anonymized registry → validation dataset.** Promote `buildAnonymizedEncounter` into a server pipeline (opt-in, consented, de-identified per your `getAgeBracket`/token projection). This dataset does double duty: it **calibrates the engine** (A.4) and it **is the clinical-validation evidence** for your papers — closing gap 9, your biggest credibility gap.
+- **Consented anonymized registry → validation dataset.** Promote the research corpus (`js/research-corpus.js`, which replaced `buildAnonymizedEncounter`) into a server pipeline (opt-in, consented, de-identified per your `getAgeBracket`/token projection). This dataset does double duty: it **calibrates the engine** (A.4) and it **is the clinical-validation evidence** for your papers — closing gap 9, your biggest credibility gap.
 - **KB delivery:** signed, versioned bundles from the backend; clients cache and run offline; updates propagate without app redeploys (A.3).
 
 ### C.5 Observability and audit
