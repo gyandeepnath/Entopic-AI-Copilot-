@@ -248,9 +248,42 @@ var RED_FLAG_OVERLAY_RULE = {
         "is the mechanism and the attribution wording."
 };
 
+/* ── WHEN THE ENGINE ITSELF FAILS ──
+   Not clinical rules: notices that the engine could not do its job on this
+   record. Declared because the register accounts for every banner the
+   product can show. Before these existed, a failure anywhere in a run ended
+   it before the red-flag stage — the alert box was simply empty, which reads
+   exactly like "nothing to worry about". */
+var RED_FLAG_SYSTEM_RULES = [
+  {
+    id: "engine_differential_failed",
+    fires_when: "The engine could not read the record or build the differential " +
+                "(a malformed record, or a knowledge-base entry it cannot score)",
+    match: "Entopic could not finish",
+    level: "warn",
+    uses: [],
+    why: "The differential is cleared rather than left showing the previous run's " +
+         "list, and the red-flag rules still run on whatever findings were read. " +
+         "The clinician is told plainly that the list is missing and why.",
+    status: "UNVERIFIED",
+    note: "Wording is engineering text, not a clinical statement."
+  },
+  {
+    id: "engine_redflags_failed",
+    fires_when: "The red-flag rules themselves could not run on this record",
+    match: "Red-flag checks could not run on this record",
+    level: "urgent",
+    uses: [],
+    why: "An empty alert box must never mean 'the checks failed'. If they cannot " +
+         "run, that is itself the most urgent thing on screen.",
+    status: "UNVERIFIED",
+    note: "Wording is engineering text, not a clinical statement."
+  }
+];
+
 /* Everything a reviewer still has to sign off. */
 function redFlagsUnverified() {
-  return RED_FLAG_RULES.concat([RED_FLAG_DERIVED_RULE, RED_FLAG_OVERLAY_RULE])
+  return RED_FLAG_RULES.concat([RED_FLAG_DERIVED_RULE, RED_FLAG_OVERLAY_RULE], RED_FLAG_SYSTEM_RULES)
     .filter(function (r) { return r.status !== "VERIFIED"; });
 }
 
@@ -259,6 +292,7 @@ if (typeof module !== "undefined" && module.exports) {
     RED_FLAG_RULES: RED_FLAG_RULES,
     RED_FLAG_DERIVED_RULE: RED_FLAG_DERIVED_RULE,
     RED_FLAG_OVERLAY_RULE: RED_FLAG_OVERLAY_RULE,
+    RED_FLAG_SYSTEM_RULES: RED_FLAG_SYSTEM_RULES,
     redFlagsUnverified: redFlagsUnverified
   };
 }

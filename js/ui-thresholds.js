@@ -128,7 +128,8 @@ function redFlagScreen() {
   if (typeof RED_FLAG_RULES === "undefined") return "";
   var all = RED_FLAG_RULES.concat(
     (typeof RED_FLAG_DERIVED_RULE !== "undefined") ? [RED_FLAG_DERIVED_RULE] : [],
-    (typeof RED_FLAG_OVERLAY_RULE !== "undefined") ? [RED_FLAG_OVERLAY_RULE] : []
+    (typeof RED_FLAG_OVERLAY_RULE !== "undefined") ? [RED_FLAG_OVERLAY_RULE] : [],
+    (typeof RED_FLAG_SYSTEM_RULES !== "undefined") ? RED_FLAG_SYSTEM_RULES : []
   );
   var open = all.filter(function (r) { return r.status !== "VERIFIED"; }).length;
 

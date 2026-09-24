@@ -391,6 +391,7 @@ var TOKEN_REGISTRY = {
   "arteriolar_narrowing": {
     "type_hint": "sign",
     "sources": [
+      "exam_text",
       "finding_map"
     ],
     "usage": {
@@ -405,6 +406,7 @@ var TOKEN_REGISTRY = {
   "asteroid_hyalosis": {
     "type_hint": "sign",
     "sources": [
+      "exam_text",
       "finding_map"
     ],
     "usage": {
@@ -477,6 +479,7 @@ var TOKEN_REGISTRY = {
   "av_nicking": {
     "type_hint": "sign",
     "sources": [
+      "exam_text",
       "finding_map"
     ],
     "usage": {
@@ -548,6 +551,7 @@ var TOKEN_REGISTRY = {
   "blepharitis_anterior": {
     "type_hint": "sign",
     "sources": [
+      "exam_text",
       "finding_map"
     ],
     "usage": {
@@ -877,6 +881,7 @@ var TOKEN_REGISTRY = {
   "chemosis": {
     "type_hint": "sign",
     "sources": [
+      "exam_text",
       "finding_map"
     ],
     "usage": {
@@ -891,6 +896,7 @@ var TOKEN_REGISTRY = {
   "cherry_red_spot": {
     "type_hint": "sign",
     "sources": [
+      "exam_text",
       "finding_map"
     ],
     "usage": {
@@ -1309,6 +1315,7 @@ var TOKEN_REGISTRY = {
     "type_hint": "sign",
     "sources": [
       "dictionary",
+      "exam_text",
       "finding_map"
     ],
     "usage": {
@@ -1364,6 +1371,7 @@ var TOKEN_REGISTRY = {
   "corneal_neovascularization": {
     "type_hint": "sign",
     "sources": [
+      "exam_text",
       "finding_map"
     ],
     "usage": {
@@ -1379,6 +1387,7 @@ var TOKEN_REGISTRY = {
     "type_hint": "sign",
     "sources": [
       "dictionary",
+      "exam_text",
       "finding_map"
     ],
     "usage": {
@@ -1436,6 +1445,7 @@ var TOKEN_REGISTRY = {
   "corneal_scar": {
     "type_hint": "sign",
     "sources": [
+      "exam_text",
       "finding_map"
     ],
     "usage": {
@@ -1474,6 +1484,7 @@ var TOKEN_REGISTRY = {
   "corneal_thinning": {
     "type_hint": "sign",
     "sources": [
+      "exam_text",
       "finding_map"
     ],
     "usage": {
@@ -1545,6 +1556,7 @@ var TOKEN_REGISTRY = {
   "cotton_wool_spots": {
     "type_hint": "sign",
     "sources": [
+      "exam_text",
       "finding_map"
     ],
     "usage": {
@@ -1700,6 +1712,7 @@ var TOKEN_REGISTRY = {
   "dendritic_ulcer": {
     "type_hint": "sign",
     "sources": [
+      "exam_text",
       "finding_map"
     ],
     "usage": {
@@ -1860,6 +1873,7 @@ var TOKEN_REGISTRY = {
   "dilated_tortuous_veins": {
     "type_hint": "sign",
     "sources": [
+      "exam_text",
       "finding_map"
     ],
     "usage": {
@@ -1917,9 +1931,9 @@ var TOKEN_REGISTRY = {
     "reachable": true
   },
   "disc_edema": {
-    "type_hint": "derived_measurement_or_history",
+    "type_hint": "sign",
     "sources": [
-      "engine_derived"
+      "exam_text"
     ],
     "usage": {
       "req": 4,
@@ -2004,6 +2018,7 @@ var TOKEN_REGISTRY = {
     "type_hint": "symptom",
     "sources": [
       "dictionary",
+      "exam_text",
       "symptom_chip"
     ],
     "usage": {
@@ -2094,6 +2109,7 @@ var TOKEN_REGISTRY = {
   "dot_blot_hemorrhages": {
     "type_hint": "sign",
     "sources": [
+      "exam_text",
       "finding_map"
     ],
     "usage": {
@@ -2137,6 +2153,7 @@ var TOKEN_REGISTRY = {
   "drusen_medium_63_125_m": {
     "type_hint": "sign",
     "sources": [
+      "exam_text",
       "finding_map"
     ],
     "usage": {
@@ -2184,6 +2201,7 @@ var TOKEN_REGISTRY = {
   "ectropion": {
     "type_hint": "sign",
     "sources": [
+      "exam_text",
       "finding_map"
     ],
     "usage": {
@@ -2240,6 +2258,7 @@ var TOKEN_REGISTRY = {
   "entropion": {
     "type_hint": "sign",
     "sources": [
+      "exam_text",
       "finding_map"
     ],
     "usage": {
@@ -2278,6 +2297,7 @@ var TOKEN_REGISTRY = {
   "epithelial_defect": {
     "type_hint": "sign",
     "sources": [
+      "exam_text",
       "finding_map"
     ],
     "usage": {
@@ -2304,6 +2324,7 @@ var TOKEN_REGISTRY = {
   "erm_macular_pucker": {
     "type_hint": "sign",
     "sources": [
+      "exam_text",
       "finding_map"
     ],
     "usage": {
@@ -2628,6 +2649,7 @@ var TOKEN_REGISTRY = {
   "flame_hemorrhages": {
     "type_hint": "sign",
     "sources": [
+      "exam_text",
       "finding_map"
     ],
     "usage": {
@@ -2801,6 +2823,7 @@ var TOKEN_REGISTRY = {
   "follicles": {
     "type_hint": "sign",
     "sources": [
+      "exam_text",
       "finding_map"
     ],
     "usage": {
@@ -2897,6 +2920,7 @@ var TOKEN_REGISTRY = {
   "geographic_atrophy": {
     "type_hint": "sign",
     "sources": [
+      "exam_text",
       "finding_map"
     ],
     "usage": {
@@ -3058,6 +3082,7 @@ var TOKEN_REGISTRY = {
   "guttata": {
     "type_hint": "sign",
     "sources": [
+      "exam_text",
       "finding_map"
     ],
     "usage": {
@@ -3089,6 +3114,7 @@ var TOKEN_REGISTRY = {
   "hard_exudates": {
     "type_hint": "sign",
     "sources": [
+      "exam_text",
       "finding_map"
     ],
     "usage": {
@@ -3273,6 +3299,7 @@ var TOKEN_REGISTRY = {
   "hordeolum_stye": {
     "type_hint": "sign",
     "sources": [
+      "exam_text",
       "finding_map"
     ],
     "usage": {
@@ -3987,6 +4014,7 @@ var TOKEN_REGISTRY = {
   "lattice_degeneration": {
     "type_hint": "sign",
     "sources": [
+      "exam_text",
       "finding_map"
     ],
     "usage": {
@@ -4084,6 +4112,7 @@ var TOKEN_REGISTRY = {
     "type_hint": "sign",
     "sources": [
       "dictionary",
+      "exam_text",
       "finding_map",
       "free_text",
       "symptom_chip"
@@ -4326,6 +4355,7 @@ var TOKEN_REGISTRY = {
     "type_hint": "sign",
     "sources": [
       "dictionary",
+      "exam_text",
       "finding_map",
       "symptom_chip"
     ],
@@ -4397,6 +4427,7 @@ var TOKEN_REGISTRY = {
   "macular_edema_clinical": {
     "type_hint": "sign",
     "sources": [
+      "exam_text",
       "finding_map"
     ],
     "usage": {
@@ -4411,6 +4442,7 @@ var TOKEN_REGISTRY = {
   "macular_hole": {
     "type_hint": "sign",
     "sources": [
+      "exam_text",
       "finding_map"
     ],
     "usage": {
@@ -4439,6 +4471,7 @@ var TOKEN_REGISTRY = {
   "macular_star": {
     "type_hint": "sign",
     "sources": [
+      "exam_text",
       "finding_map"
     ],
     "usage": {
@@ -4525,6 +4558,7 @@ var TOKEN_REGISTRY = {
     "type_hint": "sign",
     "sources": [
       "dictionary",
+      "exam_text",
       "finding_map"
     ],
     "usage": {
@@ -4607,6 +4641,7 @@ var TOKEN_REGISTRY = {
   "microaneurysms": {
     "type_hint": "sign",
     "sources": [
+      "exam_text",
       "finding_map"
     ],
     "usage": {
@@ -4929,9 +4964,9 @@ var TOKEN_REGISTRY = {
     "reachable": true
   },
   "nrr_thinning": {
-    "type_hint": "derived_measurement_or_history",
+    "type_hint": "sign",
     "sources": [
-      "engine_derived",
+      "exam_text",
       "finding_map"
     ],
     "usage": {
@@ -5016,6 +5051,7 @@ var TOKEN_REGISTRY = {
   "nve_neovascularization_elsewhere": {
     "type_hint": "sign",
     "sources": [
+      "exam_text",
       "finding_map"
     ],
     "usage": {
@@ -5253,6 +5289,7 @@ var TOKEN_REGISTRY = {
     "type_hint": "sign",
     "sources": [
       "dictionary",
+      "exam_text",
       "finding_map",
       "symptom_chip"
     ],
@@ -5266,10 +5303,10 @@ var TOKEN_REGISTRY = {
     "reachable": true
   },
   "pale_disc": {
-    "type_hint": "derived_measurement_or_history",
+    "type_hint": "sign",
     "sources": [
       "dictionary",
-      "engine_derived",
+      "exam_text",
       "finding_map"
     ],
     "usage": {
@@ -5284,6 +5321,7 @@ var TOKEN_REGISTRY = {
   "pannus": {
     "type_hint": "sign",
     "sources": [
+      "exam_text",
       "finding_map"
     ],
     "usage": {
@@ -5298,6 +5336,7 @@ var TOKEN_REGISTRY = {
   "papillae": {
     "type_hint": "sign",
     "sources": [
+      "exam_text",
       "finding_map"
     ],
     "usage": {
@@ -5766,6 +5805,7 @@ var TOKEN_REGISTRY = {
   "pterygium": {
     "type_hint": "sign",
     "sources": [
+      "exam_text",
       "finding_map"
     ],
     "usage": {
@@ -5781,6 +5821,7 @@ var TOKEN_REGISTRY = {
     "type_hint": "sign",
     "sources": [
       "dictionary",
+      "exam_text",
       "finding_map",
       "free_text",
       "symptom_chip"
@@ -5884,6 +5925,7 @@ var TOKEN_REGISTRY = {
   "pvd_weiss_ring": {
     "type_hint": "sign",
     "sources": [
+      "exam_text",
       "finding_map"
     ],
     "usage": {
@@ -6043,6 +6085,7 @@ var TOKEN_REGISTRY = {
     "type_hint": "sign",
     "sources": [
       "dictionary",
+      "exam_text",
       "finding_map"
     ],
     "usage": {
@@ -6058,6 +6101,7 @@ var TOKEN_REGISTRY = {
     "type_hint": "sign",
     "sources": [
       "dictionary",
+      "exam_text",
       "finding_map",
       "free_text",
       "symptom_chip"
@@ -6266,6 +6310,7 @@ var TOKEN_REGISTRY = {
   "retinal_break": {
     "type_hint": "sign",
     "sources": [
+      "exam_text",
       "finding_map"
     ],
     "usage": {
@@ -6280,6 +6325,7 @@ var TOKEN_REGISTRY = {
   "retinal_detachment_partial": {
     "type_hint": "sign",
     "sources": [
+      "exam_text",
       "finding_map"
     ],
     "usage": {
@@ -6322,6 +6368,7 @@ var TOKEN_REGISTRY = {
   "retinal_ischemia": {
     "type_hint": "sign",
     "sources": [
+      "exam_text",
       "finding_map"
     ],
     "usage": {
@@ -6376,6 +6423,7 @@ var TOKEN_REGISTRY = {
   "retinoschisis": {
     "type_hint": "sign",
     "sources": [
+      "exam_text",
       "finding_map"
     ],
     "usage": {
@@ -6475,9 +6523,9 @@ var TOKEN_REGISTRY = {
     "reachable": true
   },
   "rubeosis_iridis": {
-    "type_hint": "derived_measurement_or_history",
+    "type_hint": "sign",
     "sources": [
-      "engine_derived",
+      "exam_text",
       "finding_map"
     ],
     "usage": {
@@ -6692,6 +6740,7 @@ var TOKEN_REGISTRY = {
   "shafer_sign_tobacco_dust": {
     "type_hint": "sign",
     "sources": [
+      "exam_text",
       "finding_map"
     ],
     "usage": {
@@ -6963,6 +7012,7 @@ var TOKEN_REGISTRY = {
   "stromal_infiltrate": {
     "type_hint": "sign",
     "sources": [
+      "exam_text",
       "finding_map"
     ],
     "usage": {
@@ -7088,6 +7138,7 @@ var TOKEN_REGISTRY = {
   "subretinal_hemorrhage_cnv": {
     "type_hint": "sign",
     "sources": [
+      "exam_text",
       "finding_map"
     ],
     "usage": {
@@ -7496,6 +7547,7 @@ var TOKEN_REGISTRY = {
     "sources": [
       "dictionary",
       "engine_derived",
+      "exam_text",
       "finding_map"
     ],
     "usage": {
@@ -7634,6 +7686,7 @@ var TOKEN_REGISTRY = {
   "venous_beading": {
     "type_hint": "sign",
     "sources": [
+      "exam_text",
       "finding_map"
     ],
     "usage": {
@@ -7774,6 +7827,7 @@ var TOKEN_REGISTRY = {
   "vitreous_cells": {
     "type_hint": "sign",
     "sources": [
+      "exam_text",
       "finding_map"
     ],
     "usage": {
@@ -7788,6 +7842,7 @@ var TOKEN_REGISTRY = {
   "vitreous_hemorrhage": {
     "type_hint": "sign",
     "sources": [
+      "exam_text",
       "finding_map"
     ],
     "usage": {

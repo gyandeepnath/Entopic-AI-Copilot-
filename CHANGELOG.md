@@ -6,6 +6,88 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-09-24 — Full audit, part 1: the engine was misreading what you record
+
+You asked for every detail to be audited and fixed. I started where a mistake
+costs most — how the diagnostic engine READS the exam — and ran the real engine
+on ordinary entries rather than reading the code. It was wrong in three ways.
+
+### A recorded 0 was treated as "not measured"
+The engine read measurements as `parseFloat(x) || 999`, and in JavaScript 0 is
+"falsy", so a **zero** fell through to "no value". For these tests zero is not a
+blank — it is the *worst* result:
+
+- **Van Herick 0 (closed angle)** produced nothing — no narrow-angle token and
+  no "gonioscopy before dilation" warning — while grades 1 and 2 warned. (The
+  dropdown also stored its label, "0 (Closed)", instead of the grade.)
+- **TBUT 0 s and Schirmer 0 mm** — no dry-eye tokens; 3 s and 3 mm did.
+- **0 D of accommodation**, **0 cpm facility** — ignored.
+- **Age 0** — an infant got no paediatric token at all.
+
+### A blank eye was treated as a 0
+- **One normal exophthalmometry reading** (16 mm, other eye blank) "differed by
+  16 mm" from the blank eye → proptosis → **Thyroid Eye Disease 0.67**.
+- **Refracting the right eye first** (-3.00, left not yet done) → anisometropia.
+- The **left eye's accommodative facility** was never read at all.
+
+### Words were read as fragments, and "no" was ignored
+- Cornea "**within** normal limits" → corneal **thin**ning.
+- Rim "**no thinning**" / "**no notching**" → rim thinning (glaucoma evidence).
+  Disc "pink, **no edema**" → disc edema. Gonioscopy "open, **not narrow**" →
+  narrow angle → Plateau Iris. Motility "abduction **full**" → limited abduction;
+  "with**out** restriction, looks **down**" → a third-nerve palsy position.
+- "haemorrhage" (British spelling) never matched at all.
+- **NVA typed in the gonioscopy notes** — which the box's own hint invites —
+  was never read, so it raised **no rubeosis red flag**.
+- The chief-complaint parser: **21 false symptoms in 38 ordinary complaints** —
+  "routine eye tes**ting**" → burning, "eyelid tw**itch**ing" → itching,
+  "**key**board" → distance blur, "retinal **tear**" → watering, "since last
+  **night**" → worse in the evening, "welder's **flash** burn" → flashes (with
+  "spots", an urgent retinal-detachment banner), a **head**ache → eye pain.
+  Now 0 of 38, and 0 of 30 more phrases I wrote afterwards and did not tune on.
+- Cover test "8Δ exo", "8 XP", "10 XT" — the way most people write it — did
+  nothing; only "8 exo" worked.
+- "Improves with correction" fired whenever the two acuities were *different*,
+  including when corrected vision was **worse**.
+
+### A family history of diabetes was read as the patient's diabetes
+Tick "Diabetes" under **family** history and the engine treated the patient as
+diabetic — enough to list **Diabetic Macular Edema** for anyone with distortion.
+Fixed. Several similar mappings are clinical calls, not bugs, so I listed them
+for you in `NEEDS_REVIEW.md` rather than change them.
+
+### One bad field could switch off the red flags
+I fed the engine every field of a visit, one at a time, with the wrong kind of
+value (a number, an empty box, a list). **130 of 3,668 runs crashed**, and a
+crash happened *before* the red-flag stage — the alert box was simply empty,
+which looks exactly like "nothing to worry about". A visit saved by an older
+version without a symptoms list was worse: IOP 45 with an RAPD raised **no alert
+and no error**.
+
+Now the engine reads through a "safe view" of the visit, every stage is
+isolated, and if the differential can't be built you are told so in a banner
+while the red flags still run. If the red-flag rules themselves can't run, that
+is an **urgent** banner — never an empty box. 3,668 runs: 0 crashes, 0 lost
+alerts. Two safety gates also named conditions that don't exist ("PVD",
+"Keratitis"); PVD is fixed, Keratitis is a question for you.
+
+### Also
+- `npm test` was accidentally running the mutation tester as a test (its file
+  name matched the pattern). One of its deliberately-broken copies of my new
+  code looped forever and hung the suite. Tests now run from `tests/` only; the
+  mutation tester is `npm run mutation`, with a one-minute limit per mutant.
+- The token registry never read the exam boxes' keyword lists, so a finding you
+  could only *type* was listed as unreachable. Fixed.
+- `js/engine.js` stays under its size limit: the input readers moved to
+  `js/engine-inputs.js` and the next-test recommender to
+  `js/engine-next-tests.js`.
+
+**Tests:** 1,338 pass (26 new). Every new test was run against the previous
+version first and **failed there** — 22 of 22 — so they prove the fixes, not
+just the new code.
+
+---
+
 ## 2026-08-21 — Maximum-level stress testing: 22 real defects, and one benchmark that was lying to us.
 
 Full report: `docs/PHASE11_STRESS_REPORT.md`.

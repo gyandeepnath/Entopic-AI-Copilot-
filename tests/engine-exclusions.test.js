@@ -104,3 +104,22 @@ test("end-to-end: high-scoring POAG cannot suppress Acute Angle Closure Crisis",
   assert.ok(aacc, "Acute Angle Closure Crisis must survive exclusion by high-scoring POAG");
   assert.ok(aacc.urgent, "AACC is urgent-flagged");
 });
+
+
+/* ═══ DECISION-TREE GATES NAME REAL CONDITIONS ═══
+   A gate surfaces conditions BY NAME. Two names matched nothing — "PVD" (the
+   entry is "Posterior Vitreous Detachment (PVD)") and "Keratitis" (there are
+   fourteen, none called that) — so those parts of the safety gates silently did
+   nothing, and no test noticed. */
+test("every condition a decision-tree gate names exists in the knowledge base", () => {
+  const vm = require("node:vm");
+  const src = require("node:fs").readFileSync(require("node:path").resolve(__dirname, "..", "js/engine.js"), "utf8");
+  const a = src.indexOf("function applyDecisionTree"), b = src.indexOf("function selectRoutes");
+  assert.ok(a > 0 && b > a, "applyDecisionTree must exist for this check to mean anything");
+  const names = [...src.slice(a, b).matchAll(/conditions:\s*\[([^\]]*)\]/g)]
+    .flatMap((m) => [...m[1].matchAll(/"([^"]+)"/g)].map((x) => x[1]));
+  assert.ok(names.length >= 8, "expected the gate condition lists, found " + names.length);
+  const eng2 = require("../tools/lib/load-engine").createEngine();
+  const missing = names.filter((n) => !vm.runInContext("findCondition(" + JSON.stringify(n) + ")", eng2.context));
+  assert.deepStrictEqual(missing, [], "a safety gate names a condition that does not exist:\n  " + missing.join("\n  "));
+});

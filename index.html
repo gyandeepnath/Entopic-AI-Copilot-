@@ -597,7 +597,13 @@
      removes a condition from the differential. Must load BEFORE engine.js,
      which calls applyExclusions(). -->
 <script src="js/engine-exclusions.js"></script>
+<!-- How recorded values become comparable ones (safe read view, measured
+     numbers, VA, cover test, Van Herick, RAPD). engine.js reads all of it. -->
+<script src="js/engine-inputs.js"></script>
 <script src="js/engine.js"></script>
+<!-- Stage 12, split out of engine.js: what to check next to narrow the
+     differential. engine.js calls computeNextTests() at run time. -->
+<script src="js/engine-next-tests.js"></script>
 <!-- "What changed" between two engine runs (Phase 4 F-6). Loads after the
      engine, which calls engineRecordRun() at the end of every run. -->
 <script src="js/engine-diff.js"></script>

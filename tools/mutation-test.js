@@ -46,7 +46,7 @@ const TARGET = arg("target", "engine");
    that subset has a hole regardless of what the rest of the suite does. */
 const TARGETS = {
   engine: {
-    files: ["js/engine.js", "js/engine-exclusions.js"],
+    files: ["js/engine.js", "js/engine-exclusions.js", "js/engine-inputs.js", "js/engine-next-tests.js"],
     /* EVERY engine-behaviour test, not a hand-picked subset.
 
        The first version of this list omitted engine-reachability.test.js, and
@@ -166,10 +166,17 @@ copyTree(ROOT, scratch);
 const originals = {};
 for (const f of spec.files) originals[f] = fs.readFileSync(path.join(ROOT, f), "utf8");
 
+/* A mutant that turns a loop's exit test around (`idx >= 0` → `idx < 0`)
+   can spin forever. The unmutated subset runs in about a second, so a
+   minute is ample; a mutant that hangs past it is KILLED — a clinician
+   would notice a frozen exam screen long before a test would. The old
+   180 s ceiling made a handful of such mutants cost most of an hour. */
+const MUTANT_TIMEOUT_MS = 60000;
+
 function runTests() {
   try {
     execFileSync(process.execPath, ["--test", ...spec.tests],
-      { cwd: scratch, stdio: "pipe", timeout: 180000 });
+      { cwd: scratch, stdio: "pipe", timeout: MUTANT_TIMEOUT_MS });
     return true;      /* everything passed — the mutant SURVIVED */
   } catch (e) {
     return false;     /* something failed — the mutant was KILLED */

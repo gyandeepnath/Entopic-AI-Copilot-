@@ -91,12 +91,23 @@ for (const tokens of Object.values(ctx.FINDING_TOKEN_MAP)) {
 }
 
 /* 4. Free-text parser */
-const parseSrc = extractFunctionSource(engineSrc, "parseComplaintText");
+/* the parser lives in js/engine-inputs.js with the other input readers */
+const inputsSrc = fs.readFileSync(path.join(REPO_ROOT, "js", "engine-inputs.js"), "utf8");
+const parseSrc = extractFunctionSource(inputsSrc, "parseComplaintText");
 for (const token of literalsIn(parseSrc, "t\\.push")) addProducer(token, "free_text");
 
 /* 5. Engine derivation (history flags + measurements) in collectTokens */
 const collectSrc = extractFunctionSource(engineSrc, "collectTokens");
 for (const token of literalsIn(collectSrc, "addToken")) addProducer(token, "engine_derived");
+
+/* 5b. Exam free-text keyword maps — slParseText([...], { stem: "token" }, addToken).
+      These were never scanned, so a token produced ONLY by typing it into an
+      exam box (disc "pallor", gonioscopy notes "NVA", a macula "hole") was
+      registered as unreachable — and the next-test recommender will not
+      suggest an unreachable finding. */
+for (const m of collectSrc.matchAll(/slParseText\((?!vals\b)[^{]*\{([^}]*)\}\s*,\s*addToken\)/g)) {
+  for (const v of m[1].matchAll(/:\s*"([A-Za-z0-9_]+)"/g)) addProducer(v[1], "exam_text");
+}
 
 /* 6. Temporal: onset keys are stored directly as tokens; duration/course map
       to fixed categories; applyTemporalWeight injects bias tokens */
@@ -129,6 +140,7 @@ const TYPE_HINT = {
   symptom_chip: "symptom",
   finding_map: "sign",
   engine_derived: "derived_measurement_or_history",
+  exam_text: "sign",
   temporal: "temporal",
   medication: "risk_factor",
   free_text: "symptom",
@@ -141,9 +153,13 @@ for (const token of [...allTokens].sort()) {
   const use = usage[token] || { req: 0, sup: 0, con: 0, temporal: 0, tests: 0 };
   /* type hint: first non-lexical producer's hint, else lexical, else unknown */
   let hint = "unknown";
+  /* exam_text ranks last: a token that is also a symptom chip or a
+     measurement keeps the hint it always had, and only a token produced
+     solely by an exam box is typed as a sign by it. */
   for (const s of src) {
-    if (s !== "dictionary") { hint = TYPE_HINT[s]; break; }
+    if (s !== "dictionary" && s !== "exam_text") { hint = TYPE_HINT[s]; break; }
   }
+  if (hint === "unknown" && src.includes("exam_text")) hint = TYPE_HINT.exam_text;
   if (hint === "unknown" && src.includes("dictionary")) hint = "lexical";
   registry[token] = {
     type_hint: hint,

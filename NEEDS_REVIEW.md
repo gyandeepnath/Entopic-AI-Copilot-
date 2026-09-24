@@ -131,6 +131,36 @@ likelihood-ratio-style values needs real outcome data — that's what the
 registry flywheel is for. Please eyeball a handful of differentials against
 your clinical judgment and tell me if any ranking feels off.
 
+### 🟧 How history flags map to engine tokens — found in the 2026-09-24 audit
+The audit fixed one mapping that was plainly wrong and **left these for you**,
+because each is a clinical judgement about what a history item is evidence FOR.
+Nothing below was changed.
+
+1. **One generic `family_history` token for five different diseases.** A family
+   history of glaucoma, AMD, retinal detachment, keratoconus or high myopia all
+   emit the same token. Eleven hereditary conditions *require* it (Lattice,
+   Granular, Macular and PPCD corneal dystrophies, Best disease, Choroideremia,
+   FEVR, LHON, …) and ~42 use it as support — so a family history of **AMD**
+   currently supports **POAG** and satisfies **Lattice Corneal Dystrophy**'s
+   requirement. Suggested fix (needs you): one token per family flag
+   (`family_history_glaucoma`, …) and you choose which conditions each supports.
+2. **Family history of diabetes / of strabismus now contribute nothing.**
+   Diabetes used to emit the PATIENT's own `diabetes_history` — the token
+   Diabetic Macular Edema, PDR and Diabetic Papillopathy *require* — so a
+   patient with distortion and a diabetic parent was shown Diabetic Macular
+   Edema. That is fixed. Should either flag support anything?
+3. **Past uveitis / herpes → `recurrent_episode`.** That token is *required* by
+   Sebaceous Gland Carcinoma, Canaliculitis and Blepharochalasis, among others,
+   so a past uveitis satisfies part of a carcinoma's definition.
+4. **Past amblyopia → `suppression`.** Is a history of amblyopia evidence of
+   current suppression?
+5. **The fundus finding "Microaneurysms" emits `diabetes_history`** — a finding
+   asserting a history. Possibly intended (undiagnosed diabetes); please confirm.
+6. **The "pain + photophobia" safety gate named "Keratitis"**, which matched no
+   condition (there are fourteen keratitis entries), so it never surfaced one.
+   The dead name was removed — behaviour is unchanged. Which keratitis, if any,
+   should that gate force onto the list?
+
 ---
 
 ## For later (architecture — needs a decision + possibly spend)

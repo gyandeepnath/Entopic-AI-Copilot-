@@ -43,8 +43,7 @@ const FH_TOKENS = [
   ["AMD",         { amd: true },         ["family_history"]],
   ["retinal detachment", { rd: true },   ["family_history", "risk_detachment"]],
   ["keratoconus", { keratoconus: true }, ["family_history"]],
-  ["high myopia", { myopia_high: true }, ["family_history"]],
-  ["diabetes",    { dm: true },          ["diabetes_history"]]
+  ["high myopia", { myopia_high: true }, ["family_history"]]
 ];
 
 for (const [name, hxF, expected] of FH_TOKENS) {
@@ -57,6 +56,27 @@ for (const [name, hxF, expected] of FH_TOKENS) {
     }
   });
 }
+
+/* A FAMILY history of diabetes used to emit diabetes_history — the PATIENT's
+   own-diabetes token, which Diabetic Macular Edema, PDR and Diabetic
+   Papillopathy REQUIRE. The row above asserted that mapping; it was the bug.
+   A patient with distortion and a diabetic parent was shown Diabetic Macular
+   Edema. The flag stays on the record; it is not evidence of the patient's
+   own disease, and it must not satisfy the hereditary conditions that
+   require `family_history` either. */
+test("a FAMILY history of diabetes is not the patient's diabetes", () => {
+  const out = eng.runCase({ symptoms: ["distortion"], hxF: { dm: true } }, { age: "55" });
+  assert.strictEqual(out.tokens.indexOf("diabetes_history"), -1,
+    "family history of diabetes produced the patient's own diabetes token");
+  assert.strictEqual(out.tokens.indexOf("family_history"), -1,
+    "family history of diabetes would satisfy 11 hereditary dystrophies that require family_history");
+  assert.ok(!out.dxList.some((d) => /diabet/i.test(d.n)),
+    "a diabetic condition was listed for a patient who is not diabetic: " +
+    out.dxList.map((d) => d.n).join(", "));
+  /* and the patient's OWN diabetes still counts */
+  const own = eng.runCase({ symptoms: ["distortion"], hxM: { dm: true } }, { age: "55" });
+  assert.ok(own.tokens.indexOf("diabetes_history") >= 0, "the patient's own diabetes must still reach the engine");
+});
 
 test("no family-history token appears when no family history is recorded", () => {
   const toks = tokensFor({ hxF: {} });

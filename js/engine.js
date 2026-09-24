@@ -87,17 +87,26 @@ function colorVisionTextDefective(s) {
   return /defect|abnorm|fail|reduced|protan|deutan|tritan|dyschrom|colou?r\s*blind/i.test(s);
 }
 
-function collectTokens() {
+function collectTokens(visit, patient) {
+
+  /* Read through the shape-safe view, never the live objects (see
+     engineShape above). These locals shadow the globals for this whole
+     function; with no arguments the view is built from the open visit. */
+  var V = engineVisitView(visit);
+  var P = enginePatientView(patient);
 
   var tokens = [];
 
   /* Helper: add token if not already present.
      Canonicalise synonyms first (see TOKEN_ALIASES) so every producer —
      chips, free-text, findings, derived measurements — converges on one
-     token and the differential can't fragment on phrasing. */
+     token and the differential can't fragment on phrasing. A token is a
+     non-empty string; anything else (a number or object in an imported
+     symptoms array) is not evidence of anything. */
   function addToken(t) {
+    if (typeof t !== "string" || !t) return;
     if (typeof canonicalToken === "function") t = canonicalToken(t);
-    if (t && tokens.indexOf(t) === -1) {
+    if (typeof t === "string" && t && tokens.indexOf(t) === -1) {
       tokens.push(t);
     }
   }
@@ -116,7 +125,6 @@ function collectTokens() {
     var m = String(v).match(/(\d+(?:\.\d+)?)/);
     return m ? Math.round(parseFloat(m[1])) : 0;
   }
-  function slNum(v) { var n = parseFloat(v); return (isNaN(n) || n <= 0) ? 999 : n; }
   /* Free-text keyword tokenizer for exam boxes. NEGATION-AWARE: a clinician (and
      our own default placeholders like "Flat, no breaks") routinely records the
      ABSENCE of a sign — "no breaks", "without exudates", "denies floaters". A
@@ -142,15 +150,51 @@ function collectTokens() {
     for (var n = 0; n < SL_NEG_CUES.length; n++) if (clause.indexOf(SL_NEG_CUES[n]) >= 0) return true;
     return false;
   }
+  /* Is `kw` present as a WORD (or the start of one) and not negated?
+     Keywords are stems — "infiltrat" must match "infiltrate" and
+     "infiltrates" — so the end is open, but the START must be a word
+     boundary. A bare substring match read the cornea recorded as "within
+     normal limits" (wi-THIN) or "nothing abnormal" (no-THIN-g) as corneal
+     THINNING. Every occurrence is checked, so "no scar centrally, scar
+     inferiorly" still records the second one. */
+  function slKeywordAt(s, kw) {
+    /* Bounded by the text length, not by indexOf alone: a loop whose only
+       exit is `idx < 0` spins forever if that test is ever inverted. */
+    for (var n = 0, idx = s.indexOf(kw); n <= s.length && idx >= 0; n++, idx = s.indexOf(kw, idx + 1)) {
+      var atWordStart = idx === 0 || !/[a-z0-9]/.test(s.charAt(idx - 1));
+      if (atWordStart && !slNegatedAt(s, idx)) return true;
+    }
+    return false;
+  }
+  /* British spellings: "oedema" used to match the "edema" stem only by
+     accident (as a substring), and "haemorrhage" never matched
+     "hemorrhage" at all. Normalise before matching. */
+  function slNormText(v) {
+    return String(v === null || v === undefined ? "" : v).toLowerCase()
+      .replace(/oedem/g, "edem").replace(/haem/g, "hem");
+  }
+  var MOT_LIMIT_CUE = /limit|deficit|restrict|reduc|weak|poor|unable|cannot|can't|palsy|paresis|underact|lag|(^|[^a-z0-9])-\s?[1-4]\b/;
+  function motDeficit(txt, stem) {
+    for (var n = 0, idx = txt.indexOf(stem); n <= txt.length && idx >= 0; n++, idx = txt.indexOf(stem, idx + 1)) {
+      if ((idx === 0 || !/[a-z0-9]/.test(txt.charAt(idx - 1))) && !slNegatedAt(txt, idx)) {
+        /* the clause around the keyword */
+        var from = Math.max(txt.lastIndexOf(",", idx), txt.lastIndexOf(";", idx), txt.lastIndexOf(".", idx)) + 1;
+        var ends = [txt.indexOf(",", idx), txt.indexOf(";", idx), txt.indexOf(".", idx)].filter(function (x) { return x >= 0; });
+        var to = ends.length ? Math.min.apply(null, ends) : txt.length;
+        var clause = txt.slice(from, to);
+        if (MOT_LIMIT_CUE.test(clause)) return true;
+      }
+    }
+    return false;
+  }
   function slParseText(vals, map, add) {
     for (var i = 0; i < vals.length; i++) {
-      var s = (vals[i] || "").toLowerCase();
+      var s = slNormText(vals[i]);
       if (!s || s === "clear" || s === "white and quiet" || s === "wnl" || s === "normal") continue;
       /* Own keys only — an inherited one would become a slit-lamp keyword. */
       for (var kw in map) {
         if (!Object.prototype.hasOwnProperty.call(map, kw)) continue;
-        var idx = s.indexOf(kw);
-        if (idx >= 0 && !slNegatedAt(s, idx)) add(map[kw]);
+        if (slKeywordAt(s, kw)) add(map[kw]);
       }
     }
   }
@@ -250,11 +294,16 @@ function collectTokens() {
 
   /* Proptosis / lid retraction from the exophthalmometry fields, when present. */
   if (V.orbit) {
-    var exOd = parseFloat(V.orbit.exoph_od) || 0;
-    var exOs = parseFloat(V.orbit.exoph_os) || 0;
+    /* Asymmetry needs BOTH eyes measured. With one reading blank, the old
+       `parseFloat(x) || 0` made the asymmetry equal the whole of the other
+       reading: a single NORMAL value of 16 mm "differed by 16 mm" from the
+       blank eye and produced proptosis → Thyroid Eye Disease. */
+    var exOd = engineMeasured(V.orbit.exoph_od);
+    var exOs = engineMeasured(V.orbit.exoph_os);
     var _prAbs = clinThreshold("proptosis_absolute", 21);
-    if (exOd >= _prAbs || exOs >= _prAbs ||
-        Math.abs(exOd - exOs) >= clinThreshold("proptosis_asymmetry", 2)) addToken("proptosis");
+    if ((exOd !== null && exOd >= _prAbs) || (exOs !== null && exOs >= _prAbs) ||
+        (exOd !== null && exOs !== null &&
+         Math.abs(exOd - exOs) >= clinThreshold("proptosis_asymmetry", 2))) addToken("proptosis");
     if (V.orbit.lid_retraction) addToken("lid_retraction");
   }
 
@@ -284,15 +333,20 @@ function collectTokens() {
     if (V.hxF.rd)          { addToken("family_history"); addToken("risk_detachment"); }
     if (V.hxF.keratoconus) addToken("family_history");
     if (V.hxF.myopia_high) addToken("family_history");
-    if (V.hxF.dm)          addToken("diabetes_history");
+    /* A FAMILY history of diabetes is not the patient's diabetes. It used to
+       emit diabetes_history — the token Diabetic Macular Edema, PDR and
+       Diabetic Papillopathy REQUIRE — so a patient with distortion and a
+       diabetic parent was shown Diabetic Macular Edema. It stays on the
+       record; it contributes no diagnostic token (see NEEDS_REVIEW.md). */
   }
 
 
   /* ── SOURCE 9: Auto-derived from measurements ── */
 
   /* Age-based tokens */
-  var age = parseInt(P.age) || 0;
-  if (age > 0) {
+  /* engineAgeYears: "0" is a child under one, not a blank. */
+  var age = engineAgeYears(P);
+  if (age !== null) {
     /* Three brackets. `young_age` is DEPRECATED and keeps its original rule
        (under 18) so that conditions not yet reclassified behave exactly as
        before — see knowledge/age-classification.js. `paediatric_age` is its
@@ -334,10 +388,11 @@ function collectTokens() {
 
   /* Van Herick */
   if (V.sl) {
-    var vhOd = parseInt(V.sl.od.vh) || 99;
-    var vhOs = parseInt(V.sl.os.vh) || 99;
+    /* vanHerickGrade: grade 0 (closed) is the most narrow, not "unrecorded". */
+    var vhOd = vanHerickGrade(V.sl.od.vh);
+    var vhOs = vanHerickGrade(V.sl.os.vh);
     var _vhN = clinThreshold("van_herick_narrow", 2);
-    if (vhOd <= _vhN || vhOs <= _vhN) { addToken("narrow_angle"); addToken("shallow_ac"); }
+    if ((vhOd !== null && vhOd <= _vhN) || (vhOs !== null && vhOs <= _vhN)) { addToken("narrow_angle"); addToken("shallow_ac"); }
   }
 
   /* ── SOURCE 9b: STRUCTURED SLIT-LAMP GRADES + FREE-TEXT SIGNS ──
@@ -384,7 +439,7 @@ function collectTokens() {
   }
 
   /* RAPD */
-  if (V.pupil && V.pupil.rapd !== "None") {
+  if (V.pupil && rapdPresent(V.pupil.rapd)) {
     addToken("RAPD_positive");
     addToken("reduced_vision");
   }
@@ -395,27 +450,20 @@ function collectTokens() {
     if (npc >= clinThreshold("npc_receded", 6)) addToken("NPC_receded");
   }
 
-  /* Cover test / phoria auto-derivation */
-  if (V.bv && V.bv.ct_n) {
-    var ctNear = V.bv.ct_n.toLowerCase();
-    var phoriaMatch = ctNear.match(/(\d+\.?\d*)\s*(exo|eso)/);
-    if (phoriaMatch) {
-      var phoriaVal = parseFloat(phoriaMatch[1]);
-      var phoriaDir = phoriaMatch[2];
+  /* Cover test / phoria auto-derivation (coverTestDeviation reads the
+     notations actually written: "8Δ exo", "8^ XP", "10 X(T)", "eso 6"). */
+  if (V.bv) {
+    var ctN = coverTestDeviation(V.bv.ct_n);
+    if (ctN) {
       var _phN = clinThreshold("phoria_near_significant", 6);
-      if (phoriaDir === "exo" && phoriaVal > _phN) addToken("exo_near");
-      if (phoriaDir === "eso" && phoriaVal > _phN) addToken("eso_near");
+      if (ctN.dir === "exo" && ctN.amount > _phN) addToken("exo_near");
+      if (ctN.dir === "eso" && ctN.amount > _phN) addToken("eso_near");
     }
-  }
-  if (V.bv && V.bv.ct_d) {
-    var ctDist = V.bv.ct_d.toLowerCase();
-    var distMatch = ctDist.match(/(\d+\.?\d*)\s*(exo|eso)/);
-    if (distMatch) {
-      var distVal = parseFloat(distMatch[1]);
-      var distDir = distMatch[2];
+    var ctD = coverTestDeviation(V.bv.ct_d);
+    if (ctD) {
       var _phD = clinThreshold("phoria_distance_significant", 6);
-      if (distDir === "exo" && distVal > _phD) addToken("exo_distance");
-      if (distDir === "eso" && distVal > _phD) addToken("eso_distance");
+      if (ctD.dir === "exo" && ctD.amount > _phD) addToken("exo_distance");
+      if (ctD.dir === "eso" && ctD.amount > _phD) addToken("eso_distance");
     }
   }
 
@@ -428,12 +476,15 @@ function collectTokens() {
     }
   }
 
-  /* Accommodation amplitude */
-  if (V.bv && (V.bv.acc_od || V.bv.acc_os)) {
-    var accOd = parseFloat(V.bv.acc_od) || 999;
-    var accOs = parseFloat(V.bv.acc_os) || 999;
-    var accMin = Math.min(accOd, accOs);
-    if (accMin < 999 && age > 0) {
+  /* Measurements below read through engineMeasured(): blank is "not
+     measured", and a recorded 0 is a result — the most abnormal one. */
+
+  /* Accommodation amplitude (0 D = no accommodation at all) */
+  if (V.bv) {
+    var accOd = engineMeasured(V.bv.acc_od);
+    var accOs = engineMeasured(V.bv.acc_os);
+    var accMin = (accOd === null) ? accOs : (accOs === null ? accOd : Math.min(accOd, accOs));
+    if (accMin !== null && age !== null) {
       var hofMin = hofstetter(age).min;
       if (hofMin !== null && accMin < hofMin) {
         addToken("reduced_amplitude");
@@ -442,24 +493,27 @@ function collectTokens() {
     }
   }
 
-  /* Flipper rate (MAF / BAF) */
-  if (V.bv && V.bv.maf_od) {
-    var maf = parseFloat(V.bv.maf_od) || 999;
-    if (maf < clinThreshold("flipper_reduced", 8) && maf < 999) addToken("reduced_flipper_rate");
+  /* Flipper rate (monocular accommodative facility). BOTH eyes: the left
+     eye's result used to be recorded on screen and never read. */
+  if (V.bv) {
+    var mafOd = engineMeasured(V.bv.maf_od);
+    var mafOs = engineMeasured(V.bv.maf_os);
+    var _flip = clinThreshold("flipper_reduced", 8);
+    if ((mafOd !== null && mafOd < _flip) || (mafOs !== null && mafOs < _flip)) addToken("reduced_flipper_rate");
   }
 
   /* Vergence ranges */
   if (V.bv) {
-    var boNBk = parseFloat(V.bv.bo_n_bk) || 999;
-    if (boNBk < clinThreshold("pfv_reduced", 15) && boNBk < 999) addToken("reduced_PFV");
+    var boNBk = engineMeasured(V.bv.bo_n_bk);
+    if (boNBk !== null && boNBk < clinThreshold("pfv_reduced", 15)) addToken("reduced_PFV");
 
     /* Check if any vergence range is significantly reduced */
     var anyReduced = false;
     var _vgR = clinThreshold("vergence_range_reduced", 8);
     var ranges = ["bo_d_bk", "bi_d_bk", "bo_n_bk", "bi_n_bk"];
     for (var ri = 0; ri < ranges.length; ri++) {
-      var rv = parseFloat(V.bv[ranges[ri]]) || 0;
-      if (rv > 0 && rv < _vgR) anyReduced = true;
+      var rv = engineMeasured(V.bv[ranges[ri]]);
+      if (rv !== null && rv < _vgR) anyReduced = true;
     }
     if (anyReduced) addToken("reduced_vergence_ranges");
   }
@@ -482,22 +536,26 @@ function collectTokens() {
     var _ast = clinThreshold("astigmatism_min", 0.75);
     if (Math.abs(cylOd) >= _ast || Math.abs(cylOs) >= _ast) addToken("astigmatism");
 
-    /* Anisometropia */
-    if (Math.abs(sphOd - sphOs) >= clinThreshold("anisometropia_min", 1.0)) addToken("unequal_refractive_error");
+    /* Anisometropia — only when BOTH eyes were refracted. A blank eye read
+       as 0, so refracting the right eye first (-3.00, left not yet done)
+       produced a 3 D "anisometropia" and Anisometropic Refractive Error. */
+    var rxOdDone = !!(String(V.rx.od_sph).trim() || String(V.rx.od_cyl).trim());
+    var rxOsDone = !!(String(V.rx.os_sph).trim() || String(V.rx.os_cyl).trim());
+    if (rxOdDone && rxOsDone &&
+        Math.abs(sphOd - sphOs) >= clinThreshold("anisometropia_min", 1.0)) addToken("unequal_refractive_error");
 
-    /* Add power */
-    if (V.rx.od_add || V.rx.os_add) addToken("add_required");
+    /* Add power — a recorded add of 0.00 is "no add", not an add. */
+    var addOd = engineMeasured(V.rx.od_add), addOs = engineMeasured(V.rx.os_add);
+    if ((addOd !== null && addOd > 0) || (addOs !== null && addOs > 0)) addToken("add_required");
   }
 
-  /* VA auto-derivation */
+  /* VA auto-derivation — corrected acuity BETTER than unaided. This used
+     to fire whenever the two strings differed, so a best-corrected 6/9 that
+     was WORSE than an unaided 6/6 (or the same line typed as "20/20") was
+     scored as improving with correction. */
   if (V.va) {
-    /* Check if VA improves with correction */
-    if (V.va.od_bva && V.va.od_un && V.va.od_bva !== V.va.od_un) {
-      addToken("improves_with_correction");
-    }
-    if (V.va.os_bva && V.va.os_un && V.va.os_bva !== V.va.os_un) {
-      addToken("improves_with_correction");
-    }
+    if (vaBetter(V.va.od_bva, V.va.od_un, V.va.chart)) addToken("improves_with_correction");
+    if (vaBetter(V.va.os_bva, V.va.os_un, V.va.chart)) addToken("improves_with_correction");
   }
 
   /* C/D ratio auto-derivation */
@@ -509,20 +567,19 @@ function collectTokens() {
     if (cdOd > 0 && cdOs > 0 && Math.abs(cdOd - cdOs) > clinThreshold("cd_asymmetry", 0.2)) addToken("cd_asymmetry");
   }
 
-  /* NRR from fundus */
+  /* NRR from fundus — through the same word-boundary, negation-aware
+     parser as every other exam box. A substring match read "no thinning",
+     "no notching" and "within normal limits" (wi-THIN) as rim thinning,
+     which is glaucoma evidence. */
   if (V.fun) {
-    var nrrOd = (V.fun.od.nrr || "").toLowerCase();
-    var nrrOs = (V.fun.os.nrr || "").toLowerCase();
-    if (nrrOd.indexOf("thin") >= 0 || nrrOs.indexOf("thin") >= 0) addToken("nrr_thinning");
-    if (nrrOd.indexOf("notch") >= 0 || nrrOs.indexOf("notch") >= 0) addToken("nrr_thinning");
+    slParseText([V.fun.od.nrr, V.fun.os.nrr], { thin: "nrr_thinning", notch: "nrr_thinning" }, addToken);
   }
 
-  /* Disc assessment */
+  /* Disc assessment — same parser: "pink, no edema" is not disc edema, and
+     "not pale" is not a pale disc. "pallor" is the noun of "pale" and is
+     how disc colour is usually written ("temporal pallor"). */
   if (V.fun) {
-    var discOd = (V.fun.od.disc || "").toLowerCase();
-    var discOs = (V.fun.os.disc || "").toLowerCase();
-    if (discOd.indexOf("pale") >= 0 || discOs.indexOf("pale") >= 0) addToken("pale_disc");
-    if (discOd.indexOf("edema") >= 0 || discOs.indexOf("edema") >= 0) addToken("disc_edema");
+    slParseText([V.fun.od.disc, V.fun.os.disc], { pale: "pale_disc", pallor: "pale_disc", edema: "disc_edema" }, addToken);
   }
 
   /* Fundus macula / vessels / periphery / vitreous free-text → sign tokens */
@@ -550,29 +607,47 @@ function collectTokens() {
 
   /* Motility — restriction, gaze deficits, nystagmus */
   if (V.mot) {
-    var motTxt = ((V.mot.notes || "") + " " + (V.mot.versions || "") + " " + (V.mot.ductions || "")).toLowerCase();
+    var motTxt = slNormText(V.mot.notes);
     if (V.mot.versions && V.mot.versions !== "Full") addToken("restricted_motility");
     if (V.mot.ductions && V.mot.ductions !== "Full") addToken("restricted_motility");
-    if (motTxt.indexOf("abduct") >= 0) addToken("limited_abduction");
-    if (motTxt.indexOf("adduct") >= 0) addToken("adduction_deficit");
+    /* A duction DEFICIT, not a mention. "abduction full" and "no abduction
+       deficit" were both read as limited abduction; and "down" + "out"
+       anywhere in the note ("without restriction, looks down") was read as
+       the down-and-out eye of a third-nerve palsy. Now the duction must sit
+       in a clause that also states a limitation, un-negated, and down-and-
+       out must be the phrase itself. */
+    if (motDeficit(motTxt, "abduct")) addToken("limited_abduction");
+    if (motDeficit(motTxt, "adduct")) addToken("adduction_deficit");
     if (V.mot.nystagmus && V.mot.nystagmus !== "None") addToken("nystagmus_other_eye");
-    if (motTxt.indexOf("down") >= 0 && motTxt.indexOf("out") >= 0) addToken("eye_down_out");
+    var dno = /\bdown[\s-]*(and|&)?[\s-]*out\b/.exec(motTxt);
+    if (dno && !slNegatedAt(motTxt, dno.index)) addToken("eye_down_out");
   }
 
   /* Gonioscopy — narrow/closed angle (Shaffer grade ≤1 / Slit / closed),
      recession, pigment, neovascularization. */
   if (V.gon) {
     var gonVals = [V.gon.od.s, V.gon.od.n, V.gon.od.i, V.gon.od.t, V.gon.os.s, V.gon.os.n, V.gon.os.i, V.gon.os.t];
-    var gonTxt = gonVals.join(" ").toLowerCase();
     var gonNarrow = false;
     for (var gi = 0; gi < gonVals.length; gi++) {
-      var gv = String(gonVals[gi] || "").toLowerCase().trim();
-      if (gv === "0" || gv === "1" || gv === "slit" || gv.indexOf("closed") >= 0 || gv.indexOf("narrow") >= 0) gonNarrow = true;
+      var gv = slNormText(gonVals[gi]).trim();
+      if (gv === "0" || gv === "1" || gv === "slit" ||
+          slKeywordAt(gv, "closed") || slKeywordAt(gv, "narrow")) gonNarrow = true;
     }
     if (gonNarrow) { addToken("narrow_angle"); addToken("angle_closure_risk"); }
-    if (gonTxt.indexOf("recess") >= 0) addToken("trauma_history");
-    if (/nva|neovasc|rubeosis/.test(gonTxt)) addToken("rubeosis_iridis");
-    if (/heavy|dense|3\+|4\+/.test(((V.gon.od.pig || "") + " " + (V.gon.os.pig || "")).toLowerCase())) addToken("pigment_dispersion");
+    /* Recession and angle neovascularisation are written in the NOTES box —
+       its placeholder says "PAS, NVA…" — but only the four grade dropdowns
+       were ever read, so "NVA 360°" typed there raised no rubeosis red flag.
+       Read the notes too, negation-aware ("no NVA" is not NVA). */
+    slParseText(gonVals.concat([V.gon.od.notes, V.gon.os.notes]), {
+      recess: "trauma_history", nva: "rubeosis_iridis", neovasc: "rubeosis_iridis", rubeosis: "rubeosis_iridis"
+    }, addToken);
+    /* Pigment: the box asks for a grade "0-4", but only the strings "3+" /
+       "4+" were recognised — a typed 3 or 4 did nothing. */
+    [V.gon.od.pig, V.gon.os.pig].forEach(function (pg) {
+      var t = slNormText(pg);
+      var g = /(^|[^0-9.])([0-4])(?![0-9.])/.exec(t);
+      if (/heavy|dense/.test(t) || (g && parseInt(g[2], 10) >= 3)) addToken("pigment_dispersion");
+    });
   }
 
   /* Slit lamp specific fields */
@@ -580,20 +655,20 @@ function collectTokens() {
     /* TBUT — emits the symptom-domain token AND the objective-test token
        (TBUT_reduced) so a measured result is scored as confirmation, not
        just a repeat of what the patient already reported. */
-    var butOd = parseFloat(V.sl.od.but) || 999;
-    var butOs = parseFloat(V.sl.os.but) || 999;
-    var butMin = Math.min(butOd, butOs);
-    if (butMin < clinThreshold("tbut_reduced", 10) && butMin < 999) {
+    var butOd = engineMeasured(V.sl.od.but);
+    var butOs = engineMeasured(V.sl.os.but);
+    var butMin = (butOd === null) ? butOs : (butOs === null ? butOd : Math.min(butOd, butOs));
+    if (butMin !== null && butMin < clinThreshold("tbut_reduced", 10)) {
       addToken("dryness");
       addToken("TBUT_reduced");
       addToken("tear_film_instability");
     }
 
     /* Schirmer — same pattern: symptom token + objective-test token */
-    var schOd = parseFloat(V.sl.od.schirmer) || 999;
-    var schOs = parseFloat(V.sl.os.schirmer) || 999;
-    var schMin = Math.min(schOd, schOs);
-    if (schMin < clinThreshold("schirmer_low", 10) && schMin < 999) {
+    var schOd = engineMeasured(V.sl.od.schirmer);
+    var schOs = engineMeasured(V.sl.os.schirmer);
+    var schMin = (schOd === null) ? schOs : (schOs === null ? schOd : Math.min(schOd, schOs));
+    if (schMin !== null && schMin < clinThreshold("schirmer_low", 10)) {
       addToken("reduced_tearing");
       addToken("schirmer_low");
     }
@@ -694,96 +769,9 @@ function collectTokens() {
 }
 
 
-/* ═══════════════════════════════════════════════════════════════ */
-/* STAGE 2: PARSE FREE-TEXT COMPLAINT                              */
-/* Regex-based token extraction from natural language               */
-/* ═══════════════════════════════════════════════════════════════ */
-
-/* Remove negated phrases before token extraction, so "denies pain" or
-   "no flashes" do not emit pain/flashes tokens.
-   Strategy: split into clauses at punctuation and contrast conjunctions;
-   inside each clause, drop everything from a negation marker to the end
-   of the clause. Deliberately conservative — only the negated clause tail
-   is dropped, so "no flashes, floaters since Monday" still emits floaters
-   (over-alerting is safer than under-alerting for red flags). */
-function stripNegatedPhrases(text) {
-  var clauses = String(text).split(/[,;.!?]|\bbut\b|\bexcept\b|\bhowever\b/i);
-  var NEG = /\b(no|not|denies|denied|denying|deny|without|never|nil)\b/i;
-  var kept = [];
-  for (var i = 0; i < clauses.length; i++) {
-    var clause = clauses[i];
-    var m = clause.match(NEG);
-    if (m) {
-      /* keep any text before the negation marker, drop the rest */
-      kept.push(clause.slice(0, m.index));
-    } else {
-      kept.push(clause);
-    }
-  }
-  return kept.join(", ");
-}
-
-function parseComplaintText(text) {
-  var t = [];
-
-  /* Negation handling: strip "no X" / "denies X" phrases up front */
-  text = stripNegatedPhrases(text);
-
-  /* Vision */
-  if (/blur|blurr|fuzzy|hazy/i.test(text))          t.push("blur");
-  if (/distance|far away|board|driving/i.test(text)) t.push("distance_blur");
-  if (/near|reading|close|phone|book/i.test(text))   t.push("near_blur");
-  if (/double|two of/i.test(text))                    t.push("diplopia");
-  if (/strain|fatigue|tired eye/i.test(text))         t.push("asthenopia");
-  if (/fluctuat|comes and goes|variable/i.test(text)) t.push("fluctuating_blur");
-
-  /* Pain */
-  /* (?!less) keeps "painless" from emitting pain */
-  if (/pain(?!less)|sore|ache|hurt/i.test(text))     t.push("pain");
-  if (/burn|sting/i.test(text))                       t.push("burning");
-  if (/dry|dried/i.test(text))                        t.push("dryness");
-  if (/itch/i.test(text))                             t.push("itching_dominant");
-  /* \bred\b avoids matching "reduced" */
-  if (/\bred\b|redness|red eye|bloodshot|pink/i.test(text)) t.push("redness");
-  if (/grit|sand|scratch/i.test(text))                t.push("grittiness");
-  if (/foreign body|something in/i.test(text))        t.push("foreign_body_sensation");
-
-  /* Light */
-  if (/light sensitiv|photophob|bright light/i.test(text)) t.push("photophobia");
-
-  /* Retinal */
-  if (/flash/i.test(text))                            t.push("flashes");
-  if (/floater|spots|cobweb|thread/i.test(text))     t.push("floaters");
-  if (/shadow|curtain|veil/i.test(text))              t.push("field_loss");
-  if (/missing.*vision|part.*gone/i.test(text))       t.push("field_loss");
-
-  /* Neuro */
-  if (/colo[u]?r.*change|faded|dull colo/i.test(text)) t.push("color_vision_loss");
-  if (/pain.*mov|hurt.*look|move.*pain/i.test(text))    t.push("pain_eye_movement");
-
-  /* Distortion */
-  if (/distort|wavy|bent line|metamorphop/i.test(text)) t.push("distortion");
-  if (/ghost|shadow image/i.test(text))                  t.push("ghosting");
-
-  /* Temporal */
-  if (/sudden/i.test(text))                           t.push("sudden_onset");
-  if (/gradual|slowly/i.test(text))                   t.push("gradual_onset");
-  if (/morning/i.test(text))                          t.push("morning_blur");
-  if (/evening|end of day|night/i.test(text))         t.push("worse_evening");
-  if (/worse.*screen|computer|laptop|phone/i.test(text)) t.push("screen_use_exacerbation");
-
-  /* Additional */
-  if (/glare|dazzle/i.test(text))                     t.push("glare");
-  if (/halo|ring.*light/i.test(text))                 t.push("halos");
-  if (/headache|head.*pain/i.test(text))              t.push("headache");
-  if (/water|tear|lacrim/i.test(text))                t.push("watering");
-  if (/discharg|matter|pus|gunk/i.test(text))         t.push("purulent_discharge");
-  if (/crust|stuck.*morning|glued/i.test(text))       t.push("lid_crusting");
-  if (/droop|ptosis/i.test(text))                     t.push("ptosis");
-  if (/night.*vision|dark.*see|night blind/i.test(text)) t.push("night_blindness");
-
-  return t;
-}
+/* STAGE 2 — PARSE FREE-TEXT COMPLAINT: stripNegatedPhrases() and
+   parseComplaintText() live in js/engine-inputs.js with the other readers
+   of recorded input. collectTokens() calls them. */
 
 
 /* ═══════════════════════════════════════════════════════════════ */
@@ -842,7 +830,8 @@ function applyDecisionTree(tokens) {
     gates.push({
       route: "urgent",
       reason: "Flashes + floaters → retinal tear / detachment",
-      conditions: ["Retinal Tear", "Retinal Detachment", "PVD"]
+      /* "PVD" matched no condition, so PVD was never surfaced by this gate */
+      conditions: ["Retinal Tear", "Retinal Detachment", "Posterior Vitreous Detachment (PVD)"]
     });
   }
 
@@ -860,7 +849,10 @@ function applyDecisionTree(tokens) {
     gates.push({
       route: "anterior",
       reason: "Pain + photophobia → anterior segment inflammation",
-      conditions: ["Anterior Uveitis (Acute)", "Keratitis", "Corneal Abrasion"]
+      /* "Keratitis" was listed here and matched no condition (there are 14
+         keratitis entries). Which, if any, this gate should surface is a
+         clinical call — NEEDS_CLINICAL_REVIEW, see NEEDS_REVIEW.md. */
+      conditions: ["Anterior Uveitis (Acute)", "Corneal Abrasion"]
     });
   }
 
@@ -1351,7 +1343,9 @@ function interpretConfidence(score) {
 /* based on hard clinical rules regardless of diagnosis             */
 /* ═══════════════════════════════════════════════════════════════ */
 
-function computeAlerts(tokens) {
+function computeAlerts(tokens, visit) {
+  var V = engineVisitView(visit);   /* shape-safe read view; see engineShape */
+  tokens = Array.isArray(tokens) ? tokens : [];
   var alerts = [];
 
   /* Symptom-based alerts */
@@ -1393,17 +1387,18 @@ function computeAlerts(tokens) {
   }
 
   /* RAPD */
-  if (V.pupil && V.pupil.rapd !== "None") {
+  if (V.pupil && rapdPresent(V.pupil.rapd)) {
     alerts.push({ m: "RAPD detected (" + V.pupil.rapd + ") — neuro-ophthalmic assessment", l: "urgent" });
   }
 
   /* Van Herick */
   if (V.sl) {
-    var vhOd = parseInt(V.sl.od.vh) || 99;
-    var vhOs = parseInt(V.sl.os.vh) || 99;
+    /* Grade 0 is a CLOSED angle — it used to read as 99 (see vanHerickGrade). */
+    var vhOd = vanHerickGrade(V.sl.od.vh);
+    var vhOs = vanHerickGrade(V.sl.os.vh);
     var _vhA = clinThreshold("van_herick_narrow", 2);
-    if (vhOd <= _vhA) alerts.push({ m: "Van Herick ≤" + _vhA + " OD — gonioscopy before dilation", l: "warn" });
-    if (vhOs <= _vhA) alerts.push({ m: "Van Herick ≤" + _vhA + " OS — gonioscopy before dilation", l: "warn" });
+    if (vhOd !== null && vhOd <= _vhA) alerts.push({ m: "Van Herick ≤" + _vhA + " OD — gonioscopy before dilation", l: "warn" });
+    if (vhOs !== null && vhOs <= _vhA) alerts.push({ m: "Van Herick ≤" + _vhA + " OS — gonioscopy before dilation", l: "warn" });
   }
 
   /* Diabetes + no fundus */
@@ -1534,9 +1529,11 @@ function computeDerivedAlerts(shownResults, existingAlerts) {
 /* diagnostic pathways                                             */
 /* ═══════════════════════════════════════════════════════════════ */
 
-function computeNudges(results, tokens) {
+function computeNudges(results, tokens, visit, patient) {
+  var V = engineVisitView(visit);
+  var P = enginePatientView(patient);
   var nudges = [];
-  var done = new Set(V.completed || []);
+  var done = new Set(V.completed);
   var added = {};
 
   function addNudge(msg, target) {
@@ -1552,8 +1549,8 @@ function computeNudges(results, tokens) {
      paperwork: for a child, the birth / developmental history and the
      paediatric section that a paediatric assessment is incomplete
      without. These are documentation suggestions, never diagnoses. */
-  var _age = parseInt((typeof P !== "undefined" && P) ? P.age : "", 10);
-  if (!isNaN(_age)) {
+  var _age = engineAgeYears(P);
+  if (_age !== null) {
     if (_age <= clinThreshold("age_paediatric_workup", 16)) {
       var paedOn = !!(V.modules && V.modules.paediatric);
       if (!paedOn) {
@@ -1605,186 +1602,6 @@ function computeNudges(results, tokens) {
   }
 
   return nudges.slice(0, 6);
-}
-
-
-/* ═══════════════════════════════════════════════════════════════ */
-/* NEXT-TEST RECOMMENDER — the diagnostic refinement loop           */
-/*                                                                  */
-/* Entopic does not hand back a single probabilistic "answer": it    */
-/* ranks a differential and then tells the clinician what to CHECK    */
-/* NEXT to narrow it. Given the current ranked list, this picks the   */
-/* findings that would best DISCRIMINATE between the leading          */
-/* candidates — confirm the leader, or rule out a close rival. As     */
-/* each finding is entered the engine re-runs (nav() re-scores) and   */
-/* the suggestions refine: a transparent, glass-box loop. The logic   */
-/* is fully deterministic and inspectable — no probabilistic guessing */
-/* and no LLM in the diagnostic path.                                 */
-/* ═══════════════════════════════════════════════════════════════ */
-
-/* Which exam step a given finding/measurement is entered on. */
-var NEXT_TEST_ROUTE_STEP = {
-  glaucoma: "iop", retina: "fundus", anterior: "slit_lamp", binocular: "bv",
-  neuro: "neuro", refractive: "refraction", lens: "slit_lamp",
-  surface: "slit_lamp", urgent: "slit_lamp"
-};
-var NEXT_TEST_TOKEN_STEP = {
-  very_high_iop: "iop", high_iop: "iop", normal_iop: "iop", raised_iop_risk: "iop",
-  angle_closure_risk: "gonioscopy", narrow_angle: "gonioscopy", shallow_ac: "gonioscopy",
-  pigment_dispersion: "gonioscopy", pxf_material: "gonioscopy", transillumination_defects: "gonioscopy",
-  RAPD_positive: "pupil", anisocoria: "pupil", pupil_involvement: "pupil", heterochromia: "pupil",
-  macular_screening_needed: "investigations", RNFL_thinning: "investigations",
-  cd_asymmetry: "fundus", increased_cd: "fundus", nrr_thinning: "fundus", disc_hemorrhage: "fundus"
-};
-
-/* Reverse the finding→token map once: token → human-readable finding name.
-   A finding's own canonical token is its LAST entry — map ONLY that, so a
-   generic shared token (e.g. sudden_onset, which several findings list as a
-   secondary token) is never mislabeled as one specific finding. Tokens with
-   no canonical finding fall back to a prettified name. */
-var NEXT_TEST_LABELS = null;
-function buildNextTestLabels() {
-  if (NEXT_TEST_LABELS) return NEXT_TEST_LABELS;
-  NEXT_TEST_LABELS = Object.create(null);
-  if (typeof FINDING_TOKEN_MAP === "undefined") return NEXT_TEST_LABELS;
-  /* Own keys / real token lists only — an inherited one would name a
-     finding that does not exist. */
-  for (var name in FINDING_TOKEN_MAP) {
-    if (!Object.prototype.hasOwnProperty.call(FINDING_TOKEN_MAP, name)) continue;
-    var toks = FINDING_TOKEN_MAP[name];
-    if (!Array.isArray(toks) || !toks.length) continue;
-    var own = toks[toks.length - 1];
-    if (!NEXT_TEST_LABELS[own]) NEXT_TEST_LABELS[own] = name;
-  }
-  return NEXT_TEST_LABELS;
-}
-
-function prettyToken(t) {
-  return t.replace(/_/g, " ").replace(/\b\w/g, function (m) { return m.toUpperCase(); });
-}
-
-/* Onset / course tokens are captured at intake, not "checked next" — they add
-   noise to a next-test list, so they never qualify as discriminators. */
-var NEXT_TEST_SKIP = {
-  sudden_onset: 1, gradual_onset: 1, acute: 1, chronic: 1, subacute: 1,
-  acute_bias: 1, chronic_bias: 1, recurrent: 1, progressive: 1, variable: 1,
-  intermittent: 1, subacute_onset: 1
-};
-
-/* A finding is only worth suggesting if the clinician can actually enter it —
-   i.e. it is reachable (has a producing input source) in the token registry. */
-function isEnterableToken(t) {
-  if (Object.prototype.hasOwnProperty.call(NEXT_TEST_SKIP, t) && NEXT_TEST_SKIP[t]) return false;
-  if (typeof TOKEN_REGISTRY === "undefined") return true;
-  var e = TOKEN_REGISTRY[t];
-  return !!(e && e.reachable !== false);
-}
-
-/* Where to send the clinician to record this finding: an explicit override,
-   else an exam finding → the related condition's route step, else a
-   symptom/history token → chief complaint. */
-function nextTestTarget(token, relCond) {
-  if (NEXT_TEST_TOKEN_STEP[token]) return NEXT_TEST_TOKEN_STEP[token];
-  var reg = (typeof TOKEN_REGISTRY !== "undefined") ? TOKEN_REGISTRY[token] : null;
-  var src = (reg && reg.sources) ? reg.sources : [];
-  if (src.indexOf("finding_map") >= 0) return (relCond && NEXT_TEST_ROUTE_STEP[relCond.route]) || "slit_lamp";
-  if (src.indexOf("symptom_chip") >= 0 || src.indexOf("dictionary") >= 0) return "chief_complaint";
-  return (relCond && NEXT_TEST_ROUTE_STEP[relCond.route]) || "slit_lamp";
-}
-
-function computeNextTests(results, tokens) {
-  if (!results || results.length < 2) return [];
-  var present = {};
-  for (var pi = 0; pi < tokens.length; pi++) present[tokens[pi]] = true;
-
-  /* Focus = the leader plus close rivals actually in contention. Only worth
-     suggesting a discriminating finding when ≥2 candidates compete. */
-  var leader = results[0];
-  if (!leader || leader.score <= 0) return [];
-  var focus = [];
-  for (var i = 0; i < results.length && focus.length < 5; i++) {
-    var r = results[i];
-    if (r.score <= 0) continue;
-    if (i === 0 || r.score >= leader.score - 0.30) focus.push(r);
-  }
-  if (focus.length < 2) return [];
-
-  /* Candidate discriminators = the focus conditions' objective tests +
-     supportive + contradicting features, not already present and enterable.
-     Track, per token, which focus conditions it would CONFIRM vs argue
-     AGAINST (by focus index). */
-  var cand = Object.create(null);   /* token-keyed — see kbMap(), loader.js */
-  for (var f = 0; f < focus.length; f++) {
-    var c = findCondition(focus[f].name);
-    if (!c) continue;
-    var lists = [
-      { arr: c.tests || [], kind: "confirm", isTest: true },
-      { arr: c.sup || [], kind: "confirm", isTest: false },
-      { arr: c.con || [], kind: "exclude", isTest: false }
-    ];
-    for (var li = 0; li < lists.length; li++) {
-      var arr = lists[li].arr;
-      for (var ai = 0; ai < arr.length; ai++) {
-        var tok = arr[ai];
-        if (present[tok] || !isEnterableToken(tok)) continue;
-        if (!cand[tok]) cand[tok] = { confirm: [], exclude: [], isTest: false };
-        if (lists[li].kind === "confirm") {
-          if (cand[tok].confirm.indexOf(f) < 0) cand[tok].confirm.push(f);
-          if (lists[li].isTest) cand[tok].isTest = true;
-        } else {
-          if (cand[tok].exclude.indexOf(f) < 0) cand[tok].exclude.push(f);
-        }
-      }
-    }
-  }
-
-  /* Score by DISCRIMINATION power. A finding shared by every focus condition
-     (and ruling none out) tells you nothing — skip it. A finding that lifts
-     the leader above some rivals, or clears a competitor, is most useful. */
-  var scored = [];
-  for (var tok in cand) {
-    var info = cand[tok];
-    var affected = {};
-    for (var x = 0; x < info.confirm.length; x++) affected[info.confirm[x]] = true;
-    for (var y = 0; y < info.exclude.length; y++) affected[info.exclude[y]] = true;
-    if (Object.keys(affected).length === 0) continue;
-    if (info.confirm.length === focus.length && info.exclude.length === 0) continue;
-
-    var value = info.confirm.length * 1.0 + info.exclude.length * 1.2;
-    var confirmsLeader = info.confirm.indexOf(0) >= 0;
-    var excludesLeader = info.exclude.indexOf(0) >= 0;
-    if (confirmsLeader && info.confirm.length < focus.length) value += 1.5;
-    if (info.exclude.length > 0 && !excludesLeader) value += 1.5; /* clears a rival */
-    if (info.isTest) value += 0.4;                                /* objective > subjective */
-
-    scored.push({ token: tok, value: value, info: info });
-  }
-  if (!scored.length) return [];
-  scored.sort(function (a, b) {
-    if (b.value !== a.value) return b.value - a.value;
-    return a.token < b.token ? -1 : (a.token > b.token ? 1 : 0);
-  });
-
-  var labels = buildNextTestLabels();
-  var out = [];
-  for (var s = 0; s < scored.length && out.length < 4; s++) {
-    var it = scored[s], nfo = it.info;
-    var confirmNames = [], excludeNames = [];
-    for (var ci = 0; ci < nfo.confirm.length; ci++) confirmNames.push(focus[nfo.confirm[ci]].name);
-    for (var ei = 0; ei < nfo.exclude.length; ei++) excludeNames.push(focus[nfo.exclude[ei]].name);
-    var relIdx = nfo.confirm.length ? nfo.confirm[0] : nfo.exclude[0];
-    var relCond = findCondition(focus[relIdx].name);
-    var target = nextTestTarget(it.token, relCond);
-    out.push({
-      token: it.token,
-      label: labels[it.token] || prettyToken(it.token),
-      confirms: confirmNames,
-      excludes: excludeNames,
-      isTest: nfo.isTest,
-      target: target
-    });
-  }
-  return out;
 }
 
 
@@ -1899,27 +1716,64 @@ function runDiagnosticEngine() {
     : _runDiagnosticEngine();
 }
 
-function _runDiagnosticEngine() {
+/* ── FAILURE CONTAINMENT ────────────────────────────────────────── */
 
-  /* Guard: check if visit data exists */
-  if (!V || !V.symptoms) return;
+/* Run one non-safety stage; on a throw, record it and use `fallback`. A
+   failing suggestion list must not take the red flags down with it. */
+function _engineStage(what, fallback, fn) {
+  try { return fn(); }
+  catch (e) { _engineNoteError(what, e); return fallback; }
+}
 
-  ENGINE_STATE.runCount++;
+function _engineNoteError(what, e) {
+  ENGINE_STATE.lastError = {
+    stage: what,
+    message: String((e && e.message) || e).slice(0, 300),
+    at: new Date().toISOString()
+  };
+  if (typeof console !== "undefined" && console.error) console.error("Entopic engine — " + what + ":", e);
+}
 
-  /* ── STAGE 1: Collect all tokens ── */
-  var tokens = collectTokens();
+function _engineRedFlagFailure(e) {
+  _engineNoteError("red-flag checks", e);
+  return {
+    m: "Red-flag checks could not run on this record — review every finding manually before the patient leaves.",
+    l: "urgent",
+    engine_error: true
+  };
+}
 
-  /* ── Empty check ── */
-  if (tokens.length === 0) {
-    V.dxList = [];
-    V.problemFoci = [];
-    V.alerts = [];
-    V.nudges = [];
-    V.nextTests = [];
-    ENGINE_STATE.tokens = [];
-    ENGINE_STATE.results = [];
-    return;
+/* The differential could not be built. Never leave the previous run's
+   list on screen as though it were current: clear it, run the red-flag
+   rules on whatever tokens were read, and say plainly what happened. */
+function _engineFailSafe(tokens, what, e) {
+  _engineNoteError(what, e);
+  V.dxList = [];
+  V.problemFoci = [];
+  V.nudges = [];
+  V.nextTests = [];
+  var alerts;
+  try {
+    alerts = computeAlerts(tokens || []);
+  } catch (e2) {
+    alerts = [_engineRedFlagFailure(e2)];
   }
+  alerts.push({
+    m: "Entopic could not finish " + what + " — no differential is shown. " +
+       "Red-flag checks ran on the findings it could read; review this record manually.",
+    l: "warn",
+    engine_error: true
+  });
+  V.alerts = alerts;
+  ENGINE_STATE.tokens = (tokens || []).slice();
+  ENGINE_STATE.results = [];
+}
+
+/* STAGES 3–9 of a run: normalise → gate → route → score → exclude → rank
+   → the shown differential, written to V.dxList. Returns what the later
+   stages need. Split out of _runDiagnosticEngine so a failure here can be
+   caught without losing the red-flag stage. */
+function _engineDifferential(tokens) {
 
   /* ── STAGE 3: Normalize ── */
   tokens = normalizeTokens(tokens);
@@ -2188,20 +2042,81 @@ function _runDiagnosticEngine() {
     try { V.kb_provenance = overlayProvenance(); } catch (e) {}
   }
 
+  return { tokens: tokens, routes: routes, results: results,
+           overlayResults: overlayResults, mergedShown: mergedShown };
+}
+
+function _runDiagnosticEngine() {
+
+  /* No visit open — the home screen holds V = {}. This used to test for
+     `V.symptoms`, and a saved visit from an older build that lacked that
+     one array made the engine return early and SILENTLY: IOP 45 with an
+     RAPD raised no red flag and the panel kept whatever it showed before. */
+  if (!V || typeof V !== "object" || Object.keys(V).length === 0) return;
+
+  ENGINE_STATE.runCount++;
+  ENGINE_STATE.lastError = null;
+
+  /* ── STAGE 1: Collect all tokens ── */
+  var tokens;
+  try {
+    tokens = collectTokens();
+  } catch (e) {
+    _engineFailSafe([], "reading this record", e);
+    return;
+  }
+
+  /* ── Empty check ── */
+  if (tokens.length === 0) {
+    V.dxList = [];
+    V.problemFoci = [];
+    V.alerts = [];
+    V.nudges = [];
+    V.nextTests = [];
+    ENGINE_STATE.tokens = [];
+    ENGINE_STATE.results = [];
+    return;
+  }
+
+  /* ── STAGES 3–9: the differential ──
+     Isolated: if anything in scoring throws (a malformed knowledge-base
+     entry, a clinician-authored condition), the red-flag stage below must
+     still run. A throw here used to end the whole run before STAGE 10. */
+  var dx;
+  try {
+    dx = _engineDifferential(tokens);
+  } catch (e) {
+    _engineFailSafe(tokens, "building the differential", e);
+    return;
+  }
+  tokens = dx.tokens;
+  var routes = dx.routes, results = dx.results;
+  var overlayResults = dx.overlayResults, mergedShown = dx.mergedShown;
+
   /* ── Problem foci (concurrent independent problems) ──
      Core results only: a working-problem grouping built partly from
      unreviewed personal conditions would present them as established. */
-  V.problemFoci = computeProblemFoci(V.dxList.filter(function (d) { return !d.overlay; }));
+  V.problemFoci = _engineStage("grouping the working problems", [], function () {
+    return computeProblemFoci(V.dxList.filter(function (d) { return !d.overlay; }));
+  });
 
   /* ── STAGE 10: Alerts ──
      CORE alerts are computed first and independently of everything above, so
-     nothing an overlay does can alter, reorder or suppress them. */
-  V.alerts = computeAlerts(tokens);
+     nothing an overlay does can alter, reorder or suppress them. If the
+     red-flag rules themselves cannot run, the clinician is told so in an
+     urgent banner — an empty alert box must never mean "the checks failed". */
+  try {
+    V.alerts = computeAlerts(tokens);
+  } catch (e) {
+    V.alerts = [_engineRedFlagFailure(e)];
+  }
 
   /* Derived alerts (F-1): any urgent CORE condition that reached the shown
      differential and which no hand-written rule already named. Appended, so
      the 17 specific rules keep their place at the top. */
-  var _derived = computeDerivedAlerts(mergedShown, V.alerts);
+  var _derived = _engineStage("naming urgent conditions", [], function () {
+    return computeDerivedAlerts(mergedShown, V.alerts);
+  });
   for (var dv = 0; dv < _derived.length; dv++) V.alerts.push(_derived[dv]);
 
   /* User-authored urgent conditions ADD an alert; they never replace one.
@@ -2224,20 +2139,26 @@ function _runDiagnosticEngine() {
   }
 
   /* ── STAGE 11: Nudges ── */
-  V.nudges = computeNudges(results, tokens);
+  V.nudges = _engineStage("suggesting next steps", [], function () {
+    return computeNudges(results, tokens);
+  });
 
   /* ── STAGE 12: Next-test recommender (diagnostic refinement loop) ──
      Uses the SHOWN differential so suggestions track exactly what the
      clinician sees; recomputed every time the engine re-runs (nav()), which
      is what makes it a live narrowing loop. */
-  V.nextTests = computeNextTests(results, tokens);
+  V.nextTests = _engineStage("suggesting discriminating tests", [], function () {
+    return computeNextTests(results, tokens);
+  });
 
   /* ── STAGE 12: Log ── */
-  logEngineRun({
-    tokens: tokens,
-    routes: routes,
-    results: results,
-    alerts: V.alerts
+  _engineStage("logging the run", null, function () {
+    logEngineRun({
+      tokens: tokens,
+      routes: routes,
+      results: results,
+      alerts: V.alerts
+    });
   });
 
   /* Store in visit for persistence */

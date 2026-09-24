@@ -39,7 +39,7 @@ function engineAlertPushes() {
 /* ═══ THE REGISTER AND THE CODE AGREE ═══ */
 
 test("every alert the engine can raise is declared in the register", () => {
-  const declared = R.RED_FLAG_RULES.concat([R.RED_FLAG_DERIVED_RULE, R.RED_FLAG_OVERLAY_RULE]);
+  const declared = R.RED_FLAG_RULES.concat([R.RED_FLAG_DERIVED_RULE, R.RED_FLAG_OVERLAY_RULE], R.RED_FLAG_SYSTEM_RULES);
   const undeclared = engineAlertPushes().filter((p) =>
     !declared.some((d) => p.expr.indexOf(d.match) >= 0));
   assert.deepStrictEqual(undeclared.map((u) => u.expr.trim()), [],
@@ -106,7 +106,8 @@ test("ids are unique — the test that pins this to the code depends on it", () 
 });
 
 test("redFlagsUnverified lists everything still awaiting the founder", () => {
-  assert.strictEqual(R.redFlagsUnverified().length, R.RED_FLAG_RULES.length + 2,
+  /* + derived + overlay + the two engine-failure notices */
+  assert.strictEqual(R.redFlagsUnverified().length, R.RED_FLAG_RULES.length + 2 + R.RED_FLAG_SYSTEM_RULES.length,
     "not one red-flag rule has been clinically signed off yet; if that changes, " +
     "this number changes with it, deliberately");
 });
