@@ -70,8 +70,9 @@ function impactTokensOf(storedVisit) {
    thought, not what the clinician decided. Prefer a recorded diagnosis. */
 function impactActualDx(storedVisit) {
   var d = (storedVisit && storedVisit.data) || storedVisit || {};
-  if (d.final_dx) return String(d.final_dx);
-  if (d.plan && d.plan.diagnosis) return String(d.plan.diagnosis);
+  /* final_dx is the clinician's field (Diagnosis step). A plan.diagnosis
+     was also read here; no such field exists in the schema. */
+  if (String(d.final_dx || "").trim()) return String(d.final_dx);
   if (Array.isArray(d.dxList) && d.dxList.length) {
     return String(d.dxList[0].n || "");   /* engine's leader — weaker evidence */
   }
@@ -80,7 +81,7 @@ function impactActualDx(storedVisit) {
 
 function impactActualDxIsClinicianRecorded(storedVisit) {
   var d = (storedVisit && storedVisit.data) || storedVisit || {};
-  return !!(d.final_dx || (d.plan && d.plan.diagnosis));
+  return !!String(d.final_dx || "").trim();
 }
 
 /* Run a draft condition against this clinician's own past visits.

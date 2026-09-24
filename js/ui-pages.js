@@ -440,8 +440,11 @@ function pgHxF() {
 function pgVA() {
   /* Age-adaptive chart recommendation */
   var chartRec = "";
-  var age = parseInt(P.age) || 0;
-  if (age > 0) {
+  /* An infant is recorded as age 0 — the "0-2" recommendation (preferential
+     looking, Teller cards) exists for exactly them, and `|| 0` + `age > 0`
+     hid it. Blank is unknown; 0 is a child under one. */
+  var age = _uiAgeYears();
+  if (age !== null) {
     var ageKey = age < 2 ? "0-2" : age < 4 ? "2-4" : age < 7 ? "4-7" : age < 16 ? "7-16" : "16+";
     var recommended = AGE_CHART_MAP[ageKey];
     if (recommended) {
@@ -614,6 +617,12 @@ function rxCycloElapsed() {
   then.setHours(parseInt(m[1], 10), parseInt(m[2], 10), 0, 0);
   var mins = Math.floor((now - then) / 60000);
   if (mins < 0) mins += 24 * 60; /* instilled just before midnight */
+  /* A time LATER than now (typed ahead, or a slip) used to wrap to "almost a
+     day ago" — 14:30 entered at 14:00 read as 1,410 minutes elapsed and
+     "ready to repeat retinoscopy" before the drops were in. A cycloplegic
+     hold is measured in minutes, so a wrap past 12 hours is a time that has
+     not happened yet: not started. */
+  if (mins > 12 * 60) return null;
   return mins;
 }
 
@@ -1099,6 +1108,13 @@ function bvSel(key, label, opts, live) {
     optionsHtml(V.bv[key] || "", opts) + '</select></div>';
 }
 
+/* Age in whole years, or null when none is recorded ("0" is an infant). */
+function _uiAgeYears() {
+  var raw = (P && P.age !== undefined && P.age !== null) ? String(P.age).trim() : "";
+  var n = parseFloat(raw);
+  return (raw !== "" && isFinite(n) && n >= 0) ? Math.floor(n) : null;
+}
+
 /* The Van Herick grade to show as selected: "0".."4" from either a stored
    grade or a label saved before the dropdown stored grades. */
 function _vhShown(v) {
@@ -1119,8 +1135,11 @@ function bvSection(id, title, body, openByDefault) {
 }
 
 function pgBV() {
-  var age = parseInt(P.age) || 25;
-  var hof = hofstetter(age);
+  /* The expected-amplitude hint was computed for an INVENTED age of 25 when
+     no age was recorded — a reference number for a patient who does not
+     exist. No age, no hint. */
+  var age = _uiAgeYears();
+  var hof = (age !== null) ? hofstetter(age) : { min: null, avg: null, max: null };
 
   /* ── 1. Alignment ── */
   var alignment =

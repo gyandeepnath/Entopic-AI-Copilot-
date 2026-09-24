@@ -34,21 +34,47 @@ function saAge() {
   return (typeof P !== "undefined" && P) ? (parseInt(P.age, 10) || 0) : 0;
 }
 
+/* Occupation, lower-cased; "" when no patient is loaded (P.occupation on a
+   null P threw and took the advisor panel with it). */
+function saOccupation() {
+  return (typeof P !== "undefined" && P && P.occupation) ? String(P.occupation).toLowerCase() : "";
+}
+
+/* The strongest meridian of one eye's prescription, in dioptres (absolute):
+   max(|sph|, |sph + cyl|). "plano"/blank read as 0. */
+function saMaxMeridian(eye) {
+  var sph = parseFloat(saRx(eye, "sph")), cyl = parseFloat(saRx(eye, "cyl"));
+  sph = isFinite(sph) ? sph : 0;
+  cyl = isFinite(cyl) ? cyl : 0;
+  return Math.max(Math.abs(sph), Math.abs(sph + cyl));
+}
+
+/* Is there any prescription to advise on? A pure astigmat is written with a
+   blank sphere ("plano / -2.50 x 90"), and gating on the sphere alone told
+   them to "enter refraction data" — the engine had the same gate and the
+   same bug, fixed earlier. */
+function saHasRx() {
+  var parts = ["sph", "cyl", "add"];
+  for (var e = 0; e < 2; e++) {
+    for (var i = 0; i < parts.length; i++) {
+      var v = saRx(e ? "os" : "od", parts[i]);
+      if (v !== undefined && v !== null && String(v).trim() !== "") return true;
+    }
+  }
+  return false;
+}
+
 /* ═══════════════════════════════════════════════════════════════ */
 /* LENS INDEX RECOMMENDATION                                       */
 /* Based on highest sphere + cylinder power                        */
 /* ═══════════════════════════════════════════════════════════════ */
 
 function recommendLensIndex() {
-  var sphOd = Math.abs(parseFloat(saRx("od","sph")) || 0);
-  var sphOs = Math.abs(parseFloat(saRx("os","sph")) || 0);
-  var cylOd = Math.abs(parseFloat(saRx("od","cyl")) || 0);
-  var cylOs = Math.abs(parseFloat(saRx("os","cyl")) || 0);
-
-  /* Calculate effective power (sphere + half cylinder as proxy) */
-  var powerOd = sphOd + (cylOd * 0.5);
-  var powerOs = sphOs + (cylOs * 0.5);
-  var maxPower = Math.max(powerOd, powerOs);
+  /* Lens thickness is set by the STRONGEST MERIDIAN: |sph| and |sph + cyl|.
+     This used |sph| + ½|cyl|, which throws the signs away — a mixed
+     astigmat of +2.00 / −4.00 (meridians +2.00 and −2.00) counted as 4.00 D,
+     and a −2.00 / −4.00 (strongest meridian −6.00) as only 4.00 D. */
+  var maxPower = Math.max(saMaxMeridian("od"), saMaxMeridian("os"));
 
   if (maxPower <= 2.00) {
     return {
@@ -86,14 +112,14 @@ function recommendLensIndex() {
 
 /* ═══════════════════════════════════════════════════════════════ */
 /* LENS DESIGN RECOMMENDATION                                     */
-/* Based on add power, age, occupation                             */
+/* Based on add power, age and screen hours (occupation is used    */
+/* only by the coating advice below)                               */
 /* ═══════════════════════════════════════════════════════════════ */
 
 function recommendLensDesign() {
   var age = saAge();
   var hasAdd = !!(saRx("od","add") || saRx("os","add"));
   var addVal = parseFloat(saRx("od","add")) || parseFloat(saRx("os","add")) || 0;
-  var occ = (P.occupation || "").toLowerCase();
   var vdu = saVdu();
 
   var recommendations = [];
@@ -153,10 +179,14 @@ function recommendLensDesign() {
     });
 
     /* Special cases */
+    /* The rationale used to promise "digital strain reduction". For the
+       blue-light half of that, the best available evidence says otherwise
+       (see recommendCoatings below). NEEDS_CLINICAL_REVIEW — the founder to
+       confirm the wording and whether this suggestion stays. */
     if (vdu >= 6 && age >= 25) {
       recommendations.push({
         design: "Anti-fatigue / blue light lens",
-        rationale: "Heavy screen use (" + vdu + "hrs/day) — digital strain reduction.",
+        rationale: "Heavy screen use (" + vdu + "hrs/day) — may be considered for comfort; benefit for eye strain is not established.",
         priority: "suggestion"
       });
     }
@@ -173,7 +203,7 @@ function recommendLensDesign() {
 function recommendCoatings() {
   var coatings = [];
   var vdu = saVdu();
-  var occ = (P.occupation || "").toLowerCase();
+  var occ = saOccupation();
 
   /* MAR — always recommended */
   coatings.push({
@@ -182,12 +212,19 @@ function recommendCoatings() {
     priority: "essential"
   });
 
-  /* Blue light — for screen users */
+  /* Blue light — for screen users.
+     The rationale used to say it "reduces digital eye strain". A Cochrane
+     systematic review (Singh S et al., Cochrane Database Syst Rev 2023;8:
+     CD013244, doi:10.1002/14651858.CD013244.pub2 — retrieved and read via
+     PubMed, 2026-09-24) found blue-light filtering lenses may NOT attenuate
+     eye strain with computer use (low-certainty evidence) and no effect on
+     acuity. So no efficacy claim, and "optional" rather than "recommended".
+     NEEDS_CLINICAL_REVIEW — the founder to confirm the wording. */
   if (vdu >= 3) {
     coatings.push({
       coating: "Blue light filter",
-      rationale: "VDU " + vdu + "hrs/day — reduces digital eye strain and blue light exposure.",
-      priority: "recommended"
+      rationale: "VDU " + vdu + "hrs/day — optional if the patient prefers it; not shown to reduce digital eye strain.",
+      priority: "optional"
     });
   }
 
@@ -232,7 +269,7 @@ function recommendCoatings() {
 
 function renderSpectacleAdvisor() {
   /* Check if Rx data exists */
-  if (!saRx("od","sph") && !saRx("os","sph")) {
+  if (!saHasRx()) {
     return '<div style="font-size:.62rem;color:var(--sv);padding:8px">Enter refraction data to generate lens recommendations.</div>';
   }
 
@@ -273,8 +310,8 @@ function renderSpectacleAdvisor() {
 
   for (var ci = 0; ci < coatingRecs.length; ci++) {
     var cr = coatingRecs[ci];
-    var cpLabel = cr.priority === "essential" ? "ESSENTIAL" : "RECOMMENDED";
-    var cpColor = cr.priority === "essential" ? "var(--ink)" : "var(--md)";
+    var cpLabel = cr.priority === "essential" ? "ESSENTIAL" : cr.priority === "optional" ? "OPTIONAL" : "RECOMMENDED";
+    var cpColor = cr.priority === "essential" ? "var(--ink)" : cr.priority === "optional" ? "var(--sv)" : "var(--md)";
 
     h += '<div style="padding:2px 0;font-size:.62rem">';
     h += '<span style="font-weight:500">' + cr.coating + '</span>';

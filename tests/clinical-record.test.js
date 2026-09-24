@@ -250,3 +250,29 @@ test("the continuous record prints the eye alongside the finding", () => {
   const fun = rec[0].sections.find((s) => /Fundus/.test(s.label));
   assert.strictEqual(fun.value, "Old finding", "a legacy finding prints as it was recorded, with no invented eye");
 });
+
+
+/* ═══ THE RECORD READS THE SCHEMA'S FIELD NAMES ═══
+   recVisitSections read va.od_aided / od_unaided, rx.add, sl.od.tbut and
+   fun.od.cd — none of which exist in blankVisit(). So the continuous record
+   never showed a visual acuity, an add, a TBUT or a cup:disc ratio for any
+   patient. Found by checking every field read in js/ against the schema. */
+test("the continuous record shows VA, add, TBUT, Schirmer and C:D as recorded", () => {
+  const S = R.recVisitSections({ data: {
+    va: { od_un: "6/18", os_un: "6/12", od_aid: "6/9", os_aid: "6/9", od_bva: "6/6", os_bva: "6/6" },
+    rx: { od_sph: "", od_cyl: "-1.50", od_ax: "90", os_sph: "-0.50", od_add: "+2.00", os_add: "+2.00",
+          fin_od_sph: "", fin_od_cyl: "-1.25", fin_od_ax: "90", fin_os_sph: "-0.50" },
+    sl: { od: { but: "0", schirmer: "4" }, os: { but: "7", schirmer: "" }, findings: [] },
+    fun: { od: { cd_v: "0.7" }, os: { cd_v: "0.4" }, findings: [] }
+  } });
+  const byLabel = Object.fromEntries(S.map((s) => [s.label, s.value]));
+  assert.strictEqual(byLabel["Visual acuity (unaided)"], "OD 6/18 / OS 6/12");
+  assert.strictEqual(byLabel["Visual acuity (habitual correction)"], "OD 6/9 / OS 6/9");
+  assert.strictEqual(byLabel["Best-corrected VA"], "OD 6/6 / OS 6/6");
+  assert.ok(/add \+2\.00/.test(byLabel["Refraction (subjective)"]), "the add was never shown");
+  assert.ok(/-1\.50/.test(byLabel["Refraction (subjective)"]), "a pure astigmat (sphere blank) is a refraction");
+  assert.ok(/-1\.25/.test(byLabel["Prescription issued"]), "the issued prescription, where it differs");
+  assert.strictEqual(byLabel["TBUT"], "OD 0 / OS 7 s", "a TBUT of 0 is a result");
+  assert.strictEqual(byLabel["Schirmer"], "OD 4 / OS — mm");
+  assert.strictEqual(byLabel["Cup:disc (vertical)"], "OD 0.7 / OS 0.4");
+});

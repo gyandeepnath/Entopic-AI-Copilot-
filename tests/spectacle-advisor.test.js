@@ -104,3 +104,38 @@ test("the module says it is advisory", () => {
   assert.match(read("js/spectacle-advisor.js"), /Advisory only/i,
     "the advisor no longer states that the clinician makes the final call");
 });
+
+
+/* ═══ FULL AUDIT, 2026-09-24 ═══ */
+
+test("lens thickness follows the STRONGEST MERIDIAN, signs included", () => {
+  /* |sph| + ½|cyl| threw the signs away: +2.00 / −4.00 (meridians +2 and −2)
+     counted as 4 D; −2.00 / −4.00 (strongest meridian −6) as only 4 D. */
+  const idx = (rx) => JSON.parse(advisor(rx).run("JSON.stringify(recommendLensIndex())")).index;
+  assert.ok(/CR-39/.test(idx({ od_sph: "+2.00", od_cyl: "-4.00" })), "a mixed astigmat with ±2 D meridians is low power");
+  assert.ok(/1\.60|1\.67/.test(idx({ od_sph: "-2.00", od_cyl: "-4.00" })), "a −6 D meridian is high power");
+  assert.strictEqual(advisor({ od_sph: "-2.00", od_cyl: "-4.00" }).run("saMaxMeridian('od')"), 6);
+});
+
+test("a pure astigmat (sphere blank) still gets advice", () => {
+  const out = advisor({ od_sph: "", od_cyl: "-2.50", od_axis: "90" }).run("renderSpectacleAdvisor()");
+  assert.ok(!/Enter refraction data/.test(out), "told a recorded astigmat to 'enter refraction data'");
+  assert.ok(/CR-39|Polycarbonate|Hi-Index/.test(out));
+});
+
+test("no patient object does not take the coatings panel down", () => {
+  const ctx = advisor({ od_sph: "-3.00" }, { P: null });
+  assert.doesNotThrow(() => ctx.run("recommendCoatings()"));
+  assert.doesNotThrow(() => ctx.run("renderSpectacleAdvisor()"));
+});
+
+test("the advisor makes no eye-strain claim for blue-light filtering", () => {
+  /* Cochrane (Singh et al. 2023, CD013244): may NOT attenuate computer eye
+     strain. The text used to say it "reduces digital eye strain". */
+  const ctx = advisor({ od_sph: "-3.00" }, { V: { rx: { od_sph: "-3.00" }, hxS: { vdu: "8" } } });
+  const coat = JSON.parse(ctx.run("JSON.stringify(recommendCoatings())"));
+  const blue = coat.find((c) => /blue/i.test(c.coating));
+  assert.ok(blue, "the option itself is still offered for heavy screen use");
+  assert.ok(!/reduces digital eye strain/i.test(blue.rationale), blue.rationale);
+  assert.strictEqual(blue.priority, "optional");
+});

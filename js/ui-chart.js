@@ -35,9 +35,15 @@ function _inProgressVisit() {
 }
 
 /* Leading diagnosis recorded on a visit (from its saved differential). */
+/* The clinician's own diagnosis when one was recorded; otherwise the
+   engine's leader, labelled as the engine's — the chart must never present
+   a decision-support suggestion as what the clinician concluded. */
 function _leadingDx(visit) {
-  var dl = (visit.data && visit.data.dxList) || [];
-  return dl.length ? dl[0].n + " (" + Math.round((dl[0].prob || 0) * 100) + "%)" : "—";
+  var d = (visit && visit.data) || {};
+  var own = String(d.final_dx || "").trim();
+  if (own) return own + " (clinician)";
+  var dl = d.dxList || [];
+  return dl.length ? dl[0].n + " (" + Math.round((dl[0].prob || 0) * 100) + "%, engine — advisory)" : "—";
 }
 
 /* Which exam areas hold data — a compact "what was done" summary. */

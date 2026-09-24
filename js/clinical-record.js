@@ -270,6 +270,20 @@ function recVal(v) {
   var s = String(v).trim();
   return s;
 }
+/* One stage of a refraction as "OD sph / cyl / ax add N  OS …", or "" when
+   neither eye has anything recorded at that stage. */
+function recRx(rx, prefix) {
+  function eye(e) {
+    var p = prefix + e + "_";
+    var parts = [recVal(rx[p + "sph"]), recVal(rx[p + "cyl"]), recVal(rx[p + "ax"])].filter(Boolean);
+    var add = recVal(rx[p + "add"]);
+    return parts.join(" / ") + (add ? " add " + add : "");
+  }
+  var od = eye("od"), os = eye("os");
+  if (!od && !os) return "";
+  return "OD " + (od || "—") + "  OS " + (os || "—");
+}
+
 function recPair(od, os, unit) {
   od = recVal(od); os = recVal(os);
   if (!od && !os) return "";
@@ -294,24 +308,37 @@ function recVisitSections(visit) {
     add("Onset / duration", [recVal(d.temporal.onset), recVal(d.temporal.duration)].filter(Boolean).join(", "));
   }
 
-  /* Vision + refraction */
+  /* Vision + refraction.
+     Field names are the SCHEMA's (blankVisit): va.od_un / od_aid / od_bva,
+     rx.od_add. This read va.od_aided / od_unaided and rx.add, which do not
+     exist — so the continuous record never showed a visual acuity or an
+     add, for any patient. Found by checking every field read in the code
+     against the schema (full audit, 2026-09-24). */
   if (d.va) {
-    add("Visual acuity (aided)", recPair(d.va.od_aided, d.va.os_aided));
-    add("Visual acuity (unaided)", recPair(d.va.od_unaided, d.va.os_unaided));
+    add("Visual acuity (unaided)", recPair(d.va.od_un, d.va.os_un));
+    add("Visual acuity (habitual correction)", recPair(d.va.od_aid, d.va.os_aid));
     add("Pinhole", recPair(d.va.od_ph, d.va.os_ph));
+    add("Best-corrected VA", recPair(d.va.od_bva, d.va.os_bva));
+    add("Near VA", recPair(d.va.od_near, d.va.os_near));
   }
-  if (d.rx && (d.rx.od_sph || d.rx.os_sph)) {
-    var rxOd = [recVal(d.rx.od_sph), recVal(d.rx.od_cyl), recVal(d.rx.od_ax)].filter(Boolean).join(" / ");
-    var rxOs = [recVal(d.rx.os_sph), recVal(d.rx.os_cyl), recVal(d.rx.os_ax)].filter(Boolean).join(" / ");
-    add("Refraction", "OD " + (rxOd || "—") + "  OS " + (rxOs || "—") +
-      (d.rx.add ? "  add " + recVal(d.rx.add) : ""));
+  if (d.rx) {
+    /* Subjective, and the final prescription where one was issued and
+       differs: the final is what the patient was dispensed. A pure astigmat
+       (sphere blank) counts as a refraction. */
+    var rxSub = recRx(d.rx, "");
+    if (rxSub) add("Refraction (subjective)", rxSub);
+    var rxFin = recRx(d.rx, "fin_");
+    if (rxFin && rxFin !== rxSub) add("Prescription issued", rxFin);
   }
 
   /* Pressures — flagged, because this is the number that carries risk */
   if (d.iop && (d.iop.od || d.iop.os)) {
     var hi = Math.max(parseFloat(d.iop.od) || 0, parseFloat(d.iop.os) || 0);
+    /* The same bands the engine uses (knowledge/clinical-thresholds.js),
+       not a second hardcoded copy that could drift from them. */
+    var _thr = (typeof clinThreshold === "function") ? clinThreshold : function (id, f) { return f; };
     add("IOP", recPair(d.iop.od, d.iop.os, "mmHg"),
-      hi > 30 ? "abnormal" : (hi > 21 ? "borderline" : "normal"));
+      hi > _thr("iop_very_high", 30) ? "abnormal" : (hi > _thr("iop_high", 21) ? "borderline" : "normal"));
   }
 
   /* Anterior segment */
@@ -321,8 +348,11 @@ function recVisitSections(visit) {
     }
     var vh = recPair(d.sl.od && d.sl.od.vh, d.sl.os && d.sl.os.vh);
     if (vh) add("Van Herick", vh);
-    var tb = recPair(d.sl.od && d.sl.od.tbut, d.sl.os && d.sl.os.tbut, "s");
+    /* sl.od.but is the schema's TBUT field; this read sl.od.tbut (absent). */
+    var tb = recPair(d.sl.od && d.sl.od.but, d.sl.os && d.sl.os.but, "s");
     if (tb) add("TBUT", tb);
+    var sch = recPair(d.sl.od && d.sl.od.schirmer, d.sl.os && d.sl.os.schirmer, "mm");
+    if (sch) add("Schirmer", sch);
   }
 
   /* Pupils */
@@ -335,9 +365,13 @@ function recVisitSections(visit) {
     if (d.fun.findings && d.fun.findings.length) {
       add("Fundus findings", d.fun.findings.map(recFindingText).join(", "), "abnormal");
     }
-    var cd = recPair(d.fun.od && d.fun.od.cd, d.fun.os && d.fun.os.cd);
-    if (cd) add("Cup:disc", cd);
+    /* fun.od.cd_v is the schema's vertical C:D; this read fun.od.cd (absent). */
+    var cd = recPair(d.fun.od && d.fun.od.cd_v, d.fun.os && d.fun.os.cd_v);
+    if (cd) add("Cup:disc (vertical)", cd);
   }
+
+  /* What the CLINICIAN concluded — first, and flagged as theirs. */
+  if (String(d.final_dx || "").trim()) add("Clinician's diagnosis", recVal(d.final_dx));
 
   /* Impression as it was SHOWN at the time (provenance), falling back to the
      stored list. Never recomputed — a record must show what was seen. */

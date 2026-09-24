@@ -6,6 +6,64 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-09-24 — Full audit, part 4: the paperwork now says what YOU decided
+
+### The printed prescription ignored your final prescription
+The Refraction page has a "④ Final prescription issued" section — but the
+printed **Spectacle Prescription** read the *subjective* refraction. If you
+prescribed anything different (a partial correction for a child, "keep current
+Rx unchanged"), **the optician received the wrong powers**. The spectacle
+advisor and certificates already used the final, so the app disagreed with
+itself. Now the printout uses ④ when anything is written there (otherwise the
+subjective), and says on screen which one it is printing. The report shows
+both. A final written for one eye only prints the other as "not recorded" — the
+two are never mixed.
+
+### There was nowhere to record your own diagnosis
+The Diagnosis step showed only the engine's list. The printed report called the
+engine's top five the **"Assessment"**, and the referral letter sent its top
+three as the **"Provisional Assessment"** — with no advisory wording anywhere
+in the letter, so to the receiving clinician it read as *your* opinion. Three
+other features (the audit trail, the archive, the "what would my condition
+have caught" preview) were built to read your diagnosis from a field that
+nothing ever wrote, so they quietly used the engine's guess instead.
+
+Now the Diagnosis step has a **Clinician's diagnosis** box. **＋ Use** next to
+any suggestion copies it in for you to edit; the engine never fills it. The
+report and letter give your diagnosis as the clinical impression, and the
+engine's list follows under "Decision-support differential (advisory)".
+
+### The patient record left out the numbers
+The continuous record (the chart's visit history) looked for field names that
+don't exist — so it **never showed visual acuity, the add, TBUT or the
+cup:disc ratio** for any patient. I found this by checking every field the code
+reads against the list of fields a visit actually has; four were wrong in this
+one file. Fixed, plus best-corrected and near VA, Schirmer, and the issued
+prescription.
+
+### Smaller fixes
+- **Age 0** (an infant) got no chart recommendation on the VA page, and the BV
+  page showed Hofstetter's expected amplitude for an **invented age of 25**
+  when no age was recorded. Now: infants get the 0–2 recommendation; no age,
+  no expected amplitude.
+- **Cycloplegic timer:** an instillation time later than now (typed ahead)
+  counted as "yesterday" — 1,410 minutes elapsed, "ready to repeat
+  retinoscopy" before the drops were in. Now "not started".
+- **Spectacle advisor:** lens thickness now follows the strongest meridian
+  (it threw away the signs, so +2.00/−4.00 counted as 4 D); a pure astigmat
+  is no longer told to "enter refraction data"; no crash without a patient.
+- **Blue-light filters:** the advisor said they "reduce digital eye strain".
+  The Cochrane review (Singh et al., 2023) found they may not. The claim is
+  removed and the option is now "optional" — **please confirm the wording**
+  (`NEEDS_REVIEW.md`).
+- The Diagnosis page showed alert text unescaped (a clinician-authored urgent
+  condition's name and reason reach it) — escaped now, like the advisory panel.
+
+**Checks:** new `node tools/e2e/clinician-decision.js` (11/11; fails on the
+previous version). 1,347 unit tests pass.
+
+---
+
 ## 2026-09-24 — Full audit, part 3: a visit from an older version could not be examined
 
 When you opened a saved visit, the app used its data exactly as saved. A visit

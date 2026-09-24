@@ -1611,7 +1611,7 @@ function _stepHasDataInner(sid, v, p) {
       has = !!(v.inv.oct_rnfl_od || v.inv.vf_md_od || v.inv.notes);
       break;
     case "diagnosis":
-      has = v.dxList.length > 0;
+      has = !!String(v.final_dx || "").trim() || v.dxList.length > 0;
       break;
     case "plan":
       has = !!(v.plan.mgmt || v.plan.ref_to);

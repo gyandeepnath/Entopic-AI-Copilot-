@@ -173,6 +173,17 @@ down-rank instead of delete. Recommendation: (b), and consider (c) generally.
 Two other rules are inert by design (they target urgent conditions, which are
 never excluded): Dry Eye (MGD) → "acute_keratitis", POAG → "acute_angle_closure".
 
+### 🟧 Spectacle advisor: blue-light wording — changed 2026-09-24, please confirm
+The advisor said a blue-light filter "reduces digital eye strain" and ranked it
+"recommended" for ≥3 h/day screen use. A Cochrane systematic review found
+blue-light filtering lenses **may not** reduce eye strain with computer use
+(low-certainty evidence) and have probably no effect on acuity: Singh S, Keller
+PR, Busija L, et al. *Cochrane Database Syst Rev* 2023;8:CD013244,
+doi:10.1002/14651858.CD013244.pub2 (retrieved via PubMed). The claim is removed
+and the option is now "optional … not shown to reduce digital eye strain". The
+"Anti-fatigue / blue light lens" suggestion (≥6 h/day) no longer promises
+strain reduction. Confirm, reword, or remove.
+
 ---
 
 ## For later (architecture — needs a decision + possibly spend)

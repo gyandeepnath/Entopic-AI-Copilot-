@@ -318,14 +318,35 @@ function pgDx() {
     '<div class="card-t">Diagnosis / Differential</div>' +
     '<div class="card-s">Evidence-based reasoning — only conditions with clinical support shown</div>';
 
-  /* Alerts */
+  /* Alerts — escaped, and the level constrained to a known class. A
+     clinician-authored urgent condition puts its own name and free-text
+     reason into an alert; this page rendered alert text as raw HTML (the
+     advisory panel was fixed in Phase 11, this copy was not). */
   if (V.alerts && V.alerts.length > 0) {
     h += '<div style="margin-bottom:12px">';
     for (var ai = 0; ai < V.alerts.length; ai++) {
-      h += '<div class="alert-box ' + V.alerts[ai].l + '">' + V.alerts[ai].m + '</div>';
+      var _al = V.alerts[ai] || {};
+      var _lvl = (_al.l === "urgent" || _al.l === "warn" || _al.l === "info") ? _al.l : "warn";
+      h += '<div class="alert-box ' + _lvl + '">' + escH(_al.m) + '</div>';
     }
     h += '</div>';
   }
+
+  /* ── THE CLINICIAN'S DIAGNOSIS ──
+     Entopic has never had anywhere to record what the clinician concluded.
+     The printed report called the engine's top five "Assessment", the
+     referral letter sent its top three as the "Provisional Assessment", and
+     the audit trail, archive and impact preview all read a final_dx field
+     that nothing ever wrote — so each silently fell back to the engine's
+     guess. The differential below is decision support; this is the
+     decision. The engine never fills it. */
+  h += '<div style="padding:10px 12px;border:1px solid var(--bk);border-radius:var(--r);margin-bottom:12px">' +
+    '<div style="font-weight:600;font-size:.76rem;margin-bottom:4px">Clinician\'s diagnosis</div>' +
+    '<div style="font-size:.58rem;color:var(--sl);margin-bottom:6px">In your own words. This — not the list below — is what the report ' +
+      'and referral letter give as the clinical impression. Use a suggestion as a starting point with <b>＋ Use</b>, then edit.</div>' +
+    '<textarea aria-label="Clinician\'s diagnosis" oninput="V.final_dx=this.value" style="min-height:44px;width:100%" ' +
+      'placeholder="e.g. Dry eye disease (evaporative), both eyes">' + escH(V.final_dx || "") + '</textarea>' +
+  '</div>';
 
   /* Nudges */
   if (V.nudges && V.nudges.length > 0) {
@@ -354,7 +375,9 @@ function pgDx() {
       h += '<div style="display:flex;justify-content:space-between;align-items:center">';
       /* escHtml on every KB-sourced value: names, codes and domains all come
          from the knowledge base, which overlays and published bundles extend. */
-      h += '<div><div style="font-weight:600;font-size:.8rem">' + escH(d.n) + '</div>';
+      h += '<div><div style="font-weight:600;font-size:.8rem">' + escH(d.n) +
+        ' <button class="btn btn-s" style="font-size:.52rem;padding:1px 6px;margin-left:6px" ' +
+        'title="Add to the clinician\'s diagnosis" onclick="dxUseAsFinal(\'' + escAttrJs(d.n) + '\')">＋ Use</button></div>';
       h += '<div style="font-size:.52rem;color:var(--sv);font-family:var(--mono)">' + escH(d.icd) + ' · ' + escH(d.cat) + (d.domain ? ' · ' + escH(d.domain) : '') + '</div></div>';
       h += '<div style="font-family:var(--mono);font-weight:600;font-size:.92rem">' + pct + '%</div>';
       h += '</div>';
@@ -362,19 +385,19 @@ function pgDx() {
       /* Evidence trail */
       if (ev.matched && ev.matched.length > 0) {
         h += '<div style="font-size:.56rem;color:var(--sl);margin-top:4px">';
-        h += '<span style="color:var(--ink)">Matched:</span> ' + ev.matched.join(", ");
+        h += '<span style="color:var(--ink)">Matched:</span> ' + escH(ev.matched.join(", "));
         if (ev.missing && ev.missing.length > 0) {
-          h += ' · <span style="color:var(--md);font-style:italic">Missing: ' + ev.missing.join(", ") + '</span>';
+          h += ' · <span style="color:var(--md);font-style:italic">Missing: ' + escH(ev.missing.join(", ")) + '</span>';
         }
         if (ev.contradicted && ev.contradicted.length > 0) {
-          h += ' · <span style="color:var(--md)">Against: ' + ev.contradicted.join(", ") + '</span>';
+          h += ' · <span style="color:var(--md)">Against: ' + escH(ev.contradicted.join(", ")) + '</span>';
         }
         h += '</div>';
       }
 
       /* Suggested tests */
       if (ev.suggestedTests && ev.suggestedTests.length > 0) {
-        h += '<div style="font-size:.54rem;color:var(--md);margin-top:2px">Tests: ' + ev.suggestedTests.join(", ") + '</div>';
+        h += '<div style="font-size:.54rem;color:var(--md);margin-top:2px">Tests: ' + escH(ev.suggestedTests.join(", ")) + '</div>';
       }
 
       h += '</div>'; /* close dx card */
@@ -393,6 +416,18 @@ function pgDx() {
   '</div></div>';
 
   return h;
+}
+
+
+/* Add a differential entry to the clinician's diagnosis. Appends rather
+   than replaces, and never duplicates; the clinician edits from there. */
+function dxUseAsFinal(name) {
+  name = String(name || "").trim();
+  if (!name) return;
+  var cur = String(V.final_dx || "").trim();
+  if (cur.toLowerCase().indexOf(name.toLowerCase()) < 0) V.final_dx = cur ? cur + "; " + name : name;
+  if (typeof markDone === "function") markDone("diagnosis");
+  renderMain();
 }
 
 

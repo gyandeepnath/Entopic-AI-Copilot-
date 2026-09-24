@@ -1226,6 +1226,11 @@ function blankVisit() {
       notes: ""
     },
 
+    /* The CLINICIAN's diagnosis, in their own words — distinct from the
+       engine's advisory dxList. Written only by the clinician (Diagnosis
+       step); the engine never sets it. */
+    final_dx: "",
+
     /* Tracking */
     completed: [],
     dxList: [],

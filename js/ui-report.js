@@ -83,15 +83,29 @@ function pgRpt() {
     h += '</table></div>';
   }
 
-  /* Refraction */
-  if (V.rx.od_sph) {
-    h += '<div class="report-section"><b>Refraction</b> (' + V.rx.method + ')<br>';
-    h += '<table style="border-collapse:collapse;width:100%;margin-top:4px">';
-    h += '<tr style="border-bottom:1px solid var(--ms)"><th style="text-align:left;padding:3px 6px">Eye</th><th style="padding:3px 6px">Sph</th><th style="padding:3px 6px">Cyl</th><th style="padding:3px 6px">Axis</th><th style="padding:3px 6px">Add</th><th style="padding:3px 6px">Prism</th></tr>';
-    h += '<tr><td style="padding:3px 6px">OD</td><td style="text-align:center">' + (V.rx.od_sph || "—") + '</td><td style="text-align:center">' + (V.rx.od_cyl || "—") + '</td><td style="text-align:center">' + (V.rx.od_ax || "—") + '</td><td style="text-align:center">' + (V.rx.od_add || "—") + '</td><td style="text-align:center">' + (V.rx.od_prism || "—") + '</td></tr>';
-    h += '<tr><td style="padding:3px 6px">OS</td><td style="text-align:center">' + (V.rx.os_sph || "—") + '</td><td style="text-align:center">' + (V.rx.os_cyl || "—") + '</td><td style="text-align:center">' + (V.rx.os_ax || "—") + '</td><td style="text-align:center">' + (V.rx.os_add || "—") + '</td><td style="text-align:center">' + (V.rx.os_prism || "—") + '</td></tr>';
-    h += '</table>';
-    var pd = V.rx.pd_bi ? ("PD: " + V.rx.pd_bi + " mm") : (V.rx.pd_od ? ("PD: OD " + V.rx.pd_od + " / OS " + V.rx.pd_os + " mm") : "");
+  /* Refraction — the subjective, and the final prescription where one was
+     written. Gated on ANY value (a pure astigmat has a blank sphere, and an
+     OS-only refraction a blank OD — both used to omit the section), and
+     every value escaped. */
+  var _rxRows = function (pre) {
+    var cell = function (v) { return '<td style="text-align:center">' + (String(v == null ? "" : v).trim() ? escH(v) : "—") + '</td>'; };
+    return ["od", "os"].map(function (e) {
+      return '<tr><td style="padding:3px 6px">' + e.toUpperCase() + '</td>' +
+        cell(V.rx[pre + e + "_sph"]) + cell(V.rx[pre + e + "_cyl"]) + cell(V.rx[pre + e + "_ax"]) +
+        cell(V.rx[pre + e + "_add"]) + cell(V.rx[pre + e + "_prism"]) + '</tr>';
+    }).join("");
+  };
+  var _rxHead = '<tr style="border-bottom:1px solid var(--ms)"><th style="text-align:left;padding:3px 6px">Eye</th><th style="padding:3px 6px">Sph</th><th style="padding:3px 6px">Cyl</th><th style="padding:3px 6px">Axis</th><th style="padding:3px 6px">Add</th><th style="padding:3px 6px">Prism</th></tr>';
+  var _hasSub = rxHasAnyRefraction(V.rx);
+  var _hasFin = (typeof rxStageHasData === "function") && rxStageHasData("fin");
+  if (_hasSub || _hasFin) {
+    h += '<div class="report-section"><b>Refraction</b> (' + escH(V.rx.method || "") + ')<br>';
+    h += '<table style="border-collapse:collapse;width:100%;margin-top:4px">' + _rxHead + _rxRows("") + '</table>';
+    if (_hasFin) {
+      h += '<div style="margin-top:6px"><b>Prescription issued</b></div>' +
+        '<table style="border-collapse:collapse;width:100%;margin-top:2px">' + _rxHead + _rxRows("fin_") + '</table>';
+    }
+    var pd = V.rx.pd_bi ? ("PD: " + escH(V.rx.pd_bi) + " mm") : (V.rx.pd_od ? ("PD: OD " + escH(V.rx.pd_od) + " / OS " + escH(V.rx.pd_os || "—") + " mm") : "");
     if (pd) h += '<div style="margin-top:4px">' + pd + '</div>';
     h += '</div>';
   }
@@ -135,16 +149,24 @@ function pgRpt() {
 
   /* Assessment */
   h += '<div style="margin-top:12px;border-top:1px solid var(--ms);padding-top:8px">';
+  /* The clinician's diagnosis first, then the engine's differential under a
+     label that says what it is. This used to print the engine's top five as
+     "Assessment" — decision-support output presented as the visit's
+     conclusion — and the names were not escaped. */
   h += '<b>Assessment:</b><br>';
+  var _own = String(V.final_dx || "").trim();
+  h += '<div style="margin:2px 0 6px"><b>Clinician\'s diagnosis:</b> ' +
+    (_own ? escH(_own) : '<span style="color:var(--sv)">not recorded</span>') + '</div>';
   if (dx.length > 0 && dx[0].cat !== "system" && dx[0].cat !== "error") {
+    h += '<div style="font-size:.9em;color:var(--sl)">Decision-support differential (advisory — not a diagnosis):</div>';
     for (var di = 0; di < Math.min(dx.length, 5); di++) {
-      h += (di + 1) + '. ' + dx[di].n + ' (' + dx[di].icd + ')';
+      h += (di + 1) + '. ' + escH(dx[di].n) + (dx[di].icd ? ' (' + escH(dx[di].icd) + ')' : '');
       if (dx[di].evidence && dx[di].evidence.confidence) {
-        h += ' — ' + dx[di].evidence.confidence;
+        h += ' — ' + escH(dx[di].evidence.confidence);
       }
       h += '<br>';
     }
-  } else {
+  } else if (!_own) {
     h += 'Pending further evaluation<br>';
   }
   h += '</div>';
@@ -288,9 +310,32 @@ function rxIncompleteEyes(rx) {
   return out;
 }
 
+/* The prescription stage to ISSUE, as a flat {od_sph, …} object: ④ Final
+   when anything is written there, otherwise ③ Subjective.
+
+   The printed prescription used to read the subjective fields only, while
+   the refraction page offers a separate "④ Final prescription issued" — and
+   the spectacle advisor and certificates already used the final. A
+   clinician who prescribed something different from the subjective (partial
+   correction for a child; "keep current Rx unchanged") printed a sheet the
+   optician would dispense WRONG powers from. Stages are never mixed eye by
+   eye: a final written for one eye only prints the other as "not recorded". */
+function rxIssuedStage() {
+  var stage = (typeof rxEffectiveStage === "function") ? rxEffectiveStage() : "";
+  var pre = stage ? stage + "_" : "";
+  var out = { stage: stage };
+  ["od", "os"].forEach(function (e) {
+    ["sph", "cyl", "ax", "add", "prism", "base"].forEach(function (k) {
+      out[e + "_" + k] = V.rx[pre + e + "_" + k];
+    });
+  });
+  return out;
+}
+
 function pgRxP() {
   var nm = (P.first_name || "") + " " + (P.last_name || "");
-  var incomplete = rxIncompleteEyes(V.rx);
+  var R = rxIssuedStage();
+  var incomplete = rxIncompleteEyes(R);
 
   var h = '<div class="card">' +
     '<div class="card-t">Prescription</div>' +
@@ -298,7 +343,7 @@ function pgRxP() {
 
   /* No refraction at all: there is nothing to prescribe. Refuse to produce a
      print-ready document rather than emit an official-looking blank one. */
-  if (!rxHasAnyRefraction(V.rx)) {
+  if (!rxHasAnyRefraction(R)) {
     h += '<div style="background:#fdecea;border:1px solid #e6a49c;color:#8a2318;padding:10px 12px;border-radius:var(--r);font-size:.74rem;margin:10px 0">' +
       '<b>No refraction has been recorded for this visit.</b><br>' +
       'There is nothing to prescribe, so no prescription is produced. Record the refraction first, ' +
@@ -318,6 +363,14 @@ function pgRxP() {
       '<br>Missing values print as <b>“not recorded”</b>, never as plano, so absence cannot be read as a zero-power lens.' +
       '</div>';
   }
+
+  /* Say which refraction this is, on screen only. */
+  h += '<div class="no-print" style="font-size:.66rem;color:var(--sl);margin:6px 0">' +
+    (R.stage === "fin"
+      ? 'Printing the <b>④ Final prescription</b> from the Refraction page.'
+      : 'No final prescription written — printing the <b>③ Subjective refraction</b>. ' +
+        'If you are prescribing something different, write it in ④ Final prescription on the Refraction page.') +
+    '</div>';
 
   h += '<div id="rxPrint">';
 
@@ -354,39 +407,34 @@ function pgRxP() {
   h += '<th>Sphere</th><th>Cylinder</th><th>Axis</th><th>Add</th><th>Prism</th><th>Base</th>';
   h += '</tr></thead><tbody>';
 
-  /* OD */
-  h += '<tr>';
-  h += '<td style="font-weight:700;text-align:left">OD</td>';
-  h += '<td>' + rxCell(V.rx.od_sph) + '</td>';
-  h += '<td>' + (String(V.rx.od_cyl||"").trim() ? escH(V.rx.od_cyl) : "—") + '</td>';
-  h += '<td>' + (V.rx.od_ax ? V.rx.od_ax + "°" : "—") + '</td>';
-  h += '<td>' + (V.rx.od_add || "—") + '</td>';
-  h += '<td>' + (V.rx.od_prism || "—") + '</td>';
-  h += '<td>' + (V.rx.od_base || "—") + '</td>';
-  h += '</tr>';
-
-  /* OS */
-  h += '<tr>';
-  h += '<td style="font-weight:700;text-align:left">OS</td>';
-  h += '<td>' + rxCell(V.rx.os_sph) + '</td>';
-  h += '<td>' + (String(V.rx.os_cyl||"").trim() ? escH(V.rx.os_cyl) : "—") + '</td>';
-  h += '<td>' + (V.rx.os_ax ? V.rx.os_ax + "°" : "—") + '</td>';
-  h += '<td>' + (V.rx.os_add || "—") + '</td>';
-  h += '<td>' + (V.rx.os_prism || "—") + '</td>';
-  h += '<td>' + (V.rx.os_base || "—") + '</td>';
-  h += '</tr></tbody></table>';
+  /* OD / OS — from the issued stage, every value escaped */
+  ["od", "os"].forEach(function (e) {
+    var dash = function (v) { return String(v == null ? "" : v).trim() ? escH(v) : "—"; };
+    h += '<tr>';
+    h += '<td style="font-weight:700;text-align:left">' + e.toUpperCase() + '</td>';
+    h += '<td>' + rxCell(R[e + "_sph"]) + '</td>';
+    h += '<td>' + dash(R[e + "_cyl"]) + '</td>';
+    h += '<td>' + (String(R[e + "_ax"] || "").trim() ? escH(R[e + "_ax"]) + "°" : "—") + '</td>';
+    h += '<td>' + dash(R[e + "_add"]) + '</td>';
+    h += '<td>' + dash(R[e + "_prism"]) + '</td>';
+    h += '<td>' + dash(R[e + "_base"]) + '</td>';
+    h += '</tr>';
+  });
+  h += '</tbody></table>';
 
   /* PD */
   var pdText = V.rx.pd_bi
-    ? (V.rx.pd_bi + " mm (binocular)")
-    : (V.rx.pd_od ? ("OD: " + V.rx.pd_od + " mm / OS: " + V.rx.pd_os + " mm") : "—");
+    ? (escH(V.rx.pd_bi) + " mm (binocular)")
+    : (V.rx.pd_od ? ("OD: " + escH(V.rx.pd_od) + " mm / OS: " + escH(V.rx.pd_os || "—") + " mm") : "—");
   h += '<div style="font-size:.78rem;margin-bottom:14px"><b>Interpupillary Distance (PD):</b> ' + pdText + '</div>';
 
   /* The dispensing specification must PRINT — recording it but leaving it off
      the sheet means the optician never receives the clinical decision (RX-2).
      Only what was actually specified is printed; nothing is invented. */
   var _spec = [
-    { l: "Lens type", v: V.rx.lens_type },
+    /* the refraction page's own "Lens type" (④) when none was chosen here */
+    { l: "Lens type", v: V.rx.lens_type || V.rx.fin_lens_type },
+    { l: "Wearing advice", v: V.rx.fin_advice },
     { l: "Material",  v: V.rx.lens_material },
     { l: "Coating",   v: V.rx.lens_coating },
     { l: "Tint",      v: V.rx.lens_tint }
@@ -519,11 +567,17 @@ function generateReferralLetter() {
   }
   letter += "\n";
 
-  /* Provisional diagnosis */
+  /* The referring clinician's impression, then — clearly labelled — the
+     decision-support differential. The letter used to send the engine's top
+     three as the "Provisional Assessment", with no advisory wording anywhere
+     in it: to the receiving clinician that reads as the referrer's own
+     opinion. */
+  var ownDx = String(V.final_dx || "").trim();
+  letter += "Clinical impression: " + (ownDx || "not recorded — please see findings above") + "\n\n";
   if (dx.length > 0 && dx[0].cat !== "system") {
-    letter += "Provisional Assessment:\n";
+    letter += "Decision-support differential (advisory, generated by Entopic — clinical correlation required):\n";
     for (var di = 0; di < Math.min(dx.length, 3); di++) {
-      letter += "  " + (di + 1) + ". " + dx[di].n + " (" + dx[di].icd + ")\n";
+      letter += "  " + (di + 1) + ". " + dx[di].n + (dx[di].icd ? " (" + dx[di].icd + ")" : "") + "\n";
     }
     letter += "\n";
   }
@@ -548,6 +602,8 @@ function generateReferralLetter() {
   } else {
     /* Create a temporary display */
     var w = window.open("", "_blank", "width=700,height=900");
+    /* A blocked pop-up returns null; the letter is still saved on the visit. */
+    if (!w) { if (typeof toast === "function") toast("Letter saved to the visit — allow pop-ups to view it here."); return; }
     w.document.write("<pre style='font-family:monospace;padding:24px;line-height:1.6'>" + escH(letter) + "</pre>");
     w.document.title = "Referral Letter — " + nm.trim();
   }
