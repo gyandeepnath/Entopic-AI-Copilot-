@@ -329,3 +329,27 @@ test("malformed entries in the personal-condition store are skipped, not fatal",
   assert.ok(personal.indexOf("Evening dryness pattern") < 0,
     "a req STRING must not be read character by character as tokens");
 });
+
+
+/* ═══ 7. INPUTS THE KNOWLEDGE BASE WAS WRITTEN FOR ═══ */
+
+test("the Course selector's Variable and Stable reach the conditions that list them", () => {
+  /* 11 conditions list `variable` and one lists `stable` in their timing;
+     Variable produced only `intermittent` and Stable produced nothing. */
+  assert.ok(has(run({ symptoms: ["blur"], temporal: { course: "variable" } }), "variable"));
+  assert.ok(has(run({ symptoms: ["blur"], temporal: { course: "variable" } }), "intermittent"), "kept for existing rules");
+  assert.ok(has(run({ symptoms: ["blur"], temporal: { course: "stable" } }), "stable"));
+});
+
+test("keratic precipitates can be recorded (they were unreachable)", () => {
+  assert.ok(has(run({ sl: { od: { cornea: "fine KPs inferiorly" } } }), "keratic_precipitates"));
+  assert.ok(has(run({ sl: { od: { cornea: "mutton-fat keratic precipitates" } } }), "keratic_precipitates"));
+  assert.ok(!has(run({ sl: { od: { cornea: "no KPs" } } }), "keratic_precipitates"));
+});
+
+test("every supportive, contradicting and required token in the KB can be produced by some input", () => {
+  const R = eng.context.TOKEN_REGISTRY;
+  const bad = Object.keys(R).filter((t) => !R[t].reachable &&
+    (R[t].usage.req > 0 || R[t].usage.sup > 0 || R[t].usage.con > 0));
+  assert.deepStrictEqual(bad, [], "tokens the KB relies on that no input can produce");
+});

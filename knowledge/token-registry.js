@@ -3826,8 +3826,10 @@ var TOKEN_REGISTRY = {
     "reachable": true
   },
   "keratic_precipitates": {
-    "type_hint": "unknown",
-    "sources": [],
+    "type_hint": "sign",
+    "sources": [
+      "exam_text"
+    ],
     "usage": {
       "req": 0,
       "sup": 1,
@@ -3835,7 +3837,7 @@ var TOKEN_REGISTRY = {
       "temporal": 0,
       "tests": 1
     },
-    "reachable": false
+    "reachable": true
   },
   "koeppe_nodules": {
     "type_hint": "sign",
@@ -6941,8 +6943,10 @@ var TOKEN_REGISTRY = {
     "reachable": true
   },
   "stable": {
-    "type_hint": "unknown",
-    "sources": [],
+    "type_hint": "derived_measurement_or_history",
+    "sources": [
+      "engine_derived"
+    ],
     "usage": {
       "req": 0,
       "sup": 0,
@@ -6950,7 +6954,7 @@ var TOKEN_REGISTRY = {
       "temporal": 1,
       "tests": 0
     },
-    "reachable": false
+    "reachable": true
   },
   "stellate_KPs": {
     "type_hint": "unknown",
@@ -7633,8 +7637,10 @@ var TOKEN_REGISTRY = {
     "reachable": true
   },
   "variable": {
-    "type_hint": "unknown",
-    "sources": [],
+    "type_hint": "derived_measurement_or_history",
+    "sources": [
+      "engine_derived"
+    ],
     "usage": {
       "req": 0,
       "sup": 0,
@@ -7642,7 +7648,7 @@ var TOKEN_REGISTRY = {
       "temporal": 11,
       "tests": 0
     },
-    "reachable": false
+    "reachable": true
   },
   "variable_blur": {
     "type_hint": "symptom",
@@ -8047,11 +8053,9 @@ var TOKEN_REGISTRY = {
 
 var TOKEN_REGISTRY_STATS = {
   "total": 561,
-  "reachable": 461,
+  "reachable": 464,
   "unreachable_required": [],
-  "unreachable_supportive": [
-    "keratic_precipitates"
-  ],
+  "unreachable_supportive": [],
   "test_label_only": 95,
   "produced_never_consumed": 80
 };

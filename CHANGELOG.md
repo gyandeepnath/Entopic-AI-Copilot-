@@ -6,6 +6,33 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-09-24 — Full audit, part 9: the knowledge base, checked for wiring
+
+The 394 conditions still need your clinical review — that has not changed and
+I have not touched their clinical content. What I checked is whether the
+wiring is sound, and it mostly is:
+
+- **No** duplicate conditions, **no** condition that contradicts itself (a
+  sign both required and "against"), **no** two conditions defined so alike
+  the engine could never tell them apart, and **every** one of the 153 symptom
+  chips and 202 exam-finding chips feeds at least one condition.
+- **Fixed — two controls that did nothing:** the "Course" selector's
+  *Variable* and *Stable* are exactly what 11 conditions and 1 condition list
+  in their timing, but choosing them never matched (Variable became
+  "intermittent" only; Stable produced nothing).
+- **Fixed — one sign that could not be recorded:** keratic precipitates are a
+  confirmatory sign for Anterior Uveitis and Uveitic Glaucoma, but nothing on
+  any screen produced them. Typing "KPs" or "keratic precipitates" in the
+  cornea box now does. Every sign the knowledge base relies on can now be
+  entered — and a test keeps it that way.
+- Also closed a family of latent bugs across 19 modules: lookup tables that
+  would treat a record id like "toString" as a match. In the archive, that
+  could replace a visit that was never archived with a stub; restoring an
+  archive could put one patient's visit into another patient's chart if the
+  file didn't match. Both fixed and tested.
+
+---
+
 ## 2026-09-24 — Full audit, part 8: spreadsheet exports and patient deletion
 
 - **CSV exports could carry a live spreadsheet formula.** A cell starting with

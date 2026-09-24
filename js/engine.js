@@ -233,7 +233,12 @@ function collectTokens(visit, patient) {
     }
     if (V.temporal.course) {
       if (V.temporal.course === "worsening") addToken("progressive");
-      if (V.temporal.course === "variable") addToken("intermittent");
+      /* "Variable" and "Stable" are what 11 conditions and 1 condition list
+         in their timing, but the course selector's Variable became only
+         `intermittent` and Stable produced nothing — so choosing either
+         could never match the conditions written for it. */
+      if (V.temporal.course === "variable") { addToken("intermittent"); addToken("variable"); }
+      if (V.temporal.course === "stable") addToken("stable");
     }
   }
 
@@ -425,7 +430,10 @@ function collectTokens(visit, patient) {
     slParseText([V.sl.od.cornea, V.sl.os.cornea], {
       edema: "corneal_edema", scar: "corneal_scar", opacit: "corneal_opacity",
       infiltrat: "stromal_infiltrate", ulcer: "epithelial_defect", dendri: "dendritic_ulcer",
-      guttat: "guttata", neovasc: "corneal_neovascularization", thin: "corneal_thinning", pannus: "pannus"
+      guttat: "guttata", neovasc: "corneal_neovascularization", thin: "corneal_thinning", pannus: "pannus",
+      /* KPs: a confirmatory sign for Anterior Uveitis and Uveitic Glaucoma
+         that no input could produce — no chip, no keyword. */
+      keratic: "keratic_precipitates", kp: "keratic_precipitates"
     }, addToken);
     slParseText([V.sl.od.conj, V.sl.os.conj], {
       inject: "redness", follicl: "follicles", papill: "papillae",
@@ -1134,7 +1142,8 @@ function isContextOnlyToken(t) {
 var TEMPORAL_DESCRIPTOR_TOKENS = {
   acute: 1, subacute: 1, chronic: 1, sudden_onset: 1, gradual_onset: 1,
   subacute_onset: 1, acute_bias: 1, chronic_bias: 1, progressive: 1,
-  intermittent: 1, recurrent: 1, variable: 1
+  intermittent: 1, recurrent: 1, variable: 1, stable: 1, seasonal: 1,
+  gradual: 1, constant: 1, episodic: 1
 };
 function engineFactCount(tokens) {
   var n = 0, temporal = false;
