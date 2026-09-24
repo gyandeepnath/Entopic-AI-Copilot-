@@ -185,6 +185,12 @@ function pgCC() {
     '</label>' +
     '<textarea id="ccTA" oninput="V.cc=this.value;runDiagnosticEngine();renderAdvisory();renderSidebar()" ' +
     'placeholder="Describe the presenting complaint...">' + esc(V.cc) + '</textarea>' +
+    /* The AI's rewording of a spoken complaint, offered — never applied. */
+    (V.cc_ai && V.cc_ai !== V.cc
+      ? '<div style="font-size:.6rem;color:var(--sl);margin-top:4px">AI wording (not used by the engine unless you choose it): ' +
+          '<i>' + esc(V.cc_ai) + '</i> <button class="btn btn-s" style="font-size:.55rem;padding:1px 6px" ' +
+          'onclick="V.cc=V.cc_ai;runDiagnosticEngine();renderMain();renderAdvisory()">Use this wording</button></div>'
+      : '') +
   '</div>';
 
   /* Temporal pattern selectors */

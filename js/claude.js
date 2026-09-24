@@ -36,7 +36,46 @@ function llmModel() {
 
 var _llmDirectWarned = false;
 
+/* ── DE-IDENTIFICATION BEFORE ANYTHING LEAVES ──
+   buildClinicalSummary() already leaves the structured identifiers out
+   (name, MRN, DOB, contact). But free text goes too — the chief complaint,
+   and the speech parser sends what the patient SAID, verbatim — and a
+   patient who says "my name is Priya, call me on 98765 43210" put both into
+   an LLM API request. CLAUDE.md: no PII to any third-party service without
+   de-identification. Every outbound prompt passes through here:
+     - the open patient's own name, MRN, phone, email and address;
+     - anything shaped like an email address, a phone number (9+ digits,
+       no decimal point — a refraction like -3.00/-1.25 x 90 is untouched),
+       or a full date (a date of birth).
+   Not a guarantee — free text cannot be fully de-identified by pattern —
+   but it removes the identifiers that are knowable or recognisable. */
+function llmScrubPII(text) {
+  var t = String(text === null || text === undefined ? "" : text);
+  var pt = (typeof P !== "undefined" && P && typeof P === "object") ? P : {};
+  function esc(x) { return String(x).replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }
+  function drop(val, tag) {
+    var v = String(val === null || val === undefined ? "" : val).trim();
+    if (v.length < 2) return;
+    t = t.replace(new RegExp("(^|[^A-Za-z0-9])" + esc(v) + "(?=$|[^A-Za-z0-9])", "gi"), "$1" + tag);
+  }
+  t = t.replace(/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g, "[email]");
+  t = t.replace(/\+?\(?\d[\d\s()\-]{7,}\d/g, function (m) {
+    return (m.replace(/\D/g, "").length >= 9) ? "[phone]" : m;
+  });
+  t = t.replace(/\b\d{4}-\d{2}-\d{2}\b|\b\d{1,2}[\/.-]\d{1,2}[\/.-](19|20)\d{2}\b/g, "[date]");
+  /* the patient's own identifiers, after the generic shapes */
+  var full = ((pt.first_name || "") + " " + (pt.last_name || "")).trim();
+  if (full.indexOf(" ") > 0) drop(full, "[patient]");
+  drop(pt.first_name, "[patient]"); drop(pt.last_name, "[patient]");
+  drop(pt.mrn, "[id]"); drop(pt.email, "[email]"); drop(pt.address, "[address]");
+  if (pt.phone) drop(pt.phone, "[phone]");
+  return t;
+}
+
 function callClaudeAPI(systemPrompt, userPrompt, maxTokens, onSuccess, onError) {
+
+  /* The single choke point: nothing reaches the API un-scrubbed. */
+  userPrompt = llmScrubPII(userPrompt);
 
   var proxy = llmProxyUrl();
 

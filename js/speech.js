@@ -198,7 +198,9 @@ function parseSpeechWithAI(rawText, targetEl) {
     'Return ONLY valid JSON with no markdown, no backticks, no explanation:\n' +
     '{\n' +
     '  "chief_complaint": "Properly worded clinical chief complaint",\n' +
-    '  "symptoms": ["ONLY tokens from this list: ' + validSymptoms.slice(0, 40).join(",") + '..."],\n' +
+    /* the WHOLE list — the prompt used to show only the first 40 of ~150,
+       so the model invented the rest */
+    '  "symptoms": ["ONLY tokens from this list: ' + validSymptoms.join(",") + '"],\n' +
     '  "foldarq": {"F":"frequency","O":"onset","L":"location","D":"duration","A":"associated","R":"relieving","S":"severity"}\n' +
     '}\n\n' +
     'Rules:\n' +
@@ -231,30 +233,44 @@ function parseSpeechWithAI(rawText, targetEl) {
 
 function handleSpeechParseResponse(responseText, rawText, targetEl) {
   try {
-    var cleaned = responseText.replace(/```json/g, "").replace(/```/g, "").trim();
+    var cleaned = String(responseText || "").replace(/```json/g, "").replace(/```/g, "").trim();
     var parsed = JSON.parse(cleaned);
+    if (!parsed || typeof parsed !== "object") throw new Error("not an object");
 
-    /* Set CC */
-    V.cc = parsed.chief_complaint || rawText;
+    /* The chief complaint is what the PATIENT said. The model's rewording
+       into "medical terminology" used to REPLACE it — and the engine then
+       parsed the model's wording, so language the patient never used could
+       become evidence. The LLM stays downstream: its wording is kept as a
+       suggestion the clinician can adopt with one click (V.cc_ai), and the
+       engine reads the patient's own words. */
+    V.cc = rawText;
     if (targetEl) targetEl.value = V.cc;
+    V.cc_ai = (typeof parsed.chief_complaint === "string") ? parsed.chief_complaint.slice(0, 500) : "";
 
-    /* Auto-select symptoms */
-    if (parsed.symptoms && Array.isArray(parsed.symptoms)) {
+    /* Symptoms: ONLY tokens that are real symptom chips. Anything else the
+       model returns — an invented token, a diagnosis, a red-flag token the
+       patient never described — is dropped, not pushed into the visit. */
+    var valid = {};
+    for (var cat in SYM_CATS) {
+      if (!Object.prototype.hasOwnProperty.call(SYM_CATS, cat)) continue;
+      for (var key in SYM_CATS[cat]) {
+        if (Object.prototype.hasOwnProperty.call(SYM_CATS[cat], key)) valid[key] = true;
+      }
+    }
+    if (Array.isArray(parsed.symptoms)) {
       for (var i = 0; i < parsed.symptoms.length; i++) {
         var sym = parsed.symptoms[i];
-        if (V.symptoms.indexOf(sym) === -1) {
-          V.symptoms.push(sym);
-        }
+        if (typeof sym !== "string" || !Object.prototype.hasOwnProperty.call(valid, sym)) continue;
+        if (V.symptoms.indexOf(sym) === -1) V.symptoms.push(sym);
       }
     }
 
-    /* Auto-fill FOLDARS */
-    if (parsed.foldarq) {
-      for (var k in parsed.foldarq) {
-        if (parsed.foldarq[k]) {
-          V.foldarq[k] = parsed.foldarq[k];
-        }
-      }
+    /* FOLDARQ: the seven known letters only, as short strings. */
+    if (parsed.foldarq && typeof parsed.foldarq === "object") {
+      ["F", "O", "L", "D", "A", "R", "S"].forEach(function (k) {
+        var v = parsed.foldarq[k];
+        if (typeof v === "string" && v.trim()) V.foldarq[k] = v.slice(0, 200);
+      });
     }
 
     /* Refresh everything */

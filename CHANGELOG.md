@@ -6,6 +6,30 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-09-24 — Full audit, part 10: what goes to the AI, and what comes back
+
+Only relevant if an AI key is configured (the engine never needs it).
+
+- **What went out:** the structured identifiers (name, MRN, date of birth,
+  contact details) were already kept out of AI requests. But free text went as
+  typed — and the voice feature sent **what the patient said, verbatim**. "My
+  name is Priya, call me on 98765 43210" went to the API. Every request now
+  passes through one de-identification step first: the patient's own name, MRN,
+  phone, email and address, plus anything shaped like an email, a phone number
+  or a date of birth. Clinical numbers (a refraction, an acuity, pressures) are
+  left alone — tested.
+- **What came back:** the voice feature took the AI's "symptoms" and pushed
+  them straight into the visit, unchecked — and only showed it 40 of the 153
+  real symptom names, so it invented the rest. It also **replaced the
+  patient's words with the AI's "medical" rewording**, which the engine then
+  read as evidence — language the patient never used could become a finding.
+  Now: the chief complaint stays in the patient's own words; the AI's wording
+  is shown underneath with a **Use this wording** button (your choice, not
+  automatic); only real symptom names are accepted; the history fields accept
+  only the seven FOLDARQ letters.
+
+---
+
 ## 2026-09-24 — Full audit, part 9: the knowledge base, checked for wiring
 
 The 394 conditions still need your clinical review — that has not changed and
