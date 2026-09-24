@@ -84,7 +84,7 @@ function invOrderBlock() {
         '<div style="font-size:.52rem;color:var(--sv);margin-top:3px">Raised ' + esc((o.created_at || "").slice(0, 16).replace("T", " ")) +
           (o.created_by ? ' by ' + esc(o.created_by) : '') + '</div>' +
         (o.status === "ordered"
-          ? '<div style="margin-top:4px"><span style="cursor:pointer;font-size:.54rem;color:var(--as,#c0392b)" onclick="invCancelOrder(\'' + o.id + '\')">cancel order</span></div>'
+          ? '<div style="margin-top:4px"><span style="cursor:pointer;font-size:.54rem;color:var(--as,#c0392b)" onclick="invCancelOrder(\'' + escAttrJs(o.id) + '\')">cancel order</span></div>'
           : '') +
       '</div>';
     });
@@ -129,7 +129,7 @@ function homeSecInvestigations() {
     var o = r.order, pt = r.patient;
     var nm = ((pt.first_name || "") + " " + (pt.last_name || "")).trim() || "Unnamed";
     var doneN = (o.items || []).filter(function (i) { return i.status === "completed"; }).length;
-    h += '<div class="home-settings" style="margin-bottom:8px;cursor:pointer" onclick="invOpenOrder(\'' + o.id + '\')">' +
+    h += '<div class="home-settings" style="margin-bottom:8px;cursor:pointer" onclick="invOpenOrder(\'' + escAttrJs(o.id) + '\')">' +
       '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">' +
         '<div class="home-settings-title" style="margin:0">' + esc(nm) +
           '<span style="font-weight:400;color:var(--sv);font-size:.6rem"> · ' + esc(pt.age || "?") + 'y · MRN ' + esc(pt.mrn || pt.id || "") + '</span>' +
@@ -178,7 +178,7 @@ function invOrderDetail(orderId) {
       h += '<div class="fg" style="margin-top:6px">';
       (t ? t.fields : []).forEach(function (fl) {
         var val = (it.result && it.result[fl.k]) || "";
-        var setter = 'invSetItemField(\'' + o.id + '\',' + idx + ',\'' + fl.k + '\',this.value)';
+        var setter = 'invSetItemField(\'' + escAttrJs(o.id) + '\',' + idx + ',\'' + fl.k + '\',this.value)';
         if (fl.type === "textarea") {
           h += '<div class="fi full"><label>' + esc(fl.l) + '</label><textarea oninput="' + setter + '">' + esc(val) + '</textarea></div>';
         } else if (fl.type === "select") {
@@ -191,7 +191,7 @@ function invOrderDetail(orderId) {
         }
       });
       h += '<div class="fi full"><label>Note from the person performing this</label>' +
-        '<textarea oninput="invSetItemNote(\'' + o.id + '\',' + idx + ',this.value)" placeholder="Cooperation, media clarity, repeat needed…">' + esc(it.tech_note || "") + '</textarea></div>' +
+        '<textarea oninput="invSetItemNote(\'' + escAttrJs(o.id) + '\',' + idx + ',this.value)" placeholder="Cooperation, media clarity, repeat needed…">' + esc(it.tech_note || "") + '</textarea></div>' +
         '</div>';
     } else {
       /* Completed → read-only summary */
@@ -213,7 +213,7 @@ function invOrderDetail(orderId) {
       h += '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:5px">';
       it.files.forEach(function (fr) {
         h += '<div style="border:1px solid var(--fg);border-radius:var(--r);padding:4px;width:104px;font-size:.5rem;cursor:pointer"' +
-          ' onclick="invOpenFile(\'' + o.id + '\',' + idx + ',\'' + fr.id + '\')">' +
+          ' onclick="invOpenFile(\'' + escAttrJs(o.id) + '\',' + idx + ',\'' + escAttrJs(fr.id) + '\')">' +
           (fr.thumb ? '<img src="' + fr.thumb + '" style="width:100%;height:56px;object-fit:cover;border-radius:2px">'
                     : '<div style="height:56px;display:flex;align-items:center;justify-content:center;background:var(--fg);border-radius:2px;font-size:1.2rem">' + (/pdf/.test(fr.type) ? "📄" : "📎") + '</div>') +
           '<div style="margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + esc(fr.name) + '">' + esc(fr.name) + '</div>' +
@@ -224,7 +224,7 @@ function invOrderDetail(orderId) {
     }
     if (it.status !== "completed") {
       h += '<input type="file" multiple accept="image/*,application/pdf" style="font-size:.58rem"' +
-        ' onchange="invAttachHandle(this,\'' + o.id + '\',' + idx + ')">';
+        ' onchange="invAttachHandle(this,\'' + escAttrJs(o.id) + '\',' + idx + ')">';
     }
     h += '</div>';
 
@@ -232,12 +232,12 @@ function invOrderDetail(orderId) {
     if (o.status !== "cancelled" && o.status !== "reviewed") {
       h += '<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">';
       if (it.status === "ordered") {
-        h += '<button class="btn btn-s" style="font-size:.58rem" onclick="invMarkItem(\'' + o.id + '\',' + idx + ',\'in_progress\')">Start</button>';
+        h += '<button class="btn btn-s" style="font-size:.58rem" onclick="invMarkItem(\'' + escAttrJs(o.id) + '\',' + idx + ',\'in_progress\')">Start</button>';
       }
       if (it.status !== "completed") {
-        h += '<button class="btn btn-p" style="font-size:.58rem" onclick="invMarkItem(\'' + o.id + '\',' + idx + ',\'completed\')">Mark done</button>';
+        h += '<button class="btn btn-p" style="font-size:.58rem" onclick="invMarkItem(\'' + escAttrJs(o.id) + '\',' + idx + ',\'completed\')">Mark done</button>';
       } else {
-        h += '<button class="btn btn-s" style="font-size:.58rem" onclick="invMarkItem(\'' + o.id + '\',' + idx + ',\'in_progress\')">Reopen</button>';
+        h += '<button class="btn btn-s" style="font-size:.58rem" onclick="invMarkItem(\'' + escAttrJs(o.id) + '\',' + idx + ',\'in_progress\')">Reopen</button>';
       }
       h += '</div>';
     }
@@ -255,8 +255,8 @@ function invOrderDetail(orderId) {
       (o.review_note ? '<div style="font-size:.58rem;margin-top:4px">' + esc(o.review_note) + '</div>' : '');
   } else {
     h += '<div class="fi full" style="margin-top:6px"><label>Review note</label>' +
-      '<textarea oninput="invSetReviewNote(\'' + o.id + '\',this.value)" placeholder="What the results show, how they change the plan…">' + esc(o.review_note || "") + '</textarea></div>' +
-      '<div style="margin-top:6px"><button class="btn btn-p" style="font-size:.62rem" onclick="invMarkReviewed(\'' + o.id + '\')">Sign off results</button></div>';
+      '<textarea oninput="invSetReviewNote(\'' + escAttrJs(o.id) + '\',this.value)" placeholder="What the results show, how they change the plan…">' + esc(o.review_note || "") + '</textarea></div>' +
+      '<div style="margin-top:6px"><button class="btn btn-p" style="font-size:.62rem" onclick="invMarkReviewed(\'' + escAttrJs(o.id) + '\')">Sign off results</button></div>';
   }
   h += '</div>';
   return h;
@@ -286,7 +286,7 @@ function invReviewBlock() {
       if (it.files && it.files.length) h += '<div style="font-size:.52rem;color:var(--sv)">' + it.files.length + ' report file(s) attached</div>';
     });
     h += '<div style="margin-top:5px"><button class="btn btn-s" style="font-size:.58rem"' +
-      ' onclick="goHome();setHomeTab(\'investigations\');invOpenOrder(\'' + o.id + '\')">Open &amp; review</button></div>' +
+      ' onclick="goHome();setHomeTab(\'investigations\');invOpenOrder(\'' + escAttrJs(o.id) + '\')">Open &amp; review</button></div>' +
     '</div>';
   });
   return h;

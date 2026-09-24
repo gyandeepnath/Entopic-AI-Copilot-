@@ -745,7 +745,7 @@ if (typeof document !== "undefined") {
     var chip = function (type, val, label, count) {
       var active = _cbFilter[type] === val;
       return '<button class="cb-chip' + (active ? ' cb-chip-on' : '') + '" onclick="casebookFacet(\'' + type + '\',\'' +
-        _esc(val).replace(/'/g, "\\'") + '\')">' + _esc(label) + (count ? ' <span style="opacity:.6">' + count + '</span>' : '') + '</button>';
+        escAttrJs(val) + '\')">' + _esc(label) + (count ? ' <span style="opacity:.6">' + count + '</span>' : '') + '</button>';
     };
     /* domains (specialty areas) */
     var domHtml = "";
@@ -860,14 +860,14 @@ if (typeof document !== "undefined") {
     var isFaculty = (typeof effectiveRole === "function" && effectiveRole() === "faculty");
     var actions = '<div class="btn-g" style="margin-top:6px">';
     if (isFaculty) {
-      actions += '<button class="btn btn-s" onclick="casebookAnnotateUi(\'' + entry.id + '\')" style="font-size:.62rem">✎ Annotate</button>' +
-        '<button class="btn btn-s" onclick="casebookReviewUi(\'' + entry.id + '\')" style="font-size:.62rem">' +
+      actions += '<button class="btn btn-s" onclick="casebookAnnotateUi(\'' + escAttrJs(entry.id) + '\')" style="font-size:.62rem">✎ Annotate</button>' +
+        '<button class="btn btn-s" onclick="casebookReviewUi(\'' + escAttrJs(entry.id) + '\')" style="font-size:.62rem">' +
         (entry.reviewed ? "Unmark reviewed" : "✓ Mark reviewed") + '</button>';
     }
-    actions += '<button class="btn btn-s" onclick="casebookRemove(\'' + entry.id + '\')" style="font-size:.62rem">Delete case</button></div>';
+    actions += '<button class="btn btn-s" onclick="casebookRemove(\'' + escAttrJs(entry.id) + '\')" style="font-size:.62rem">Delete case</button></div>';
 
     return '<div style="border:1px solid var(--ms);border-radius:var(--r);margin-bottom:6px;overflow:hidden">' +
-      '<div style="padding:7px 10px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px" onclick="casebookToggle(\'' + entry.id + '\')">' +
+      '<div style="padding:7px 10px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px" onclick="casebookToggle(\'' + escAttrJs(entry.id) + '\')">' +
         '<div style="min-width:0">' +
           '<div style="font-size:.68rem;color:var(--sv)">' + (meta.join(" · ") || "Case") +
             (urgent ? ' <span style="color:var(--ac,#c00);font-weight:600">· URGENT</span>' : '') +

@@ -134,15 +134,15 @@ function renderAttachList(scope) {
     var a = list[i], isImg = /^image\//.test(a.type);
     h += '<div style="border:1px solid var(--fg);border-radius:var(--r);padding:6px;width:120px;font-size:.54rem">' +
       (isImg
-        ? '<img src="' + (a.thumb || a.dataUrl || "") + '" style="width:100%;height:70px;object-fit:cover;border-radius:3px;cursor:pointer" onclick="openAttachment(\'' + scope + '\',\'' + a.id + '\')">'
-        : '<div onclick="openAttachment(\'' + scope + '\',\'' + a.id + '\')" style="height:70px;display:flex;align-items:center;justify-content:center;background:var(--fg);border-radius:3px;cursor:pointer;font-size:1.5rem">' + (/pdf/.test(a.type) ? "📄" : "📎") + '</div>') +
+        ? '<img src="' + (a.thumb || a.dataUrl || "") + '" style="width:100%;height:70px;object-fit:cover;border-radius:3px;cursor:pointer" onclick="openAttachment(\'' + scope + '\',\'' + escAttrJs(a.id) + '\')">'
+        : '<div onclick="openAttachment(\'' + scope + '\',\'' + escAttrJs(a.id) + '\')" style="height:70px;display:flex;align-items:center;justify-content:center;background:var(--fg);border-radius:3px;cursor:pointer;font-size:1.5rem">' + (/pdf/.test(a.type) ? "📄" : "📎") + '</div>') +
       '<div style="margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + esc(a.name) + '">' + esc(a.name) + '</div>' +
       '<div style="color:var(--sv)">' + fsHumanSize(a.size) +
         (a.compressed && a.orig_size > a.size ? ' <span title="compressed from ' + fsHumanSize(a.orig_size) + '">↓</span>' : '') +
         (a.added ? ' · ' + esc(a.added.slice(0, 10)) : '') + '</div>' +
       '<div style="display:flex;gap:8px;margin-top:2px">' +
-        '<span style="cursor:pointer;color:var(--md)" onclick="openAttachment(\'' + scope + '\',\'' + a.id + '\')">open</span>' +
-        '<span style="cursor:pointer;color:var(--as,#c0392b)" onclick="removeAttachment(\'' + scope + '\',\'' + a.id + '\')">remove</span>' +
+        '<span style="cursor:pointer;color:var(--md)" onclick="openAttachment(\'' + scope + '\',\'' + escAttrJs(a.id) + '\')">open</span>' +
+        '<span style="cursor:pointer;color:var(--as,#c0392b)" onclick="removeAttachment(\'' + scope + '\',\'' + escAttrJs(a.id) + '\')">remove</span>' +
       '</div></div>';
   }
   return h + '</div>';

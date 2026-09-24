@@ -786,14 +786,26 @@ function renderDrawingGallery(kind) {
   }
   h += '<div style="display:flex;flex-wrap:wrap;gap:8px">';
   list.forEach(function (d, i) {
+    var src = drawSafeImageSrc(d && d.data);
     h += '<div style="border:1px solid var(--fg);border-radius:var(--r);padding:5px;width:190px;font-size:.52rem">' +
-      '<img src="' + d.data + '" style="width:100%;border-radius:2px;cursor:pointer;background:#fff" onclick="openSavedDrawing(\'' + kind + '\',' + i + ')">' +
+      (src ? '<img src="' + src + '" style="width:100%;border-radius:2px;cursor:pointer;background:#fff" onclick="openSavedDrawing(\'' + kind + '\',' + i + ')">'
+           : '<div style="color:var(--sv);padding:12px 0">(image unavailable)</div>') +
       '<div style="margin-top:3px;font-weight:600">' + esc(d.eye || "") + ' · ' + esc((d.timestamp || "").slice(0, 16).replace("T", " ")) + '</div>' +
       (d.by ? '<div style="color:var(--sv)">by ' + esc(d.by) + '</div>' : '') +
-      '<div style="margin-top:2px"><span style="cursor:pointer;color:var(--as,#c0392b)" onclick="deleteDrawing(\'' + kind + '\',\'' + (d.id || i) + '\')">delete</span></div>' +
+      '<div style="margin-top:2px"><span style="cursor:pointer;color:var(--as,#c0392b)" onclick="deleteDrawing(\'' + kind + '\',\'' + escAttrJs(d.id || i) + '\')">delete</span></div>' +
     '</div>';
   });
   return h + '</div>';
+}
+
+/* A saved drawing's image as a src attribute value, or "" if it is not one.
+   It comes back from the record — a restored backup or a synced device can
+   carry anything — and was written into src="…" raw, both on the page and
+   in the full-size pop-up: `x" onerror="…` ran code. Only a base64 PNG /
+   JPEG / WebP data URL (what the canvas produces) is accepted. */
+function drawSafeImageSrc(data) {
+  var s = String(data === null || data === undefined ? "" : data);
+  return /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+\/=\s]+$/.test(s) ? s : "";
 }
 
 /* Open a saved drawing full size, with its colour legend, in a new tab. */
@@ -803,17 +815,22 @@ function openSavedDrawing(kind, idx) {
   if (!d) return;
   var w = window.open();
   if (!w) return;
-  var legend = (d.legend || []).map(function (c) {
+  /* The legend is read back from the RECORD, not from the palette constants:
+     escaped, and the colour must be a plain colour value. */
+  var legend = (Array.isArray(d.legend) ? d.legend : []).map(function (c) {
+    c = c || {};
+    var col = /^#[0-9a-fA-F]{3,8}$|^[a-zA-Z]{3,20}$/.test(String(c.value || "")) ? c.value : "transparent";
     return '<div style="display:flex;align-items:center;gap:8px;margin:2px 0;font-size:12px">' +
-      '<span style="width:12px;height:12px;border-radius:50%;background:' + c.value + ';display:inline-block"></span>' +
-      '<b style="min-width:52px">' + c.label + '</b><span>' + c.use + '</span></div>';
+      '<span style="width:12px;height:12px;border-radius:50%;background:' + col + ';display:inline-block"></span>' +
+      '<b style="min-width:52px">' + esc(c.label || "") + '</b><span>' + esc(c.use || "") + '</span></div>';
   }).join("");
+  var imgSrc = drawSafeImageSrc(d.data);
   var title = (kind === "slit_lamp" ? "Anterior segment" : "Fundus") + " — " + (d.eye || "");
   w.document.write('<!doctype html><meta charset="utf-8"><title>' + esc(title) +
     '</title><body style="font-family:sans-serif;margin:24px">' +
     '<h3 style="margin:0 0 8px">' + esc(title) +
     ' <span style="font-weight:400;font-size:12px;color:#666">' + esc((d.timestamp || "").slice(0, 16).replace("T", " ")) + '</span></h3>' +
-    '<img src="' + d.data + '" style="max-width:100%;border:1px solid #ddd">' +
+    (imgSrc ? '<img src="' + imgSrc + '" style="max-width:100%;border:1px solid #ddd">' : '<p>(image unavailable)</p>') +
     '<h4 style="margin:14px 0 4px;font-size:13px">Colour key</h4>' + legend +
     '<div style="font-size:11px;color:#777;margin-top:10px">Conventional drawing colours — verify against local practice. ' +
     'Drawings are documentation only and are not interpreted by the diagnostic engine.</div>' +

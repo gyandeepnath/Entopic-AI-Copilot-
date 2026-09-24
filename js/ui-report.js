@@ -11,6 +11,41 @@
 /* PAGE 21: CLINICAL REPORT                                        */
 /* ═══════════════════════════════════════════════════════════════ */
 
+/* ── REPORT VALUE HELPERS ─────────────────────────────────────────
+   Every recorded value on the report is escaped: the report is rendered as
+   HTML, printed, and sent onward, and its values come from typed fields,
+   restored backups and synced devices. It interpolated most of them raw. */
+function rptVal(v) {
+  var t = String(v === null || v === undefined ? "" : v).trim();
+  return t ? escH(t) : "—";
+}
+/* Findings are {label, eye} objects since CL-2 (bare strings in older
+   records). The report joined them directly and printed "[object Object]". */
+function rptFindings(list) {
+  if (!Array.isArray(list)) return "";
+  return list.map(function (f) {
+    if (typeof recFindingText === "function") return recFindingText(f);
+    return (f && typeof f === "object") ? String(f.label || "") : String(f || "");
+  }).filter(Boolean).join(", ");
+}
+/* The EXAMINATION date of the open visit, not today's. The prescription was
+   fixed for this (RX-3); the report still stamped whatever day it was
+   printed, so re-printing a year-old visit misdated a clinical document. */
+function rptExamDate() {
+  try {
+    var vs = (typeof loadVisits === "function") ? loadVisits() : [];
+    for (var i = 0; i < vs.length; i++) if (vs[i].id === CV && vs[i].date) return new Date(vs[i].date).toLocaleDateString();
+  } catch (e) {}
+  return new Date().toLocaleDateString();
+}
+function rptAny() {
+  for (var i = 0; i < arguments.length; i++) {
+    var v = arguments[i];
+    if (v !== null && v !== undefined && String(v).trim() !== "") return true;
+  }
+  return false;
+}
+
 function pgRpt() {
   var nm = (P.first_name || "") + " " + (P.last_name || "");
   var dx = V.dxList || [];
@@ -34,7 +69,7 @@ function pgRpt() {
   /* Clinician + Date */
   h += '<div style="display:flex;justify-content:space-between;margin-bottom:10px;font-size:.68rem">';
   h += '<span>Clinician: ' + (CU ? escH(CU.name) + ", " + escH(CU.cred) : "—") + '</span>';
-  h += '<span>Date: ' + new Date().toLocaleDateString() + '</span>';
+  h += '<span>Examined: ' + escH(rptExamDate()) + '</span>';
   h += '</div>';
 
   /* Patient info box */
@@ -60,26 +95,20 @@ function pgRpt() {
     if (V.temporal.onset) temp.push("Onset: " + V.temporal.onset);
     if (V.temporal.duration) temp.push("Duration: " + V.temporal.duration);
     if (V.temporal.course) temp.push("Course: " + V.temporal.course);
-    h += '<div class="report-section"><b>Pattern:</b> ' + temp.join(" · ") + '</div>';
+    h += '<div class="report-section"><b>Pattern:</b> ' + escH(temp.join(" · ")) + '</div>';
   }
 
-  /* Visual Acuity */
-  if (V.va.od_un || V.va.od_bva) {
-    h += '<div class="report-section"><b>Visual Acuity</b> (' + V.va.chart + ' @ ' + V.va.dist + ')<br>';
+  /* Visual Acuity — either eye (an OS-only acuity used to omit the section) */
+  if (rptAny(V.va.od_un, V.va.os_un, V.va.od_bva, V.va.os_bva, V.va.od_ph, V.va.os_ph, V.va.od_near, V.va.os_near)) {
+    h += '<div class="report-section"><b>Visual Acuity</b> (' + escH(V.va.chart || "") + ' @ ' + escH(V.va.dist || "") + ')<br>';
     h += '<table style="border-collapse:collapse;width:100%;margin-top:4px">';
     h += '<tr style="border-bottom:1px solid var(--ms)"><th style="text-align:left;padding:3px 8px;width:100px"></th><th style="padding:3px 8px">OD</th><th style="padding:3px 8px">OS</th></tr>';
-    if (V.va.od_un || V.va.os_un) {
-      h += '<tr><td style="padding:3px 8px">Unaided</td><td style="text-align:center;padding:3px 8px">' + (V.va.od_un || "—") + '</td><td style="text-align:center;padding:3px 8px">' + (V.va.os_un || "—") + '</td></tr>';
-    }
-    if (V.va.od_ph || V.va.os_ph) {
-      h += '<tr><td style="padding:3px 8px">Pinhole</td><td style="text-align:center;padding:3px 8px">' + (V.va.od_ph || "—") + '</td><td style="text-align:center;padding:3px 8px">' + (V.va.os_ph || "—") + '</td></tr>';
-    }
-    if (V.va.od_bva || V.va.os_bva) {
-      h += '<tr><td style="padding:3px 8px">BVA</td><td style="text-align:center;padding:3px 8px">' + (V.va.od_bva || "—") + '</td><td style="text-align:center;padding:3px 8px">' + (V.va.os_bva || "—") + '</td></tr>';
-    }
-    if (V.va.od_near || V.va.os_near) {
-      h += '<tr><td style="padding:3px 8px">Near</td><td style="text-align:center;padding:3px 8px">' + (V.va.od_near || "—") + '</td><td style="text-align:center;padding:3px 8px">' + (V.va.os_near || "—") + '</td></tr>';
-    }
+    [["Unaided", "un"], ["Pinhole", "ph"], ["BVA", "bva"], ["Near", "near"]].forEach(function (row) {
+      var od = V.va["od_" + row[1]], os = V.va["os_" + row[1]];
+      if (!rptAny(od, os)) return;
+      h += '<tr><td style="padding:3px 8px">' + row[0] + '</td><td style="text-align:center;padding:3px 8px">' + rptVal(od) +
+        '</td><td style="text-align:center;padding:3px 8px">' + rptVal(os) + '</td></tr>';
+    });
     h += '</table></div>';
   }
 
@@ -111,39 +140,43 @@ function pgRpt() {
   }
 
   /* IOP */
-  if (V.iop.od || V.iop.os) {
-    h += '<div class="report-section"><b>IOP</b> (' + V.iop.method + '): OD ' + (V.iop.od || "—") + ' mmHg · OS ' + (V.iop.os || "—") + ' mmHg';
-    if (V.iop.time) h += ' @ ' + V.iop.time;
+  if (rptAny(V.iop.od, V.iop.os)) {
+    h += '<div class="report-section"><b>IOP</b> (' + escH(V.iop.method || "") + '): OD ' + rptVal(V.iop.od) + ' mmHg · OS ' + rptVal(V.iop.os) + ' mmHg';
+    if (V.iop.time) h += ' @ ' + escH(V.iop.time);
     h += '</div>';
   }
 
-  /* Pupils */
-  if (V.pupil.rapd !== "None") {
-    h += '<div class="report-section"><b>Pupils:</b> RAPD ' + V.pupil.rapd;
-    if (V.pupil.rapd_grade) h += ' Grade ' + V.pupil.rapd_grade;
+  /* Pupils — an empty RAPD value is not an RAPD */
+  var _rapdOn = (typeof rapdPresent === "function") ? rapdPresent(V.pupil.rapd) : (V.pupil.rapd && V.pupil.rapd !== "None");
+  if (_rapdOn) {
+    h += '<div class="report-section"><b>Pupils:</b> RAPD ' + escH(V.pupil.rapd);
+    if (V.pupil.rapd_grade) h += ' Grade ' + escH(V.pupil.rapd_grade);
     h += '</div>';
   }
 
   /* Slit Lamp */
-  if (V.sl.findings.length > 0) {
-    h += '<div class="report-section"><b>Anterior Segment:</b> ' + V.sl.findings.join(", ") + '</div>';
+  var _slF = rptFindings(V.sl.findings);
+  if (_slF) {
+    h += '<div class="report-section"><b>Anterior Segment:</b> ' + escH(_slF) + '</div>';
   }
 
   /* BV Summary */
-  if (V.bv.npc_b || V.bv.ct_n) {
+  if (rptAny(V.bv.npc_b, V.bv.ct_n, V.bv.ct_d, V.bv.acc_od, V.bv.acc_os)) {
     var bvSummary = [];
     if (V.bv.ct_d) bvSummary.push("CT Dist: " + V.bv.ct_d);
     if (V.bv.ct_n) bvSummary.push("CT Near: " + V.bv.ct_n);
     if (V.bv.npc_b) bvSummary.push("NPC: " + V.bv.npc_b + " cm");
     if (V.bv.acc_od) bvSummary.push("Acc OD: " + V.bv.acc_od + " D");
-    h += '<div class="report-section"><b>Binocular Vision:</b> ' + bvSummary.join(" · ") + '</div>';
+    if (V.bv.acc_os) bvSummary.push("Acc OS: " + V.bv.acc_os + " D");
+    h += '<div class="report-section"><b>Binocular Vision:</b> ' + escH(bvSummary.join(" · ")) + '</div>';
   }
 
   /* Fundus */
-  if (V.fun.od.cd_v || V.fun.findings.length > 0) {
-    h += '<div class="report-section"><b>Fundus</b> (' + V.fun.method + (V.fun.dilated ? ', dilated' : '') + '):<br>';
-    if (V.fun.od.cd_v) h += 'C/D: OD ' + V.fun.od.cd_v + ' · OS ' + (V.fun.os.cd_v || "—") + '<br>';
-    if (V.fun.findings.length > 0) h += 'Findings: ' + V.fun.findings.join(", ");
+  var _fuF = rptFindings(V.fun.findings);
+  if (rptAny(V.fun.od.cd_v, V.fun.os.cd_v) || _fuF) {
+    h += '<div class="report-section"><b>Fundus</b> (' + escH(V.fun.method || "") + (V.fun.dilated ? ', dilated' : '') + '):<br>';
+    if (rptAny(V.fun.od.cd_v, V.fun.os.cd_v)) h += 'C/D: OD ' + rptVal(V.fun.od.cd_v) + ' · OS ' + rptVal(V.fun.os.cd_v) + '<br>';
+    if (_fuF) h += 'Findings: ' + escH(_fuF);
     h += '</div>';
   }
 
@@ -545,25 +578,28 @@ function generateReferralLetter() {
     letter += "Presenting Complaint: " + V.cc + "\n\n";
   }
 
-  /* Key findings */
+  /* Key findings. VA used to print "OD <bva or unaided> OS <bva or
+     unaided>" with nothing to say which — one eye's corrected acuity beside
+     the other's UNCORRECTED one reads as a large difference that is not
+     there. Each measure now has its own labelled line. Findings are objects
+     since CL-2 and printed as "[object Object]"; either eye's C/D now counts;
+     an empty RAPD value is not an RAPD. */
+  var _t = function (v) { var x = String(v === null || v === undefined ? "" : v).trim(); return x || "—"; };
   letter += "Key Clinical Findings:\n";
-  if (V.va.od_bva || V.va.od_un) {
-    letter += "  VA: OD " + (V.va.od_bva || V.va.od_un || "—") + "  OS " + (V.va.os_bva || V.va.os_un || "—") + "\n";
+  if (rptAny(V.va.od_bva, V.va.os_bva)) letter += "  VA (best corrected): OD " + _t(V.va.od_bva) + "  OS " + _t(V.va.os_bva) + "\n";
+  if (rptAny(V.va.od_un, V.va.os_un))   letter += "  VA (unaided): OD " + _t(V.va.od_un) + "  OS " + _t(V.va.os_un) + "\n";
+  if (rptAny(V.iop.od, V.iop.os)) {
+    letter += "  IOP: OD " + _t(V.iop.od) + "  OS " + _t(V.iop.os) + " mmHg (" + _t(V.iop.method) + ")\n";
   }
-  if (V.iop.od || V.iop.os) {
-    letter += "  IOP: OD " + (V.iop.od || "—") + "  OS " + (V.iop.os || "—") + " mmHg (" + V.iop.method + ")\n";
+  var _slL = rptFindings(V.sl.findings);
+  if (_slL) letter += "  Anterior: " + _slL + "\n";
+  if (rptAny(V.fun.od.cd_v, V.fun.os.cd_v)) {
+    letter += "  C/D: OD " + _t(V.fun.od.cd_v) + "  OS " + _t(V.fun.os.cd_v) + "\n";
   }
-  if (V.sl.findings.length > 0) {
-    letter += "  Anterior: " + V.sl.findings.join(", ") + "\n";
-  }
-  if (V.fun.od.cd_v) {
-    letter += "  C/D: OD " + V.fun.od.cd_v + "  OS " + (V.fun.os.cd_v || "—") + "\n";
-  }
-  if (V.fun.findings.length > 0) {
-    letter += "  Fundus: " + V.fun.findings.join(", ") + "\n";
-  }
-  if (V.pupil.rapd !== "None") {
-    letter += "  RAPD: " + V.pupil.rapd + "\n";
+  var _fuL = rptFindings(V.fun.findings);
+  if (_fuL) letter += "  Fundus: " + _fuL + "\n";
+  if ((typeof rapdPresent === "function") ? rapdPresent(V.pupil.rapd) : (V.pupil.rapd && V.pupil.rapd !== "None")) {
+    letter += "  RAPD: " + V.pupil.rapd + (V.pupil.rapd_grade ? " (grade " + V.pupil.rapd_grade + ")" : "") + "\n";
   }
   letter += "\n";
 

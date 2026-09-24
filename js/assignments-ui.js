@@ -74,7 +74,7 @@ function assignFacultyCard() {
           ' · ' + esc(a.mode === "osce" ? "OSCE" : simTier(a.tier).label) +
           ' · ' + target + ' case' + (target === 1 ? '' : 's') +
           (a.due ? ' · due ' + esc(a.due) : '') + '</span></div>' +
-        '<button class="btn btn-s" style="font-size:.54rem" onclick="assignRemove(\'' + a.id + '\')">Delete</button>' +
+        '<button class="btn btn-s" style="font-size:.54rem" onclick="assignRemove(\'' + escAttrJs(a.id) + '\')">Delete</button>' +
       '</div>' +
       '<div style="font-size:.56rem;color:var(--sl)">' +
         (a.assignedTo && a.assignedTo.length

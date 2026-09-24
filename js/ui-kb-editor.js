@@ -101,7 +101,7 @@ function kbRenderReviewQueue() {
   var h = "";
   for (var i = 0; i < Math.min(q.length, 400); i++) {
     var c = q[i];
-    h += '<div class="kbe-queue-item" onclick="openKbEditor(' + "'" + esc(c.name).replace(/'/g, "\\'") + "'" + ')" ' +
+    h += '<div class="kbe-queue-item" onclick="openKbEditor(' + "'" + escAttrJs(c.name) + "'" + ')" ' +
       'style="cursor:pointer;padding:3px 6px;border-bottom:1px solid var(--fg);font-size:.6rem;display:flex;gap:6px;align-items:center">' +
       (c.urgent ? '<span style="color:var(--ur,#c0392b);font-weight:700" title="urgent flag needs sign-off">⚑</span>' : '<span style="opacity:.35">·</span>') +
       '<span style="flex:1">' + esc(c.name) + '</span>' +

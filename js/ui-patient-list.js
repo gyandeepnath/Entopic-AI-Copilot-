@@ -54,7 +54,7 @@ function patientRowHtml(pt, lastByPatient) {
   var status = lastV && lastV.status === "completed"
     ? '<span style="color:var(--sl);font-size:.54rem;font-weight:600"> ✓</span>'
     : '<span style="color:var(--md);font-size:.54rem"> ●</span>';
-  return '<div class="p-row" onclick="openPatient(\'' + pt.id + '\')">' +
+  return '<div class="p-row" onclick="openPatient(\'' + escAttrJs(pt.id) + '\')">' +
     '<div><b>' + escH(nm) + '</b>' + (pt.practice ? ' <span class="practice-chip">practice</span>' : '') + status + '</div>' +
     '<span style="font-family:var(--mono);color:var(--sv);font-size:.6rem">' + escH(pt.mrn || "") + '</span>' +
   '</div>';

@@ -62,7 +62,7 @@ function moduleChooser() {
   EXAM_MODULES.forEach(function (m) {
     var on = !!V.modules[m.id];
     h += '<button class="btn ' + (on ? "btn-p" : "btn-s") + '" style="font-size:.6rem"' +
-      ' title="' + esc(m.blurb) + '" onclick="moduleToggle(\'' + m.id + '\')">' +
+      ' title="' + esc(m.blurb) + '" onclick="moduleToggle(\'' + escAttrJs(m.id) + '\')">' +
       (on ? "✓ " : "+ ") + esc(m.label) + '</button>';
   });
   return h + '</div>';

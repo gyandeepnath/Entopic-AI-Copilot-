@@ -35,7 +35,7 @@ function simLauncherCard() {
     if (t.id === "osce") return;   /* OSCE has its own launcher below */
     var on = (SIM.tier || "standard") === t.id;
     h += '<button class="btn ' + (on ? "btn-p" : "btn-s") + '" style="font-size:.58rem"' +
-      ' title="' + esc(t.blurb) + '" onclick="simSetTier(\'' + t.id + '\')">' + t.icon + " " + t.label + '</button>';
+      ' title="' + esc(t.blurb) + '" onclick="simSetTier(\'' + escAttrJs(t.id) + '\')">' + t.icon + " " + t.label + '</button>';
   });
   h += '</div>' +
     '<div style="font-size:.54rem;color:var(--sv);margin-bottom:8px">' + esc(simTier(SIM.tier || "standard").blurb) + '</div>';
@@ -113,7 +113,7 @@ function assignStudentCard() {
           (p.complete ? ' <span style="color:#2e7d32">✓ complete</span>' :
             (p.overdue ? ' <span style="color:#c0392b">overdue</span>' : '')) + '</div>' +
         '<button class="btn ' + (p.complete ? "btn-s" : "btn-p") + '" style="font-size:.58rem"' +
-          ' onclick="assignStart(\'' + a.id + '\')">' + (p.complete ? "Practise again" : "Continue") + '</button>' +
+          ' onclick="assignStart(\'' + escAttrJs(a.id) + '\')">' + (p.complete ? "Practise again" : "Continue") + '</button>' +
       '</div>' +
       '<div style="font-size:.56rem;color:var(--sv)">' + p.done + ' of ' + p.target + ' done' +
         (p.attempts ? ' · ' + p.accuracy + '% correct' : '') +
@@ -503,7 +503,7 @@ function simDebriefHtml(s) {
     h += '<div class="btn-g" style="margin-top:10px">' +
         (ap.complete
           ? '<button class="btn btn-p" onclick="simCloseModal();simQuitSilent()">Done — back to Study</button>'
-          : '<button class="btn btn-p" onclick="simCloseModal();assignStart(\'' + a.id + '\')">Next case in this assignment</button>') +
+          : '<button class="btn btn-p" onclick="simCloseModal();assignStart(\'' + escAttrJs(a.id) + '\')">Next case in this assignment</button>') +
         '<button class="btn btn-s" onclick="simCloseModal();simQuitSilent()">Finish for now</button>' +
       '</div>';
     return h;

@@ -103,7 +103,7 @@ function clinicChooser() {
   CLINIC_PACKS.forEach(function (p) {
     var on = !!V.clinics[p.id];
     h += '<button class="btn ' + (on ? "btn-p" : "btn-s") + '" style="font-size:.6rem"' +
-      ' title="' + esc(p.blurb) + '" onclick="clinicToggle(\'' + p.id + '\')">' +
+      ' title="' + esc(p.blurb) + '" onclick="clinicToggle(\'' + escAttrJs(p.id) + '\')">' +
       (on ? "✓ " : "") + p.icon + " " + esc(p.label) + '</button>';
   });
   return h + '</div>';

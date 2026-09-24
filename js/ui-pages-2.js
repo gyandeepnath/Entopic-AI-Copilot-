@@ -106,7 +106,7 @@ function pgFun() {
       /* The chip shows WHICH EYE, and cycles OD -> OS -> OU -> off (CL-2). */
       var eyeSel = (typeof recFindingState === "function") ? recFindingState(V.fun.findings, item)
                                                           : (V.fun.findings.indexOf(item) >= 0 ? "?" : "");
-      fh += '<span class="fn' + (eyeSel ? " sel" : "") + '" title="Click to cycle OD / OS / both / off" onclick="togFunFind(\'' + item.replace(/'/g, "\\'") + '\')">' + item +
+      fh += '<span class="fn' + (eyeSel ? " sel" : "") + '" title="Click to cycle OD / OS / both / off" onclick="togFunFind(\'' + escAttrJs(item) + '\')">' + escHtml(item) +
             (eyeSel ? ' <b style="font-size:.9em">' + (eyeSel === "?" ? "eye?" : eyeSel) + '</b>' : '') + '</span>';
     }
     fh += '</div>';

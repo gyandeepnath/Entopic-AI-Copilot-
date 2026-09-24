@@ -720,8 +720,8 @@ function adminUsersByRoleHtml(users) {
           ' <span style="font-size:.56rem;color:var(--sv)">@' + escH(u.username) + (u.cred ? ' · ' + escH(u.cred) : '') +
           (u.created ? ' · joined ' + escH(String(u.created).slice(0, 10)) : '') + '</span></div>' +
         '<div style="display:flex;gap:4px">' +
-          '<button class="btn btn-s" style="font-size:.54rem;padding:2px 7px" onclick="adminSetUserRole(\'' + u.id + '\')">Change mode</button>' +
-          '<button class="btn btn-s" style="font-size:.54rem;padding:2px 7px" onclick="adminDeleteUser(\'' + u.id + '\')">Delete</button>' +
+          '<button class="btn btn-s" style="font-size:.54rem;padding:2px 7px" onclick="adminSetUserRole(\'' + escAttrJs(u.id) + '\')">Change mode</button>' +
+          '<button class="btn btn-s" style="font-size:.54rem;padding:2px 7px" onclick="adminDeleteUser(\'' + escAttrJs(u.id) + '\')">Delete</button>' +
         '</div>' +
       '</div>';
     }
@@ -800,7 +800,7 @@ function showRolePicker() {
   var h = '<div class="role-pick-grid">';
   for (var i = 0; i < live.length; i++) {
     var r = live[i];
-    h += '<div class="role-card' + (r.id === cur ? ' role-card-on' : '') + '" onclick="pickRole(\'' + r.id + '\')">' +
+    h += '<div class="role-card' + (r.id === cur ? ' role-card-on' : '') + '" onclick="pickRole(\'' + escAttrJs(r.id) + '\')">' +
       '<div class="role-card-icon">' + (r.icon || "") + '</div>' +
       '<div class="role-card-label">' + escH(r.label) + '</div>' +
       '<div class="role-card-blurb">' + escH(r.blurb || "") + '</div>' +
@@ -1054,7 +1054,7 @@ function showKBInfo() {
         /* human-readable "what to enter" = its required findings */
         var needs = (c.req || []).map(kbPrettyToken).join(", ");
         h += '<div class="kbinfo-row" data-name="' + escH((c.name || "").toLowerCase()) + '" data-keywords="' + escH(kbSearchKeywords(c)) + '" ' +
-          'onclick="showKBDetail(\'' + escH(String(c.name)).replace(/'/g, "\\'") + '\')" ' +
+          'onclick="showKBDetail(\'' + escAttrJs(c.name) + '\')" ' +
           'style="cursor:pointer;font-size:.62rem;color:var(--sl);padding:3px 6px 3px 10px;border-radius:4px" ' +
           'onmouseover="this.style.background=\'var(--sn)\'" onmouseout="this.style.background=\'\'">' +
           '<b style="color:var(--ink,#222);font-weight:500">' + escH(c.name) + '</b>' +
@@ -1114,8 +1114,8 @@ function showKBDetail(name) {
 
     (typeof isAdmin === "function" && isAdmin() ?
       '<div class="btn-g" style="margin-top:10px">' +
-        (provisional ? '<button class="btn btn-p" onclick="reviewVerify(\'' + escH(String(c.name)).replace(/'/g, "\\'") + '\');showKBDetail(\'' + escH(String(c.name)).replace(/'/g, "\\'") + '\')" style="font-size:.62rem">Verify ✓</button>' : '') +
-        '<button class="btn btn-s" onclick="openKbEditor(\'' + escH(String(c.name)).replace(/'/g, "\\'") + '\')" style="font-size:.62rem">Edit in KB editor</button>' +
+        (provisional ? '<button class="btn btn-p" onclick="reviewVerify(\'' + escAttrJs(c.name) + '\');showKBDetail(\'' + escAttrJs(c.name) + '\')" style="font-size:.62rem">Verify ✓</button>' : '') +
+        '<button class="btn btn-s" onclick="openKbEditor(\'' + escAttrJs(c.name) + '\')" style="font-size:.62rem">Edit in KB editor</button>' +
       '</div>' : '') +
   '</div>';
 

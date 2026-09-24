@@ -188,7 +188,7 @@ if (typeof document !== "undefined") {
     var dkeys = Object.keys(perDomain).sort(function (a, b) { return perDomain[b] - perDomain[a]; });
     for (var d = 0; d < dkeys.length; d++) {
       chips += '<button class="cb-chip' + (_krFilter.domain === dkeys[d] ? ' cb-chip-on' : '') +
-        '" onclick="reviewQueueDomain(\'' + _kre(dkeys[d]).replace(/'/g, "\\'") + '\')">' +
+        '" onclick="reviewQueueDomain(\'' + escAttrJs(dkeys[d]) + '\')">' +
         _kre(dkeys[d]) + ' <span style="opacity:.6">' + perDomain[dkeys[d]] + '</span></button>';
     }
 
@@ -228,7 +228,7 @@ if (typeof document !== "undefined") {
           (it.req.length ? '<div class="kr-req">Requires: ' + _kre(it.req.join(", ")) + '</div>' : '') +
           (it.summary ? '<div class="kr-sum">' + _kre(it.summary) + '</div>' : '') +
         '</div>' +
-        '<button class="btn btn-p kr-verify" onclick="reviewVerify(\'' + _kre(it.name).replace(/'/g, "\\'") + '\')">Verify ✓</button>' +
+        '<button class="btn btn-p kr-verify" onclick="reviewVerify(\'' + escAttrJs(it.name) + '\')">Verify ✓</button>' +
       '</div>';
     }
     if (items.length > 60) {

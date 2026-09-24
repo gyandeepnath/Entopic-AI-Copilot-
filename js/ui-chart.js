@@ -121,7 +121,7 @@ function renderChart() {
     h += '<div class="adv-sec" style="font-size:.7rem">Previous visit — summary</div>';
     h += '<div style="border:1px solid var(--fg);border-left:3px solid var(--bk,#333);border-radius:var(--r);padding:12px;margin-bottom:14px;background:var(--card,transparent)">' +
       visitDigest(prev, true) +
-      '<div style="margin-top:6px"><button class="btn btn-s" style="font-size:.58rem" onclick="viewPastVisit(\'' + prev.id + '\')">View full previous visit</button></div>' +
+      '<div style="margin-top:6px"><button class="btn btn-s" style="font-size:.58rem" onclick="viewPastVisit(\'' + escAttrJs(prev.id) + '\')">View full previous visit</button></div>' +
       '</div>';
     if (!inProg && completed.length) {
       h += '<div style="font-size:.62rem;color:var(--sv);margin:-6px 0 14px">Starting a follow-up carries this patient\'s history (ocular, medical, family, social) forward automatically — you record only what\'s new.</div>';
@@ -152,7 +152,7 @@ function renderChart() {
       h += '<div style="padding:10px 12px;' + (i < visits.length - 1 ? 'border-bottom:1px solid var(--fg);' : '') + 'display:flex;gap:8px;align-items:flex-start">' +
         '<div style="flex:1">' + visitDigest(v, false) + '</div>' +
         '<button class="btn btn-s" style="font-size:.55rem;white-space:nowrap" onclick="' +
-        (v.status === "in_progress" ? "continueInProgress()" : "viewPastVisit('" + v.id + "')") + '">' +
+        (v.status === "in_progress" ? "continueInProgress()" : "viewPastVisit('" + escAttrJs(v.id) + "')") + '">' +
         (v.status === "in_progress" ? "Continue" : "View") + '</button>' +
         '</div>';
     }

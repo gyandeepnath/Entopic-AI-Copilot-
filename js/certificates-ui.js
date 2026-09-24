@@ -16,7 +16,7 @@ function certBlock() {
     '</div>' +
     '<div style="display:flex;flex-wrap:wrap;gap:6px">';
   CERTIFICATE_TEMPLATES.forEach(function (t) {
-    h += '<button class="btn btn-s" style="font-size:.6rem" onclick="certStart(\'' + t.id + '\')" title="' + esc(t.blurb) + '">' +
+    h += '<button class="btn btn-s" style="font-size:.6rem" onclick="certStart(\'' + escAttrJs(t.id) + '\')" title="' + esc(t.blurb) + '">' +
       esc(t.title) + '</button>';
   });
   return h + '</div>';

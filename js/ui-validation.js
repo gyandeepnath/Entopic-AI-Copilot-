@@ -369,7 +369,7 @@ if (typeof document !== "undefined") {
     for (var d = 0; d < dkeys.length; d++) {
       if (!dkeys[d]) continue;
       domChips += '<button class="val-dom' + (VALWORK.domain === dkeys[d] ? ' val-dom-on' : '') +
-        '" onclick="valFilterDomain(\'' + _ve(dkeys[d]).replace(/'/g, "\\'") + '\')">' +
+        '" onclick="valFilterDomain(\'' + escAttrJs(dkeys[d]) + '\')">' +
         _ve(dkeys[d]) + ' <span>' + perDomain[dkeys[d]] + '</span></button>';
     }
 
@@ -415,7 +415,7 @@ if (typeof document !== "undefined") {
     for (var i = 0; i < items.length; i++) {
       var it = items[i];
       h += '<div class="val-item' + (it.name === VALWORK.selected ? ' val-item-on' : '') +
-        '" data-name="' + _ve(it.name) + '" onclick="valSelect(\'' + _ve(it.name).replace(/'/g, "\\'") + '\')">' +
+        '" data-name="' + _ve(it.name) + '" onclick="valSelect(\'' + escAttrJs(it.name) + '\')">' +
         badge[it.status] +
         '<span class="val-item-name">' + _ve(it.name) + '</span>' +
         (it.urgent ? '<span class="val-item-urg" title="carries an urgent flag">⚑</span>' : '') +
@@ -508,11 +508,11 @@ if (typeof document !== "undefined") {
       (det.exclusions.length ? '<div class="val-excl">Supersedes: ' + _ve(det.exclusions.join(", ")) + '</div>' : "") +
       '<div class="val-actions">' +
         (canVerify
-          ? '<button class="btn btn-p" onclick="valVerify(\'' + _ve(det.name).replace(/'/g, "\\'") + '\')">Verify ✓ (record my clinical sign-off)</button>' +
-            '<button class="btn btn-p" onclick="valVerifyAndNext(\'' + _ve(det.name).replace(/'/g, "\\'") + '\')" ' +
+          ? '<button class="btn btn-p" onclick="valVerify(\'' + escAttrJs(det.name) + '\')">Verify ✓ (record my clinical sign-off)</button>' +
+            '<button class="btn btn-p" onclick="valVerifyAndNext(\'' + escAttrJs(det.name) + '\')" ' +
             'title="Sign this off and open the next one awaiting review">Verify &amp; next →</button>'
           : '') +
-        '<button class="btn btn-s" onclick="valEdit(\'' + _ve(det.name).replace(/'/g, "\\'") + '\')">Edit logic / tokens…</button>' +
+        '<button class="btn btn-s" onclick="valEdit(\'' + escAttrJs(det.name) + '\')">Edit logic / tokens…</button>' +
       '</div>' +
       '<div class="val-subnote">Need “any one of these findings” instead of all of them (alternative / substitute tokens)? ' +
         'That is an engine-semantics change flagged for a separate decision — for now, add a synonym in the token dictionary or split the condition. ' +

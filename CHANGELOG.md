@@ -6,6 +6,42 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-09-24 — Full audit, part 5: the report, the letter, and code-injection gaps
+
+### The clinical report and referral letter
+- Findings are stored as "finding + which eye" since an earlier update, but the
+  report and letter still printed them as a plain list — so **the anterior
+  segment and fundus findings printed as "[object Object], [object Object]"**.
+- The report was dated the day it was **printed**, not the day of the exam —
+  re-printing an old visit misdated a clinical document. (The prescription had
+  this fixed already; the report didn't.)
+- A left-eye-only acuity, or a left-eye-only cup:disc, left the section out.
+- The letter's "VA: OD … OS …" line mixed best-corrected and unaided acuity
+  with nothing to say which — one eye's corrected vision beside the other's
+  uncorrected vision reads as a large difference that isn't there. Each is now
+  its own labelled line.
+
+### Places where text from a record could run as code
+Rendered in a real browser with hostile values, then fixed:
+- The **clinical report** printed typed values (VA, IOP method, findings…) as
+  raw HTML — a crafted value ran code.
+- A **saved drawing's image** was written into the page raw — a crafted
+  "image" ran code, both on the page and in the full-size view.
+- **Patient and visit ids** were written into click handlers raw — a crafted
+  id in a restored backup ran code from the patient list and chart.
+- Fifteen click handlers used a home-made escape that forgot the backslash; a
+  condition name starting with a backslash broke out in the validation and
+  review screens. All now use the app's proper escape.
+
+Where these come from in practice: restored backups, imported files, records
+synced from another device, and clinician-written conditions shared with the
+clinic. The injection test (`node tools/stress/xss.js`) now covers all of them
+— 42 checks, 0 broken; on the previous version 6 of them break. It also got
+smarter: it used to flag correctly-escaped text as an attack, so it now parses
+each handler and only fails when the payload is actually live code.
+
+---
+
 ## 2026-09-24 — Full audit, part 4: the paperwork now says what YOU decided
 
 ### The printed prescription ignored your final prescription

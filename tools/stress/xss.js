@@ -31,6 +31,31 @@ const PW = "/opt/node22/lib/node_modules/playwright";
 const CHROME = "/opt/pw-browsers/chromium-1194/chrome-linux/chrome";
 const URL = "file://" + path.resolve(__dirname, "..", "..", "index.html");
 const { chromium } = require(PW);
+const espree = require("/opt/node22/lib/node_modules/eslint/node_modules/espree");
+
+/* Does this inline-handler body EXECUTE the payload? An escaped payload still
+   CONTAINS the text "__xss" — inside a string literal passed to an app
+   function — so a text match reports correct escaping as a break-out. Parse
+   the handler and look for the payload as CODE: any reference to __xss that
+   is not inside a string literal. A handler that no longer parses at all is
+   reported too: the escaping broke it, even if nothing ran. */
+function handlerExecutesPayload(body) {
+  let ast;
+  try { ast = espree.parse("(function(event){" + body + "\n})", { ecmaVersion: "latest" }); }
+  catch (e) { return "handler no longer parses (" + e.message.slice(0, 40) + ")"; }
+  let live = false;
+  (function walk(n) {
+    if (!n || typeof n !== "object" || live) return;
+    if (n.type === "Identifier" && n.name === "__xss") { live = true; return; }
+    if (n.type === "Literal" || n.type === "TemplateElement") return;
+    for (const k of Object.keys(n)) {
+      if (k === "parent") continue;
+      const v = n[k];
+      if (Array.isArray(v)) v.forEach(walk); else if (v && typeof v.type === "string") walk(v);
+    }
+  })(ast);
+  return live ? "payload is live code" : "";
+}
 
 let held = 0, broke = 0;
 function ok(name, cond, detail) {
@@ -46,7 +71,11 @@ const PAYLOADS = {
   tag:    '<img src=x onerror="window.__xss=1">',
   attrD:  '" onmouseover="window.__xss=1" x="',
   attrS:  "' onmouseover='window.__xss=1' x='",
-  jsStr:  "');window.__xss=1;//"
+  jsStr:  "');window.__xss=1;//",
+  /* The hand-rolled `escHtml(x).replace(/'/g, "\\'")` escapes the quote but
+     not the backslash, so a LEADING backslash turns its added \\' into an
+     escaped backslash followed by a real quote. escAttrJs exists for this. */
+  jsStrBs: "\\');window.__xss=1;//"
 };
 
 (async () => {
@@ -60,22 +89,28 @@ const PAYLOADS = {
 
   /* Everything the DOM must never contain after a render. */
   async function liveHandlers() {
-    return page.evaluate(() => {
-      const bad = [];
+    const found = await page.evaluate(() => {
+      const out = [];
       document.querySelectorAll("*").forEach((el) => {
         for (const a of el.attributes || []) {
           if (/^on/i.test(a.name) && /__xss/.test(a.value)) {
-            bad.push(el.tagName + "[" + a.name + "] in " +
-              (el.parentElement ? (el.parentElement.className || el.parentElement.tagName) : "?"));
+            out.push({ where: el.tagName + "[" + a.name + "] in " +
+              (el.parentElement ? (el.parentElement.className || el.parentElement.tagName) : "?"), body: a.value });
+          }
+          /* a javascript: URL in an href/src would also be a break-out */
+          if (/^(href|src|action|formaction)$/i.test(a.name) && /^\s*javascript:/i.test(a.value) && /__xss/.test(a.value)) {
+            out.push({ where: el.tagName + "[" + a.name + "] javascript: URL", body: "window.__xss=1" });
           }
         }
       });
       /* A <script> that came from data would also be a break-out. */
       document.querySelectorAll("script").forEach((s) => {
-        if (/__xss/.test(s.textContent || "")) bad.push("SCRIPT with payload");
+        if (/__xss/.test(s.textContent || "")) out.push({ where: "SCRIPT with payload", body: "window.__xss=1" });
       });
-      return bad;
+      return out;
     });
+    return found.map((f) => { const why = handlerExecutesPayload(f.body); return why ? f.where + " — " + why : ""; })
+                .filter(Boolean);
   }
 
   async function sweep(label, setup) {
@@ -241,6 +276,80 @@ const PAYLOADS = {
       window.HOME_TAB = "teaching"; window.renderHome();
       var host = document.getElementById("homeBody") || document.body;
       host.innerHTML = window.competencyTeachingCard() + window.competencyStudyCard();
+    } catch (e) { return { error: String(e) }; }
+    return {};
+  `));
+
+  /* ═══════════════════════════════════════════════════════════ */
+  group("Full audit (2026-09-24): report, diagnosis, review screens, drawings, ids");
+
+  for (const [kind, payload] of Object.entries(PAYLOADS)) {
+    await sweep("the clinical report and the Diagnosis step, " + kind + " payload", new Function("", `
+      var P_ = ${JSON.stringify(payload)};
+      try {
+        window.P = window.blankPatient("p1", "M1");
+        window.V = window.blankVisit();
+        window.CU = { username: "u", name: P_, cred: P_, clinic: P_ };
+        var V = window.V;
+        ["od_un","os_un","od_ph","os_ph","od_bva","os_bva","od_near","os_near","chart","dist"].forEach(function (k) { V.va[k] = P_; });
+        V.iop.od = P_; V.iop.os = P_; V.iop.method = P_; V.iop.time = P_;
+        V.pupil.rapd = P_; V.pupil.rapd_grade = P_;
+        V.sl.findings = [{ label: P_, eye: P_ }, P_];
+        V.fun.findings = [{ label: P_, eye: P_ }]; V.fun.method = P_; V.fun.od.cd_v = P_;
+        V.bv.ct_n = P_; V.bv.npc_b = P_; V.bv.acc_os = P_;
+        V.temporal.onset = P_; V.final_dx = P_;
+        V.rx.od_sph = P_; V.rx.fin_od_sph = P_; V.rx.method = P_; V.rx.pd_bi = P_;
+        V.dxList = [{ n: P_, icd: P_, prob: 0.9, cat: P_, domain: P_, urgent: true,
+                      evidence: { matched: [P_], missing: [P_], contradicted: [P_], suggestedTests: [P_], confidence: P_ } }];
+        V.alerts = [{ l: P_, m: P_ }];
+        V.step = "report"; var host = document.getElementById("mainEl") || document.body;
+        host.innerHTML = window.pgRpt();
+        host.innerHTML += window.pgDx ? "" : "";
+        /* pgDx re-runs the engine; render it with the hostile list restored after */
+        var html = (function () { var r = window.runDiagnosticEngine; window.runDiagnosticEngine = function () {}; try { return window.pgDx(); } finally { window.runDiagnosticEngine = r; } })();
+        host.innerHTML += html + window.pgRxP();
+      } catch (e) { return { error: String(e) }; }
+      return {};
+    `));
+  }
+
+  await sweep("a hostile condition name in the validation workspace and review queue", new Function("", `
+    var P_ = ${JSON.stringify(PAYLOADS.jsStrBs)};
+    try {
+      var c = JSON.parse(JSON.stringify(window.KNOWLEDGE_ALL[0]));
+      c.name = P_; c.domain = P_; c.icd = ""; c.review_status = "NEEDS_CLINICAL_REVIEW";
+      window.KNOWLEDGE_ALL.push(c);
+      if (typeof window.rebuildKbIndexes === "function") window.rebuildKbIndexes();
+      window.CU = { username: "admin", name: "A", admin: true, role: "clinician" };
+      if (window.showReviewQueue) window.showReviewQueue();
+      if (window.openValidation) window.openValidation(P_);
+    } catch (e) { return { error: String(e) }; }
+    return {};
+  `));
+
+  await sweep("a saved drawing whose image and legend are hostile", new Function("", `
+    var P_ = ${JSON.stringify(PAYLOADS.tag)};
+    try {
+      window.P = window.blankPatient("p1", "M1");
+      window.V = window.blankVisit();
+      window.V.sl.drawings = [{ id: ${JSON.stringify(PAYLOADS.jsStr)}, eye: P_, by: P_, timestamp: P_,
+        data: 'x" onerror="window.__xss=1', legend: [{ value: "red", label: P_, use: P_ }] }];
+      window.V.step = "slit_lamp";
+      var host = document.getElementById("mainEl") || document.body;
+      host.innerHTML = window.pgSL();
+    } catch (e) { return { error: String(e) }; }
+    return {};
+  `));
+
+  await sweep("hostile record ids across the patient list, chart and queues", new Function("", `
+    var J_ = ${JSON.stringify(PAYLOADS.jsStr)};
+    try {
+      window.CU = { username: "u", name: "U", role: "clinician" };
+      window.savePatients([{ id: J_, mrn: "M", first_name: "A", last_name: "B", created: new Date().toISOString() }]);
+      window.saveVisits([{ id: J_, patient_id: J_, status: "completed", date: new Date().toISOString(),
+                           updated: new Date().toISOString(), data: { cc: "x", symptoms: [] } }]);
+      window.HOME_TAB = "patients"; window.renderHome();
+      if (window.openChart) window.openChart(J_);
     } catch (e) { return { error: String(e) }; }
     return {};
   `));

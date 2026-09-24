@@ -32,7 +32,7 @@ function homeSecStudy() {
       '<span style="font-size:.58rem;color:var(--sv)">' + practice.length + ' · uncounted · <a href="#" onclick="clearPracticeExams();return false" style="color:var(--md)">clear all</a></span></div>';
     for (var i = 0; i < Math.min(practice.length, 12); i++) {
       var pt = practice[i];
-      practiceHtml += '<div class="p-row" onclick="openPatient(\'' + pt.id + '\')">' +
+      practiceHtml += '<div class="p-row" onclick="openPatient(\'' + escAttrJs(pt.id) + '\')">' +
         '<div><b>' + escH((pt.first_name || "Practice") + " " + (pt.last_name || "case")) + '</b> ' +
           '<span class="practice-chip">' + pStatus(pt.id) + '</span></div>' +
         '<span style="font-family:var(--mono);color:var(--sv);font-size:.6rem">' + escH(pt.mrn || "") + '</span>' +

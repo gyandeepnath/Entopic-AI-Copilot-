@@ -96,7 +96,7 @@ function renderSidebar() {
     }
 
     h += '<div class="sb-item' + (isActive ? " act" : "") + (isDone ? " done" : "") + '"' +
-      ' onclick="nav(\'' + s.id + '\')">';
+      ' onclick="nav(\'' + escAttrJs(s.id) + '\')">';
     h += '<span class="sb-num">' + s.n + '</span>';
     h += '<span>' + s.l + '</span>';
     if (hasAlert && !isDone) {
