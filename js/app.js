@@ -595,7 +595,8 @@ function homeSecAccount() {
 function homeSecAdmin() {
   if (typeof isAdmin !== "function" || !isAdmin()) return homeSecPatients();
 
-  var stats = getStorageStats();
+  /* (getStorageStats() was computed here and never used — a walk of every
+     stored byte on each Admin render.) */
   var cases = (typeof casebookLoad === "function") ? casebookLoad() : [];
   var users = loadUsers();
 

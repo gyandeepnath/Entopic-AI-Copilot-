@@ -547,3 +547,65 @@ test("the batch lookup reads the index ONCE regardless of patient count", () => 
   assert.strictEqual(reads, 1,
     "the visit index was read " + reads + " times for one batch lookup; it must be read once");
 });
+
+
+/* ═══ A RESTORE SAYS WHAT ACTUALLY HAPPENED  (full audit, 2026-09-24) ═══
+   The restore ignored every write result: on a full device it announced
+   "Restored N patients" having written none, and a failure between patients
+   and visits left the backup's patients beside this device's visits. And a
+   malformed entry in an optional part threw into a catch that told the
+   clinician "NOTHING was replaced — your records are untouched" AFTER the
+   patients and visits had been replaced. */
+async function restoreInto(target, payload) {
+  target.__p = payload;
+  target.run("_importDecoded(__p)");
+  for (let i = 0; i < 12; i++) await Promise.resolve();
+}
+function backupOf(visits, patients, extra) {
+  const a = sandbox({ also: ["js/storage-backup.js"] });
+  seed(a, visits);
+  a.run(`savePatients(${JSON.stringify(patients)})`);
+  return Object.assign(JSON.parse(a.run("JSON.stringify(buildBackupPayload())")), extra || {});
+}
+
+test("a restore whose core write is refused puts the previous records back and says so", async () => {
+  const payload = backupOf([visit("n1", "pNew", ago(1))], [{ id: "pNew", first_name: "New" }]);
+  const alerts = [];
+  const b = sandbox({ also: ["js/storage-backup.js"],
+                      extra: { confirm: () => true, dlSaveAs: () => true, alert: (m) => alerts.push(m),
+                               location: { reload() {} } } });
+  seed(b, [visit("o1", "pOld", ago(5))]);
+  b.run('savePatients([{ id: "pOld", first_name: "Old" }]);');
+  /* this device refuses to write visits from now on (full, locked, corrupt) */
+  b.run("var __realSaveVisits = saveVisits; var __refuse = true; saveVisits = function (v) { return __refuse ? false : __realSaveVisits(v); };");
+  /* …but lets the rollback through */
+  b.run("var __realSavePatients = savePatients;");
+  await restoreInto(b, payload);
+  b.run("__refuse = false;");
+  const msg = alerts.join("\n");
+  assert.ok(/The backup was NOT restored/.test(msg), "claimed or implied success: " + msg);
+  assert.ok(/visits/.test(msg), "the failing part must be named: " + msg);
+  assert.strictEqual(b.run('loadPatients().map(function (p) { return p.id; }).join(",")'), "pOld",
+    "the backup's patients were left beside this device's visits");
+  assert.ok(!/Restored \d+ patients/.test(msg));
+  assert.ok(b._audits.some((x) => x.a === "data_restore_failed"));
+});
+
+test("a refused OPTIONAL part is named; the records still restore; no false 'nothing was replaced'", async () => {
+  const payload = backupOf([visit("n1", "pNew", ago(1))], [{ id: "pNew", first_name: "New" }],
+    { consents: { pNew: { research: true } }, kb_overlays: [null, { id: "ov1", name: "X" }], competency_log: [null] });
+  const alerts = [];
+  const b = sandbox({ also: ["js/storage-backup.js"],
+                      extra: { confirm: () => true, dlSaveAs: () => true, alert: (m) => alerts.push(m),
+                               location: { reload() {} } } });
+  b.run('saveStore("kb_overlays", [null]); saveStore("competency_log", [null]);');
+  b.run("var __ss = saveStore; saveStore = function (k, v) { return k === 'consents' ? false : __ss(k, v); };");
+  await restoreInto(b, payload);
+  const msg = alerts.join("\n");
+  assert.ok(/Restored 1 patients and 1 visits/.test(msg), msg);
+  assert.ok(/could NOT be restored.*consents/.test(msg), "the refused part must be named: " + msg);
+  assert.ok(!/NOTHING was replaced/.test(msg), "told the clinician nothing changed after it had: " + msg);
+  assert.strictEqual(b.run("loadVisits().length"), 1);
+  /* the malformed null entries on either side no longer break the merge */
+  assert.ok(b.run('JSON.stringify(loadStore("kb_overlays", []))').indexOf("ov1") >= 0);
+});

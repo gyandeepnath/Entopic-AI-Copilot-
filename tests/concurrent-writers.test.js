@@ -178,6 +178,9 @@ for (const split of [false, true]) {
     const c = saveSandbox();
     const call = (e) => vm.runInContext(e, c);
 
+    /* the patient exists too — doSave now reports a save whose patient
+       record has vanished as NOT saved, which is what it is */
+    call(`savePatients([{ id: "p1", first_name: "A" }]);`);
     call(`saveVisits([{ id: "v1", patient_id: "p1", status: "in_progress",
       date: "2026-07-31T09:00:00.000Z", updated: "2026-07-31T09:05:00.000Z",
       updated_by: "Dr A", data: { iop: { od: 24, os: 22 } } }]);`);
@@ -273,4 +276,27 @@ test("the clinician is told, and the audit trail records it", () => {
   assert.ok(/evOn\("visit:conflict"/.test(ui),
     "and something must actually render it — an unheard event is a silent failure");
   assert.ok(/visitConflictBanner/.test(ui), "a visible notice exists");
+});
+
+
+/* ═══ A SAVE WHOSE PATIENT HAS VANISHED IS NOT A SAVE ═══
+   doSave() walked the patient list for the open patient and, finding nothing
+   (deleted on another device; the store came back empty), wrote the list back
+   unchanged and reported ok — every demographic edit silently dropped while
+   the app said "saved". Full audit, 2026-09-24. */
+test("doSave reports a missing patient record instead of claiming success", () => {
+  const c = saveSandbox();
+  const call = (e) => vm.runInContext(e, c);
+  call(`saveVisits([{ id: "v1", patient_id: "p1", status: "in_progress",
+    date: "2026-07-31T09:00:00.000Z", updated: "2026-07-31T09:05:00.000Z", data: {} }]);`);
+  c.CP = "p1"; c.CV = "v1";
+  c.P = { id: "p1", first_name: "Edited name" };
+  c.V = { id: "v1", cc: "typed" };
+  const res = call("doSave()");
+  assert.strictEqual(res.ok, false, "reported ok with no patient record to write to");
+  assert.strictEqual(res.patient_found, false);
+  assert.ok(/patient is no longer in the record store/.test(res.reason), res.reason);
+  assert.ok(c._events.some((e) => e[0] === "visit:save-failed"), "the failure must be announced");
+  /* the visit itself was still written — the report is about the patient */
+  assert.strictEqual(res.visit_written, true);
 });

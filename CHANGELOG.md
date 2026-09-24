@@ -6,6 +6,31 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-09-24 — Full audit, part 7: restoring a backup, and saving a patient who has gone
+
+### Restoring a backup could report success while failing
+- The restore **never checked whether its writes worked**. On a full device it
+  said "Restored 3,000 patients" having written none; and if writing stopped
+  between patients and visits, the device was left holding the backup's
+  patients beside its own old visits. Now accounts, patients, visits, settings
+  and the audit trail are written **as one unit**: if any of them fails, the
+  previous records are put back, and the message says the backup was NOT
+  restored and which part failed.
+- A damaged entry in any of the optional parts (personal conditions,
+  competency logbook, …) used to throw an error that landed in a message saying
+  **"NOTHING was replaced — your records are untouched"** — shown *after* the
+  patients and visits had been replaced. Each optional part now succeeds or
+  fails on its own and is named if it fails; "nothing was replaced" is shown
+  only when that is true (the safety copy could not be made).
+
+### A save whose patient had vanished said "saved"
+If the open patient's record had been deleted on another device (or the store
+came back empty), the save found nobody to write to and still reported success
+— every change to the patient's details silently lost. It now reports that the
+patient is no longer in the record store.
+
+---
+
 ## 2026-09-24 — Full audit, part 6: age vs date of birth, and a dead privacy path
 
 - **Age and date of birth could disagree silently.** The engine reads only the

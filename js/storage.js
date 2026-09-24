@@ -468,7 +468,7 @@ function loadSettings() {
 }
 
 function saveSettings(settings) {
-  saveStore("settings", settings);
+  return saveStore("settings", settings) !== false;
 }
 
 /* ═══════════════════════════════════════════════════════════════ */
@@ -482,7 +482,7 @@ function saveSettings(settings) {
 var AUDIT_MAX_LOCAL = 2000;
 
 function loadAudit() { return loadStore("audit", []); }
-function saveAudit(entries) { saveStore("audit", entries); }
+function saveAudit(entries) { return saveStore("audit", entries) !== false; }
 
 /* Describe a truncation in words a reader of the trail can act on. Pure. */
 function auditNoteTruncation(dropped) {
@@ -732,8 +732,10 @@ function _doSave() {
 
   /* Save patient data */
   var patients = loadPatients();
+  var patientFound = false;
   for (var j = 0; j < patients.length; j++) {
     if (patients[j].id === CP) {
+      patientFound = true;
       /* Update patient fields without replacing the whole object.
          Stamp `updated` only when the record actually changed — cloud sync
          uses this per-record stamp for last-writer-wins, so an untouched
@@ -741,7 +743,7 @@ function _doSave() {
          let this device silently overwrite another device's newer edit). */
       var before = JSON.stringify(patients[j]);
       for (var k in P) {
-        if (P.hasOwnProperty(k)) {
+        if (Object.prototype.hasOwnProperty.call(P, k) && k !== "__proto__") {
           patients[j][k] = P[k];
         }
       }
@@ -774,10 +776,16 @@ function _doSave() {
   } else if (!patientWritten) {
     reason = storageIsCorrupt("patients") ? "the patient store is damaged and writes are blocked"
            : "the patient store refused the write";
+  } else if (CP && !patientFound) {
+    /* Same rule as a missing visit: the patient's details were NOT saved
+       (the record was deleted on another device, or the store came back
+       empty). Reporting ok here silently dropped every demographic edit. */
+    reason = "the open patient is no longer in the record store — their details were not saved";
   }
 
   var res = {
-    ok: visitFound && visitWritten && patientWritten,
+    ok: visitFound && visitWritten && patientWritten && (!CP || patientFound),
+    patient_found: !CP || patientFound,
     visit_written: visitWritten, patient_written: patientWritten,
     visit_found: visitFound, reason: reason
   };

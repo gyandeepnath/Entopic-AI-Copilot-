@@ -345,27 +345,83 @@ function _importDecoded(data) {
   }
 
   takeSafetySnapshot().then(function (mode) {
-    if (data.users) saveUsers(data.users);
-    savePatients(data.patients);
-    saveVisits(data.visits);
-    if (data.settings) saveSettings(data.settings);
-    /* Restore the audit trail too — losing the access history on restore
-       would break the record the clinic may have to produce. */
-    if (Array.isArray(data.audit) && typeof saveAudit === "function") saveAudit(data.audit);
+    /* ── THE CORE RECORDS: ALL OR NOTHING ──
+       Accounts, patients, visits, settings and the audit trail are written
+       as a unit. The restore used to ignore every write result: on a full
+       device it announced "Restored 3,000 patients" having written none, and
+       a failure between patients and visits left this device holding the
+       backup's patients beside its own visits. Now a failed write puts the
+       previous records back, and says so. */
+    var before = {
+      users: loadUsers(), patients: loadPatients(), visits: loadVisits(),
+      settings: loadSettings(), audit: (typeof loadAudit === "function") ? loadAudit() : null
+    };
+    var failedCore = [];
+    function core(label, ok) { if (ok === false) failedCore.push(label); return ok !== false; }
+    if (!data.users || core("accounts", saveUsers(data.users))) {
+      if (core("patients", savePatients(data.patients)) &&
+          core("visits", saveVisits(data.visits)) &&
+          (!data.settings || core("settings", saveSettings(data.settings)))) {
+        /* Restore the audit trail too — losing the access history on restore
+           would break the record the clinic may have to produce. */
+        if (Array.isArray(data.audit) && typeof saveAudit === "function") core("audit trail", saveAudit(data.audit));
+      }
+    }
+    if (failedCore.length) {
+      var why = (typeof storageWriteFailure === "function" && storageWriteFailure())
+        ? storageWriteFailure().reason : "the device refused the write";
+      var back = saveUsers(before.users) !== false && savePatients(before.patients) !== false &&
+                 saveVisits(before.visits) !== false;
+      saveSettings(before.settings);
+      if (before.audit && typeof saveAudit === "function") saveAudit(before.audit);
+      if (typeof logAudit === "function") {
+        try { logAudit("data_restore_failed", "Restore NOT completed: writing " + failedCore.join(", ") +
+          " failed (" + why + "); previous records " + (back ? "put back" : "COULD NOT be put back"), {}); } catch (e0) {}
+      }
+      alert("The backup was NOT restored.\n\nWriting the " + failedCore.join(", ") + " failed (" + why + ").\n\n" +
+        (back ? "Your previous records were put back as they were."
+              : "Putting your previous records back ALSO failed. Restore the safety copy that was just downloaded to recover them.") +
+        "\n\nThe page will now reload.");
+      location.reload();
+      return;
+    }
+
+    /* ── EVERYTHING ELSE: each part on its own ──
+       These are merged or replaced one by one below. A malformed entry in
+       any of them (a null in the overlay list, say) used to throw into the
+       catch at the end, which then announced "NOTHING was replaced — your
+       records are untouched" AFTER the patients and visits had been
+       replaced. Each part now succeeds or fails alone, and a failure is
+       reported by name; the device keeps its own copy of that part. */
+    var failedExtra = [];
+    function part(label, fn) {
+      try { if (fn() === false) failedExtra.push(label); }
+      catch (e) { failedExtra.push(label); }
+    }
+
+    /* A write inside one part that the device refuses fails THAT part. */
+    function _put(k, v) {
+      var ok = saveStore(k, v);
+      if (ok === false) throw new Error("write refused: " + k);
+      return ok;
+    }
 
     /* Clinical sign-offs. MERGED, not replaced: a restore must never destroy
        verification work done on this device since the backup was taken. Older
        backups have no kb_signoffs key at all, which is why this is guarded. */
-    if (data.kb_signoffs && typeof data.kb_signoffs === "object") {
-      var incoming = data.kb_signoffs;
-      var have = loadStore("kb_signoffs") || {};
-      for (var sn in incoming) {
-        if (!Object.prototype.hasOwnProperty.call(incoming, sn)) continue;
-        var mine = have[sn];
-        if (!mine || String(incoming[sn].on || "") > String(mine.on || "")) have[sn] = incoming[sn];
+    part("clinical sign-offs", function () {
+      if (data.kb_signoffs && typeof data.kb_signoffs === "object") {
+        var incoming = data.kb_signoffs;
+        var have = loadStore("kb_signoffs") || {};
+        for (var sn in incoming) {
+          if (!Object.prototype.hasOwnProperty.call(incoming, sn)) continue;
+          var mine = have[sn];
+          if (!incoming[sn] || typeof incoming[sn] !== "object") continue;
+          if (!mine || String(incoming[sn].on || "") > String(mine.on || "")) have[sn] = incoming[sn];
+        }
+        _put("kb_signoffs", have);
       }
-      saveStore("kb_signoffs", have);
-    }
+    });
 
     /* Consents, the research corpus and its salt, and feedback.
        These are REPLACED rather than merged, which is the honest choice for
@@ -396,14 +452,16 @@ function _importDecoded(data) {
        restore must not throw away decisions made since the backup. Where both
        sides have a value the LOCAL one wins, because it is the more recent
        decision by the same person. */
-    if (data.age_brackets && typeof data.age_brackets === "object") {
-      var ab = loadStore("age_brackets", {}) || {};
-      for (var abn in data.age_brackets) {
-        if (!Object.prototype.hasOwnProperty.call(data.age_brackets, abn)) continue;
-        if (!ab[abn]) ab[abn] = data.age_brackets[abn];
+    part("age-bracket decisions", function () {
+      if (data.age_brackets && typeof data.age_brackets === "object") {
+        var ab = loadStore("age_brackets", {}) || {};
+        for (var abn in data.age_brackets) {
+          if (!Object.prototype.hasOwnProperty.call(data.age_brackets, abn)) continue;
+          if (!ab[abn]) ab[abn] = data.age_brackets[abn];
+        }
+        _put("age_brackets", ab);
       }
-      saveStore("age_brackets", ab);
-    }
+    });
 
     /* Migration ledger — UNION of applied ids, never a replace.
 
@@ -418,18 +476,20 @@ function _importDecoded(data) {
        The version string takes the higher of the two for the same reason. */
     /* Backup bookkeeping. Take the OLDER export stamp of the two: a restore
        must never make a device look better protected than it is. */
-    if (data.autobackup && typeof data.autobackup === "object") {
-      var abHave = loadStore("autobackup", null) || { snapshots: [], last_export: null };
-      var mine = abHave.last_export ? Date.parse(abHave.last_export) : 0;
-      var theirs = data.autobackup.last_export ? Date.parse(data.autobackup.last_export) : 0;
-      saveStore("autobackup", {
-        /* snapshots are per-device blobs; the restored list would point at
-           IndexedDB entries this device does not have. Keep our own. */
-        snapshots: abHave.snapshots || [],
-        last_export: (mine && theirs) ? (mine < theirs ? abHave.last_export : data.autobackup.last_export)
-                   : (abHave.last_export || data.autobackup.last_export || null)
-      });
-    }
+    part("backup bookkeeping", function () {
+      if (data.autobackup && typeof data.autobackup === "object") {
+        var abHave = loadStore("autobackup", null) || { snapshots: [], last_export: null };
+        var mine = abHave.last_export ? Date.parse(abHave.last_export) : 0;
+        var theirs = data.autobackup.last_export ? Date.parse(data.autobackup.last_export) : 0;
+        _put("autobackup", {
+          /* snapshots are per-device blobs; the restored list would point at
+             IndexedDB entries this device does not have. Keep our own. */
+          snapshots: abHave.snapshots || [],
+          last_export: (mine && theirs) ? (mine < theirs ? abHave.last_export : data.autobackup.last_export)
+                     : (abHave.last_export || data.autobackup.last_export || null)
+        });
+      }
+    });
 
     /* Automatic-archive bookkeeping. Take the OLDER prompt stamp of the two,
        for the same reason the export stamp above takes the older one: a
@@ -440,50 +500,56 @@ function _importDecoded(data) {
        `enabled` is a deliberate choice by whoever set it, so the restored
        value wins — except that an absent value defaults to ON, because a clinic
        that never turns this on is exactly the clinic that hits the wall. */
-    if (data.archive_auto && typeof data.archive_auto === "object") {
-      var aaHave = loadStore("archive_auto", null) || { last_prompt: null, enabled: true };
-      var aMine = aaHave.last_prompt ? Date.parse(aaHave.last_prompt) : 0;
-      var aTheirs = data.archive_auto.last_prompt ? Date.parse(data.archive_auto.last_prompt) : 0;
-      saveStore("archive_auto", {
-        last_prompt: (aMine && aTheirs)
-          ? (aMine < aTheirs ? aaHave.last_prompt : data.archive_auto.last_prompt)
-          : (aaHave.last_prompt || data.archive_auto.last_prompt || null),
-        enabled: data.archive_auto.enabled !== false
-      });
-    }
+    part("archive settings", function () {
+      if (data.archive_auto && typeof data.archive_auto === "object") {
+        var aaHave = loadStore("archive_auto", null) || { last_prompt: null, enabled: true };
+        var aMine = aaHave.last_prompt ? Date.parse(aaHave.last_prompt) : 0;
+        var aTheirs = data.archive_auto.last_prompt ? Date.parse(data.archive_auto.last_prompt) : 0;
+        _put("archive_auto", {
+          last_prompt: (aMine && aTheirs)
+            ? (aMine < aTheirs ? aaHave.last_prompt : data.archive_auto.last_prompt)
+            : (aaHave.last_prompt || data.archive_auto.last_prompt || null),
+          enabled: data.archive_auto.enabled !== false
+        });
+      }
+    });
 
     /* The archive index. UNION by id, and keep the higher retention floor —
        an index is a map from a stub in a chart to the file holding the rest of
        that visit. Dropping an entry does not lose records, but it loses the
        ability to find them, so a restore may only ever ADD to it. */
-    if (data.archives && typeof data.archives === "object") {
-      var arHave = loadStore("archives", null) || { archives: [], years: 3 };
-      var seenAr = {};
-      (arHave.archives || []).forEach(function (a) { if (a && a.id) seenAr[a.id] = true; });
-      var merged = (arHave.archives || []).slice();
-      (Array.isArray(data.archives.archives) ? data.archives.archives : []).forEach(function (a) {
-        if (a && a.id && !seenAr[a.id]) { seenAr[a.id] = true; merged.push(a); }
-      });
-      saveStore("archives", {
-        archives: merged,
-        years: Math.max(arHave.years || 0, data.archives.years || 0) ||
-               (typeof ARCHIVE_DEFAULT_YEARS !== "undefined" ? ARCHIVE_DEFAULT_YEARS : 3)
-      });
-    }
+    part("archive list", function () {
+      if (data.archives && typeof data.archives === "object") {
+        var arHave = loadStore("archives", null) || { archives: [], years: 3 };
+        var seenAr = {};
+        (arHave.archives || []).forEach(function (a) { if (a && a.id) seenAr[a.id] = true; });
+        var merged = (arHave.archives || []).slice();
+        (Array.isArray(data.archives.archives) ? data.archives.archives : []).forEach(function (a) {
+          if (a && a.id && !seenAr[a.id]) { seenAr[a.id] = true; merged.push(a); }
+        });
+        _put("archives", {
+          archives: merged,
+          years: Math.max(arHave.years || 0, data.archives.years || 0) ||
+                 (typeof ARCHIVE_DEFAULT_YEARS !== "undefined" ? ARCHIVE_DEFAULT_YEARS : 3)
+        });
+      }
+    });
 
-    if (data.migrations && typeof data.migrations === "object") {
-      var mHave = loadStore("migrations", null) || { version: null, applied: [] };
-      var mIn = data.migrations;
-      var merged = (mHave.applied || []).slice();
-      (Array.isArray(mIn.applied) ? mIn.applied : []).forEach(function (id) {
-        if (merged.indexOf(id) < 0) merged.push(id);
-      });
-      var vHave = mHave.version || "", vIn = mIn.version || "";
-      saveStore("migrations", {
-        version: (compareStoreVersion(vIn, vHave) === 1) ? vIn : (vHave || vIn),
-        applied: merged
-      });
-    }
+    part("migration ledger", function () {
+      if (data.migrations && typeof data.migrations === "object") {
+        var mHave = loadStore("migrations", null) || { version: null, applied: [] };
+        var mIn = data.migrations;
+        var merged = (mHave.applied || []).slice();
+        (Array.isArray(mIn.applied) ? mIn.applied : []).forEach(function (id) {
+          if (merged.indexOf(id) < 0) merged.push(id);
+        });
+        var vHave = mHave.version || "", vIn = mIn.version || "";
+        _put("migrations", {
+          version: (compareStoreVersion(vIn, vHave) === 1) ? vIn : (vHave || vIn),
+          applied: merged
+        });
+      }
+    });
 
     /* Competency framework and evidence. The framework is REPLACED (it is the
        institution's, and one version is authoritative); the evidence log is
@@ -491,52 +557,66 @@ function _importDecoded(data) {
        sign-off recorded since the backup was taken. */
     /* Clinician-authored conditions. MERGED by id — a restore must never
        destroy a condition somebody wrote since the backup was taken. */
-    if (Array.isArray(data.kb_overlays)) {
-      var haveOv = loadStore("kb_overlays", []) || [];
-      var seenOv = {};
-      for (var ovi = 0; ovi < haveOv.length; ovi++) seenOv[haveOv[ovi].id] = true;
-      for (var ovj = 0; ovj < data.kb_overlays.length; ovj++) {
-        var incOv = data.kb_overlays[ovj];
-        if (incOv && incOv.id && !seenOv[incOv.id]) haveOv.push(incOv);
+    part("personal conditions", function () {
+      if (Array.isArray(data.kb_overlays)) {
+        var haveOv = loadStore("kb_overlays", []) || [];
+        var seenOv = Object.create(null);
+        for (var ovi = 0; ovi < haveOv.length; ovi++) if (haveOv[ovi] && haveOv[ovi].id) seenOv[haveOv[ovi].id] = true;
+        for (var ovj = 0; ovj < data.kb_overlays.length; ovj++) {
+          var incOv = data.kb_overlays[ovj];
+          if (incOv && incOv.id && !seenOv[incOv.id]) haveOv.push(incOv);
+        }
+        _put("kb_overlays", haveOv);
       }
-      saveStore("kb_overlays", haveOv);
-    }
+    });
 
-    if (data.competencies && typeof data.competencies === "object") {
-      saveStore("competencies", data.competencies);
-    }
+    part("competency framework", function () {
+      if (data.competencies && typeof data.competencies === "object") {
+        _put("competencies", data.competencies);
+      }
+    });
     /* The feedback axes the department assesses on. Restored BEFORE the log
        below, so that ratings arriving with the sign-offs refer to dimensions
        that already exist rather than reading as orphaned. */
-    if (Array.isArray(data.competency_feedback_dims) && data.competency_feedback_dims.length) {
-      saveStore("competency_feedback_dims", data.competency_feedback_dims);
-    }
+    part("feedback dimensions", function () {
+      if (Array.isArray(data.competency_feedback_dims) && data.competency_feedback_dims.length) {
+        _put("competency_feedback_dims", data.competency_feedback_dims);
+      }
+    });
     /* The simulated-encounter rule, restored BEFORE the evidence it governs.
        An explicit typeof check, not a truthiness one: `false` is a real,
        deliberate setting here and the conservative default, so treating it as
        "absent" would silently re-score every restored logbook. */
-    if (typeof data.competency_sim_policy === "boolean") {
-      saveStore("competency_sim_policy", data.competency_sim_policy);
-    }
-    if (Array.isArray(data.competency_log)) {
-      var haveLog = loadStore("competency_log", []) || [];
-      var seenIds = {};
-      for (var cli = 0; cli < haveLog.length; cli++) seenIds[haveLog[cli].id] = true;
-      for (var clj = 0; clj < data.competency_log.length; clj++) {
-        var inc = data.competency_log[clj];
-        if (inc && inc.id && !seenIds[inc.id]) haveLog.push(inc);
+    part("simulated-evidence rule", function () {
+      if (typeof data.competency_sim_policy === "boolean") {
+        _put("competency_sim_policy", data.competency_sim_policy);
       }
-      saveStore("competency_log", haveLog);
-    }
+    });
+    part("competency logbook", function () {
+      if (Array.isArray(data.competency_log)) {
+        var haveLog = loadStore("competency_log", []) || [];
+        var seenIds = Object.create(null);
+        for (var cli = 0; cli < haveLog.length; cli++) if (haveLog[cli] && haveLog[cli].id) seenIds[haveLog[cli].id] = true;
+        for (var clj = 0; clj < data.competency_log.length; clj++) {
+          var inc = data.competency_log[clj];
+          if (inc && inc.id && !seenIds[inc.id]) haveLog.push(inc);
+        }
+        _put("competency_log", haveLog);
+      }
+    });
 
-    if (data.consents && typeof data.consents === "object") saveStore("consents", data.consents);
-    if (typeof data.research_salt === "string" && data.research_salt) {
-      saveStore("research_salt", data.research_salt);
-    }
-    if (data.research_corpus && typeof data.research_corpus === "object") {
-      saveStore("research_corpus", data.research_corpus);
-    }
-    if (Array.isArray(data.feedback)) saveStore("feedback", data.feedback);
+    part("consents", function () { if (data.consents && typeof data.consents === "object") _put("consents", data.consents); });
+    part("research key", function () {
+      if (typeof data.research_salt === "string" && data.research_salt) {
+        _put("research_salt", data.research_salt);
+      }
+    });
+    part("research data", function () {
+      if (data.research_corpus && typeof data.research_corpus === "object") {
+        _put("research_corpus", data.research_corpus);
+      }
+    });
+    part("feedback reports", function () { if (Array.isArray(data.feedback)) _put("feedback", data.feedback); });
 
     if (typeof logAudit === "function") {
       try {
@@ -546,14 +626,31 @@ function _importDecoded(data) {
       } catch (e3) {}
     }
 
+    if (failedExtra.length && typeof logAudit === "function") {
+      try { logAudit("data_restore_partial", "Restored the records, but not: " + failedExtra.join(", ") +
+        " (this device kept its own copy of those)", {}); } catch (e4) {}
+    }
     alert("Restored " + check.counts.patients + " patients and " + check.counts.visits + " visits.\n\n" +
+          (failedExtra.length ? "These could NOT be restored, so this device kept its own copy: " +
+            failedExtra.join(", ") + ".\n\n" : "") +
           "A safety copy of your previous data was downloaded" +
           (mode === "encrypted" ? " (encrypted with this device's vault key)." : " (unencrypted — store it carefully).") +
           "\n\nThe page will now reload.");
     location.reload();
-  }).catch(function (err2) {
+  }, function (err2) {
+    /* ONLY the safety snapshot's failure lands here (the rejection handler of
+       takeSafetySnapshot itself), so "nothing was replaced" is now true. A
+       .catch() at the end of the chain also caught errors thrown AFTER the
+       records had been replaced, and told the clinician the opposite. */
     alert("Could not save a safety copy of the current data, so NOTHING was replaced.\n\n(" +
           ((err2 && err2.message) || "unknown error") + ")\n\nYour records are untouched.");
+  }).catch(function (err3) {
+    if (typeof logAudit === "function") {
+      try { logAudit("data_restore_error", "The restore stopped part-way: " + ((err3 && err3.message) || err3), {}); } catch (e5) {}
+    }
+    alert("The restore stopped part-way because of an unexpected error (" + ((err3 && err3.message) || "unknown") + ").\n\n" +
+          "Some records may already have been replaced. The safety copy just downloaded holds your previous data — " +
+          "restore THAT file to go back.");
   });
 }
 
