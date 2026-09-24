@@ -424,3 +424,29 @@ test("there is no code path from a candidate straight to a prune", () => {
   assert.ok(/if \(!v\.ok\)[\s\S]{0,400}return/.test(runBody),
     "a failed verification must return before reaching the prune");
 });
+
+
+/* ═══ FULL AUDIT, 2026-09-24 ═══ */
+test("an archive record never replaces a stub that belongs to a DIFFERENT patient", () => {
+  const c = sandbox();
+  const call = (e) => vm.runInContext(e, c);
+  call(`saveVisits([{ id: "v1", patient_id: "pA", date: "2020-01-01", status: "completed",
+                      archived: true, archive_id: "a1", summary: {} }]);`);
+  c.__arch = { __entopic_archive: call("ARCHIVE_TAG"), visits: [
+    { id: "v1", patient_id: "pB", date: "2020-01-01", status: "completed", data: { cc: "patient B's exam" } }] };
+  const r = call("archiveRestore(__arch)");
+  assert.strictEqual(r.restored, 0);
+  assert.strictEqual(r.mismatched, 1);
+  assert.strictEqual(call('loadVisits()[0].archived'), true, "patient B's exam was written into patient A's chart");
+});
+
+test("a visit whose id is an Object.prototype name is not pruned unless it was archived", () => {
+  const c = sandbox();
+  const call = (e) => vm.runInContext(e, c);
+  call(`saveVisits([{ id: "toString", patient_id: "p1", date: "2010-01-01", status: "completed", data: { cc: "keep me" } },
+                    { id: "v2", patient_id: "p1", date: "2011-01-01", status: "completed", data: {} }]);`);
+  const r = call('archivePrune("a1", ["v2"])');
+  assert.strictEqual(r.pruned, 1, "only v2 was archived");
+  assert.strictEqual(call('loadVisits().filter(function (v) { return v.id === "toString"; })[0].data.cc'), "keep me",
+    "a visit that was never in the archive was replaced by a stub");
+});

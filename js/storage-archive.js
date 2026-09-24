@@ -111,7 +111,9 @@ function archiveCandidates(opts) {
 
   /* The newest LIVE visit per patient is the clinical baseline the next
      consultation is compared against. It stays, however old it is. */
-  var newestPerPatient = {};
+  /* Null-prototype maps throughout: keyed by record ids, and an id such as
+     "toString" would otherwise read an inherited function as a hit. */
+  var newestPerPatient = Object.create(null);
   visits.forEach(function (v) {
     if (!v || _isStub(v)) return;
     var t = Date.parse(v.date || "") || 0;
@@ -210,7 +212,7 @@ function archiveVerify(expected, actual) {
     return { ok: false, reason: "the archive holds " + actual.visits.length +
              " visit(s); " + expected.visits.length + " were written" };
   }
-  var byId = {};
+  var byId = Object.create(null);
   actual.visits.forEach(function (v) { if (v && v.id) byId[v.id] = v; });
   for (var i = 0; i < expected.visits.length; i++) {
     var want = expected.visits[i];
@@ -232,13 +234,16 @@ function archivePrune(archiveId, visitIds) {
   if (!archiveId || !Array.isArray(visitIds) || !visitIds.length) {
     return { ok: false, pruned: 0, reason: "nothing to prune" };
   }
-  var wanted = {};
+  /* Object.create(null): with {}, a visit whose id is "toString" read as
+     wanted — and was replaced by a stub though it was never in the verified
+     archive. */
+  var wanted = Object.create(null);
   visitIds.forEach(function (id) { wanted[id] = true; });
 
   var visits = loadVisits();
   var pruned = 0;
   for (var i = 0; i < visits.length; i++) {
-    if (!wanted[visits[i].id] || _isStub(visits[i])) continue;
+    if (!visits[i] || !wanted[visits[i].id] || _isStub(visits[i])) continue;
     visits[i] = archiveStubOf(visits[i], archiveId);
     pruned++;
   }
@@ -360,20 +365,30 @@ function archiveRestore(payload) {
     return { ok: false, restored: 0, reason: "the archive contains no visits" };
   }
   var visits = loadVisits();
-  var byId = {};
-  visits.forEach(function (v, i) { byId[v.id] = i; });
+  var byId = Object.create(null);
+  visits.forEach(function (v, i) { if (v && v.id) byId[v.id] = i; });
 
-  var restored = 0;
+  var restored = 0, mismatched = 0;
   payload.visits.forEach(function (v) {
-    if (!v || !v.id) return;
+    if (!v || typeof v !== "object" || !v.id) return;
     var idx = byId[v.id];
     if (idx === undefined) { visits.push(v); restored++; return; }
     /* Only a stub is replaced. A live record is never overwritten by an
        archive — the live one is by definition the more recent truth. */
-    if (_isStub(visits[idx])) { visits[idx] = v; restored++; }
+    if (!_isStub(visits[idx])) return;
+    /* …and only by the record for the SAME patient. The stub knows whose
+       visit it stands in for; an archive record claiming the same visit id
+       for a different patient (a mismatched or edited file) would otherwise
+       put one patient's examination into another patient's chart. */
+    if (visits[idx].patient_id !== v.patient_id) { mismatched++; return; }
+    visits[idx] = v; restored++;
   });
 
-  if (!restored) return { ok: true, restored: 0, reason: "every record in that archive is already live" };
+  if (!restored) {
+    return { ok: !mismatched, restored: 0, mismatched: mismatched,
+             reason: mismatched ? mismatched + " record(s) in that archive belong to a different patient than the chart entry they would replace — not restored"
+                                : "every record in that archive is already live" };
+  }
   if (saveVisits(visits) === false) {
     return { ok: false, restored: 0, reason: "the record store refused the write" };
   }
@@ -381,7 +396,8 @@ function archiveRestore(payload) {
     try { logAudit("records_restored_from_archive",
       restored + " visit(s) restored from archive " + (payload.archive_id || "(unknown)") + ".", {}); } catch (e) {}
   }
-  return { ok: true, restored: restored, reason: "" };
+  return { ok: true, restored: restored, mismatched: mismatched,
+           reason: mismatched ? mismatched + " record(s) were skipped: they belong to a different patient than the chart entry they would replace" : "" };
 }
 
 /* How much headroom archiving would actually buy, for the UI to show before
