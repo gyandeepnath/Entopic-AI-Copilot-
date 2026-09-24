@@ -1089,7 +1089,7 @@ var SCORE_WEIGHTS = {
   req_missing_factor: 0.45, /* multiplied in once per ABSENT required token */
   temporal_match: 1.08,
   temporal_mismatch: 0.85,
-  sparse_evidence: 0.5     /* fewer than 2 tokens in the whole encounter */
+  sparse_evidence: 0.5     /* fewer than 2 clinical FACTS in the encounter — see engineFactCount */
 };
 
 /* ═══════════════════════════════════════════════════════════════ */
@@ -1124,6 +1124,27 @@ var CONTEXT_ONLY_TOKENS = {
    context-only at once, draining every condition's evidence (kbMap(), loader.js). */
 function isContextOnlyToken(t) {
   return Object.prototype.hasOwnProperty.call(CONTEXT_ONLY_TOKENS, t) && !!CONTEXT_ONLY_TOKENS[t];
+}
+
+/* How many clinical facts an encounter holds, for the sparse-evidence rule.
+   Demographic and background-risk tokens are not facts about the eye
+   (CONTEXT_ONLY_TOKENS). The onset and course descriptors count once
+   between them: one "sudden" selection emits sudden_onset, acute and
+   acute_bias, which is one thing the patient said, not three. */
+var TEMPORAL_DESCRIPTOR_TOKENS = {
+  acute: 1, subacute: 1, chronic: 1, sudden_onset: 1, gradual_onset: 1,
+  subacute_onset: 1, acute_bias: 1, chronic_bias: 1, progressive: 1,
+  intermittent: 1, recurrent: 1, variable: 1
+};
+function engineFactCount(tokens) {
+  var n = 0, temporal = false;
+  for (var i = 0; i < tokens.length; i++) {
+    var t = tokens[i];
+    if (isContextOnlyToken(t)) continue;
+    if (Object.prototype.hasOwnProperty.call(TEMPORAL_DESCRIPTOR_TOKENS, t)) { temporal = true; continue; }
+    n++;
+  }
+  return n + (temporal ? 1 : 0);
 }
 
 function scoreCondition(condition, tokens, tokenSet) {
@@ -1225,8 +1246,12 @@ function scoreCondition(condition, tokens, tokenSet) {
   if (tempMatch) base *= SCORE_WEIGHTS.temporal_match;
   else if (tempMismatch) base *= SCORE_WEIGHTS.temporal_mismatch;
 
-  /* Very sparse encounters can't produce confident calls. */
-  if (tokens.length < 2) base *= SCORE_WEIGHTS.sparse_evidence;
+  /* Very sparse encounters can't produce confident calls. Counted in
+     clinical FACTS, not tokens: this was `tokens.length < 2`, and typing the
+     patient's age adds two or three demographic tokens — so entering an age
+     alone DOUBLED the confidence of a one-symptom differential ("distortion"
+     → Wet AMD 0.30 without an age, 0.60 with one). */
+  if (engineFactCount(tokens) < 2) base *= SCORE_WEIGHTS.sparse_evidence;
 
   /* All required tokens missing = zero (hard rule, unchanged) */
   if (reqMatched === 0 && condition.req.length > 0) base = 0;
@@ -1934,7 +1959,11 @@ function _engineDifferential(tokens) {
     var overlays = overlayConditions();
     for (var ov = 0; ov < overlays.length; ov++) {
       var oc = overlays[ov];
-      var os = scoreCondition(oc, tokens, scoreTokenSet);
+      /* One unscoreable personal condition is skipped, never fatal to the
+         core differential it is appended beneath. */
+      var os;
+      try { os = scoreCondition(oc, tokens, scoreTokenSet); }
+      catch (e) { _engineNoteError("scoring a personal condition", e); continue; }
       if (!os || !os.score) continue;
       var orec = {
         name: oc.name, icd: oc.icd, icd_label: "", icd_status: "",

@@ -61,6 +61,32 @@ function escAttrJs(s) {
     .replace(/'/g, "\\'"));
 }
 
+/* The <option> tags for a <select>, with the stored value selected again
+   when the page re-renders.
+
+   `options` is a list of plain strings, or [value, label] pairs when what is
+   STORED should differ from what is SHOWN. Every option gets an explicit,
+   escaped value attribute. An option without one submits its visible text:
+   the Van Herick dropdown stored "0 (Closed)" instead of the grade, and a
+   label written as "&amp;" in source stored "&", which never matched its own
+   option again. A full-audit round trip (every option of every exam
+   dropdown, chosen and re-rendered) found 7 dropdowns that reverted on
+   screen while the record kept the value — including nystagmus, which
+   showed "None" for a recorded nystagmus.
+
+   Pass labels as plain text; they are escaped here. */
+function optionsHtml(current, options) {
+  var cur = (current === null || current === undefined) ? "" : String(current);
+  var out = "";
+  for (var i = 0; i < options.length; i++) {
+    var o = options[i];
+    var v = Array.isArray(o) ? String(o[0]) : String(o);
+    var t = Array.isArray(o) ? String(o[1]) : String(o);
+    out += '<option value="' + escHtml(v) + '"' + (v === cur ? " selected" : "") + '>' + escHtml(t) + '</option>';
+  }
+  return out;
+}
+
 if (typeof module !== "undefined" && module.exports) {
-  module.exports = { escHtml: escHtml, escAttrJs: escAttrJs };
+  module.exports = { escHtml: escHtml, escAttrJs: escAttrJs, optionsHtml: optionsHtml };
 }

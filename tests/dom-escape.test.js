@@ -112,3 +112,25 @@ test("modules that provide load-time guards are loaded before their consumers", 
   assert.ok(at("local-vault.js") < at("storage.js"),
     "local-vault.js must precede storage.js, which bridges reads/writes through the vault");
 });
+
+
+/* ═══ optionsHtml — a dropdown must show what was stored ═══
+   Options without a value attribute submit their visible TEXT: Van Herick
+   stored "0 (Closed)" and the engine read the closed angle as open. Labels
+   written as "&amp;" in source stored "&" and never matched their own option
+   again. tools/e2e/dropdowns.js checks every exam dropdown in a browser; this
+   pins the helper itself. */
+test("optionsHtml: explicit escaped values, the stored one selected", () => {
+  const { optionsHtml } = require("../js/dom-escape.js");
+  const h = optionsHtml("0", [["", "—"], ["4", "4 (Wide)"], ["0", "0 (Closed)"]]);
+  assert.ok(/<option value="0" selected>0 \(Closed\)<\/option>/.test(h), h);
+  assert.strictEqual((h.match(/selected/g) || []).length, 1);
+  assert.ok(/<option value="">—<\/option>/.test(h), "the blank option must store blank, not its dash");
+  /* plain strings are value = label, and are escaped once — not left raw */
+  const a = optionsHtml("Insertion & removal", ["", "Insertion & removal", "<b>x</b>"]);
+  assert.ok(/value="Insertion &amp; removal" selected>Insertion &amp; removal</.test(a), a);
+  assert.ok(a.indexOf("<b>") < 0, "an option label reached the page as markup");
+  /* nothing stored → nothing selected (the browser shows the first option) */
+  assert.ok(optionsHtml(undefined, ["a", "b"]).indexOf("selected") < 0);
+  assert.ok(optionsHtml(null, ["a", "b"]).indexOf("selected") < 0);
+});

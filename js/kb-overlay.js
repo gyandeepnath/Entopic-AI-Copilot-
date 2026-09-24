@@ -80,7 +80,11 @@ var OVERLAY_STATES = ["private", "submitted", "published", "returned", "declined
 function overlayAll() {
   if (typeof loadStore !== "function") return [];
   var l = loadStore(OVERLAY_STORE, []);
-  return Array.isArray(l) ? l : [];
+  /* Objects only. A null or a string in the stored list (an import, a sync
+     from another version) made overlayActive() throw on `o.deleted`, and the
+     engine scores overlays inside the differential stage — one bad entry
+     would have blanked every differential on the device. */
+  return Array.isArray(l) ? l.filter(function (o) { return !!o && typeof o === "object" && !Array.isArray(o); }) : [];
 }
 
 function overlaySaveAll(list) {
@@ -372,14 +376,23 @@ function overlayReview(id, decision, comment) {
 /* ── What the engine consumes ──
    Shaped exactly like a core condition so scoreCondition needs no changes,
    plus `_overlay` so every consumer can tell them apart. */
+/* A token list as the scorer needs it: an array of non-empty strings. A
+   string here would be iterated character by character as tokens; anything
+   else would make the score NaN. */
+function _overlayTokens(list) {
+  return Array.isArray(list) ? list.filter(function (t) { return typeof t === "string" && t; }) : [];
+}
+
 function overlayConditions() {
-  return overlayActive().map(function (o) {
+  return overlayActive().filter(function (o) {
+    return typeof o.name === "string" && o.name.trim();
+  }).map(function (o) {
     return {
       name: o.name,
       domain: o.domain,
       route: o.route,
-      req: o.req || [], sup: o.sup || [], con: o.con || [],
-      temporal: o.temporal || [], tests: o.tests || [],
+      req: _overlayTokens(o.req), sup: _overlayTokens(o.sup), con: _overlayTokens(o.con),
+      temporal: _overlayTokens(o.temporal), tests: _overlayTokens(o.tests),
       exclusions: [],                       /* never, by construction */
       urgent: !!o.urgent,
       icd: o.icd || "",

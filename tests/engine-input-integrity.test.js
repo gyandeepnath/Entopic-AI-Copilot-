@@ -281,3 +281,51 @@ test("hostile symptom-array elements are ignored, real ones still count", () => 
   assert.ok(out.tokens.every((t) => typeof t === "string"), "a non-string became a token");
   assert.ok(/Flashes \+ floaters/.test(alertText(out)));
 });
+
+
+/* ═══ 5. AN AGE IS NOT EVIDENCE ═══ */
+
+test("typing the patient's age does not inflate a one-symptom differential", () => {
+  /* The sparse-evidence rule counted TOKENS; an age adds two or three
+     demographic ones, so "distortion" alone scored Wet AMD 0.30 without an age
+     and 0.60 with one. Demographics are declared context-only elsewhere in
+     the engine; this rule now agrees. */
+  const top = (p) => run({ symptoms: ["distortion"] }, p).dxList[0];
+  const noAge = top({ age: "" }), withAge = top({ age: "55" });
+  assert.strictEqual(withAge.n, noAge.n);
+  assert.ok(Math.abs(withAge.prob - noAge.prob) < 1e-9,
+    "age changed confidence " + noAge.prob.toFixed(2) + " → " + withAge.prob.toFixed(2));
+  /* one onset selection is one fact, not three tokens — and two real facts
+     are not sparse */
+  const twoFacts = run({ symptoms: ["floaters"], temporal: { onset: "acute" } }, { age: "" }).dxList[0];
+  const oneFact = run({ symptoms: ["floaters"] }, { age: "" }).dxList[0];
+  assert.ok(twoFacts.prob > oneFact.prob, "a symptom plus its onset is two facts");
+});
+
+
+/* ═══ 6. ONE BAD PERSONAL CONDITION CANNOT BLANK THE DIFFERENTIAL ═══ */
+
+test("malformed entries in the personal-condition store are skipped, not fatal", () => {
+  /* overlayActive() read `o.deleted` on every stored entry; a null in the list
+     (an import, a sync from another version) threw inside the differential
+     stage and would have blanked every differential on the device. */
+  const e2 = createEngine();
+  const fs = require("node:fs"), path = require("node:path");
+  vm.runInContext(fs.readFileSync(path.resolve(__dirname, "..", "js/kb-overlay.js"), "utf8"), e2.context);
+  e2.context.__store = [null, "x", 7, [],
+    { name: "Evening dryness pattern", author: "", state: "draft", scope: "private",
+      req: "dryness", sup: {}, con: null, urgent: true },
+    { name: 5, author: "", state: "draft", scope: "private", req: ["dryness"] },
+    { name: "Screen strain pattern", author: "", state: "draft", scope: "private",
+      req: ["dryness"], sup: ["burning", 7, null], con: [] }];
+  vm.runInContext("loadStore = function (k, d) { return k === OVERLAY_STORE ? __store : d; };", e2.context);
+  const out = e2.runCase({ symptoms: ["dryness", "burning"], iop: { od: "48" } }, { age: "50" });
+  assert.strictEqual(vm.runInContext("ENGINE_STATE.lastError", e2.context), null,
+    "a malformed personal condition failed a stage");
+  assert.ok(out.dxList.some((d) => !d.overlay), "the core differential was lost");
+  assert.ok(/IOP critically elevated/.test(alertText(out)));
+  const personal = out.dxList.filter((d) => d.overlay).map((d) => d.n);
+  assert.ok(personal.indexOf("Screen strain pattern") >= 0, "the well-formed personal condition still scores");
+  assert.ok(personal.indexOf("Evening dryness pattern") < 0,
+    "a req STRING must not be read character by character as tokens");
+});

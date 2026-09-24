@@ -6,6 +6,49 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-09-24 — Full audit, part 2: dropdowns that forgot, and an age that counted as evidence
+
+### Seven dropdowns showed the wrong thing after you chose
+I wrote a browser test that picks **every option of every dropdown on every
+exam step** (89 dropdowns, 490 options), lets the page redraw, and checks what
+the dropdown shows. Seven failed. The record kept what you chose, but the
+screen went back to the default — so **nystagmus showed "None" for a recorded
+nystagmus**, saccades and pursuits "Normal", the fundus lens "90D", and a
+contact-lens teaching record went blank. Anyone re-reading the screen would
+believe it, and could "correct" it back. Van Herick and the RAPD grade stored
+their long labels instead of the grade, which is how the closed-angle bug in
+part 1 started.
+
+All dropdowns now go through one helper that stores a proper value and
+re-selects it. Records saved before this still display correctly (tested).
+The test is permanent: `node tools/e2e/dropdowns.js`.
+
+### Typing the patient's age doubled the confidence of a guess
+The engine halves its confidence when an encounter has fewer than two pieces
+of evidence. It counted *tokens*, and entering an age adds two or three
+demographic tokens — so "distortion" alone scored Wet AMD **0.30 without an
+age and 0.60 with one**. The same engine already declares that an age "is not
+a clinical finding"; this rule now agrees. Two real findings score as before.
+
+### One damaged personal condition could blank every differential
+A single empty entry in your personal-conditions list (possible after an import
+or a sync) made the engine fail to build any differential on the device. Bad
+entries are now skipped; the rest still score. A condition whose "required"
+list was a single word used to be read letter by letter — now ignored.
+
+### For you to decide (added to `NEEDS_REVIEW.md`)
+"Allergic Conjunctivitis rules out keratitis / uveitis" is matched by name
+fragment, so whenever allergic conjunctivitis scores 0.5 or more it deletes
+**all 10 non-urgent keratitis entries and all 14 uveitis entries** from the
+list — herpes simplex and contact-lens keratitis included. Allergic eye disease
+can itself cause keratitis. I have not changed it: whether a rule should delete
+or merely down-rank is a clinical call.
+
+**Tests:** 1,341 pass; `dropdowns` e2e 8/8 (13 of its 15 checks fail on the
+previous version — the other two cover the engine half fixed in part 1).
+
+---
+
 ## 2026-09-24 — Full audit, part 1: the engine was misreading what you record
 
 You asked for every detail to be audited and fixed. I started where a mistake

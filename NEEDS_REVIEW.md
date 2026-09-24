@@ -161,6 +161,18 @@ Nothing below was changed.
    The dead name was removed — behaviour is unchanged. Which keratitis, if any,
    should that gate force onto the list?
 
+### 🟧 Exclusion rules delete by name fragment — found in the 2026-09-24 audit
+When a condition scores ≥ 0.5 its exclusion list removes matching conditions
+from the differential entirely (urgent ones are always kept). Matching is by
+name fragment, so **"Allergic Conjunctivitis" excluding "keratitis" and
+"uveitis" deletes all 10 non-urgent keratitis entries** (Herpes Simplex,
+Contact Lens Related, Marginal, Interstitial, …) **and all 14 uveitis entries**.
+Allergic eye disease (VKC/AKC) can itself cause keratitis. Options:
+(a) keep; (b) name the specific conditions excluded; (c) make exclusion
+down-rank instead of delete. Recommendation: (b), and consider (c) generally.
+Two other rules are inert by design (they target urgent conditions, which are
+never excluded): Dry Eye (MGD) → "acute_keratitis", POAG → "acute_angle_closure".
+
 ---
 
 ## For later (architecture — needs a decision + possibly spend)

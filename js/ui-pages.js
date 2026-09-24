@@ -844,12 +844,10 @@ function pgSL() {
         '<div class="fi"><label>Cornea</label><input value="' + esc(s.cornea) + '" oninput="' + p + 'cornea=this.value;runDiagnosticEngine();renderAdvisory()"></div>' +
         '<div class="fi"><label>Van Herick</label>' +
           '<select oninput="' + p + 'vh=this.value;runDiagnosticEngine();renderAdvisory()">' +
-            '<option value="">—</option>' +
-            '<option' + (s.vh === "4" ? " selected" : "") + '>4 (Wide)</option>' +
-            '<option' + (s.vh === "3" ? " selected" : "") + '>3 (Open)</option>' +
-            '<option' + (s.vh === "2" ? " selected" : "") + '>2 (Narrow)</option>' +
-            '<option' + (s.vh === "1" ? " selected" : "") + '>1 (V.narrow)</option>' +
-            '<option' + (s.vh === "0" ? " selected" : "") + '>0 (Closed)</option>' +
+            /* Stores the GRADE. Records from before this fix hold the label
+               ("0 (Closed)"); vanHerickGrade reads both, so they re-select. */
+            optionsHtml(_vhShown(s.vh), [["", "—"], ["4", "4 (Wide)"], ["3", "3 (Open)"],
+              ["2", "2 (Narrow)"], ["1", "1 (V.narrow)"], ["0", "0 (Closed)"]]) +
           '</select></div>' +
         '<div class="fi"><label>AC Cells (SUN)</label>' +
           '<select oninput="' + p + 'cells=this.value;runDiagnosticEngine();renderAdvisory()">' +
@@ -1006,12 +1004,12 @@ function pgPup() {
     h += '<div class="fi" style="max-width:380px">' +
       '<label>RAPD Grade</label>' +
       '<select oninput="V.pupil.rapd_grade=this.value">' +
-        '<option value="">Select grade</option>' +
-        '<option' + (V.pupil.rapd_grade === "1" ? " selected" : "") + '>1 — Weak initial constriction then dilation</option>' +
-        '<option' + (V.pupil.rapd_grade === "2" ? " selected" : "") + '>2 — Stall then dilation</option>' +
-        '<option' + (V.pupil.rapd_grade === "3" ? " selected" : "") + '>3 — Immediate dilation</option>' +
-        '<option' + (V.pupil.rapd_grade === "4" ? " selected" : "") + '>4 — Amaurotic — no constriction</option>' +
-        '<option' + (V.pupil.rapd_grade === "5" ? " selected" : "") + '>5 — Amaurotic + no consensual</option>' +
+        /* Stores the grade number; older records hold the whole label, and
+           its leading digit re-selects it. */
+        optionsHtml((/^\s*([1-5])/.exec(String(V.pupil.rapd_grade || "")) || [])[1] || "",
+          [["", "Select grade"], ["1", "1 — Weak initial constriction then dilation"],
+           ["2", "2 — Stall then dilation"], ["3", "3 — Immediate dilation"],
+           ["4", "4 — Amaurotic — no constriction"], ["5", "5 — Amaurotic + no consensual"]]) +
       '</select>' +
     '</div>';
   }
@@ -1049,13 +1047,14 @@ function pgMot() {
           '<option' + (V.mot.ductions === "Limited" ? " selected" : "") + '>Limited</option>' +
         '</select></div>' +
       '<div class="fi"><label>Saccades</label>' +
-        '<select oninput="V.mot.saccades=this.value"><option>Normal</option><option>Hypometric</option><option>Hypermetric</option></select></div>' +
+        '<select oninput="V.mot.saccades=this.value">' + optionsHtml(V.mot.saccades, ["Normal", "Hypometric", "Hypermetric"]) + '</select></div>' +
       '<div class="fi"><label>Pursuits</label>' +
-        '<select oninput="V.mot.pursuits=this.value"><option>Normal</option><option>Jerky</option><option>Restricted</option></select></div>' +
+        '<select oninput="V.mot.pursuits=this.value">' + optionsHtml(V.mot.pursuits, ["Normal", "Jerky", "Restricted"]) + '</select></div>' +
       '<div class="fi"><label>Hirschberg</label>' +
         '<input value="' + esc(V.mot.hirsch) + '" oninput="V.mot.hirsch=this.value" placeholder="Ortho / ET / XT"></div>' +
       '<div class="fi"><label>Nystagmus</label>' +
-        '<select oninput="V.mot.nystagmus=this.value;runDiagnosticEngine();renderAdvisory()"><option>None</option><option>Present — horizontal</option><option>Present — vertical</option><option>Present — rotary</option></select></div>' +
+        '<select oninput="V.mot.nystagmus=this.value;runDiagnosticEngine();renderAdvisory()">' +
+          optionsHtml(V.mot.nystagmus, ["None", "Present — horizontal", "Present — vertical", "Present — rotary"]) + '</select></div>' +
       '<div class="fi full"><label>Notes</label><textarea oninput="V.mot.notes=this.value;runDiagnosticEngine();renderAdvisory()">' + esc(V.mot.notes) + '</textarea></div>' +
     '</div>' +
     '<div class="btn-g">' +
@@ -1097,9 +1096,14 @@ function bvIn(key, ph, live, hint) {
 function bvSel(key, label, opts, live) {
   return '<div class="fi"><label>' + label + '</label>' +
     '<select oninput="V.bv[\'' + key + '\']=this.value' + (live ? ';runDiagnosticEngine();renderAdvisory()' : '') + '">' +
-    opts.map(function (o) {
-      return '<option' + ((V.bv[key] || "") === o ? " selected" : "") + '>' + o + '</option>';
-    }).join("") + '</select></div>';
+    optionsHtml(V.bv[key] || "", opts) + '</select></div>';
+}
+
+/* The Van Herick grade to show as selected: "0".."4" from either a stored
+   grade or a label saved before the dropdown stored grades. */
+function _vhShown(v) {
+  var g = (typeof vanHerickGrade === "function") ? vanHerickGrade(v) : null;
+  return g === null ? "" : String(g);
 }
 
 function bvArea(key, label, ph) {

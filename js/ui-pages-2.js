@@ -13,10 +13,10 @@ function pgGon() {
 
   function gonEye(eye) {
     var g = V.gon[eye];
+    /* The blank option used to have no value attribute, so choosing "—"
+       stored the dash itself, which then printed on the record. */
     var gradeOpts = function(sel) {
-      return ["", "4", "3", "2", "1", "Slit", "0"].map(function(v) {
-        return '<option' + (g[sel] === v ? ' selected' : '') + '>' + (v || "—") + '</option>';
-      }).join("");
+      return optionsHtml(g[sel] === "—" ? "" : g[sel], [["", "—"], "4", "3", "2", "1", "Slit", "0"]);
     };
 
     return '<div class="dv"><span>' + eye.toUpperCase() + '</span></div>' +
@@ -116,7 +116,7 @@ function pgFun() {
     '<div class="card-t">Fundus Examination</div>' +
     '<div class="fg" style="margin-bottom:10px">' +
       '<div class="fi"><label>Method</label>' +
-        '<select oninput="V.fun.method=this.value"><option>90D</option><option>78D</option><option>BIO + 20D</option><option>Direct</option></select></div>' +
+        '<select oninput="V.fun.method=this.value">' + optionsHtml(V.fun.method, ["90D", "78D", "BIO + 20D", "Direct"]) + '</select></div>' +
       '<div class="fi"><label>Dilated</label>' +
         '<select oninput="V.fun.dilated=this.value===\'Yes\'">' +
           '<option' + (V.fun.dilated ? ' selected' : '') + '>Yes</option>' +

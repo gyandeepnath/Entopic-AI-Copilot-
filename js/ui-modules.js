@@ -26,9 +26,7 @@ function modIn(obj, key, label, ph, hint) {
 function modSel(obj, key, label, opts) {
   return '<div class="fi"><label>' + label + '</label>' +
     '<select oninput="V.' + obj + '[\'' + key + '\']=this.value">' +
-    opts.map(function (o) {
-      return '<option' + (((V[obj] && V[obj][key]) || "") === o ? " selected" : "") + '>' + o + '</option>';
-    }).join("") + '</select></div>';
+    optionsHtml((V[obj] && V[obj][key]) || "", opts) + '</select></div>';
 }
 function modArea(obj, key, label, ph) {
   return '<div class="fi full"><label>' + label + '</label>' +
@@ -291,7 +289,7 @@ function pgContactLens() {
 
     '<div class="dv"><span>Teaching, care &amp; aftercare</span></div>' +
     '<div class="fg">' +
-      modSel("cl", "handling_taught", "Handling taught", ["", "Insertion &amp; removal taught and demonstrated back", "Partially — further session needed", "Already competent", "Not applicable"]) +
+      modSel("cl", "handling_taught", "Handling taught", ["", "Insertion & removal taught and demonstrated back", "Partially — further session needed", "Already competent", "Not applicable"]) +
       modIn("cl", "solution", "Care system", "") +
       modIn("cl", "replacement", "Replacement schedule agreed", "") +
       modArea("cl", "hygiene_advice", "Hygiene &amp; safety advice given", "Hand washing, no water contact, no overnight wear unless prescribed, when to remove and seek help…") +
