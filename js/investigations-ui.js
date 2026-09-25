@@ -7,12 +7,24 @@
 /* ═══════════════════════════════════════════════════════════════ */
 "use strict";
 
+var INV_STATUS_COLOUR = { ordered: "#b8860b", in_progress: "#1565c0", completed: "#2e7d32",
+                          reviewed: "#555", cancelled: "#999" };
+
+/* `status` is read back from the record — an imported or synced order can
+   carry anything — so the label is escaped and the colour is own-key only. */
 function invStatusPill(status) {
-  var col = { ordered: "#b8860b", in_progress: "#1565c0", completed: "#2e7d32",
-              reviewed: "#555", cancelled: "#999" }[status] || "#666";
+  var col = Object.prototype.hasOwnProperty.call(INV_STATUS_COLOUR, status) ? INV_STATUS_COLOUR[status] : "#666";
   return '<span style="font-size:.5rem;text-transform:uppercase;letter-spacing:.05em;' +
     'border:1px solid ' + col + ';color:' + col + ';border-radius:99px;padding:1px 7px;white-space:nowrap">' +
-    (INV_STATUS_LABEL[status] || status) + '</span>';
+    esc(invStatusLabel(status)) + '</span>';
+}
+
+/* "OCT — RNFL (OD), VF (OU)" — names and eyes both come from the record. */
+function invItemsText(o, sep) {
+  return (Array.isArray(o && o.items) ? o.items : []).map(function (i) {
+    i = i || {};
+    return esc(i.name) + (i.eye ? ' (' + esc(i.eye) + ')' : '');
+  }).join(sep);
 }
 
 function invUrgencyPill(u) {
@@ -69,14 +81,15 @@ function invOrderBlock() {
     '</div>';
 
   /* Existing orders for this patient */
-  var mine = (typeof P !== "undefined" && P) ? (P.orders || []) : [];
+  var mine = (typeof P !== "undefined" && P && Array.isArray(P.orders))
+    ? P.orders.filter(function (o) { return o && typeof o === "object"; }) : [];
   if (mine.length) {
     h += '<div style="font-size:.56rem;color:var(--sl);text-transform:uppercase;letter-spacing:.05em;margin:14px 0 4px">This patient\'s orders</div>';
     mine.slice().reverse().forEach(function (o) {
       h += '<div style="border:1px solid var(--fg);border-radius:var(--r);padding:8px;margin-bottom:6px">' +
         '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">' +
           '<div style="font-size:.64rem;font-weight:600">' +
-            o.items.map(function (i) { return esc(i.name) + (i.eye ? ' (' + i.eye + ')' : ''); }).join(", ") +
+            invItemsText(o, ", ") +
             invUrgencyPill(o.urgency) + '</div>' +
           invStatusPill(o.status) +
         '</div>' +
@@ -128,7 +141,8 @@ function homeSecInvestigations() {
   rows.forEach(function (r) {
     var o = r.order, pt = r.patient;
     var nm = ((pt.first_name || "") + " " + (pt.last_name || "")).trim() || "Unnamed";
-    var doneN = (o.items || []).filter(function (i) { return i.status === "completed"; }).length;
+    var items = Array.isArray(o.items) ? o.items : [];
+    var doneN = items.filter(function (i) { return i && i.status === "completed"; }).length;
     h += '<div class="home-settings" style="margin-bottom:8px;cursor:pointer" onclick="invOpenOrder(\'' + escAttrJs(o.id) + '\')">' +
       '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">' +
         '<div class="home-settings-title" style="margin:0">' + esc(nm) +
@@ -137,11 +151,11 @@ function homeSecInvestigations() {
         invStatusPill(o.status) +
       '</div>' +
       '<div class="home-settings-desc" style="margin-top:3px">' +
-        o.items.map(function (i) { return esc(i.name) + (i.eye ? ' (' + i.eye + ')' : ''); }).join(" · ") +
+        invItemsText(o, " · ") +
       '</div>' +
       (o.question ? '<div style="font-size:.56rem;color:var(--sv);margin-top:2px">“' + esc(o.question) + '”</div>' : '') +
       '<div style="font-size:.52rem;color:var(--sv);margin-top:3px">' +
-        doneN + ' of ' + o.items.length + ' done · raised ' + esc((o.created_at || "").slice(0, 16).replace("T", " ")) +
+        doneN + ' of ' + items.length + ' done · raised ' + esc((o.created_at || "").slice(0, 16).replace("T", " ")) +
         (o.created_by ? ' by ' + esc(o.created_by) : '') + '</div>' +
     '</div>';
   });
@@ -166,7 +180,8 @@ function invOrderDetail(orderId) {
       (o.question ? '<div style="font-size:.62rem;margin-top:4px;padding:6px 8px;background:var(--sn);border-radius:var(--r)"><b>Clinical question:</b> ' + esc(o.question) + '</div>' : '') +
     '</div>';
 
-  (o.items || []).forEach(function (it, idx) {
+  (Array.isArray(o.items) ? o.items : []).forEach(function (it, idx) {
+    it = it || {};
     var t = invTest(it.code);
     h += '<div class="home-settings" style="margin-bottom:10px">' +
       '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">' +
@@ -209,12 +224,12 @@ function invOrderDetail(orderId) {
     /* Reports */
     h += '<div style="margin-top:8px">' +
       '<div style="font-size:.54rem;color:var(--sl);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">Report / images</div>';
-    if (it.files && it.files.length) {
+    if (Array.isArray(it.files) && it.files.length) {
       h += '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:5px">';
       it.files.forEach(function (fr) {
         h += '<div style="border:1px solid var(--fg);border-radius:var(--r);padding:4px;width:104px;font-size:.5rem;cursor:pointer"' +
           ' onclick="invOpenFile(\'' + escAttrJs(o.id) + '\',' + idx + ',\'' + escAttrJs(fr.id) + '\')">' +
-          (fr.thumb ? '<img src="' + fr.thumb + '" style="width:100%;height:56px;object-fit:cover;border-radius:2px">'
+          (fsSafeThumb(fr.thumb) ? '<img src="' + fsSafeThumb(fr.thumb) + '" style="width:100%;height:56px;object-fit:cover;border-radius:2px">'
                     : '<div style="height:56px;display:flex;align-items:center;justify-content:center;background:var(--fg);border-radius:2px;font-size:1.2rem">' + (/pdf/.test(fr.type) ? "📄" : "📎") + '</div>') +
           '<div style="margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + esc(fr.name) + '">' + esc(fr.name) + '</div>' +
           '<div style="color:var(--sv)">' + fsHumanSize(fr.size) + '</div>' +
@@ -266,16 +281,16 @@ function invOrderDetail(orderId) {
 /* ── 3. Results waiting for this patient, shown inside the exam ──── */
 
 function invReviewBlock() {
-  if (typeof P === "undefined" || !P || !P.orders || !P.orders.length) return "";
-  var ready = P.orders.filter(function (o) { return o.status === "completed"; });
+  if (typeof P === "undefined" || !P || !Array.isArray(P.orders) || !P.orders.length) return "";
+  var ready = P.orders.filter(function (o) { return o && o.status === "completed"; });
   if (!ready.length) return "";
 
   var h = '<div class="dv"><span>Investigation results ready for review</span></div>';
   ready.forEach(function (o) {
     h += '<div style="border:1px solid var(--ink);border-radius:var(--r);padding:8px;margin-bottom:6px">' +
       '<div style="font-size:.64rem;font-weight:600">' +
-        o.items.map(function (i) { return esc(i.name) + (i.eye ? ' (' + i.eye + ')' : ''); }).join(", ") + '</div>';
-    o.items.forEach(function (it) {
+        invItemsText(o, ", ") + '</div>';
+    (Array.isArray(o.items) ? o.items : []).forEach(function (it) {
       var t = invTest(it.code);
       var vals = [];
       (t ? t.fields : []).forEach(function (fl) {
@@ -283,7 +298,7 @@ function invReviewBlock() {
         if (v) vals.push(esc(fl.l) + ": " + esc(v));
       });
       if (vals.length) h += '<div style="font-size:.56rem;color:var(--md);margin-top:2px">' + vals.join(" · ") + '</div>';
-      if (it.files && it.files.length) h += '<div style="font-size:.52rem;color:var(--sv)">' + it.files.length + ' report file(s) attached</div>';
+      if (Array.isArray(it.files) && it.files.length) h += '<div style="font-size:.52rem;color:var(--sv)">' + it.files.length + ' report file(s) attached</div>';
     });
     h += '<div style="margin-top:5px"><button class="btn btn-s" style="font-size:.58rem"' +
       ' onclick="goHome();setHomeTab(\'investigations\');invOpenOrder(\'' + escAttrJs(o.id) + '\')">Open &amp; review</button></div>' +

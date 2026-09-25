@@ -35,10 +35,18 @@ function attachPersist(scope) {
     if (typeof doSave === "function") doSave();
     if (typeof renderMain === "function") renderMain();
   } else if (scope === "patient") {
-    /* write the updated patient back into the store, then re-render the chart */
-    var pts = loadPatients();
-    for (var i = 0; i < pts.length; i++) if (pts[i].id === P.id) { pts[i] = P; break; }
-    savePatients(pts);
+    /* Write the attachments list onto the STORED record, not the whole of P:
+       investigation orders on the stored record can be newer than P's copy
+       (js/investigations.js), and replacing the record rolled them back.
+       Stamp `updated`, or cloud sync never sends the change. */
+    var pts = loadPatients(), found = false, stamp = new Date().toISOString();
+    for (var i = 0; i < pts.length; i++) {
+      if (pts[i].id === P.id) { pts[i].attachments = P.attachments; pts[i].updated = stamp; found = true; break; }
+    }
+    var ok = found && savePatients(pts) !== false;
+    if (ok) P.updated = stamp;
+    else alert("The file list was NOT saved to the patient record — " +
+      (found ? "the record store refused the write." : "this patient is no longer in the record store."));
     if (typeof renderChart === "function") renderChart();
   }
 }
@@ -96,13 +104,21 @@ function attachFind(scope, id) {
 function openAttachment(scope, id) {
   var a = attachFind(scope, id);
   if (!a) return;
+  attachOpenRecord(a);
+}
+
+/* Shared by the exam attachments and the investigation queue. fsResolveUrl
+   hands back only an object URL or a validated data URL, and the src is
+   escaped as well: this window is same-origin with the app, so whatever is
+   written into it runs with the app's reach. */
+function attachOpenRecord(a) {
   fsResolveUrl(a).then(function (url) {
     if (!url) { alert("The stored file could not be read back from this device."); return; }
     try {
       var w = window.open();
       if (w) {
-        if (/^image\//.test(a.type)) {
-          w.document.write('<title>' + esc(a.name) + '</title><img src="' + url + '" style="max-width:100%">');
+        if (/^image\//.test(String(a.type || ""))) {
+          w.document.write('<title>' + esc(a.name) + '</title><img src="' + esc(url) + '" style="max-width:100%">');
         } else {
           w.location = url;
         }
@@ -131,15 +147,15 @@ function renderAttachList(scope) {
   if (!list.length) return '<div style="font-size:.6rem;color:var(--sv)">No files attached yet.</div>';
   var h = '<div style="display:flex;flex-wrap:wrap;gap:8px">';
   for (var i = 0; i < list.length; i++) {
-    var a = list[i], isImg = /^image\//.test(a.type);
+    var a = list[i], isImg = /^image\//.test(String(a.type || ""));
     h += '<div style="border:1px solid var(--fg);border-radius:var(--r);padding:6px;width:120px;font-size:.54rem">' +
       (isImg
-        ? '<img src="' + (a.thumb || a.dataUrl || "") + '" style="width:100%;height:70px;object-fit:cover;border-radius:3px;cursor:pointer" onclick="openAttachment(\'' + scope + '\',\'' + escAttrJs(a.id) + '\')">'
+        ? '<img src="' + (fsSafeThumb(a.thumb) || fsSafeDataUrl(a.dataUrl)) + '" style="width:100%;height:70px;object-fit:cover;border-radius:3px;cursor:pointer" onclick="openAttachment(\'' + scope + '\',\'' + escAttrJs(a.id) + '\')">'
         : '<div onclick="openAttachment(\'' + scope + '\',\'' + escAttrJs(a.id) + '\')" style="height:70px;display:flex;align-items:center;justify-content:center;background:var(--fg);border-radius:3px;cursor:pointer;font-size:1.5rem">' + (/pdf/.test(a.type) ? "📄" : "📎") + '</div>') +
       '<div style="margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + esc(a.name) + '">' + esc(a.name) + '</div>' +
       '<div style="color:var(--sv)">' + fsHumanSize(a.size) +
         (a.compressed && a.orig_size > a.size ? ' <span title="compressed from ' + fsHumanSize(a.orig_size) + '">↓</span>' : '') +
-        (a.added ? ' · ' + esc(a.added.slice(0, 10)) : '') + '</div>' +
+        (a.added ? ' · ' + esc(String(a.added).slice(0, 10)) : '') + '</div>' +
       '<div style="display:flex;gap:8px;margin-top:2px">' +
         '<span style="cursor:pointer;color:var(--md)" onclick="openAttachment(\'' + scope + '\',\'' + escAttrJs(a.id) + '\')">open</span>' +
         '<span style="cursor:pointer;color:var(--as,#c0392b)" onclick="removeAttachment(\'' + scope + '\',\'' + escAttrJs(a.id) + '\')">remove</span>' +

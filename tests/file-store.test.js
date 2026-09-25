@@ -285,14 +285,38 @@ test("a record whose bytes are gone resolves to empty, so the caller can warn", 
 });
 
 test("both call sites warn the clinician when an attachment cannot be read", () => {
-  /* The contract above is only worth anything if the callers act on it. */
-  for (const f of ["js/ui-attach.js", "js/investigations.js"]) {
-    const src = read(f);
-    const m = /fsResolveUrl\([^)]*\)\.then\(function \([^)]*\) \{\s*\n?\s*if \(!url\)/.exec(src);
-    assert.ok(m, f + " must check for an empty url before opening a window");
-    assert.ok(/could not be read back from this device/.test(src),
-      f + " must tell the clinician the file is missing, not open a blank window");
+  /* The contract above is only worth anything if the callers act on it. Both
+     surfaces now share one opener (attachOpenRecord in ui-attach.js). */
+  const src = read("js/ui-attach.js");
+  const m = /fsResolveUrl\([^)]*\)\.then\(function \([^)]*\) \{\s*\n?\s*if \(!url\)/.exec(src);
+  assert.ok(m, "ui-attach.js must check for an empty url before opening a window");
+  assert.ok(/could not be read back from this device/.test(src),
+    "the clinician must be told the file is missing, not shown a blank window");
+  assert.match(read("js/investigations.js"), /attachOpenRecord\(rec\)/,
+    "the investigation queue uses the same opener");
+});
+
+test("a data URL read back from a record is only what ingest could have produced", () => {
+  /* A restored backup or synced device can put anything in `dataUrl` and
+     `thumb`; both reach src="…" and a navigation. */
+  const ctx = device();
+  const hostile = [
+    "javascript:window.__x=1",
+    'x" onerror="window.__x=1',
+    "data:text/html;base64,PHNjcmlwdD4=",
+    "data:image/svg+xml;base64,PHN2Zz4=",
+    'data:image/png;base64,AAAA" onerror="x',
+    null, 42, {}
+  ];
+  for (const h of hostile) {
+    assert.strictEqual(run(ctx, "fsSafeDataUrl(__h)", { __h: h }), "", String(h));
+    assert.strictEqual(run(ctx, "fsSafeThumb(__h)", { __h: h }), "", String(h));
   }
+  assert.strictEqual(run(ctx, "fsSafeDataUrl('data:application/pdf;base64,JVBERi0=')"), "data:application/pdf;base64,JVBERi0=");
+  assert.strictEqual(run(ctx, "fsSafeThumb('data:image/jpeg;base64,/9j/4A==')"), "data:image/jpeg;base64,/9j/4A==");
+  return run(ctx, "fsResolveUrl({ store: 'inline', dataUrl: 'javascript:window.__x=1' })").then((u) => {
+    assert.strictEqual(u, "", "a hostile inline record resolves to nothing, so the caller says it cannot be read");
+  });
 });
 
 test("forgetting a file removes its bytes, and is safe to repeat", () => {

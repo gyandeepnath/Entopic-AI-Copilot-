@@ -369,11 +369,26 @@ function fsIngest(file, opts) {
   });
 }
 
+/* ── URLs read back from a RECORD ──
+
+   `dataUrl` (inline storage) and `thumb` are strings on the attachment
+   record, and a restored backup or a synced device can carry anything there.
+   Both were written into src="…" raw and `dataUrl` was navigated to:
+   `x" onerror="…"` or a `javascript:` URL ran code in the app's origin, with
+   the whole record store in reach. Only what fsIngest itself could have
+   produced is accepted — an allow-listed type, base64 — and anything else
+   reads back as "" (the callers already treat that as "not available"). */
+var FS_SAFE_DATA_URL = /^data:(image\/(jpeg|png|gif|webp|bmp|tiff|heic|heif)|application\/pdf|application\/octet-stream);base64,[A-Za-z0-9+\/=\s]*$/i;
+var FS_SAFE_THUMB = /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+\/=\s]+$/i;
+
+function fsSafeDataUrl(s) { return (typeof s === "string" && FS_SAFE_DATA_URL.test(s)) ? s : ""; }
+function fsSafeThumb(s) { return (typeof s === "string" && FS_SAFE_THUMB.test(s)) ? s : ""; }
+
 /* Resolve a stored record back to something the browser can open. Returns a
    Promise of an object URL (caller should revoke) or a data URL. */
 function fsResolveUrl(rec) {
   if (!rec) return Promise.resolve("");
-  if (rec.store === "inline" || rec.dataUrl) return Promise.resolve(rec.dataUrl || "");
+  if (rec.store === "inline" || rec.dataUrl) return Promise.resolve(fsSafeDataUrl(rec.dataUrl));
   return fsGet(rec.id).then(function (blob) {
     if (!blob) return "";
     return URL.createObjectURL(blob);
@@ -430,6 +445,7 @@ if (typeof module !== "undefined" && module.exports) {
     fsHumanSize: fsHumanSize, fsIsImage: fsIsImage,
     FS_ALLOWED_TYPES: FS_ALLOWED_TYPES, FS_ALLOWED_EXT: FS_ALLOWED_EXT,
     FS_ABS_MAX: FS_ABS_MAX,
-    fsTypeAllowed: fsTypeAllowed, fsSniff: fsSniff
+    fsTypeAllowed: fsTypeAllowed, fsSniff: fsSniff,
+    fsSafeDataUrl: fsSafeDataUrl, fsSafeThumb: fsSafeThumb, fsResolveUrl: fsResolveUrl
   };
 }

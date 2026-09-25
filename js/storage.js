@@ -743,10 +743,15 @@ function _doSave() {
          let this device silently overwrite another device's newer edit). */
       var before = JSON.stringify(patients[j]);
       for (var k in P) {
-        if (Object.prototype.hasOwnProperty.call(P, k) && k !== "__proto__") {
+        /* `orders` is owned by the STORE: the investigation queue writes it
+           straight to the stored record (js/investigations.js), so the open
+           exam's copy can be older. Copying it back rolled back a result,
+           a cancellation or a sign-off made since this exam opened. */
+        if (Object.prototype.hasOwnProperty.call(P, k) && k !== "__proto__" && k !== "orders") {
           patients[j][k] = P[k];
         }
       }
+      if (patients[j].orders !== undefined) P.orders = patients[j].orders;
       if (JSON.stringify(patients[j]) !== before) {
         P.updated = new Date().toISOString();
         patients[j].updated = P.updated;

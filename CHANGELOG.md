@@ -6,6 +6,45 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-09-25 — Full audit, part 12: investigation orders that didn't stay put
+
+The investigations workflow works like this: order in the exam, perform in
+the queue (often another person on another device), then sign off back in the
+exam. Several things broke that hand-off:
+
+- **Cancelling an order from the exam did nothing.** The cancel was saved, but
+  the screen redrew from the exam's older copy of the patient, and the next
+  autosave wrote that older copy back. The order came back.
+- **Results and sign-offs could be undone.** If the patient was open in
+  another window, that window's next autosave replaced the orders with its
+  older list. Now the record store owns the orders: the exam's autosave
+  never writes them, and the exam's copy is refreshed from the store.
+- **Nothing about an order ever reached another device.** Cloud sync only
+  sends a patient record after its "last changed" time moves, and order
+  changes never moved it. So the technician's results never reached the
+  ordering clinician's device, and nothing reported an error. Every order
+  change now updates that time. Attaching a document to the patient had the
+  same gap and the same risk of overwriting orders; both are fixed.
+- **Uploading a report erased results typed during the upload.** The upload
+  wrote back a copy of the order taken before it started. Each finished file
+  now re-reads the order first.
+- **The app said "Order raised" even when the save failed**, or when the
+  patient no longer existed. Failed saves now say so. On a practice patient,
+  the message no longer claims the order is in the shared queue, because
+  practice records are kept out of it.
+- **Rules tightened:** an order that has been started can't be cancelled,
+  and a cancelled order can't be signed off.
+- **Security:** an attachment record from a restored backup or a synced
+  device could carry a `javascript:` link or an `onerror` payload. That
+  payload ran when the file was opened or its thumbnail shown. Stored file
+  links are now accepted only in the forms the app itself creates. Both
+  attachment screens use one checked "open file" routine. Order labels, eye
+  markings and statuses read from the record are escaped.
+- Tests: `tests/investigations.test.js` (11) and file-store URL checks. Ten
+  of the eleven fail on the previous code.
+
+---
+
 ## 2026-09-24 — Full audit, part 11: 249 buttons that did nothing
 
 - **Age-bracket review screen (admin):** every "which ages does this apply

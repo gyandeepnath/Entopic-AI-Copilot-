@@ -341,24 +341,77 @@ var INV_STATUS_LABEL = {
   ordered: "Ordered", in_progress: "In progress", completed: "Results ready",
   reviewed: "Reviewed", cancelled: "Cancelled"
 };
+/* Status comes back from the record; an own-key lookup so "constructor" or
+   "toString" is not mistaken for a label. */
+function invStatusLabel(s) {
+  return Object.prototype.hasOwnProperty.call(INV_STATUS_LABEL, s) ? INV_STATUS_LABEL[s] : String(s || "");
+}
 
 
 /* ── Storage ─────────────────────────────────────────────────────
    Orders live on the patient record so they survive the hand-off.
    ---------------------------------------------------------------- */
 
-function invOrdersOf(pt) {
-  if (!pt) return [];
-  if (!pt.orders) pt.orders = [];
-  return pt.orders;
+/* Write an order change for one patient. Returns true only if it reached the
+   store.
+
+   ── THE STORE OWNS `orders` ──
+
+   Orders are edited from two places: the open exam (raise, cancel) and the
+   shared queue (perform, record, sign off). The queue works on a FRESH copy
+   of the patient from the store, and the exam holds its own in-memory copy
+   (`P`). doSave() used to copy every key of `P` back onto the stored record,
+   `orders` included — so the open exam's stale list overwrote whatever the
+   queue had just written. Measured: cancel an order from the exam, and the
+   cancel was undone by the next autosave, and the button looked dead because
+   the block re-rendered from the stale copy. doSave now leaves `orders`
+   alone and this is the only writer; the open exam's copy is refreshed here.
+
+   ── AND THE CHANGE MUST BE VISIBLE TO SYNC ──
+
+   Cloud sync pushes a record only when its `updated` stamp moves. Nothing
+   here moved it, so once a patient had synced, no order raised, result
+   recorded or sign-off made on this device ever left it — the technician's
+   results never reached the ordering clinician's device, silently. */
+function invSavePatient(pt) {
+  if (!pt || !pt.id) return false;
+  var pts = loadPatients();
+  var found = false;
+  var stamp = new Date().toISOString();
+  pt.updated = stamp;
+  for (var i = 0; i < pts.length; i++) {
+    if (pts[i].id === pt.id) { pts[i] = pt; found = true; break; }
+  }
+  if (!found) return false;
+  var ok = savePatients(pts) !== false;
+  /* Keep the open exam's view in step with what is now stored. */
+  if (ok && typeof P !== "undefined" && P && P !== pt && P.id === pt.id) {
+    P.orders = pt.orders;
+    P.updated = stamp;
+  }
+  return ok;
 }
 
-function invSavePatient(pt) {
-  var pts = loadPatients();
+/* Apply `fn` to the STORED copy of a patient and write it. The exam's `P` may
+   lag behind the store (the queue, another tab, a sync pull), so edits start
+   from the store, never from `P`. */
+function invUpdatePatient(patientId, fn) {
+  var pts = loadPatients() || [];
   for (var i = 0; i < pts.length; i++) {
-    if (pts[i].id === pt.id) { pts[i] = pt; break; }
+    if (pts[i] && pts[i].id === patientId) {
+      if (!pts[i].orders) pts[i].orders = [];
+      fn(pts[i]);
+      return invSavePatient(pts[i]);
+    }
   }
-  savePatients(pts);
+  return false;
+}
+
+function invSaveFailed(what) {
+  var why = (typeof storageWriteFailure === "function" && storageWriteFailure())
+    ? " (" + storageWriteFailure().reason + ")" : "";
+  alert(what + " was NOT saved" + why + ". Nothing on this order has changed — try again, " +
+    "and if it keeps failing, check the storage warning at the top of the screen.");
 }
 
 /* Every order across every patient, newest first, with the patient attached. */
@@ -367,10 +420,11 @@ function invAllOrders(filter) {
   var out = [];
   for (var i = 0; i < pts.length; i++) {
     var pt = pts[i];
-    if (pt.practice) continue;                 /* practice records stay out */
-    var orders = pt.orders || [];
+    if (!pt || pt.practice) continue;                 /* practice records stay out */
+    var orders = Array.isArray(pt.orders) ? pt.orders : [];
     for (var j = 0; j < orders.length; j++) {
       var o = orders[j];
+      if (!o || typeof o !== "object") continue;
       if (filter && filter !== "all" && o.status !== filter) continue;
       out.push({ order: o, patient: pt });
     }
@@ -384,9 +438,10 @@ function invCount(status) { return invAllOrders(status).length; }
 /* Roll the order status up from its items. */
 function invRecomputeStatus(o) {
   if (o.status === "cancelled" || o.status === "reviewed") return o.status;
-  var items = o.items || [];
+  var items = Array.isArray(o.items) ? o.items : [];
   var done = 0, started = 0;
   for (var i = 0; i < items.length; i++) {
+    if (!items[i]) continue;
     if (items[i].status === "completed") done++;
     else if (items[i].status === "in_progress") started++;
   }
@@ -435,8 +490,12 @@ function invCreateOrder() {
     reviewed_by: "", reviewed_at: "", review_note: ""
   };
 
-  invOrdersOf(P).push(order);
-  invSavePatient(P);
+  /* Appended to the STORED record, so an order the queue has updated since
+     this exam opened is not rolled back by the exam's older copy. */
+  if (!invUpdatePatient(P.id, function (pt) { pt.orders.push(order); })) {
+    invSaveFailed("The order");
+    return;
+  }
   if (typeof logAudit === "function") {
     logAudit("investigation_ordered",
       order.items.length + " investigation(s) ordered · " + order.urgency,
@@ -444,15 +503,27 @@ function invCreateOrder() {
   }
   INV_ORDER_DRAFT = { codes: {}, urgency: "Routine", question: "", note: "" };
   renderMain();
-  toast("Order raised — now in the investigation queue.");
+  /* The shared queue leaves practice records out (invAllOrders), so saying
+     "now in the queue" for one was untrue. */
+  toast(P.practice
+    ? "Order recorded on this practice patient — practice records stay out of the shared queue."
+    : "Order raised — now in the investigation queue.");
 }
 
 function invCancelOrder(orderId) {
-  if (!window.confirm("Cancel this investigation order?")) return;
   var found = invFindOrder(orderId);
   if (!found) return;
+  /* Only an order nobody has started. Once a test is under way or has a
+     result, cancelling would hide work that was done. */
+  if (found.order.status !== "ordered") {
+    alert("This order is already " + invStatusLabel(found.order.status).toLowerCase() +
+      " and can no longer be cancelled.");
+    invRerender();
+    return;
+  }
+  if (!window.confirm("Cancel this investigation order?")) return;
   found.order.status = "cancelled";
-  invSavePatient(found.patient);
+  if (!invSavePatient(found.patient)) { invSaveFailed("The cancellation"); return; }
   if (typeof logAudit === "function") logAudit("investigation_cancelled", "Order cancelled", { patient_id: found.patient.id });
   invRerender();
 }
@@ -460,8 +531,10 @@ function invCancelOrder(orderId) {
 function invFindOrder(orderId) {
   var pts = loadPatients() || [];
   for (var i = 0; i < pts.length; i++) {
-    var orders = pts[i].orders || [];
-    for (var j = 0; j < orders.length; j++) if (orders[j].id === orderId) return { order: orders[j], patient: pts[i] };
+    var orders = (pts[i] && Array.isArray(pts[i].orders)) ? pts[i].orders : [];
+    for (var j = 0; j < orders.length; j++) {
+      if (orders[j] && orders[j].id === orderId) return { order: orders[j], patient: pts[i] };
+    }
   }
   return null;
 }
@@ -484,8 +557,11 @@ function invSetItemField(orderId, idx, key, val) {
   if (!f) return;
   var it = f.order.items[idx];
   if (!it) return;
-  if (!it.result) it.result = {};
+  if (it.status === "completed") return;      /* read-only once marked done */
+  if (!it.result || typeof it.result !== "object") it.result = {};
   it.result[key] = val;
+  /* Typed input: a refused write is reported by the storage banner, not by
+     an alert on every keystroke. */
   invSavePatient(f.patient);
 }
 
@@ -497,8 +573,10 @@ function invSetItemNote(orderId, idx, val) {
 }
 
 function invMarkItem(orderId, idx, status) {
+  if (status !== "ordered" && status !== "in_progress" && status !== "completed") return;
   var f = invFindOrder(orderId);
   if (!f) return;
+  if (f.order.status === "cancelled" || f.order.status === "reviewed") return;
   var it = f.order.items[idx];
   if (!it) return;
   it.status = status;
@@ -507,7 +585,7 @@ function invMarkItem(orderId, idx, status) {
     it.performed_at = new Date().toISOString();
   }
   invRecomputeStatus(f.order);
-  invSavePatient(f.patient);
+  if (!invSavePatient(f.patient)) { invSaveFailed("“" + it.name + "” marked " + status.replace("_", " ")); invRerender(); return; }
   if (typeof logAudit === "function") {
     logAudit("investigation_" + status, it.name + " marked " + status, { patient_id: f.patient.id });
   }
@@ -519,29 +597,37 @@ function invMarkItem(orderId, idx, status) {
 function invAttachHandle(input, orderId, idx) {
   var files = input.files;
   if (!files || !files.length) return;
-  var f = invFindOrder(orderId);
-  if (!f) return;
-  var it = f.order.items[idx];
-  if (!it) return;
-  if (!it.files) it.files = [];
+  if (!invFindOrder(orderId)) return;
   var pending = files.length;
+  var failures = [];
   function done() {
     if (--pending > 0) return;
-    invSavePatient(f.patient);
+    if (failures.length) alert(failures.join("\n\n"));
     invRerender();
   }
   for (var i = 0; i < files.length; i++) {
     (function (file) {
       fsIngest(file, { profile: (typeof ATTACH_PROFILE !== "undefined" ? ATTACH_PROFILE : "standard") })
         .then(function (rec) {
+          /* Re-read the order when EACH file lands. Ingest is asynchronous and
+             the person keeps typing results meanwhile; writing back the copy
+             read before the upload began erased everything typed during it. */
+          var f = invFindOrder(orderId);
+          var it = f && f.order.items[idx];
+          if (!it) { failures.push("“" + rec.name + "”: the order is no longer on this device."); done(); return; }
+          if (!Array.isArray(it.files)) it.files = [];
           it.files.push(rec);
+          if (!invSavePatient(f.patient)) {
+            failures.push("“" + rec.name + "” was stored but could not be linked to the order — the record store refused the write.");
+            done(); return;
+          }
           if (typeof logAudit === "function") {
             logAudit("file_attached", "Investigation report: " + rec.name, { patient_id: f.patient.id });
           }
           if (typeof fsCloudUpload === "function") { try { fsCloudUpload(rec); } catch (e) {} }
           done();
         })
-        .catch(function (e) { alert(String((e && e.message) || e)); done(); });
+        .catch(function (e) { failures.push(String((e && e.message) || e)); done(); });
     })(files[i]);
   }
   input.value = "";
@@ -552,16 +638,11 @@ function invOpenFile(orderId, idx, fileId) {
   if (!f) return;
   var it = f.order.items[idx];
   var rec = null;
-  for (var i = 0; it && it.files && i < it.files.length; i++) if (it.files[i].id === fileId) rec = it.files[i];
+  for (var i = 0; it && Array.isArray(it.files) && i < it.files.length; i++) {
+    if (it.files[i] && it.files[i].id === fileId) rec = it.files[i];
+  }
   if (!rec) return;
-  fsResolveUrl(rec).then(function (url) {
-    if (!url) { alert("The stored file could not be read back from this device."); return; }
-    var w = window.open();
-    if (w) {
-      if (/^image\//.test(rec.type)) w.document.write('<title>' + esc(rec.name) + '</title><img src="' + url + '" style="max-width:100%">');
-      else w.location = url;
-    }
-  });
+  attachOpenRecord(rec);   /* js/ui-attach.js — validated URL, escaped src */
 }
 
 
@@ -570,6 +651,7 @@ function invOpenFile(orderId, idx, fileId) {
 function invSetReviewNote(orderId, val) {
   var f = invFindOrder(orderId);
   if (!f) return;
+  if (f.order.status === "reviewed") return;  /* signed off → read-only */
   f.order.review_note = val;
   invSavePatient(f.patient);
 }
@@ -577,13 +659,15 @@ function invSetReviewNote(orderId, val) {
 function invMarkReviewed(orderId) {
   var f = invFindOrder(orderId);
   if (!f) return;
+  if (f.order.status === "cancelled") { alert("This order was cancelled — there are no results to sign off."); return; }
+  if (f.order.status === "reviewed") return;
   if (f.order.status !== "completed") {
     if (!window.confirm("Not all tests are marked done. Sign off on the results anyway?")) return;
   }
   f.order.status = "reviewed";
   f.order.reviewed_by = (typeof CU !== "undefined" && CU) ? (CU.username || "") : "";
   f.order.reviewed_at = new Date().toISOString();
-  invSavePatient(f.patient);
+  if (!invSavePatient(f.patient)) { invSaveFailed("The sign-off"); invRerender(); return; }
   if (typeof logAudit === "function") {
     logAudit("investigation_reviewed", "Results reviewed and signed off", { patient_id: f.patient.id });
   }
