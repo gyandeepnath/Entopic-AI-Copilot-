@@ -2,7 +2,7 @@
 
 **Document version:** 1.1
 **Covers build:** Entopic v1.5.0, KB v1.3.1 — 129 loaded files (106 in `js/`, 23 in
-`knowledge/`), 394 conditions across 9 domains, 104 test files.
+`knowledge/`), 394 conditions across 9 domains, 109 test files.
 **Counts last verified:** 2026-08-01, regenerated from `index.html` and the repo.
 **Purpose:** A ground-truth teardown of everything in the current system, followed by a target architecture that keeps the same UI and concept but rebuilds the foundations for scale, onboarding, a stable backend, an independent continuously-looping diagnostic engine, and a trustworthy evidence-based knowledge base.
 **Standing constraint:** Entopic is advisory decision-support. Every diagnostic output requires clinical correlation. Nothing here changes that contract.
@@ -121,6 +121,13 @@ A thin CRUD layer over `localStorage`, namespaced with the `entopic_` prefix, st
 
 > **`loadStore()` returns a fresh parse on every call, and must keep doing so.** A parse cache that returned the *shared* parsed object was added and removed on 2026-08-08: it made a write that had **failed on quota** still read back as though it had persisted, because the caller's array was the cache's array (`tools/stress/attack.js` A1). The safe variant is slower than no cache at all — `structuredClone` 753 ms vs `JSON.parse` 645 ms at 9,000 visits — and the store size it optimised is unreachable, since localStorage exhausts at ~1,900 visits where an uncached read is ~39 ms. Every storage guarantee in the codebase depends on *reading tells you what is on disk*; `tests/storage-read-isolation.test.js` pins it. The sound fixes for save cost are incremental save and per-patient visit keys, neither of which hands out a shared mutable view.
 
+### 4.1 Who owns what on a record (full audit, 2026-09-24/25)
+
+- **`visitUpgradeShape(v)`** (`js/visit-history.js`) runs when a visit is opened. It **adds** any field an older build did not have, and never overwrites. A value that no longer fits its field is moved to `_legacy_values`, not dropped.
+- **Patient `orders` belong to the store, not to the open exam.** The investigation queue writes orders straight to the stored record (`invSavePatient` / `invUpdatePatient` in `js/investigations.js`), and `doSave()` does **not** copy `P.orders` back. Instead it refreshes `P.orders` from the store. Patient `attachments` are written the same way, one field at a time (`attachPersist`). Any change made outside `doSave()` must stamp the record's `updated`. **Cloud sync pushes only records whose `updated` has moved**, so a change without a new stamp is never sent.
+- **Every write reports its result.** `doSave()` returns `{ ok, reason, … }`. Backup restore, patient delete and clearing practice records are all-or-nothing and roll back on a refused write. Deletes are sent as cloud tombstones only after the local delete has actually happened.
+- **Anything read back from a record is untrusted** (it may come from a restored backup or a synced device). Lookup maps are null-prototype; ids in handlers go through `escAttrJs`; `<select>` markup goes through `optionsHtml`; stored file links pass `fsSafeDataUrl`/`fsSafeThumb` (`js/file-store.js`). Attachments open through one routine, `attachOpenRecord` (`js/ui-attach.js`).
+
 ## 4a. Two seams added on 2026-08-01
 
 Both were recommendations in the Phase 1 review. Both are now code.
@@ -235,7 +242,7 @@ This is a clean, sensible assembly step. It is the natural place to later insert
 
 **Stage 1 — Collect (`collectTokens`).** Reads all of `V` and `P` and emits tokens from **nine sources**: (1) selected symptoms (already tokens), (2) free-text CC via `parseComplaintText`, (3) temporal selections, (4) slit-lamp findings via the finding-map, (5) fundus findings via the finding-map, (6) medical-history booleans, (7) ocular-history flags, (8) family history, and (9) a large **auto-derivation** block that turns measurements into tokens: age bands; IOP thresholds (`high_iop` >21, `IOP_very_high` >30); CCT (`thin_cornea` <520); Van Herick (`narrow_angle`/`shallow_ac` ≤2); AC cells; RAPD; NPC (`NPC_receded` ≥6); cover-test phorias parsed by regex (`exo_near`/`eso_near`/… >6Δ); AC/A; accommodative amplitude vs Hofstetter minimum; flipper rate; vergence ranges; refraction (`myopia`/`hyperopia`/`astigmatism`/anisometropia/add); VA-improves-with-correction; C/D (`increased_cd` ≥0.6, asymmetry >0.2); NRR/disc descriptors; motility; TBUT/Schirmer/LOCS; neuro (color/CVF/Amsler); and investigations (OCT RNFL <80, VF MD thresholds). This block is where a lot of clinical intelligence lives, and where a lot of hard-coded constants live.
 
-**Stage 2 — Parse free text (`parseComplaintText`).** ~40 regex rules mapping phrases to tokens (`/blur|fuzzy|hazy/ → blur`, `/flash/ → flashes`, etc.). Serviceable but brittle: no negation handling ("no pain" still yields `pain` unless the regex is written to exclude it), no synonym coverage guarantee, English-only.
+**Stage 2 — Parse free text (`parseComplaintText`, now in `js/engine-inputs.js`).** Regex rules mapping phrases to tokens, word-anchored (`\b`), with negated phrases stripped first (`stripNegatedPhrases`: "no pain", "denies flashes") and onset phrases kept out of symptom matching. Pinned by `tests/complaint-parser.test.js` — 38 tuned phrases plus 30 held-out phrases the rules were not written against. Still English-only and still a rule list, not a language model (deliberately: it must stay deterministic).
 
 **Stage 3 — Normalize.** Dedupe.
 
@@ -260,6 +267,19 @@ This is a clean, sensible assembly step. It is the natural place to later insert
 **Stage 12 — Log.** Records each run (token/route/result counts, top Dx, top score, alert count), keeps the last 50, persists the last 10 into `V.engineLog`.
 
 Finally, results are sorted (urgent floats up when score >0.2), the top 8 become `V.dxList` with a reasoning string, and alerts/nudges are written back to `V`.
+
+### 6.1 The input boundary and stage isolation (full audit, 2026-09-24)
+
+The full audit found the engine's commonest failure was not in its reasoning but in **reading its inputs**. Examples: a recorded 0 treated as "not measured" (`parseInt(x) || N`), a blank eye treated as 0, substring matches ("no pain" → `pain`, "headache" → `ache`), a field of the wrong type (a number where a string was expected) crashing the whole run, and schema field names that did not match what the pages write. The design response:
+
+- **`js/engine-inputs.js` (loads before `engine.js`)** is the single boundary. `collectTokens` begins with `engineVisitView(visit)` / `enginePatientView(patient)`: a copy shaped against the `blankVisit()` template, with every field coerced to its expected type. Old visits, imported visits and visits with hostile values all reach the engine in a known shape. Helpers here: `engineMeasured` (number or null — never "0 means absent"), `vanHerickGrade`, `engineAgeYears`, `vaLogMAR`/`vaBetter`, `coverTestDeviation`, `rapdPresent`, and the complaint parser.
+- **Stage isolation.** Stages 3–9 run inside `_engineDifferential`; each stage runs under `_engineStage(what, fallback, fn)`. A fault in one stage records `ENGINE_STATE.lastError` and falls back rather than blanking the advisory panel. A failure in the differential raises the **`engine_differential_failed`** warning. A failure computing red flags raises **`engine_redflags_failed`** (urgent), from `RED_FLAG_SYSTEM_RULES` in `knowledge/red-flags.js`. The clinician is told the engine could not finish; it never looks like an empty but valid result.
+- **Stage 12 (next tests)** moved to `js/engine-next-tests.js` (size cap).
+- **Sparse evidence** is judged by `engineFactCount(tokens)`, which does not count descriptors like "gradual" or "stable" as clinical facts. Before, an age band and an onset word could make a two-fact case look well supported.
+
+### 6.2 The clinician's decision is a field, not an inference
+
+`V.final_dx` (the "Clinician's diagnosis" box on the Diagnosis step, with "＋ Use" buttons that copy an engine suggestion into it) is what the report, the referral letter, the clinical record, the chart summary and the overlay-impact measurement all show as **the** diagnosis. The engine's list is printed beneath it as "Decision-support differential (advisory — not a diagnosis)". Before this, the paperwork presented the engine's top guess as the finding.
 
 **Assessment of the engine.** The architecture is sound and the intent is right: deterministic, evidence-carrying, safety-gated, workflow-aware. The weaknesses are specific and fixable (§10): universal scoring constants, single-list competition, and dependence on an unmanaged token vocabulary. *(The broken exclusion matcher listed here previously is fixed — see §10 gap 2.)*
 
@@ -570,10 +590,10 @@ reach without a browser, a hostile input, or a second device.
 | `attack.js` | 46 | storage, migrations, engine, red flags |
 | `privacy.js` | 43 | what LEAVES — de-identification, consent, exports |
 | `crypto.js` | 24 | who GETS IN — credentials, the vault, the envelope |
-| `clinical.js` | 37 | the instruments beside the engine — scales, medications, OSDI, dispensing |
+| `clinical.js` | 47 | the instruments beside the engine — scales, medications, OSDI, dispensing |
 | `pollution.js` | 16 | prototype pollution, swept as a class |
 | `sync.js` | 18 | a record arriving from another device, and backup round trips |
-| `xss.js` | 24 | script injection, in a real browser, on every screen |
+| `xss.js` | 48 | script injection, in a real browser, on every screen |
 | `output.js` | 26 | what a patient or another clinician reads on paper |
 | `redflag-screen.js` | 44 | does a red flag reach PAINTED PIXELS |
 | `lib.js` | — | the shared sandbox all of them use |
@@ -817,7 +837,7 @@ Generated by `node tools/sync-docs.js` from the `<script>` order in
 - `medications.js` (165)
 - `token-dictionary.js` (221)
 - `finding-token-map.js` (214)
-- `token-registry.js` (8058)
+- `token-registry.js` (8062)
 - `icd-map.js` (910)
 - `expansion.js` (938)
 - `condition-info.js` (4116)
@@ -829,13 +849,13 @@ Generated by `node tools/sync-docs.js` from the `<script>` order in
 
 **`/js`** — 106 files, in load order:
 
-- `dom-escape.js` (67)
+- `dom-escape.js` (93)
 - `build-info.js` (78)
 - `browser-io.js` (101)
 - `kb-authoring.js` (312)
 - `data-classification.js` (285)
 - `events.js` (86)
-- `data-model.js` (1305)
+- `data-model.js` (1311)
 - `wnl-templates.js` (67)
 - `section-status.js` (208)
 - `ui-section-status.js` (127)
@@ -849,22 +869,22 @@ Generated by `node tools/sync-docs.js` from the `<script>` order in
 - `cloud-crypto.js` (265)
 - `cloud-sync.js` (605)
 - `cloud-replication.js` (438)
-- `clinical-record.js` (591)
+- `clinical-record.js` (625)
 - `consent.js` (231)
 - `research-corpus.js` (621)
 - `insights.js` (278)
 - `feedback.js` (257)
-- `storage.js` (1060)
+- `storage.js` (1047)
 - `visit-store.js` (423)
-- `storage-backup.js` (560)
+- `storage-backup.js` (657)
 - `storage-migrations.js` (421)
 - `storage-autobackup.js` (210)
 - `audit-clinical.js` (146)
-- `storage-archive.js` (415)
+- `storage-archive.js` (431)
 - `storage-archive-auto.js` (186)
-- `visit-history.js` (212)
-- `clinical-contradictions.js` (229)
-- `kb-overlay.js` (423)
+- `visit-history.js` (264)
+- `clinical-contradictions.js` (267)
+- `kb-overlay.js` (436)
 - `competency.js` (602)
 - `ui-trends.js` (88)
 - `ui-storage-banners.js` (259)
@@ -876,37 +896,37 @@ Generated by `node tools/sync-docs.js` from the `<script>` order in
 - `clinical-validators.js` (109)
 - `perf-metrics.js` (178)
 - `engine-exclusions.js` (94)
-- `engine-inputs.js` (198)
-- `engine.js` (2290)
+- `engine-inputs.js` (306)
+- `engine.js` (2245)
 - `engine-next-tests.js` (190)
 - `engine-diff.js` (310)
 - `engine-replay.js` (442)
-- `overlay-impact.js` (170)
+- `overlay-impact.js` (171)
 - `ui-condition-builder.js` (423)
 - `ui-sidebar.js` (150)
 - `clinical-scales.js` (396)
 - `medication-checker.js` (372)
 - `ui-advisory.js` (514)
-- `ui-pages.js` (1262)
-- `ui-pages-2.js` (540)
-- `module-links.js` (209)
+- `ui-pages.js` (1294)
+- `ui-pages-2.js` (575)
+- `module-links.js` (211)
 - `simulation-progress.js` (236)
 - `simulation-presentation.js` (393)
 - `simulation-realism.js` (314)
-- `simulation.js` (417)
-- `osce.js` (261)
-- `assignments.js` (231)
+- `simulation.js` (418)
+- `osce.js` (278)
+- `assignments.js` (257)
 - `simulation-ui.js` (544)
 - `osce-ui.js` (155)
-- `assignments-ui.js` (222)
+- `assignments-ui.js` (224)
 - `clinics.js` (399)
 - `clinics-ui.js` (111)
-- `ui-modules.js` (309)
-- `ui-report.js` (555)
+- `ui-modules.js` (307)
+- `ui-report.js` (651)
 - `reasoning-views.js` (895)
 - `ui-quiz.js` (415)
 - `analytics.js` (287)
-- `data-export.js` (211)
+- `data-export.js` (221)
 - `ui-flowmap.js` (799)
 - `ui-age-brackets.js` (138)
 - `ui-thresholds.js` (376)
@@ -917,23 +937,23 @@ Generated by `node tools/sync-docs.js` from the `<script>` order in
 - `ui-feedback.js` (247)
 - `ui-deployment.js` (422)
 - `ui-vault.js` (438)
-- `ui-chart.js` (359)
-- `file-store.js` (436)
-- `ui-attach.js` (184)
-- `speech.js` (307)
-- `claude.js` (320)
+- `ui-chart.js` (369)
+- `file-store.js` (452)
+- `ui-attach.js` (200)
+- `speech.js` (323)
+- `claude.js` (359)
 - `drawing-guide.js` (123)
-- `drawing.js` (823)
+- `drawing.js` (840)
 - `smart-intake.js` (468)
-- `spectacle-advisor.js` (289)
-- `certificates.js` (209)
+- `spectacle-advisor.js` (326)
+- `certificates.js` (237)
 - `certificates-ui.js` (134)
-- `investigations.js` (593)
-- `investigations-ui.js` (294)
+- `investigations.js` (678)
+- `investigations-ui.js` (315)
 - `ui-patient-list.js` (69)
-- `ui-study.js` (127)
+- `ui-study.js` (148)
 - `ui-a11y.js` (192)
-- `app.js` (1940)
+- `app.js` (1942)
 - `error-boundary.js` (162)
 
 ---

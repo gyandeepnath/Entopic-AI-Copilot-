@@ -1,4 +1,4 @@
-# Entopic — package for exploring, 21 August 2026
+# Entopic — package for exploring, 25 September 2026
 
 ## Just want to look at it?
 
@@ -14,7 +14,35 @@ set, or the built-in default if you have not changed it.
 
 ---
 
-## New in this package — the hardest stress test yet
+## New in this package — every detail audited (September 2026)
+
+You asked me to audit everything and fix what I found. The full account, in
+plain language, is **`docs/FULL_AUDIT_REPORT.md`**. The step-by-step detail
+is in `CHANGELOG.md` ("Full audit, parts 1–13"). The fixes that matter most
+to you as a clinician:
+
+- **The engine was misreading ordinary entries.** It treated a recorded 0 as
+  "not measured" (Van Herick 0, TBUT 0), read "no thinning" as thinning, and
+  found 21 false symptoms in 38 everyday complaints. Now 0.
+- **One oddly typed field could leave the red-flag box empty.** Now the red
+  flags always run, and if anything fails you get a banner, never silence.
+- **Your diagnosis now leads the paperwork.** There is a *Clinician's
+  diagnosis* box. The report, letter and record use it. The engine's list is
+  labelled advisory, and the printed prescription is the one you issued.
+- **Certificates:** the contact-lens certificate no longer prints spectacle
+  powers, prism now prints, and a draft can no longer carry over to the next
+  patient.
+- **Investigation orders now stay put and reach the other device.** Before,
+  a cancel could come back, and results never synced.
+- **Old visits open properly, backups either restore fully or report
+  failure, and 249 dead admin buttons now work.**
+
+**Your decisions are needed** on a short list in `NEEDS_REVIEW.md` (items
+dated 2026-09-24/25). The admin sign-in is still the published default,
+`entopic-admin` / `Entopic-Admin-2026`. Change it under **Admin → Change
+admin password**.
+
+## Earlier — the hardest stress test yet
 
 I attacked eight areas that had **no adversarial testing at all** and found
 **24 real defects**. Four of them could have harmed a patient or published one.
@@ -50,7 +78,7 @@ nothing left to leak.
 ### Checking it yourself
 
 ```
-npm test                              1,313 unit tests
+npm test                              1,387 unit tests
 node tools/stress/attack.js           the original 46 attacks
 node tools/stress/privacy.js          what leaves the device
 node tools/stress/crypto.js           who gets in
@@ -58,6 +86,10 @@ node tools/stress/clinical.js         scales, medications, OSDI, dispensing
 node tools/stress/pollution.js        one whole class of security bug
 node tools/stress/sync.js             records arriving from another device
 node tools/e2e/accessibility.js       every screen, labels + keyboard
+node tools/e2e/dropdowns.js           every option of every dropdown sticks
+node tools/e2e/legacy-records.js      old-version visits open and save
+node tools/e2e/clinician-decision.js  your diagnosis + final Rx reach paper
+node tools/e2e/handlers.js            all 2,082 buttons call something real
 ```
 
 The browser ones (`xss`, `output`, `redflag-screen`, everything in `tools/e2e/`)
@@ -195,7 +227,7 @@ still works: that is a hard guarantee, tested on every run.
 ## Running the checks yourself (optional — needs Node.js)
 
 ```
-npm test                              # 1,219 unit tests
+npm test                              # 1,387 unit tests
 node tools/audit.js                   # knowledge-base + wiring audit
 node tools/stress/attack.js           # 46 adversarial attacks
 node tools/e2e/patient-journey.js     # 29 real-browser checks

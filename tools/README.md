@@ -56,10 +56,10 @@ wrong thing quietly?*
 node tools/stress/attack.js           46  storage, migrations, engine, red flags
 node tools/stress/privacy.js          43  what LEAVES the device
 node tools/stress/crypto.js           24  who GETS IN
-node tools/stress/clinical.js         37  scales, medications, OSDI, dispensing
+node tools/stress/clinical.js         47  scales, medications, OSDI, dispensing
 node tools/stress/pollution.js        16  prototype pollution, as a class
 node tools/stress/sync.js             18  records arriving from another device
-node tools/stress/xss.js              24  script injection (real browser)
+node tools/stress/xss.js              48  script injection (real browser)
 node tools/stress/output.js           26  what gets printed (real browser)
 node tools/stress/redflag-screen.js   44  red flags to painted pixels (real browser)
 ```
@@ -68,6 +68,26 @@ Add `--only=X1` to any of them to run a single attack.
 
 The last three drive a real Chromium, because the question is about pixels and
 execution, not about strings.
+
+## Real-browser journeys (`tools/e2e/`)
+
+```
+node tools/e2e/patient-journey.js     29  a real exam, start to printed report
+node tools/e2e/competency-journey.js  35  logbook, supervisor sign-off
+node tools/e2e/student-ui.js          13  the student workspace
+node tools/e2e/accessibility.js        —  every screen: labels + keyboard reach
+node tools/e2e/dropdowns.js            8  every option of every dropdown (89/490) sticks
+node tools/e2e/legacy-records.js      10  old-shaped visits open, save, report (reads errRecent)
+node tools/e2e/clinician-decision.js  11  final Rx + clinician's diagnosis reach paper
+node tools/e2e/handlers.js             2  every on* attribute on every screen parses, and
+                                          its callee exists (2,082 handlers)
+```
+
+`handlers.js` catches handlers that are syntactically broken but fail
+silently. A quoted value inside a double-quoted `onclick` truncates the
+attribute, and the browser reports nothing. That is how 249 admin buttons
+were dead. Build handler arguments with `escAttrJs`, never with
+`JSON.stringify`.
 
 **If you change the shared sandbox (`tools/stress/lib.js`), read its header
 first.** It deliberately does not inject the host realm's `Object`/`JSON`/

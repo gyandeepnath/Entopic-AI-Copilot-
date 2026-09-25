@@ -127,12 +127,10 @@ var VA_N = [
   "N14", "N18", "N24", "N36", "N48"
 ];
 
-/* LogMAR equivalents */
-var VA_LOG = [
-  "-0.10", "-0.08", "0.00", "0.10", "0.18", "0.30", "0.40",
-  "0.48", "0.60", "0.78", "1.00", "1.30", "1.78",
-  "2.00", "2.30", "2.60", "3.00"
-];
+/* (VA_LOG, a "LogMAR equivalents" list, was removed: nothing read it, and
+   its first entries did not match the Snellen list above — 6/4 is about
+   -0.18 logMAR, not -0.10. LogMAR conversion lives in vaLogMAR(),
+   js/engine-inputs.js.) */
 
 /* Chart types */
 var CHART_TYPES = [

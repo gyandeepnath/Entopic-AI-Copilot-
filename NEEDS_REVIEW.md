@@ -197,6 +197,25 @@ rule shown in the confirmation.
 
 ## For later (architecture — needs a decision + possibly spend)
 
+### 🟦 Two devices editing the same patient's investigation orders — found 2026-09-25
+Order changes now reach other devices (before the audit they never did). Cloud
+sync resolves a whole **patient record** at a time. If device A (clinician)
+and device B (technician) both change the same patient's orders **before
+either has synced**, B's change is recorded as a sync conflict: A's version
+is kept, the conflict is logged, and B's results do not merge in by
+themselves. Normal use (B records results, syncs, then A reviews) is not
+affected. The proper fix is to store orders as their own synced records, one
+per order, instead of a list inside the patient. That is an architecture
+change I have not made. Recommendation: do it before the investigations
+workflow is used across devices in a busy unit.
+
+### 🟦 Practice (student) records sync to the cloud like real ones — found 2026-09-25
+When cloud sync is on, practice exams are encrypted and sent like real
+records, and count toward the clinic's cloud storage. Whether practice data
+should leave the device at all is a product decision. Recommendation: keep
+practice records on the device only.
+
+
 ### 🟦 Backend / persistence (Supabase) — BUILT (free tier)
 Done, at your go-ahead: Supabase project `entopic` (free tier, $0/mo), full
 schema + RLS + Realtime, and an offline-first client sync layer. Tenant

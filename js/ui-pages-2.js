@@ -352,7 +352,7 @@ function pgDx() {
   if (V.nudges && V.nudges.length > 0) {
     h += '<div class="dv"><span>Improve Diagnostic Confidence</span></div>';
     for (var ni = 0; ni < V.nudges.length; ni++) {
-      h += '<div class="nudge" onclick="nav(\'' + V.nudges[ni].t + '\')">→ ' + V.nudges[ni].m + '</div>';
+      h += '<div class="nudge" onclick="nav(\'' + escAttrJs(V.nudges[ni].t) + '\')">→ ' + escHtml(V.nudges[ni].m) + '</div>';
     }
   }
 
