@@ -133,8 +133,18 @@ function assignProgress(a, username) {
     correct: correct,
     complete: done >= target,
     accuracy: subs.length ? Math.round(100 * correct / subs.length) : 0,
-    overdue: !!(a.due && !(done >= target) && new Date(a.due) < new Date())
+    overdue: !!(a.due && !(done >= target) && assignDueEnd(a.due) < Date.now())
   };
+}
+
+/* A due date is a DAY. new Date("2026-09-25") is midnight UTC, so a student
+   was shown "overdue" for the whole of the due day (and, west of UTC, from
+   the evening before). Due means the end of that day, local time. */
+function assignDueEnd(due) {
+  var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(due || ""));
+  if (m) return new Date(+m[1], +m[2] - 1, +m[3], 23, 59, 59, 999).getTime();
+  var t = Date.parse(due);
+  return isNaN(t) ? Infinity : t;
 }
 
 /* Faculty view: every student who has touched this assignment. */
@@ -192,6 +202,21 @@ function assignNextCase(a, username) {
     if (from.length) return simBuildRealisticCase(from[Math.floor(Math.random() * from.length)].name, a.tier);
     return null;
   }
+  /* common / urgent / all: prefer a condition this student has not done yet.
+     simRandomCase drew with replacement, so progress (which counts DISTINCT
+     conditions) stalled on repeats and the last cases took many attempts. */
+  if (typeof KNOWLEDGE_ALL !== "undefined") {
+    var pool = KNOWLEDGE_ALL.filter(function (c) {
+      if (!(c.req || []).length) return false;
+      if (a.scope === "urgent") return !!c.urgent;
+      if (a.scope === "common" && typeof KB_COMMON_SET !== "undefined") return !!KB_COMMON_SET[c.name];
+      return true;
+    });
+    var unseen = pool.filter(function (c) { return !done[c.name]; });
+    var src = unseen.length ? unseen : pool;
+    if (src.length) return simBuildRealisticCase(src[Math.floor(Math.random() * src.length)].name, a.tier);
+    return null;
+  }
   return simRandomCase(a.scope === "all" ? "" : a.scope);
 }
 
@@ -205,7 +230,8 @@ function assignStart(id) {
   ASSIGN_ACTIVE = a;
 
   if (a.mode === "osce") {
-    osceStart(a.scope === "all" ? "" : a.scope, a.count);
+    osceStart(a.scope === "all" ? "" : a.scope, a.count,
+      { assignment: true, domain: a.domain, conditions: a.conditions });
     return;
   }
   var c = assignNextCase(a, u);
@@ -226,5 +252,5 @@ function assignCredit(score, theCase, mode) {
 }
 
 if (typeof module !== "undefined" && module.exports) {
-  module.exports = { assignProgress: assignProgress, assignNextCase: assignNextCase };
+  module.exports = { assignProgress: assignProgress, assignNextCase: assignNextCase, assignDueEnd: assignDueEnd };
 }

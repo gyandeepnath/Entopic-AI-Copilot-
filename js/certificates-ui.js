@@ -6,7 +6,7 @@
 "use strict";
 
 function certBlock() {
-  if (CERT_DRAFT) return certEditor();
+  if (certDraftForThisVisit()) return certEditor();
 
   var h = '<div class="dv"><span>Certificates</span></div>' +
     '<div style="font-size:.58rem;color:var(--sv);margin-bottom:8px">' +
@@ -118,7 +118,7 @@ function certHtml(d) {
 
 /* Print just the certificate, in its own window, without the app chrome. */
 function certPrint() {
-  if (!CERT_DRAFT) return;
+  if (!certDraftForThisVisit()) { renderMain(); return; }
   var w = window.open("", "_blank");
   if (!w) { alert("Allow pop-ups to print the certificate."); return; }
   w.document.write('<!doctype html><html><head><title>' + esc(CERT_DRAFT.title) +

@@ -37,6 +37,12 @@ function invUrgencyPill(u) {
 /* ── 1. Ordering, from the exam ──────────────────────────────────── */
 
 function invOrderBlock() {
+  /* The draft (ticked tests, clinical question) is global; it must not carry
+     over to the next patient and be raised against them. */
+  var pid = (typeof P !== "undefined" && P) ? P.id : null;
+  if (INV_ORDER_DRAFT.patient_id !== pid) {
+    INV_ORDER_DRAFT = { codes: {}, urgency: "Routine", question: "", note: "", patient_id: pid };
+  }
   var cats = {};
   INVESTIGATION_CATALOGUE.forEach(function (t) { (cats[t.cat] = cats[t.cat] || []).push(t); });
 

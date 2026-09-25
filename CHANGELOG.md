@@ -6,6 +6,55 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-09-25 — Full audit, part 13: certificates, teaching assignments, practice records
+
+**Certificates (these go to employers and authorities):**
+- **The contact-lens certificate printed spectacle powers as the lens
+  power.** It took the patient's current correction whether they wore
+  glasses or contact lenses. Above a few dioptres those powers differ
+  (vertex distance). It now fills the lens power only if the current
+  correction is contact lenses; otherwise the line is left blank for you to
+  fill in.
+- **The prescription certificate left out prism.** A certificate for a
+  patient given prism read as if none was prescribed. Prism and base now
+  print.
+- **A draft certificate followed you to the next patient.** Start one for
+  patient A, open patient B, and B's Certificates step showed, and printed,
+  A's name and findings. A draft now belongs to the visit it was started in.
+  The unsent investigation order (ticked tests and clinical question) had
+  the same problem and is fixed the same way.
+- The low-vision certificate's three blank lines to fill in never appeared.
+  They do now.
+
+**The printed report:** specialty-clinic sections (for example a screening
+camp's "Refer urgently") printed **below the signature line**, outside what
+you sign. They now print above it.
+
+**Teaching:**
+- An OSCE assignment for one area ("Glaucoma OSCE") ran stations from the
+  **whole** knowledge base and credited them to that assignment. It now uses
+  that area, or the named list.
+- A later free-practice circuit was still credited to the last assignment.
+  It no longer is.
+- "Common" and "red flag" assignments picked cases at random, repeats
+  included. Progress only counts different conditions, so the last few
+  cases took many attempts. Unseen conditions are now served first.
+- Due dates marked work **overdue for the whole of the due day** (the date
+  was read as midnight UTC). Due now means the end of that day. The tutor's
+  view shows the same case count as the students', which already takes
+  account of how many cases the chosen area contains.
+
+**Practice records:** "Clear practice exams" didn't tell your other devices,
+so with sync on the records came back on the next sync. It also ignored
+failed saves. It now works like a patient delete: every save is checked, it
+either finishes completely or not at all, and your other devices are told.
+
+Tests: `tests/certificates.test.js` (5), `tests/practice-clear.test.js` (2),
+and 5 more in `tests/simulation-osce.test.js`. Each fails on the previous
+code.
+
+---
+
 ## 2026-09-25 — Full audit, part 12: investigation orders that didn't stay put
 
 The investigations workflow works like this: order in the exam, perform in

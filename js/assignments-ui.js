@@ -64,7 +64,9 @@ function assignFacultyCard() {
 
   list.slice().reverse().forEach(function (a) {
     var cohort = assignCohortProgress(a);
-    var target = (a.scope === "list" && a.conditions.length) ? a.conditions.length : a.count;
+    /* The same clamped target the students see (assignProgress) — the raw count
+       said "20 cases" above rows reading 15/15 for a 15-condition domain. */
+    var target = assignProgress(a, null).target;
     var complete = cohort.filter(function (r) { return r.complete; }).length;
 
     h += '<div style="border-top:1px solid var(--fg);padding:7px 0">' +

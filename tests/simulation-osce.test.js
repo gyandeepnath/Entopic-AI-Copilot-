@@ -454,3 +454,62 @@ test("learning progress is stored apart from patient data, per user", () => {
   assert.strictEqual(keys.benRaw, null, "one student's progress does not leak into another's");
   assert.ok(!/patient/i.test(keys.amyKey), "progress does not live in patient storage");
 });
+
+/* ── 7. Assignment scope reaches OSCE circuits (full audit, part 13) ── */
+
+test("an OSCE assignment for one domain builds its circuit from that domain", () => {
+  reset();
+  const off = evalIn(`(function () {
+    var st = osceBuild("domain", 8, { domain: "Glaucoma" });
+    if (!st.length) return ["<empty circuit>"];
+    return st.filter(function (c) { return (findCondition(c.condition).domain || "Other") !== "Glaucoma"; })
+      .map(function (c) { return c.condition; });
+  })()`);
+  assert.strictEqual(off.length, 0, `out-of-domain stations: ${off}`);
+});
+
+test("an OSCE assignment with a named list uses only those conditions", () => {
+  reset();
+  const names = evalJson(`osceBuild("list", 10, { conditions: ["Dry Eye Disease - Evaporative (MGD)", "Acute Angle Closure Crisis"] })
+    .map(function (c) { return c.condition; }).sort()`);
+  assert.deepStrictEqual(names, ["Acute Angle Closure Crisis", "Dry Eye Disease - Evaporative (MGD)"]);
+});
+
+test("a free circuit after an assignment is not credited to it", () => {
+  reset();
+  const active = evalIn(`(function () {
+    ASSIGN_ACTIVE = { id: "as1" };
+    var real = osceRunStation; osceRunStation = function () {};
+    try { osceStart("common", 2); } finally { osceRunStation = real; }
+    return ASSIGN_ACTIVE;
+  })()`);
+  assert.strictEqual(active, null);
+});
+
+test("a common-scope assignment serves unseen conditions before repeating", () => {
+  reset();
+  const repeats = evalIn(`(function () {
+    var a = assignCreate({ title: "Red flags", scope: "urgent", count: 10 });
+    var seen = {}, rep = 0;
+    for (var i = 0; i < 10; i++) {
+      var c = assignNextCase(a, "student1");
+      if (seen[c.condition]) rep++;
+      seen[c.condition] = true;
+      assignRecord(a.id, { condition: c.condition, correct: true });
+    }
+    return rep;
+  })()`);
+  assert.strictEqual(repeats, 0, "each attempt should advance distinct-condition progress");
+});
+
+test("an assignment is not overdue on its due day, and is the day after", () => {
+  reset();
+  const r = evalJson(`(function () {
+    function ymd(d) { return d.getFullYear() + "-" + ("0" + (d.getMonth() + 1)).slice(-2) + "-" + ("0" + d.getDate()).slice(-2); }
+    var today = ymd(new Date()), y = new Date(); y.setDate(y.getDate() - 1);
+    var a = assignCreate({ title: "Due today", scope: "urgent", count: 3, due: today });
+    var b = assignCreate({ title: "Due yesterday", scope: "urgent", count: 3, due: ymd(y) });
+    return [assignProgress(a, "student1").overdue, assignProgress(b, "student1").overdue];
+  })()`);
+  assert.deepStrictEqual(r, [false, true]);
+});

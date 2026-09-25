@@ -119,8 +119,29 @@ function clearPracticeExams() {
   var practice = practicePatients();
   if (!practice.length) return;
   if (!confirm("Delete all " + practice.length + " practice exams? (Your real records and casebook are untouched.)")) return;
-  var ids = {}; for (var i = 0; i < practice.length; i++) ids[practice[i].id] = true;
-  savePatients(loadPatients().filter(function (p) { return !p.practice; }));
-  saveVisits(loadVisits().filter(function (v) { return !ids[v.patient_id]; }));
+  var ids = Object.create(null);
+  for (var i = 0; i < practice.length; i++) ids[practice[i].id] = true;
+  /* Same discipline as deletePatient: visits first, every write checked, all
+     or nothing — and the deletes sent to the clinic's other devices as
+     tombstones. Practice records sync like any other; without tombstones
+     they came back on the next cloud pull. */
+  var visits = loadVisits();
+  var goneVisits = visits.filter(function (v) { return ids[v.patient_id]; }).map(function (v) { return v.id; });
+  if (saveVisits(visits.filter(function (v) { return !ids[v.patient_id]; })) === false) {
+    alert("The practice visits could not be removed, so nothing was deleted.");
+    return;
+  }
+  if (savePatients(loadPatients().filter(function (p) { return !ids[p.id]; })) === false) {
+    saveVisits(visits);
+    alert("The practice records could not be removed, so nothing was deleted.");
+    return;
+  }
+  if (typeof cloudEnqueueDelete === "function") {
+    Object.keys(ids).forEach(function (pid) { cloudEnqueueDelete("patients", pid); });
+    goneVisits.forEach(function (vid) { cloudEnqueueDelete("visits", vid); });
+  }
+  if (typeof logAudit === "function") {
+    logAudit("practice_cleared", practice.length + " practice exam(s) and " + goneVisits.length + " visit(s) deleted", {});
+  }
   renderHome();
 }

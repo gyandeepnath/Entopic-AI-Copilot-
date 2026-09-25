@@ -55,14 +55,25 @@ var OSCE = {
 
 /* Build a circuit. Stations are distinct conditions so a circuit never
    repeats itself. */
-function osceBuild(scope, count) {
+/* spec (optional, from an assignment): { domain, conditions[] }. A "domain"
+   or "list" assignment used to reach here as a bare scope word that matched
+   nothing, so a "Glaucoma OSCE" ran stations drawn from the whole knowledge
+   base — and credited them to the glaucoma assignment. */
+function osceBuild(scope, count, spec) {
   count = count || OSCE_CONFIG.stations;
+  spec = spec || {};
   var pool = (typeof KNOWLEDGE_ALL !== "undefined") ? KNOWLEDGE_ALL.slice() : [];
   pool = pool.filter(function (c) { return (c.req || []).length > 0; });
   if (scope === "common" && typeof KB_COMMON_SET !== "undefined") {
     pool = pool.filter(function (c) { return KB_COMMON_SET[c.name]; });
   }
   if (scope === "urgent") pool = pool.filter(function (c) { return c.urgent; });
+  if (scope === "domain") pool = pool.filter(function (c) { return (c.domain || "Other") === spec.domain; });
+  if (scope === "list") {
+    var want = Object.create(null);
+    (Array.isArray(spec.conditions) ? spec.conditions : []).forEach(function (n) { want[n] = true; });
+    pool = pool.filter(function (c) { return want[c.name]; });
+  }
   if (!pool.length) return [];
 
   /* Shuffle, then take distinct conditions. */
@@ -75,8 +86,11 @@ function osceBuild(scope, count) {
     .filter(Boolean);
 }
 
-function osceStart(scope, count) {
-  var stations = osceBuild(scope, count);
+function osceStart(scope, count, spec) {
+  /* A circuit started anywhere but an assignment is free practice: nothing
+     in it may be credited to an assignment the student opened earlier. */
+  if (!(spec && spec.assignment) && typeof ASSIGN_ACTIVE !== "undefined") ASSIGN_ACTIVE = null;
+  var stations = osceBuild(scope, count, spec);
   if (!stations.length) { if (typeof toast === "function") toast("Could not build a circuit."); return; }
   OSCE.active = true;
   OSCE.stations = stations;
@@ -211,6 +225,7 @@ function osceNextStation() {
 function osceAbort() {
   osceStopTimer();
   OSCE.active = false;
+  if (typeof ASSIGN_ACTIVE !== "undefined") ASSIGN_ACTIVE = null;
   simEnd();
   if (typeof goHome === "function") goHome();
 }
@@ -246,6 +261,8 @@ function osceSummary() {
 function osceFinish() {
   osceStopTimer();
   OSCE.active = false;
+  /* The circuit IS the assignment attempt; "Another circuit" is practice. */
+  if (typeof ASSIGN_ACTIVE !== "undefined") ASSIGN_ACTIVE = null;
   var sum = osceSummary();
   simEnd();
   if (typeof osceShowSummary === "function") osceShowSummary(sum);
@@ -256,5 +273,5 @@ function osceFinish() {
 }
 
 if (typeof module !== "undefined" && module.exports) {
-  module.exports = { OSCE_CONFIG: OSCE_CONFIG, osceMark: osceMark };
+  module.exports = { OSCE_CONFIG: OSCE_CONFIG, osceMark: osceMark, osceBuild: osceBuild };
 }

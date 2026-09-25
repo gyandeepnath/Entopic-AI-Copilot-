@@ -172,7 +172,9 @@ function mlSectionValues(sec) {
         (g.fields || []).forEach(function (f) {
           if (f.type === "eyes") {
             var od = store[f.k + "_od"], os = store[f.k + "_os"];
-            if ((od && od.trim()) || (os && os.trim())) push(f.l, "OD " + (od || "—") + " · OS " + (os || "—"));
+            od = (od === undefined || od === null) ? "" : String(od);
+            os = (os === undefined || os === null) ? "" : String(os);
+            if (od.trim() || os.trim()) push(f.l, "OD " + (od || "—") + " · OS " + (os || "—"));
           } else push(f.l, store[f.k]);
         });
       });

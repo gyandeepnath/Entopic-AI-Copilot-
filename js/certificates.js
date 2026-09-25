@@ -98,6 +98,8 @@ function certStart(id) {
   if (!t) return;
   CERT_DRAFT = {
     template: id,
+    visit_id: (typeof CV !== "undefined") ? CV : null,
+    patient_id: (typeof CP !== "undefined") ? CP : null,
     title: t.title,
     statement: t.statement,
     rows: certGather(t.sections),
@@ -111,6 +113,15 @@ function certStart(id) {
 }
 
 function certClose() { CERT_DRAFT = null; renderMain(); }
+
+/* The draft holds one patient's name and findings. It is a global, so it used
+   to survive opening another patient — whose Certificates step then showed,
+   and printed, the previous patient's certificate. A draft belongs to the
+   visit it was started in; anywhere else it is discarded. */
+function certDraftForThisVisit() {
+  if (CERT_DRAFT && CERT_DRAFT.visit_id !== ((typeof CV !== "undefined") ? CV : null)) CERT_DRAFT = null;
+  return CERT_DRAFT;
+}
 
 function certSetRow(i, val) { if (CERT_DRAFT && CERT_DRAFT.rows[i]) CERT_DRAFT.rows[i].v = val; }
 function certAddRow() {
@@ -152,7 +163,10 @@ function certGather(sections) {
       var stage = (typeof rxStageHasData === "function" && rxStageHasData("fin")) ? "fin" : "";
       var pw = function (eye) {
         var k = function (s) { return V.rx[(stage ? stage + "_" : "") + eye + "_" + s] || ""; };
-        var p = [k("sph"), k("cyl"), k("ax") ? "x " + k("ax") : "", k("add") ? "Add " + k("add") : ""]
+        /* Prism belongs on a prescription. It was left off, so a certificate
+           for a patient prescribed prism read as if none had been. */
+        var p = [k("sph"), k("cyl"), k("ax") ? "x " + k("ax") : "", k("add") ? "Add " + k("add") : "",
+                 k("prism") ? "Prism " + k("prism") + (k("base") ? " base " + k("base") : "") : ""]
           .filter(function (x) { return x; }).join(" / ");
         return p;
       };
@@ -186,23 +200,37 @@ function certGather(sections) {
     }
 
     if (sec === "lowvision") {
-      add("Magnification / aid trialled", "");
-      add("Reading performance with aid", "");
-      add("Mobility / functional notes", "");
+      /* Blank rows for the clinician to fill. add() drops empty values, so
+         these three never appeared at all. */
+      rows.push({ l: "Magnification / aid trialled", v: "" });
+      rows.push({ l: "Reading performance with aid", v: "" });
+      rows.push({ l: "Mobility / functional notes", v: "" });
     }
 
     if (sec === "contactlens" && V.rx) {
-      var cl = function (eye) {
-        var k = function (s) { return V.rx["hab_" + eye + "_" + s] || ""; };
-        return [k("sph"), k("cyl"), k("ax") ? "x " + k("ax") : ""].filter(function (x) { return x; }).join(" / ");
-      };
-      eyePair("Lens power", cl("od"), cl("os"));
+      /* The habitual-correction powers are contact-lens powers ONLY when the
+         habitual correction is contact lenses. Otherwise they are spectacle
+         powers, and printing them as a lens specification is wrong (vertex
+         distance changes the power above a few dioptres). Then the row is
+         left blank for the fitted power. */
+      if (/contact/i.test(String(V.rx.hab_type || ""))) {
+        var cl = function (eye) {
+          var k = function (s) { return V.rx["hab_" + eye + "_" + s] || ""; };
+          return [k("sph"), k("cyl"), k("ax") ? "x " + k("ax") : ""].filter(function (x) { return x; }).join(" / ");
+        };
+        eyePair("Lens power", cl("od"), cl("os"));
+      }
+      if (!rows.some(function (r) { return r.l === "Lens power"; })) rows.push({ l: "Lens power", v: "" });
       add("Base curve", V.rx.cl_bc);
       add("Diameter", V.rx.cl_dia);
       add("Modality", V.rx.cl_modality);
       add("Material", V.rx.cl_material);
-      eyePair("VA with lenses", V.rx.hab_va_od, V.rx.hab_va_os);
+      if (/contact/i.test(String(V.rx.hab_type || ""))) eyePair("VA with lenses", V.rx.hab_va_od, V.rx.hab_va_os);
     }
   }
   return rows;
+}
+
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = { certGather: certGather, CERTIFICATE_TEMPLATES: CERTIFICATE_TEMPLATES };
 }

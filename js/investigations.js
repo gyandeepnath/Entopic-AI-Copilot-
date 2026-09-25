@@ -458,6 +458,7 @@ function invRecomputeStatus(o) {
 var INV_ORDER_DRAFT = { codes: {}, urgency: "Routine", question: "", note: "" };
 
 function invDraftToggle(code) {
+  if (!invTest(code)) return;
   if (INV_ORDER_DRAFT.codes[code]) delete INV_ORDER_DRAFT.codes[code];
   else INV_ORDER_DRAFT.codes[code] = "OU";
   renderMain();
@@ -501,7 +502,7 @@ function invCreateOrder() {
       order.items.length + " investigation(s) ordered · " + order.urgency,
       { patient_id: P.id, visit_id: order.visit_id });
   }
-  INV_ORDER_DRAFT = { codes: {}, urgency: "Routine", question: "", note: "" };
+  INV_ORDER_DRAFT = { codes: {}, urgency: "Routine", question: "", note: "", patient_id: P.id };
   renderMain();
   /* The shared queue leaves practice records out (invAllOrders), so saying
      "now in the queue" for one was untrue. */
