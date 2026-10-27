@@ -45,7 +45,27 @@
 
 var VAULT_META_KEY   = "entopic_vault_meta";
 var VAULT_TAG        = "entopic-vault-aesgcm256-v1";
-var VAULT_PBKDF2_ITERS = 210000;   /* OWASP-current for PBKDF2-SHA-256, 2026 */
+/* PBKDF2-HMAC-SHA-256 work factor for every key made FROM NOW ON.
+   600,000 is the OWASP Password Storage Cheat Sheet figure for SHA-256
+   (checked against the cheat sheet itself, 2026-10-27). The previous value,
+   210,000, was annotated here as "OWASP-current for SHA-256"; it is close to
+   OWASP's figure for SHA-512, not SHA-256.
+
+   ── THE COUNT TRAVELS WITH EACH KEY ──
+   Every wrapping, and every backup file, records the count it was made with,
+   and is always opened with THAT count. Before this, derivation read this
+   constant directly and ignored the stored `kdf.iters` — so raising it would
+   have made every existing vault and every backup file unopenable with the
+   correct passphrase. Older keys are re-wrapped at the new strength the next
+   time they are opened successfully. */
+var VAULT_PBKDF2_ITERS = 600000;
+/* What every vault wrapping and backup file used before counts were tracked
+   per wrapping. The fallback when a record names no count of its own. */
+var VAULT_LEGACY_ITERS = 210000;
+/* Bounds on a count read back from a file or the device. A backup file is
+   untrusted input, and an absurd count would freeze the browser on open. */
+var VAULT_ITERS_MIN = 100000;
+var VAULT_ITERS_MAX = 5000000;
 var VAULT_CHECK_TEXT = "entopic-vault-check";
 
 /* The stores that hold patient-identifiable or account data. Anything
@@ -162,7 +182,10 @@ function vaultSaveMeta(meta) {
 }
 
 function vaultEnabled() { return !!vaultMeta(); }
-function vaultUnlocked() { return !!_vaultDek; }
+/* Unlocked means the key AND the decrypted records are in memory. A key
+   without its cache used to count as unlocked, which made every protected
+   store read as empty and writable (see vaultHydrate). */
+function vaultUnlocked() { return !!_vaultDek && !!_vaultCache; }
 
 function vaultState() {
   if (!vaultHasCrypto()) return "unavailable";
@@ -197,13 +220,34 @@ function vaultNormalizeRecoveryCode(code) {
 
 
 /* ── Key derivation + DEK wrapping ───────────────────────────────── */
-function vaultDeriveKek(secret, saltHex) {
+function vaultCheckIters(n) {
+  n = Number(n);
+  if (!(Math.floor(n) === n && n >= VAULT_ITERS_MIN && n <= VAULT_ITERS_MAX)) {
+    throw new Error("unsupported key-derivation setting (" + String(n) + " iterations)");
+  }
+  return n;
+}
+
+/* The count a given wrapping in `meta` was made with. `kdf.iters` is the
+   count every wrapping used before per-wrapping counts existed. */
+function vaultKdfIters(meta, which) {
+  var kdf = (meta && meta.kdf) || {};
+  var own = kdf[which + "_iters"];
+  return own || kdf.iters || VAULT_LEGACY_ITERS;
+}
+
+/* iters defaults to the CURRENT strength — right for a key being made now,
+   wrong for one being opened; callers opening a key pass its stored count. */
+function vaultDeriveKek(secret, saltHex, iters) {
   var enc = new TextEncoder();
+  var n;
+  try { n = vaultCheckIters(iters === undefined ? VAULT_PBKDF2_ITERS : iters); }
+  catch (e) { return Promise.reject(e); }
   return crypto.subtle
     .importKey("raw", enc.encode(String(secret)), "PBKDF2", false, ["deriveKey"])
     .then(function (base) {
       return crypto.subtle.deriveKey(
-        { name: "PBKDF2", salt: vaultFromHex(saltHex), iterations: VAULT_PBKDF2_ITERS, hash: "SHA-256" },
+        { name: "PBKDF2", salt: vaultFromHex(saltHex), iterations: n, hash: "SHA-256" },
         base,
         { name: "AES-GCM", length: 256 },
         false,
@@ -236,6 +280,32 @@ function vaultUnwrapDek(wrapped, kek) {
 }
 
 
+/* Re-wrap one wrapping at the current strength, after it has just been
+   opened with `secret`. Best-effort: a failure leaves the older (still
+   working) wrapping in place and never fails the unlock. A fresh salt is
+   used, and the meta is re-read immediately before saving. */
+var VAULT_WRAP_FIELD = { pass: ["pass", "salt"], recovery: ["recovery", "recovery_salt"],
+                         admin: ["admin", "admin_salt"] };
+function vaultUpgradeWrap(which, secret, dek) {
+  var meta = vaultMeta();
+  if (!meta || !dek || vaultKdfIters(meta, which) >= VAULT_PBKDF2_ITERS) return Promise.resolve(false);
+  var f = VAULT_WRAP_FIELD[which];
+  var salt = vaultRandomHex(16);
+  return crypto.subtle.exportKey("raw", dek).then(function (rawDek) {
+    return vaultDeriveKek(secret, salt).then(function (kek) {
+      return vaultWrapDek(new Uint8Array(rawDek), kek);
+    });
+  }).then(function (wrapped) {
+    var m = vaultMeta();
+    if (!m || !m.wrapped || !m.wrapped[f[0]]) return false;
+    m.wrapped[f[0]] = wrapped;
+    m.kdf[f[1]] = salt;
+    m.kdf[which + "_iters"] = VAULT_PBKDF2_ITERS;
+    vaultSaveMeta(m);
+    return true;
+  }).catch(function () { return false; });
+}
+
 /* ── Value encryption (one store's worth of JSON) ────────────────── */
 function vaultIsEnvelope(x) {
   return !!(x && typeof x === "object" && x.__vault === VAULT_TAG && x.iv && x.ct);
@@ -263,19 +333,29 @@ function vaultDecryptValue(env, key) {
 
 
 /* ── Unlock ──────────────────────────────────────────────────────── */
+
+/* The key was right; something AFTER that failed. Kept apart from a wrong
+   passphrase so the clinician is never told "wrong passphrase" for the right
+   one (they would keep retrying, burn the throttle, and conclude the records
+   are gone). */
+function VaultOpenError(message) { this.name = "VaultOpenError"; this.message = message; }
+VaultOpenError.prototype = Object.create(Error.prototype);
+
 function _vaultVerifyAndAdopt(dek, meta) {
   /* Prove the key is right before adopting it: decrypt the check blob.
      Without this, a wrong-but-structurally-valid key would surface later
      as unreadable records instead of a clean "wrong passphrase". */
   return vaultDecryptValue(meta.check, dek).then(function (v) {
     if (v !== VAULT_CHECK_TEXT) throw new Error("bad key");
-    _vaultDek = dek;
+    return vaultHydrate(dek).catch(function (e) {
+      throw new VaultOpenError("The passphrase was correct, but the records could not be loaded (" +
+        ((e && e.message) || "unknown error") + "). Nothing was changed.");
+    });
+  }).then(function () {
     /* Re-wrap any secret still lying in the clear (e.g. stored before the
-       vault was enabled). Security review S-1. */
-    return vaultHydrate()
-      .then(function () { return vaultRewrapSecrets(); })
-      .then(function () { return vaultRestoreSecretConsumers(); });
-  });
+       vault was enabled). Security review S-1. js/vault-secrets.js. */
+    return (typeof vaultRewrapSecrets === "function") ? vaultRewrapSecrets() : true;
+  }).then(function () { return vaultRestoreSecretConsumers(); });
 }
 
 /* Hand the now-readable secrets back to the modules that need them. Wired here
@@ -330,9 +410,11 @@ function vaultUnlock(passphrase) {
       (secs >= 60 ? Math.ceil(secs / 60) + " min" : secs + "s") + " before trying again."));
   }
   if (!vaultHasCrypto()) return Promise.reject(new Error("This browser cannot open the vault (no Web Crypto)."));
-  return vaultDeriveKek(passphrase, meta.kdf.salt)
+  var opened = null;
+  return vaultDeriveKek(passphrase, meta.kdf.salt, vaultKdfIters(meta, "pass"))
     .then(function (kek) { return vaultUnwrapDek(meta.wrapped.pass, kek); })
-    .then(function (dek) { return _vaultVerifyAndAdopt(dek, meta); })
+    .then(function (dek) { opened = dek; return _vaultVerifyAndAdopt(dek, meta); })
+    .then(function () { return vaultUpgradeWrap("pass", passphrase, opened); })
     .then(function () {
       vaultThrottleReset();
       if (typeof logAudit === "function") { try { logAudit("vault_unlocked", "Record vault opened on this device", {}); } catch (e) {} }
@@ -340,6 +422,7 @@ function vaultUnlock(passphrase) {
     })
     .catch(function (e) {
       if (e && /Too many attempts/.test(e.message || "")) throw e;
+      if (e instanceof VaultOpenError) throw e;     /* right passphrase — no throttle */
       vaultThrottleNoteFailure();
       throw new Error("That passphrase did not open the vault.");
     });
@@ -349,15 +432,20 @@ function vaultUnlockWithRecovery(code) {
   var meta = vaultMeta();
   if (!meta) return Promise.reject(new Error("The vault is not set up on this device."));
   var norm = vaultNormalizeRecoveryCode(code);
-  return vaultDeriveKek(norm, meta.kdf.recovery_salt)
+  var opened = null;
+  return vaultDeriveKek(norm, meta.kdf.recovery_salt, vaultKdfIters(meta, "recovery"))
     .then(function (kek) { return vaultUnwrapDek(meta.wrapped.recovery, kek); })
-    .then(function (dek) { return _vaultVerifyAndAdopt(dek, meta); })
+    .then(function (dek) { opened = dek; return _vaultVerifyAndAdopt(dek, meta); })
+    .then(function () { return vaultUpgradeWrap("recovery", norm, opened); })
     .then(function () {
       vaultThrottleReset();
       if (typeof logAudit === "function") { try { logAudit("vault_recovery_used", "Vault opened with the RECOVERY CODE — set a new passphrase", {}); } catch (e) {} }
       return true;
     })
-    .catch(function () { throw new Error("That recovery code did not open the vault."); });
+    .catch(function (e) {
+      if (e instanceof VaultOpenError) throw e;
+      throw new Error("That recovery code did not open the vault.");
+    });
 }
 
 /* Lock the vault. Any pending write is flushed first and, because vaultFlush
@@ -380,22 +468,72 @@ function vaultLock() {
 
 /* ── Hydrate / flush (the sync-read bridge) ──────────────────────── */
 
-/* Decrypt every protected store into memory. Called once per unlock. */
-function vaultHydrate() {
-  if (!_vaultDek) return Promise.reject(new Error("Vault is locked"));
-  var cache = {};
+/* Decrypt every protected store into memory, then adopt the key and the
+   cache TOGETHER. Called once per unlock.
+
+   ── TWO DEFECTS THIS CLOSES (full audit, 2026-10-27) ──
+
+   1. ONE damaged record locked the clinic out. A single visit whose
+      ciphertext was damaged (a write cut off by a crash or a full disk) made
+      the whole decrypt chain reject, so the CORRECT passphrase was reported
+      as "did not open the vault". Worse, the key had already been adopted
+      before the records were read: the app then counted as unlocked with no
+      records in memory, read every store as empty, and the next save
+      encrypted that empty list over the real one. Measured: 2 patients ->
+      one damaged visit -> unlock -> one save -> 1 patient.
+
+   2. The damaged-store protection did not apply with the vault on. With the
+      vault off, a store that cannot be read is quarantined and every write to
+      it is refused (storage.js, storageNoteCorrupt). With the vault on, an
+      unreadable store was simply left out of the cache, read back as EMPTY,
+      and overwritten by the next save — the exact loss that protection was
+      written to prevent, reintroduced for the clinics that chose encryption.
+
+   Now each store is read on its own. A store that cannot be parsed, cannot
+   be decrypted, or has the wrong shape is reported through the same
+   storageNoteCorrupt path (quarantined copy, writes blocked, banner) and the
+   rest of the records open normally. The key and the cache are adopted in
+   one step, only after every store has been read — never one without the
+   other. */
+function vaultHydrate(dekArg) {
+  var dek = dekArg || _vaultDek;
+  if (!dek) return Promise.reject(new Error("Vault is locked"));
+  var cache = Object.create(null);
+  var damaged = [];
+  var expectArray = (typeof STORE_EXPECTED_ARRAY !== "undefined") ? STORE_EXPECTED_ARRAY : [];
+  function shapeOk(k, v) { return expectArray.indexOf(k) < 0 || Array.isArray(v); }
   var chain = Promise.resolve();
   vaultProtectedKeys().forEach(function (k) {
     chain = chain.then(function () {
       var raw = null;
       try { raw = localStorage.getItem(STORE_PREFIX + k); } catch (e) {}
-      if (raw === null) { cache[k] = undefined; return; }
+      if (raw === null) return;
       var parsed;
-      try { parsed = JSON.parse(raw); } catch (e) { cache[k] = undefined; return; }
-      return vaultDecryptValue(parsed).then(function (v) { cache[k] = v; });
+      try { parsed = JSON.parse(raw); } catch (e) {
+        damaged.push({ key: k, raw: raw, reason: "unreadable (" + ((e && e.message) || "parse error") + ")" });
+        return;
+      }
+      return vaultDecryptValue(parsed, dek).then(function (v) {
+        if (!shapeOk(k, v)) {
+          damaged.push({ key: k, raw: raw, reason: "expected a list, found " + (v === null ? "null" : typeof v) });
+          return;
+        }
+        cache[k] = v;
+      }, function () {
+        damaged.push({ key: k, raw: raw, reason: "the encrypted record is damaged and could not be decrypted" });
+      });
     });
   });
-  return chain.then(function () { _vaultCache = cache; return true; });
+  return chain.then(function () {
+    _vaultDek = dek;
+    _vaultCache = cache;
+    /* Reported AFTER adoption, so the audit entry storageNoteCorrupt writes
+       lands in the (now open) encrypted audit store. */
+    damaged.forEach(function (d) {
+      if (typeof storageNoteCorrupt === "function") storageNoteCorrupt(d.key, d.raw, d.reason);
+    });
+    return true;
+  });
 }
 
 /* Synchronous read used by loadStore(). undefined = "not present". */
@@ -406,7 +544,9 @@ function vaultCacheGet(storeKey) {
 
 /* Synchronous write used by saveStore(): memory now, disk shortly. */
 function vaultCacheSet(storeKey, value) {
-  if (!_vaultCache) _vaultCache = {};
+  /* Only ever called while unlocked (saveStore checks). Creating a cache here
+     would fabricate an "unlocked" vault whose other stores read as empty. */
+  if (!_vaultCache) return false;
   _vaultCache[storeKey] = value;
   _vaultDirty[storeKey] = true;
   if (_vaultFlushTimer) return;
@@ -483,7 +623,8 @@ function vaultEnable(passphrase) {
     .then(function (parts) {
       meta = {
         v: 1, tag: VAULT_TAG,
-        kdf: { iters: VAULT_PBKDF2_ITERS, salt: saltHex, recovery_salt: recSaltHex, hash: "SHA-256" },
+        kdf: { iters: VAULT_PBKDF2_ITERS, pass_iters: VAULT_PBKDF2_ITERS, recovery_iters: VAULT_PBKDF2_ITERS,
+               salt: saltHex, recovery_salt: recSaltHex, hash: "SHA-256" },
         wrapped: { pass: parts[0], recovery: parts[1] },
         check: parts[2],
         created: new Date().toISOString()
@@ -519,8 +660,9 @@ function vaultEnable(passphrase) {
     })
     .then(function () {
       vaultSaveMeta(meta);
-      _vaultDek = dek;
-      return vaultHydrate().then(function () { return vaultRewrapSecrets(); });
+      return vaultHydrate(dek).then(function () {
+        return (typeof vaultRewrapSecrets === "function") ? vaultRewrapSecrets() : true;
+      });
     })
     .then(function () {
       if (typeof logAudit === "function") {
@@ -550,7 +692,7 @@ function vaultChangePassphrase(currentPass, newPass) {
     return Promise.reject(new Error("Choose a passphrase of at least 10 characters."));
   }
   var newSalt = vaultRandomHex(16);
-  return vaultDeriveKek(currentPass, meta.kdf.salt)
+  return vaultDeriveKek(currentPass, meta.kdf.salt, vaultKdfIters(meta, "pass"))
     .then(function (kek) { return vaultUnwrapDek(meta.wrapped.pass, kek); })
     .then(function (dek) {
       return crypto.subtle.exportKey("raw", dek).then(function (rawDek) {
@@ -562,6 +704,7 @@ function vaultChangePassphrase(currentPass, newPass) {
     .then(function (wrapped) {
       meta = vaultMeta();                       /* re-read: never save a stale copy */
       meta.kdf.salt = newSalt;
+      meta.kdf.pass_iters = VAULT_PBKDF2_ITERS;
       meta.wrapped.pass = wrapped;
       /* Clears the flag an administrator reset set. This is the step that
          takes the admin's temporary passphrase back out of circulation. */
@@ -588,7 +731,7 @@ function vaultRegenerateRecoveryCode(passphrase) {
   if (!meta) return Promise.reject(new Error("The vault is not set up on this device."));
   var code = vaultGenerateRecoveryCode();
   var newSalt = vaultRandomHex(16);
-  return vaultDeriveKek(passphrase, meta.kdf.salt)
+  return vaultDeriveKek(passphrase, meta.kdf.salt, vaultKdfIters(meta, "pass"))
     .then(function (kek) { return vaultUnwrapDek(meta.wrapped.pass, kek); })
     .then(function (dek) {
       return crypto.subtle.exportKey("raw", dek).then(function (rawDek) {
@@ -598,7 +741,9 @@ function vaultRegenerateRecoveryCode(passphrase) {
       });
     })
     .then(function (wrapped) {
+      meta = vaultMeta();                       /* re-read: never save a stale copy */
       meta.kdf.recovery_salt = newSalt;
+      meta.kdf.recovery_iters = VAULT_PBKDF2_ITERS;
       meta.wrapped.recovery = wrapped;
       vaultSaveMeta(meta);
       if (typeof logAudit === "function") { try { logAudit("vault_recovery_reissued", "A new vault recovery code was issued (the old one no longer works)", {}); } catch (e) {} }
@@ -611,11 +756,17 @@ function vaultRegenerateRecoveryCode(passphrase) {
 function vaultDisable(passphrase) {
   var meta = vaultMeta();
   if (!meta) return Promise.resolve(true);
-  return vaultDeriveKek(passphrase, meta.kdf.salt)
+  /* Which stores were already written back in the clear when something
+     failed. A failure AFTER the key was proven used to be reported as
+     "the passphrase was not correct … nothing changed" — wrong on both
+     counts, and it sent the admin hunting for a passphrase problem. */
+  var keyOk = false, done = [];
+  return vaultDeriveKek(passphrase, meta.kdf.salt, vaultKdfIters(meta, "pass"))
     .then(function (kek) { return vaultUnwrapDek(meta.wrapped.pass, kek); })
     .then(function (dek) {
       return vaultDecryptValue(meta.check, dek).then(function (v) {
         if (v !== VAULT_CHECK_TEXT) throw new Error("bad key");
+        keyOk = true;
         return dek;
       });
     })
@@ -629,9 +780,34 @@ function vaultDisable(passphrase) {
           var parsed;
           try { parsed = JSON.parse(raw); } catch (e) { return; }
           if (!vaultIsEnvelope(parsed)) return;
-          return vaultDecryptValue(parsed, dek).then(function (plain) {
+          return vaultDecryptValue(parsed, dek).catch(function () {
+            /* A damaged record cannot be decrypted. Turning the vault off
+               would throw away the only key that could ever read it, so stop
+               here with encryption still on. */
+            throw new Error("the '" + k + "' record is damaged and could not be decrypted");
+          }).then(function (plain) {
+            done.push(k);
             localStorage.setItem(STORE_PREFIX + k, JSON.stringify(plain));
             if (typeof mirrorStore === "function") mirrorStore(k, plain);
+          });
+        });
+      });
+      /* The wrapped SECRETS too (AI key, cloud sign-in, cloud PHI key). They
+         are wrapped with the very key this step throws away; left wrapped,
+         they became unreadable forever the moment the vault was turned off —
+         the clinic silently lost its cloud sign-in and its cloud encryption
+         key. "Turning it off is not a one-way door" has to include them. */
+      var managed = (typeof VAULT_MANAGED_SECRETS !== "undefined") ? VAULT_MANAGED_SECRETS : [];
+      managed.forEach(function (sk) {
+        chain = chain.then(function () {
+          var raw = "";
+          try { raw = localStorage.getItem(sk) || ""; } catch (e) {}
+          if (!raw || raw.charAt(0) !== "{") return;
+          var envS;
+          try { envS = JSON.parse(raw); } catch (e) { return; }
+          if (!vaultIsEnvelope(envS)) return;
+          return vaultDecryptValue(envS, dek).then(function (plain) {
+            localStorage.setItem(sk, String(plain == null ? "" : plain));
           });
         });
       });
@@ -646,170 +822,15 @@ function vaultDisable(passphrase) {
       return true;
     })
     .catch(function (e) {
-      if (e && /not correct/.test(e.message || "")) throw e;
+      if (keyOk) {
+        throw new Error("Encryption is still ON — " + ((e && e.message) || "an error occurred") + ". " +
+          (done.length ? done.length + " record store(s) had already been written back in the clear; " +
+                         "they remain readable and will be re-encrypted on the next save. "
+                       : "Nothing was changed. ") +
+          "No records were lost.");
+      }
       throw new Error("That passphrase was not correct — encryption is still on and nothing changed.");
     });
-}
-
-
-/* ═══════════════════════════════════════════════════════════════ */
-/* PROTECTED SECRETS (security review S-1)                         */
-/*                                                                  */
-/* Encrypting the RECORDS is not enough. A device also holds keys   */
-/* that open the records held elsewhere:                            */
-/*                                                                  */
-/*   • the Supabase session — an access token AND a long-lived      */
-/*     refresh token, which together let anyone holding them sign   */
-/*     in as that clinician and pull the whole clinic's data from   */
-/*     the SERVER, no local decryption required;                    */
-/*   • the Claude API key — a billable credential.                  */
-/*                                                                  */
-/* Both sat in localStorage in the clear, so a stolen laptop with   */
-/* the vault ON still gave up the cloud copy. That made the vault's */
-/* promise partly false, which is worse than an honest gap.         */
-/*                                                                  */
-/* These helpers wrap any small secret with the vault key when the  */
-/* vault is open, fall back to plain storage when it is off (the    */
-/* previous behaviour, so nothing changes for an install that has   */
-/* not enabled encryption), and refuse to hand anything back while  */
-/* the vault is LOCKED — a locked device must not be able to reach  */
-/* the cloud on the thief's behalf.                                 */
-/* ═══════════════════════════════════════════════════════════════ */
-
-function vaultSecretUsable() {
-  return vaultEnabled() && vaultUnlocked();
-}
-
-/* Store a secret string. Returns a promise resolving to whether the value is
-   actually on disk — it used to resolve true unconditionally, so a full or
-   blocked localStorage lost the secret while reporting success. Writes go
-   through lsSet (js/browser-io.js), which surfaces the failure in the same
-   banner the record store uses. */
-function vaultSecretSet(storageKey, value) {
-  if (value === null || value === undefined || value === "") {
-    lsRemove(storageKey);
-    return Promise.resolve(true);
-  }
-  var str = String(value);
-  if (!vaultSecretUsable()) return Promise.resolve(lsSet(storageKey, str));
-
-  return vaultEncryptValue(str).then(function (env) {
-    return lsSet(storageKey, JSON.stringify(env));
-  }).catch(function () {
-    /* Encryption failed — keep the secret rather than drop it. */
-    return lsSet(storageKey, str);
-  });
-}
-
-/* Read a secret back, handling both shapes. Resolves "" when the value is
-   wrapped but the vault is locked — the caller must treat that as
-   "unavailable", never as "absent, so create a new one". */
-function vaultSecretGet(storageKey) {
-  var raw = "";
-  try { raw = localStorage.getItem(storageKey) || ""; } catch (e) {}
-  if (!raw) return Promise.resolve("");
-  if (!vaultIsWrappedSecret(raw)) return Promise.resolve(raw);      /* plain (vault off / legacy) */
-  if (!vaultSecretUsable()) return Promise.resolve("");             /* locked → withheld */
-  var env;
-  try { env = JSON.parse(raw); } catch (e) { return Promise.resolve(""); }
-  return vaultDecryptValue(env).then(function (v) { return String(v == null ? "" : v); })
-                               .catch(function () { return ""; });
-}
-
-/* Is the stored blob one of our envelopes rather than a raw secret? */
-function vaultIsWrappedSecret(raw) {
-  if (!raw || raw.charAt(0) !== "{") return false;
-  try { return vaultIsEnvelope(JSON.parse(raw)); } catch (e) { return false; }
-}
-
-/* Is a secret present at all (wrapped or not)? Distinguishes "nothing stored"
-   from "stored but currently locked", which callers need to tell apart. */
-function vaultSecretPresent(storageKey) {
-  var raw = "";
-  try { raw = localStorage.getItem(storageKey) || ""; } catch (e) {}
-  return !!raw;
-}
-function vaultSecretAvailable(storageKey) {
-  var raw = "";
-  try { raw = localStorage.getItem(storageKey) || ""; } catch (e) {}
-  if (!raw) return false;
-  if (!vaultIsWrappedSecret(raw)) return true;
-  return vaultSecretUsable();
-}
-
-/* Re-wrap every plaintext secret the moment the vault becomes available.
-   Called after a successful unlock and after enabling the vault, so secrets
-   stored before encryption was turned on do not stay in the clear. */
-var VAULT_MANAGED_SECRETS = ["entopic_cloud_session", "entopic_apikey"];
-
-function vaultRewrapSecrets() {
-  if (!vaultSecretUsable()) return Promise.resolve(false);
-  var chain = Promise.resolve();
-  VAULT_MANAGED_SECRETS.forEach(function (k) {
-    chain = chain.then(function () {
-      var raw = "";
-      try { raw = localStorage.getItem(k) || ""; } catch (e) {}
-      if (!raw || vaultIsWrappedSecret(raw)) return;      /* absent or already wrapped */
-      return vaultSecretSet(k, raw);
-    });
-  });
-  return chain.then(function () { return true; });
-}
-
-
-/* ═══════════════════════════════════════════════════════════════ */
-/* ENCRYPTED BACKUP FILES (audit H-4)                              */
-/*                                                                  */
-/* Records are encrypted on the device, but the exported backup was */
-/* plaintext JSON holding every name, DOB and MRN — so the weekly   */
-/* backup routine was quietly the weakest link. A backup file       */
-/* travels (USB stick, Downloads folder, email), which is exactly   */
-/* where it needs protection most.                                  */
-/*                                                                  */
-/* These files are SELF-CONTAINED: the salt travels with the file   */
-/* and the key comes from a passphrase, not from this device's      */
-/* vault. That matters for disaster recovery — a backup must be     */
-/* restorable onto a NEW machine that has no vault at all.          */
-/* ═══════════════════════════════════════════════════════════════ */
-var BACKUP_TAG = "entopic-backup-aesgcm256-v1";
-
-function backupIsEncrypted(x) {
-  return !!(x && typeof x === "object" && x.__backup === BACKUP_TAG && x.iv && x.ct && x.kdf);
-}
-
-function backupEncrypt(dataObj, passphrase) {
-  if (!vaultHasCrypto()) return Promise.reject(new Error("This browser cannot encrypt (no Web Crypto)."));
-  if (!passphrase || String(passphrase).length < 10) {
-    return Promise.reject(new Error("Choose a backup passphrase of at least 10 characters."));
-  }
-  var salt = vaultRandomHex(16);
-  return vaultDeriveKek(passphrase, salt).then(function (key) {
-    var iv = new Uint8Array(12);
-    crypto.getRandomValues(iv);
-    var pt = new TextEncoder().encode(JSON.stringify(dataObj));
-    return crypto.subtle.encrypt({ name: "AES-GCM", iv: iv }, key, pt).then(function (ct) {
-      return {
-        __backup: BACKUP_TAG,
-        exported: new Date().toISOString(),
-        note: "Entopic encrypted backup. Restore it from Admin → Restore from backup; you will need the backup passphrase.",
-        kdf: { alg: "PBKDF2-SHA-256", iters: VAULT_PBKDF2_ITERS, salt: salt },
-        iv: vaultToHex(iv),
-        ct: vaultB64(new Uint8Array(ct))
-      };
-    });
-  });
-}
-
-function backupDecrypt(envelope, passphrase) {
-  if (!backupIsEncrypted(envelope)) return Promise.resolve(envelope);
-  if (!vaultHasCrypto()) return Promise.reject(new Error("This browser cannot decrypt (no Web Crypto)."));
-  return vaultDeriveKek(passphrase, envelope.kdf.salt)
-    .then(function (key) {
-      return crypto.subtle.decrypt(
-        { name: "AES-GCM", iv: vaultFromHex(envelope.iv) }, key, vaultUnB64(envelope.ct));
-    })
-    .then(function (pt) { return JSON.parse(new TextDecoder().decode(pt)); })
-    .catch(function () { throw new Error("That passphrase did not open this backup file."); });
 }
 
 
@@ -837,15 +858,11 @@ if (typeof module !== "undefined" && module.exports) {
     vaultDisable: vaultDisable,
     vaultEncryptValue: vaultEncryptValue, vaultDecryptValue: vaultDecryptValue,
     vaultIsEnvelope: vaultIsEnvelope,
-    backupEncrypt: backupEncrypt, backupDecrypt: backupDecrypt,
-    backupIsEncrypted: backupIsEncrypted,
     vaultUnlockDelayMs: vaultUnlockDelayMs, vaultThrottleCheck: vaultThrottleCheck,
     vaultThrottleNoteFailure: vaultThrottleNoteFailure, vaultThrottleReset: vaultThrottleReset,
     VAULT_THROTTLE_AFTER: VAULT_THROTTLE_AFTER,
-    vaultSecretSet: vaultSecretSet, vaultSecretGet: vaultSecretGet,
-    vaultSecretPresent: vaultSecretPresent, vaultSecretAvailable: vaultSecretAvailable,
-    vaultIsWrappedSecret: vaultIsWrappedSecret, vaultRewrapSecrets: vaultRewrapSecrets,
-    VAULT_MANAGED_SECRETS: VAULT_MANAGED_SECRETS,
+    VAULT_PBKDF2_ITERS: VAULT_PBKDF2_ITERS, VAULT_LEGACY_ITERS: VAULT_LEGACY_ITERS,
+    vaultKdfIters: vaultKdfIters, vaultUpgradeWrap: vaultUpgradeWrap,
     vaultHydrate: vaultHydrate, vaultFlush: vaultFlush,
     vaultCacheGet: vaultCacheGet, vaultCacheSet: vaultCacheSet
   };

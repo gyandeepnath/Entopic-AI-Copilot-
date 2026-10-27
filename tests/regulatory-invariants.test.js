@@ -151,7 +151,7 @@ test("R4 · nothing in the product prescribes, refers, orders or notifies by its
     "research-corpus.js",
     "feedback.js",          /* user-initiated report */
     "auth-crypto.js",
-    "local-vault.js", "vault-admin-recovery.js",
+    "local-vault.js", "vault-admin-recovery.js", "vault-secrets.js", "backup-crypto.js",
     "storage-mirror.js", "file-store.js", "storage-autobackup.js",
     /* Connectivity check against the clinic's OWN configured backend, so an
        admin can tell "the URL is wrong" from "the network is down". Sends no

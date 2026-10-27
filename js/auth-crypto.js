@@ -29,8 +29,16 @@
 /* ═══════════════════════════════════════════════════════════════ */
 "use strict";
 
-var AUTH_PBKDF2_ITERATIONS = 120000;   /* ~100ms on a modest device */
-var AUTH_HASH_VERSION = "pbkdf2-sha256-v1";
+/* PBKDF2-HMAC-SHA-256 work factor for credentials made from now on.
+   600,000 is the OWASP Password Storage Cheat Sheet figure for SHA-256
+   (checked 2026-10-27). v1 credentials used 120,000 — a fifth of it, which
+   matters because a backup file carries every account's hash. Each version
+   names its own count, a credential is always verified with the count it was
+   MADE with, and a v1 credential is re-hashed as v2 at its next successful
+   sign-in. */
+var AUTH_ITERS_BY_ALGO = { "pbkdf2-sha256-v1": 120000, "pbkdf2-sha256-v2": 600000 };
+var AUTH_HASH_VERSION = "pbkdf2-sha256-v2";
+var AUTH_PBKDF2_ITERATIONS = AUTH_ITERS_BY_ALGO[AUTH_HASH_VERSION];
 
 function authHasWebCrypto() {
   return !!(typeof crypto !== "undefined" && crypto.subtle && crypto.getRandomValues);
@@ -75,8 +83,12 @@ function authFallbackHash(password, salt) {
   return "w" + h1.toString(36) + h2.toString(36);
 }
 
-/* Returns a Promise of the hash string. */
-function authHashPassword(password, salt) {
+/* Returns a Promise of { hash, algo }. `algo` defaults to the current
+   version; verification passes the version the credential was stored with. */
+function authHashPassword(password, salt, algo) {
+  algo = algo || AUTH_HASH_VERSION;
+  var iters = AUTH_ITERS_BY_ALGO[algo];
+  if (!iters) return Promise.reject(new Error("unknown credential algorithm " + algo));
   if (!authHasWebCrypto()) {
     return Promise.resolve({ hash: authFallbackHash(password, salt), algo: "fallback-v1" });
   }
@@ -87,12 +99,12 @@ function authHashPassword(password, salt) {
       return crypto.subtle.deriveBits({
         name: "PBKDF2",
         salt: enc.encode(String(salt)),
-        iterations: AUTH_PBKDF2_ITERATIONS,
+        iterations: iters,
         hash: "SHA-256"
       }, key, 256);
     })
     .then(function (bits) {
-      return { hash: authBytesToHex(new Uint8Array(bits)), algo: AUTH_HASH_VERSION };
+      return { hash: authBytesToHex(new Uint8Array(bits)), algo: algo };
     })
     .catch(function () {
       return { hash: authFallbackHash(password, salt), algo: "fallback-v1" };
@@ -129,10 +141,18 @@ function authMakeCredentials(password) {
 function authCredentialAlgo(user) {
   if (user && user.pw_algo === "fallback-v1") return "fallback-v1";
   if (user && user.pw_algo) return user.pw_algo;
+  /* A record with no `pw_algo` predates the field, and everything written
+     then was v1. This must name v1 EXPLICITLY, not "the current version":
+     when the current version moved to v2, "current" would have verified these
+     records at the wrong count and locked their owners out. */
   var h = (user && typeof user.pw_hash === "string") ? user.pw_hash : "";
-  if (/^[0-9a-f]{64}$/.test(h)) return AUTH_HASH_VERSION;
   if (/^w[0-9a-z]+$/.test(h)) return "fallback-v1";
-  return AUTH_HASH_VERSION;
+  return "pbkdf2-sha256-v1";
+}
+
+/* Does a credential made with `algo` need re-hashing at the current strength? */
+function authNeedsUpgrade(algo) {
+  return algo !== AUTH_HASH_VERSION && authHasWebCrypto();
 }
 
 /* Hash under a SPECIFIC algorithm rather than the strongest one available.
@@ -151,7 +171,7 @@ function authHashPasswordAs(password, salt, algo) {
   if (algo === "fallback-v1") {
     return Promise.resolve({ hash: authFallbackHash(password, salt), algo: "fallback-v1" });
   }
-  return authHashPassword(password, salt);
+  return authHashPassword(password, salt, algo);
 }
 
 /* Verify a password against a user record, migrating a legacy plaintext
@@ -171,9 +191,10 @@ function authVerifyUser(user, password) {
       if (!authSafeEqual(r.hash, user.pw_hash)) {
         return { ok: false, migrated: false, user: user };
       }
-      /* Correct password, weak stored hash, capable browser: re-hash it now.
-         The caller persists whenever `migrated` is true. */
-      if (algo === "fallback-v1" && authHasWebCrypto()) {
+      /* Correct password, weaker stored hash (the fallback, or an older
+         PBKDF2 count), capable browser: re-hash it now. The caller persists
+         whenever `migrated` is true. */
+      if (authNeedsUpgrade(algo)) {
         return authMakeCredentials(password).then(function (cred) {
           user.pw_salt = cred.pw_salt;
           user.pw_hash = cred.pw_hash;
@@ -218,7 +239,8 @@ if (typeof module !== "undefined" && module.exports) {
   module.exports = {
     authHashPassword: authHashPassword,
     authHashPasswordAs: authHashPasswordAs,
-    authCredentialAlgo: authCredentialAlgo,
+    authCredentialAlgo: authCredentialAlgo, authNeedsUpgrade: authNeedsUpgrade,
+    AUTH_HASH_VERSION: AUTH_HASH_VERSION, AUTH_ITERS_BY_ALGO: AUTH_ITERS_BY_ALGO,
     authFallbackHash: authFallbackHash,
     authHasWebCrypto: authHasWebCrypto,
     authSafeEqual: authSafeEqual,

@@ -197,6 +197,21 @@ rule shown in the confirmation.
 
 ## For later (architecture — needs a decision + possibly spend)
 
+### 🟧 Cloud encryption key strength — found 2026-10-27
+What the cloud stores is encrypted with a key derived from the clinic
+passphrase using 150,000 PBKDF2 iterations, and the passphrase can be as
+short as 8 characters. Someone holding a copy of the cloud database could try
+passphrases offline, and at that setting a short passphrase falls quickly.
+OWASP recommends 600,000 iterations for this algorithm (now used for
+passwords, the device vault and backup files). It is not changed here
+because every device in the clinic must derive the same key: changing it
+means **re-encrypting the whole cloud copy** and updating every device at
+once, and the stored envelopes do not yet record which setting made them.
+Recommendation: before real patient data goes to the cloud, (1) add a key
+version to the envelope, (2) move to 600,000 and a 12-character minimum,
+(3) re-encrypt in one supervised step.
+
+
 ### 🟦 Two devices editing the same patient's investigation orders — found 2026-09-25
 Order changes now reach other devices (before the audit they never did). Cloud
 sync resolves a whole **patient record** at a time. If device A (clinician)

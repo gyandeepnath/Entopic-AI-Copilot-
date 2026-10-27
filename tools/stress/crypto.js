@@ -57,7 +57,7 @@ attack("U2 the same password hashes differently for two accounts", async () => {
 attack("U3 real PBKDF2 is used when the browser has WebCrypto", async () => {
   const c = authCtx();
   const cred = await c.run(`authMakeCredentials("pw")`);
-  mustEqual(cred.pw_algo, "pbkdf2-sha256-v1",
+  mustEqual(cred.pw_algo, c.run("AUTH_HASH_VERSION"),
     "a browser WITH WebCrypto silently used the weak fallback");
 });
 
@@ -167,7 +167,7 @@ attack("V3 a PBKDF2 account does NOT verify against a fallback hash", async () =
      against a strong stored hash. */
   const strong = authCtx();
   const cred = await strong.run(`authMakeCredentials("downgrade-me")`);
-  mustEqual(cred.pw_algo, "pbkdf2-sha256-v1", "sanity");
+  mustEqual(cred.pw_algo, strong.run("AUTH_HASH_VERSION"), "sanity");
 
   const weak = noCryptoCtx();
   weak.__u = JSON.parse(JSON.stringify(cred));
@@ -188,7 +188,7 @@ attack("V4 an upgraded credential does not silently keep the weak algorithm", as
   if (!r.ok) return;                            /* covered by V2 */
   const algo = strong.run("__u.pw_algo");
   const hash = strong.run("__u.pw_hash");
-  if (algo === "pbkdf2-sha256-v1") {
+  if (/^pbkdf2-sha256-v\d+$/.test(algo)) {
     must(hash !== cred.pw_hash, "the record claims PBKDF2 but still holds the fallback hash");
   } else {
     mustEqual(algo, "fallback-v1", "the record claims an algorithm it was not hashed with");
@@ -208,7 +208,8 @@ attack("V5 the fallback hash is at least salt-dependent and password-dependent",
 /* ═══════════════════════════════════════════════════════════════ */
 G("W. the vault — bytes on a lost laptop");
 
-const VAULT = ["js/data-classification.js", "js/storage.js", "js/local-vault.js"];
+const VAULT = ["js/data-classification.js", "js/storage.js", "js/local-vault.js",
+               "js/vault-secrets.js", "js/backup-crypto.js"];
 
 function vaultCtx() {
   const c = browser({ also: ["js/local-vault.js"] });

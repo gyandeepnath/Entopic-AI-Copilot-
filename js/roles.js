@@ -219,31 +219,47 @@ function adminVerify(username, password) {
       : cred.algo;
     return authHashPasswordAs(password, cred.salt, algo).then(function (r) {
       if (!authSafeEqual(r.hash, cred.hash)) return false;
-      /* Correct password under a weak hash on a capable browser: re-hash it. */
-      if (algo === "fallback-v1" && typeof authHasWebCrypto === "function" && authHasWebCrypto()) {
-        return adminSetPassword(password).then(function () { return true; },
-                                              function () { return true; });
+      /* Is this still the published default? Devices upgraded before the flag
+         existed are recognised here, at the moment the password is known. */
+      var isDefault = !!cred.is_default || adminHash(password) === ADMIN_PASS_HASH_DEFAULT;
+      /* Correct password under a weaker hash on a capable browser: re-hash it
+         (keeping the default flag — re-hashing is not changing it). */
+      var weak = (typeof authNeedsUpgrade === "function") ? authNeedsUpgrade(algo)
+        : (algo === "fallback-v1" && typeof authHasWebCrypto === "function" && authHasWebCrypto());
+      if (weak || isDefault !== !!cred.is_default) {
+        return adminSetPassword(password, { isDefault: isDefault, quiet: true })
+          .then(function () { return true; }, function () { return true; });
       }
       return true;
     });
   }
   /* No modern credential yet → verify against the legacy djb2, then upgrade. */
   if (adminHash(password) === adminPassHash()) {
-    return adminSetPassword(password).then(function () { return true; }).catch(function () { return true; });
+    var wasDefault = adminPassHash() === ADMIN_PASS_HASH_DEFAULT;
+    return adminSetPassword(password, { isDefault: wasDefault, quiet: true })
+      .then(function () { return true; }).catch(function () { return true; });
   }
   return Promise.resolve(false);
 }
 
-/* Set/replace the admin password as a salted PBKDF2 hash. Returns a Promise. */
-function adminSetPassword(newPass) {
+/* Set/replace the admin password as a salted PBKDF2 hash. Returns a Promise.
+   opts.isDefault / opts.quiet are for the sign-in path, which re-stores the
+   SAME password (an upgrade, not a change); the Admin form passes neither. */
+function adminSetPassword(newPass, opts) {
+  opts = opts || {};
   if (!newPass || String(newPass).length < 8) return Promise.reject(new Error("Password must be at least 8 characters."));
+  if (!opts.quiet && adminHash(newPass) === ADMIN_PASS_HASH_DEFAULT) {
+    return Promise.reject(new Error("That is the published default password. Choose a different one."));
+  }
   if (typeof authMakeCredentials !== "function") return Promise.reject(new Error("Crypto unavailable."));
   return authMakeCredentials(newPass).then(function (cred) {
+    var rec = { salt: cred.pw_salt, hash: cred.pw_hash, algo: cred.pw_algo };
+    if (opts.isDefault) rec.is_default = true;
     try {
-      localStorage.setItem(ADMIN_CRED_KEY, JSON.stringify({ salt: cred.pw_salt, hash: cred.pw_hash, algo: cred.pw_algo }));
+      localStorage.setItem(ADMIN_CRED_KEY, JSON.stringify(rec));
       localStorage.removeItem("entopic_adminhash");   /* erase any legacy djb2 hash */
     } catch (e) { throw e; }
-    if (typeof logAudit === "function") logAudit("admin_password_changed", "Admin password updated (PBKDF2)", {});
+    if (!opts.quiet && typeof logAudit === "function") logAudit("admin_password_changed", "Admin password updated (PBKDF2)", {});
     return true;
   });
 }
@@ -252,10 +268,19 @@ function adminSetPassword(newPass) {
    denial rather than throwing. Real checks go through adminVerify (async). */
 function adminCheckCredentials() { return false; }
 
-/* Whether the admin credential is still the weak legacy default (surfaced in
-   the Admin panel so the founder is nudged to change it). */
+/* Whether the admin password is still the PUBLISHED DEFAULT (surfaced in the
+   Admin panel and as a blocking item in deployment readiness).
+
+   This used to be `!adminStoredCred()` — "no PBKDF2 credential yet". But the
+   first sign-in with the default immediately stores it AS a PBKDF2
+   credential, so by the time anyone could see the Admin panel the warning
+   had switched itself off, and readiness reported "Changed from the default"
+   for a device still on the password printed in the documentation. The
+   default is now flagged when it is stored, and the flag is cleared only by
+   choosing a different password. */
 function adminUsingLegacyCredential() {
-  return !adminStoredCred();
+  var c = adminStoredCred();
+  return !c || !!c.is_default;
 }
 
 function isAdmin() {

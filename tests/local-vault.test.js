@@ -55,6 +55,9 @@ function makeEnv(seed) {
   vm.runInContext(read("js/storage.js"), ctx, { filename: "storage.js" });
   vm.runInContext(read("js/storage-backup.js"), ctx, { filename: "storage-backup.js" });
   vm.runInContext(read("js/local-vault.js"), ctx, { filename: "local-vault.js" });
+  /* Split from local-vault.js (2026-10-27), loaded in index.html order. */
+  vm.runInContext(read("js/vault-secrets.js"), ctx, { filename: "vault-secrets.js" });
+  vm.runInContext(read("js/backup-crypto.js"), ctx, { filename: "backup-crypto.js" });
   ctx.__raw = store;
   return ctx;
 }
@@ -727,4 +730,160 @@ test("no vault loop walks the static list any more", () => {
   assert.strictEqual(loops.length, 1,
     "expected exactly one VAULT_PROTECTED.forEach (inside vaultProtectedKeys); found " +
     loops.length + ". enable, disable and hydrate must enumerate what is actually stored.");
+});
+
+
+/* ═══ Damaged records with the vault on (full audit, 2026-10-27) ═══
+   Measured before the fix: one damaged visit made the RIGHT passphrase
+   "not open the vault", left the app counting as unlocked with nothing in
+   memory, and the next save encrypted an empty-ish patient list over the
+   real one. And a truncated store was read as empty and overwritten — the
+   damaged-store protection simply did not run with the vault on. */
+
+test("one damaged encrypted record does not lock the clinic out of the rest", async () => {
+  const ctx = makeEnv({ entopic_patients: PATIENTS,
+                        entopic_visit_v1: { id: "v1", data: {} }, entopic_visit_v2: { id: "v2", data: {} } });
+  await ctx.vaultEnable(PASS);
+  await ctx.vaultFlush();
+  ctx.vaultLock();
+  const env = JSON.parse(ctx.__raw["entopic_visit_v2"]);
+  env.ct = env.ct.slice(0, -8) + "AAAAAAAA";            /* a damaged write */
+  ctx.__raw["entopic_visit_v2"] = JSON.stringify(env);
+
+  await ctx.vaultUnlock(PASS);                           /* must not reject */
+  assert.strictEqual(ctx.loadStore("patients", []).length, 2, "the healthy records open normally");
+  assert.strictEqual(ctx.storageIsCorrupt("visit_v2"), true, "the damaged one is reported, not hidden");
+  assert.strictEqual(ctx.saveStore("visit_v2", { id: "v2" }), false, "and cannot be overwritten");
+
+  ctx.saveStore("patients", ctx.loadStore("patients", []).concat([{ id: "p3" }]));
+  await ctx.vaultFlush();
+  ctx.vaultLock();
+  await ctx.vaultUnlock(PASS);
+  assert.strictEqual(ctx.loadStore("patients", []).length, 3, "a save after that keeps every patient");
+});
+
+test("a truncated store is quarantined and write-protected with the vault on, as without it", async () => {
+  const ctx = makeEnv({ entopic_patients: PATIENTS });
+  await ctx.vaultEnable(PASS);
+  await ctx.vaultFlush();
+  ctx.vaultLock();
+  const damaged = ctx.__raw["entopic_patients"].slice(0, 40);
+  ctx.__raw["entopic_patients"] = damaged;
+
+  await ctx.vaultUnlock(PASS);
+  assert.strictEqual(ctx.storageIsCorrupt("patients"), true);
+  assert.strictEqual(ctx.saveStore("patients", [{ id: "new" }]), false, "the write is refused");
+  await ctx.vaultFlush();
+  assert.strictEqual(ctx.__raw["entopic_patients"], damaged, "the damaged bytes are still there to recover");
+  const q = Object.keys(ctx.__raw).filter((k) => k.indexOf("entopic_corrupt_patients_") === 0);
+  assert.strictEqual(q.length, 1, "and a quarantined copy was kept");
+});
+
+test("a failed unlock never leaves a half-open vault", async () => {
+  const ctx = makeEnv({ entopic_patients: PATIENTS });
+  await ctx.vaultEnable(PASS);
+  ctx.vaultLock();
+  await ctx.vaultUnlock("wrong passphrase").catch(() => {});
+  assert.strictEqual(ctx.vaultUnlocked(), false);
+  assert.strictEqual(ctx.saveStore("patients", []), false, "nothing can be written over the records");
+});
+
+
+/* ═══ Key-derivation strength travels with each key (2026-10-27) ═══
+   Derivation used to read the constant and ignore the stored count, so
+   raising the count would have made every existing vault and backup
+   unopenable. Now each wrapping records its count and is opened with it. */
+
+function makeLegacyVault(ctx) {
+  /* Exactly what a vault made before per-wrapping counts looks like. */
+  vm.runInContext("VAULT_PBKDF2_ITERS = 210000", ctx);
+  return ctx.vaultEnable(PASS).then((r) => {
+    const meta = JSON.parse(ctx.__raw["entopic_vault_meta"]);
+    delete meta.kdf.pass_iters; delete meta.kdf.recovery_iters;
+    meta.kdf.iters = 210000;
+    ctx.__raw["entopic_vault_meta"] = JSON.stringify(meta);
+    vm.runInContext("VAULT_PBKDF2_ITERS = 600000", ctx);
+    return r.recoveryCode;
+  });
+}
+
+test("the current strength is OWASP's figure for PBKDF2-SHA-256", () => {
+  const ctx = makeEnv();
+  assert.ok(ctx.VAULT_PBKDF2_ITERS >= 600000);
+});
+
+test("a vault made at the old strength still opens, and is upgraded on opening", async () => {
+  const ctx = makeEnv({ entopic_patients: PATIENTS });
+  const code = await makeLegacyVault(ctx);
+  await ctx.vaultFlush();
+  ctx.vaultLock();
+
+  await ctx.vaultUnlock(PASS);
+  assert.strictEqual(ctx.loadStore("patients", []).length, 2, "opened with the stored count");
+  const meta = JSON.parse(ctx.__raw["entopic_vault_meta"]);
+  assert.strictEqual(meta.kdf.pass_iters, 600000, "the passphrase wrapping was strengthened");
+
+  ctx.vaultLock();
+  await ctx.vaultUnlock(PASS);                           /* the upgraded wrapping opens */
+  ctx.vaultLock();
+  await ctx.vaultUnlockWithRecovery(code);               /* the recovery wrapping, still old, opens */
+  assert.strictEqual(JSON.parse(ctx.__raw["entopic_vault_meta"]).kdf.recovery_iters, 600000);
+  ctx.vaultLock();
+  await ctx.vaultUnlockWithRecovery(code);
+  assert.strictEqual(ctx.loadStore("patients", []).length, 2);
+});
+
+test("a backup file made at the old strength still restores", async () => {
+  const ctx = makeEnv();
+  vm.runInContext("VAULT_PBKDF2_ITERS = 210000", ctx);
+  const file = await ctx.backupEncrypt({ patients: PATIENTS }, PASS);
+  delete file.kdf.iters;                                 /* files before the count was trusted */
+  vm.runInContext("VAULT_PBKDF2_ITERS = 600000", ctx);
+  const back = await ctx.backupDecrypt(file, PASS);
+  assert.strictEqual(back.patients.length, 2);
+  const fresh = await ctx.backupEncrypt({ patients: PATIENTS }, PASS);
+  assert.strictEqual(fresh.kdf.iters, 600000, "new files are made at the current strength");
+});
+
+test("a backup file naming an absurd count is refused, not allowed to freeze the browser", async () => {
+  const ctx = makeEnv();
+  const file = await ctx.backupEncrypt({ patients: PATIENTS }, PASS);
+  file.kdf.iters = 1e12;
+  const t0 = Date.now();
+  await assert.rejects(ctx.backupDecrypt(file, PASS));
+  assert.ok(Date.now() - t0 < 2000);
+});
+
+test("turning the vault off keeps the stored secrets readable", async () => {
+  const ctx = makeEnv({ entopic_patients: PATIENTS });
+  await ctx.vaultEnable(PASS);
+  await ctx.vaultSecretSet("entopic_apikey", "sk-test-123");
+  assert.ok(ctx.vaultIsWrappedSecret(ctx.__raw["entopic_apikey"]), "wrapped while the vault is on");
+  await ctx.vaultDisable(PASS);
+  assert.strictEqual(ctx.__raw["entopic_apikey"], "sk-test-123",
+    "the key it was wrapped with is gone, so it must have been unwrapped first");
+});
+
+test("a cloud encryption key cached in the clear is wrapped as soon as the vault opens", async () => {
+  const ctx = makeEnv({ entopic_patients: PATIENTS });
+  await ctx.vaultEnable(PASS);
+  ctx.vaultLock();
+  ctx.__raw["entopic_cloud_phi_keyhex"] = "ab".repeat(32);  /* cached before the vault existed */
+  await ctx.vaultUnlock(PASS);
+  assert.ok(ctx.vaultIsWrappedSecret(ctx.__raw["entopic_cloud_phi_keyhex"]));
+});
+
+test("turning the vault off with a damaged record stops, keeps the key, and says what happened", async () => {
+  const ctx = makeEnv({ entopic_patients: PATIENTS, entopic_visit_v1: { id: "v1" } });
+  await ctx.vaultEnable(PASS);
+  await ctx.vaultFlush();
+  const env = JSON.parse(ctx.__raw["entopic_visit_v1"]);
+  env.ct = env.ct.slice(0, -8) + "AAAAAAAA";
+  ctx.__raw["entopic_visit_v1"] = JSON.stringify(env);
+  await assert.rejects(ctx.vaultDisable(PASS), (e) => {
+    assert.match(e.message, /still ON/);
+    assert.doesNotMatch(e.message, /passphrase was not correct/, "the passphrase WAS correct");
+    return true;
+  });
+  assert.strictEqual(ctx.vaultEnabled(), true, "the key that could ever read it is kept");
 });

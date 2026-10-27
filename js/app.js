@@ -136,6 +136,13 @@ function doLogin() {
       if (typeof roleSessionReset === "function") roleSessionReset();
       if (typeof clinicIdleReset === "function") clinicIdleReset();
       showHomePage();
+      /* The default is printed in the documentation, so on any device that
+         still uses it, anyone who has read the docs is an administrator. */
+      if (typeof adminUsingLegacyCredential === "function" && adminUsingLegacyCredential()) {
+        alert("You signed in with the PUBLISHED DEFAULT administrator password.\n\n" +
+              "Anyone who has read Entopic's documentation can do the same on this device. " +
+              "Change it now: Admin tab → \"Change admin password\".");
+      }
     }).catch(function () {
       noteFailure();
       errEl.textContent = "Invalid credentials"; errEl.style.display = "block";
@@ -169,7 +176,7 @@ function doLogin() {
     if (res.migrated) {
       saveUsers(users);
       if (typeof logAudit === "function") {
-        logAudit("credential_upgraded", candidate.username + " — plaintext password replaced with a salted hash", {});
+        logAudit("credential_upgraded", candidate.username + " — stored password re-hashed at the current strength", {});
       }
     }
     noteSuccess();
@@ -788,6 +795,8 @@ function adminChangePassword() {
   /* Now async (PBKDF2). */
   adminSetPassword(a).then(function () {
     if (msg) msg.textContent = "✓ Updated (salted PBKDF2) — use it from the next sign-in.";
+    /* Repaint so the "still the default" warning goes away now, not later. */
+    if (typeof renderHome === "function") setTimeout(renderHome, 1500);
   }).catch(function (e) {
     if (msg) msg.textContent = (e && e.message) || "Too short (min 8 characters).";
   });

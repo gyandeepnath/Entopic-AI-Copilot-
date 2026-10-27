@@ -59,7 +59,7 @@ test("a browser WITH WebCrypto stores a real PBKDF2 credential", async () => {
   const c = ctx();
   assert.strictEqual(c.run("authHasWebCrypto()"), true, "sanity: WebCrypto present");
   const cred = await c.run(`authMakeCredentials("pw")`);
-  assert.strictEqual(cred.pw_algo, "pbkdf2-sha256-v1");
+  assert.strictEqual(cred.pw_algo, "pbkdf2-sha256-v2");
 });
 
 test("a browser WITHOUT WebCrypto stores a fallback credential", async () => {
@@ -92,7 +92,7 @@ test("opening a fallback account on a capable browser UPGRADES it to PBKDF2", as
 
   assert.strictEqual(res.ok, true);
   assert.strictEqual(res.migrated, true, "the caller must be told to persist the upgrade");
-  assert.strictEqual(strong.run("__u.pw_algo"), "pbkdf2-sha256-v1",
+  assert.strictEqual(strong.run("__u.pw_algo"), "pbkdf2-sha256-v2",
     "the record must be re-hashed, not left weak");
   assert.notStrictEqual(strong.run("__u.pw_hash"), cred.pw_hash,
     "the record claims PBKDF2 but still holds the fallback digest");
@@ -108,7 +108,7 @@ test("suppressing WebCrypto does NOT downgrade a PBKDF2 credential", async () =>
      the cheap fallback hash accepted against a strong stored credential. */
   const strong = ctx();
   const cred = await strong.run(`authMakeCredentials("downgrade-me")`);
-  assert.strictEqual(cred.pw_algo, "pbkdf2-sha256-v1", "sanity");
+  assert.strictEqual(cred.pw_algo, "pbkdf2-sha256-v2", "sanity");
 
   const weak = ctx({ webcrypto: false });
   weak.__u = JSON.parse(JSON.stringify(cred));
@@ -132,11 +132,40 @@ test("a credential with no pw_algo is judged by the shape of its hash", async ()
 });
 
 test("a legacy no-algo PBKDF2 record still verifies", async () => {
+  /* Everything written before pw_algo existed was v1 (120,000 iterations). */
   const c = ctx();
-  const cred = await c.run(`authMakeCredentials("legacy-noalgo")`);
-  c.__u = { pw_salt: cred.pw_salt, pw_hash: cred.pw_hash };   /* pw_algo deleted */
+  const h = await c.run(`authHashPassword("legacy-noalgo", "salt-legacy", "pbkdf2-sha256-v1")`);
+  c.__u = { pw_salt: "salt-legacy", pw_hash: h.hash };        /* no pw_algo at all */
   const res = await c.run(`authVerifyUser(__u, "legacy-noalgo")`);
   assert.strictEqual(res.ok, true, "a record predating pw_algo was locked out");
+});
+
+test("a v1 credential (120,000 iterations) verifies, then is re-hashed at the current strength", async () => {
+  const c = ctx();
+  const h = await c.run(`authHashPassword("old-account", "salt-v1", "pbkdf2-sha256-v1")`);
+  c.__u = { pw_salt: "salt-v1", pw_hash: h.hash, pw_algo: "pbkdf2-sha256-v1" };
+  const res = await c.run(`authVerifyUser(__u, "old-account")`);
+  assert.strictEqual(res.ok, true, "raising the strength must not lock existing accounts out");
+  assert.strictEqual(res.migrated, true, "the caller is told to persist the stronger hash");
+  assert.strictEqual(c.run("__u.pw_algo"), "pbkdf2-sha256-v2");
+  assert.strictEqual(c.run("AUTH_ITERS_BY_ALGO['pbkdf2-sha256-v2']"), 600000);
+  const again = await c.run(`authVerifyUser(__u, "old-account")`);
+  assert.strictEqual(again.ok, true);
+  assert.strictEqual((await c.run(`authVerifyUser(__u, "old-accoun")`)).ok, false);
+});
+
+test("the default admin password stays flagged after its first use, until it is changed", async () => {
+  /* The warning used to switch itself off at the first sign-in, because the
+     default was stored as an ordinary PBKDF2 credential. */
+  const c = ctx({ files: ["js/auth-crypto.js", "js/roles.js"] });
+  assert.strictEqual(await c.run(`adminVerify("entopic-admin", "Entopic-Admin-2026")`), true);
+  assert.strictEqual(c.run("adminUsingLegacyCredential()"), true, "still the published default");
+  assert.strictEqual(await c.run(`adminVerify("entopic-admin", "Entopic-Admin-2026")`), true);
+  assert.strictEqual(c.run("adminUsingLegacyCredential()"), true, "and after a second sign-in");
+  await assert.rejects(c.run(`adminSetPassword("Entopic-Admin-2026")`), /published default/);
+  await c.run(`adminSetPassword("a-real-new-password")`);
+  assert.strictEqual(c.run("adminUsingLegacyCredential()"), false);
+  assert.strictEqual(await c.run(`adminVerify("entopic-admin", "a-real-new-password")`), true);
 });
 
 test("the admin credential is verified under its own stored algorithm too", async () => {

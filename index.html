@@ -515,6 +515,10 @@
 <!-- local-vault defines the secret-wrapping helpers that cloud-sync and
      storage consult at load time, so it must precede them. -->
 <script src="js/local-vault.js"></script>
+<!-- Split from local-vault.js (size cap): wrapped secrets, and encrypted
+     backup files. Both need the vault helpers above. -->
+<script src="js/vault-secrets.js"></script>
+<script src="js/backup-crypto.js"></script>
 <!-- Key escrow: who ELSE may open the vault. Split from local-vault.js so the
      whole trust decision reads in one place. Needs the vault helpers above. -->
 <script src="js/vault-admin-recovery.js"></script>

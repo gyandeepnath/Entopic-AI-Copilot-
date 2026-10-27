@@ -6,6 +6,74 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-10-27 — Second full audit, part 1: device encryption and passwords
+
+You asked me to audit everything. This round starts with the parts the
+September audit never opened. The first is the **record vault** (device
+encryption), where a mistake can lose a clinic's records.
+
+### One damaged record could lose the whole patient list (vault on)
+If a single encrypted visit was damaged (for example a write cut off by a
+crash or a full disk), the **correct passphrase was reported as wrong**. The
+app was then left half-open: it counted as unlocked, showed no records, and the
+next save wrote that near-empty list over the real one. Measured: 2 patients →
+one damaged visit → unlock → one save → 1 patient.
+
+Separately, the damaged-record protection added earlier (keep a copy, refuse to
+overwrite, show a banner) **did not run with encryption on**. A cut-off
+patient list was read as "no patients" and overwritten by the next save,
+which is exactly the loss that protection was built to prevent.
+
+Now each record is opened on its own. A damaged one is quarantined,
+protected from overwriting and reported, while everything else opens normally.
+The app is never left half-open.
+
+### Turning encryption off silently threw away three secrets
+The AI key, the cloud sign-in and the cloud encryption key are stored wrapped
+with the vault key. Turning the vault off discarded that key without
+unwrapping them first, so all three became unreadable. They are now unwrapped
+first. If a damaged record stops the process partway, the message now says
+what actually happened. Before, it claimed "wrong passphrase, nothing changed".
+
+### Key strength — and a trap that would have locked every clinic out
+- I checked OWASP's guidance at its source. It recommends **600,000** PBKDF2
+  iterations for SHA-256. Entopic used 120,000 for staff passwords and
+  210,000 for the vault and backups; the code comment called 210,000
+  "OWASP-current for SHA-256", but that is close to OWASP's figure for SHA-512.
+- The trap: the vault **ignored the count it had saved** and always used
+  the current setting. Raising the setting would have made every existing
+  vault and every backup file impossible to open with the correct passphrase.
+  Each key now records its own count and is always opened with it.
+- New keys, passwords and backup files use 600,000. Existing ones keep
+  working and are strengthened automatically the next time they are opened
+  successfully. Tested with a vault and a backup made the old way.
+- The cloud-sync key (150,000 iterations, 8-character minimum) is **not**
+  changed. Every device in a clinic must derive the same key, so changing it
+  means re-encrypting the cloud copy. That is listed for your decision in
+  `NEEDS_REVIEW.md`.
+
+### The "default admin password" warning could never appear
+The first sign-in with the published default stored it as an ordinary
+credential, and the warning only checked whether *any* credential was
+stored. By the time anyone could see the Admin panel, the warning had turned
+itself off. The deployment-readiness panel then reported "**Changed from the
+default**" for a device still using the password printed in the
+documentation. The default is now flagged until a different password is
+chosen. Signing in with it shows a warning, and it can't be re-chosen as the
+"new" password.
+
+### Also
+- The cloud encryption key, if cached before the vault was turned on, now gets
+  wrapped as soon as the vault opens. Before, it stayed in the clear until sync
+  happened to load it.
+- `js/local-vault.js` passed its size limit, so wrapped secrets and encrypted
+  backup files now live in `js/vault-secrets.js` and `js/backup-crypto.js`.
+
+Tests: 11 new vault tests and 3 new password tests. The damaged-record tests
+fail on the previous code.
+
+---
+
 ## 2026-09-25 — Full audit, part 13: certificates, teaching assignments, practice records
 
 **Certificates (these go to employers and authorities):**

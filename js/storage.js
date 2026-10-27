@@ -222,7 +222,10 @@ function saveStore(key, data) {
       console.error("Storage write refused [" + key + "]: the record vault is locked.");
       return false;
     }
-    vaultCacheSet(key, data);                       /* memory now, ciphertext shortly */
+    if (vaultCacheSet(key, data) === false) {       /* memory now, ciphertext shortly */
+      console.error("Storage write refused [" + key + "]: the record vault is not open.");
+      return false;
+    }
     if (typeof cloudEnqueue === "function") cloudEnqueue(key);
     storageQuotaWatch();
     /* `true`, not a bare return. saveStore's contract is a boolean; this path

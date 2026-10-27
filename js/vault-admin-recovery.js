@@ -109,7 +109,7 @@ function vaultAdminEnrol(passphrase, masterPassword, adminName) {
       "otherwise the reset path adds risk without adding recovery."));
   }
   var adminSalt = vaultRandomHex(16);
-  return vaultDeriveKek(passphrase, meta.kdf.salt)
+  return vaultDeriveKek(passphrase, meta.kdf.salt, vaultKdfIters(meta, "pass"))
     .then(function (kek) { return vaultUnwrapDek(meta.wrapped.pass, kek); })
     .then(function (dek) {
       /* Prove the key is right before writing a wrapping of it. */
@@ -126,6 +126,7 @@ function vaultAdminEnrol(passphrase, masterPassword, adminName) {
     .then(function (wrapped) {
       meta = vaultMeta();                       /* re-read: never save a stale copy */
       meta.kdf.admin_salt = adminSalt;
+      meta.kdf.admin_iters = VAULT_PBKDF2_ITERS;   /* made at the current strength */
       meta.wrapped.admin = wrapped;
       meta.admin_enrolled_at = new Date().toISOString();
       meta.admin_enrolled_by = String(adminName || "");
@@ -150,7 +151,7 @@ function vaultAdminWithdraw(passphrase) {
   var meta = vaultMeta();
   if (!meta) return Promise.reject(new Error("The vault is not set up on this device."));
   if (!vaultAdminEnrolled()) return Promise.resolve(true);
-  return vaultDeriveKek(passphrase, meta.kdf.salt)
+  return vaultDeriveKek(passphrase, meta.kdf.salt, vaultKdfIters(meta, "pass"))
     .then(function (kek) { return vaultUnwrapDek(meta.wrapped.pass, kek); })
     .then(function (dek) { return vaultDecryptValue(meta.check, dek); })
     .then(function (v) {
@@ -158,6 +159,7 @@ function vaultAdminWithdraw(passphrase) {
       meta = vaultMeta();
       delete meta.wrapped.admin;
       delete meta.kdf.admin_salt;
+      delete meta.kdf.admin_iters;
       delete meta.admin_enrolled_at;
       delete meta.admin_enrolled_by;
       vaultSaveMeta(meta);
@@ -199,11 +201,13 @@ function vaultAdminReset(masterPassword, newPassphrase, adminName) {
   }
 
   var newSalt = vaultRandomHex(16);
-  return vaultDeriveKek(masterPassword, meta.kdf.admin_salt)
+  var openedDek = null;
+  return vaultDeriveKek(masterPassword, meta.kdf.admin_salt, vaultKdfIters(meta, "admin"))
     .then(function (kek) { return vaultUnwrapDek(meta.wrapped.admin, kek); })
     .then(function (dek) {
       return vaultDecryptValue(meta.check, dek).then(function (v) {
         if (v !== VAULT_CHECK_TEXT) throw new Error("bad key");
+        openedDek = dek;
         return crypto.subtle.exportKey("raw", dek);
       });
     })
@@ -215,6 +219,7 @@ function vaultAdminReset(masterPassword, newPassphrase, adminName) {
     .then(function (wrapped) {
       meta = vaultMeta();
       meta.kdf.salt = newSalt;
+      meta.kdf.pass_iters = VAULT_PBKDF2_ITERS;
       meta.wrapped.pass = wrapped;
       /* The user must replace the administrator's temporary passphrase. An
          admin-chosen secret is not allowed to become the standing one. */
@@ -223,6 +228,9 @@ function vaultAdminReset(masterPassword, newPassphrase, adminName) {
       meta.reset_by = String(adminName || "");
       vaultSaveMeta(meta);
       vaultThrottleReset();
+      /* The master password was just proven: bring its own wrapping up to
+         the current strength while we have it (best-effort). */
+      if (typeof vaultUpgradeWrap === "function") { try { vaultUpgradeWrap("admin", masterPassword, openedDek); } catch (e2) {} }
       if (typeof logAudit === "function") {
         try { logAudit("vault_admin_reset",
           "An administrator reset this device's vault passphrase using the master password" +
