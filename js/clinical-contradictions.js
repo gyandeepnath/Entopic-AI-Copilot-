@@ -150,7 +150,7 @@ function clinContradictions(V, P) {
         }).map(function (f) { return f.label; });
         if (!hits.length) return;
         out.push(_contra("sl_wnl_with_findings", "error",
-          eye.toUpperCase() + ": the " + s.label + " is recorded as \"" + side[s.field] + "\", but " +
+          eye.toUpperCase() + ": the " + s.label + " field reads \"" + side[s.field] + "\", but " +
           hits.join(", ") + " is also recorded for this eye.",
           true, "Update the " + s.label + " field so the record says one thing — it starts " +
                 "pre-filled as normal on every new exam."));
