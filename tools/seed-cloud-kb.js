@@ -10,7 +10,11 @@
 /* the app never depends on the cloud KB at runtime.                 */
 /*                                                                  */
 /*   node tools/seed-cloud-kb.js            > kb_seed.sql            */
-/*   node tools/seed-cloud-kb.js --version 1.0.0                     */
+/*   node tools/seed-cloud-kb.js --version 1.4.1                     */
+/*                                                                  */
+/* A device applies a published bundle only if its version is NEWER  */
+/* than the KB it already runs (KB_VERSION in js/build-info.js), so  */
+/* publish above that number; an equal or older one is ignored.      */
 /* ═══════════════════════════════════════════════════════════════ */
 "use strict";
 
@@ -20,6 +24,23 @@ const versionArg = (() => {
   const i = process.argv.indexOf("--version");
   return i >= 0 ? process.argv[i + 1] : null;
 })();
+
+/* Say so when a version will be ignored, rather than let it publish and
+   silently never reach a device. */
+if (versionArg) {
+  try {
+    const kbv = /var KB_VERSION = "([^"]+)"/.exec(require("fs").readFileSync(
+      require("path").join(__dirname, "..", "js", "build-info.js"), "utf8"))[1];
+    const n = (v) => String(v).split(".").map((x) => parseInt(x, 10) || 0);
+    const [a, b] = [n(versionArg), n(kbv)];
+    let newer = false;
+    for (let i = 0; i < 3; i++) { if (a[i] !== b[i]) { newer = a[i] > b[i]; break; } }
+    if (!newer) {
+      process.stderr.write("WARNING: version " + versionArg + " is not newer than the app's KB " + kbv +
+        " — devices will ignore this bundle. Publish above " + kbv + ".\n");
+    }
+  } catch (e) { /* the warning is a courtesy; never block the SQL */ }
+}
 
 function sqlStr(s) {
   return "'" + String(s).replace(/'/g, "''") + "'";

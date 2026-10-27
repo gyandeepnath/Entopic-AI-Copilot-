@@ -39,6 +39,22 @@ test("both versions are present and semver", () => {
   assert.ok(SEMVER.test(ctx.KB_VERSION), "KB_VERSION must be semver, got " + ctx.KB_VERSION);
 });
 
+/* Second full audit, 2026-10-27: the loader carried its own KB number, stuck
+   at 1.1.0 since July. Every visit's provenance claimed KB 1.1.0, and the
+   cloud-update check would have treated an older bundle as newer. */
+test("there is one knowledge-base version: KB_META follows KB_VERSION", () => {
+  const ctx = load({ KB_META: { version: "1.1.0", source: "bundled" } });
+  assert.strictEqual(ctx.KB_META.version, ctx.KB_VERSION, "the bundled KB reports KB_VERSION");
+
+  const remote = load({ KB_META: { version: "9.9.9", source: "remote update" } });
+  assert.strictEqual(remote.KB_META.version, "9.9.9", "a cloud-applied KB keeps its own version");
+
+  const literal = /var KB_META = \{\s*version: "([^"]+)"/.exec(read("knowledge/loader.js"));
+  assert.ok(literal, "the loader's KB_META literal was not found");
+  assert.strictEqual(literal[1], ctx.KB_VERSION,
+    "knowledge/loader.js KB_META.version (what an engine-only sandbox sees) must equal KB_VERSION");
+});
+
 test("KB_VERSION is actually defined — it was referenced in two places and defined in none", () => {
   /* js/kb-signoffs.js stamps every clinical sign-off with the KB version it
      was made against. While KB_VERSION was undefined, every attestation

@@ -49,6 +49,19 @@ var KB_VERSION = "1.4.0";
 var BUILD_COMMIT = "dev";
 var BUILD_DATE = "2026-10-27";
 
+/* ONE knowledge-base version. knowledge/loader.js kept its own KB_META.version
+   ("1.1.0", July) that nothing bumped, while KB_VERSION here moved on. The
+   engine stamps KB_META.version into every visit's provenance, so every visit
+   since July claimed KB 1.1.0 and a replay could never show that the KB had
+   changed; and the cloud-update check compared a published bundle against
+   1.1.0, so an OLDER bundle numbered 1.2.0 would have replaced this newer one
+   (second full audit, 2026-10-27). KB_VERSION — the number CI makes us bump —
+   is now the one in force, unless a cloud update has replaced the bundled KB. */
+if (typeof KB_META !== "undefined" && KB_META && KB_META.source === "bundled") {
+  KB_META.version = KB_VERSION;
+  KB_META.date = BUILD_DATE;
+}
+
 /* One string for a support call, a bug report, or an error banner.
    Deliberately contains no patient data and no device identifier — it is
    safe to read aloud over the phone or paste into an e-mail. */

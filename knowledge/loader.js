@@ -169,9 +169,13 @@ if (typeof KB_EXPANSION !== "undefined") {
 /* Version info for display and update tracking                    */
 /* ═══════════════════════════════════════════════════════════════ */
 
+/* version/date are overwritten from KB_VERSION / BUILD_DATE by
+   js/build-info.js, the single source. This literal is only the value an
+   engine-only sandbox sees; tests/build-info.test.js keeps it equal to
+   KB_VERSION so the two cannot drift again. */
 var KB_META = {
-  version: "1.1.0",
-  date: "2026-07-12",
+  version: "1.4.0",
+  date: "2026-10-27",
   conditions: KNOWLEDGE_ALL.length,
   domains: Object.keys(KNOWLEDGE_DOMAINS).length,
   author: "Entopic Clinical Team",
