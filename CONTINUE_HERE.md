@@ -5,7 +5,22 @@ full what/why/idea history, newest first). To continue in a new conversation,
 just start a session on this repo/branch and read, in order: **`CLAUDE.md` →
 `ARCHITECTURE.md` → `CHANGELOG.md`**, then scan the repo.
 
-## Current state (2026-07-18)
+## Current state (2026-10-27) — read this, the July section below is history
+- **v1.6.0, KB 1.4.0.** 394 conditions, 131 loaded files, **1,450 tests**, CI
+  green (Node 22). Second full audit done: `docs/SECOND_AUDIT_REPORT.md`.
+- **Gates to run before calling anything done:** `npm test`; the 9 suites in
+  `tools/stress/`; the 8 journeys in `tools/e2e/` (they find Chromium via
+  `tools/lib/browser.js`); `node tools/sync-docs.js --check`; and, for SQL
+  changes, `tools/db/verify-migrations.js` against a scratch PostgreSQL 16
+  (see tools/README).
+- **Waiting on the founder:** run migration 006 on Supabase; change the
+  default admin password; the clinical decisions at the top of
+  `NEEDS_REVIEW.md` (steroid-cataract requirement, amiodarone token,
+  pachymetry, OSDI N/A, About-summary fingerprint).
+- **Rule learned the hard way:** check CI after every push. It ran no tests
+  from 24 Sept to 27 Oct and nobody noticed.
+
+## Previous state (2026-07-18)
 - **384 conditions** in the KB — every one has an ICD-10 code AND a hand-written
   "About" note. All wired to the deterministic engine. **227/227 tests pass.**
 - **Reasoning-views layer** (Vision Moves 1+4): SOAP note generated from the

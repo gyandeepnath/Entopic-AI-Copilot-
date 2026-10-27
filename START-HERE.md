@@ -1,4 +1,4 @@
-# Entopic — package for exploring, 25 September 2026
+# Entopic — package for exploring, 27 October 2026 (v1.6.0, KB 1.4.0)
 
 ## Just want to look at it?
 
@@ -14,7 +14,28 @@ set, or the built-in default if you have not changed it.
 
 ---
 
-## New in this package — every detail audited (September 2026)
+## New in this package — second full audit (27 October 2026)
+
+The plain-language account is **`docs/SECOND_AUDIT_REPORT.md`**. The ones that
+matter most clinically:
+
+- **"✓ Normal" no longer erases what you recorded.** On the pupil step it used
+  to overwrite a recorded RAPD with "None", and the red flag disappeared.
+- **"Not sure if it's flashes or floaters" now raises the red flag.** Doubt
+  used to be read as denial.
+- **A medication list alone no longer produces a dry-eye diagnosis.**
+- **Findings read "Hypopyon (OD)"** in the note, chart and AI summary, instead
+  of "[object Object]".
+- **Your work is not thrown away** by the idle lock or a wiped browser.
+- **Encryption now covers backup snapshots, archive copies and attachments.**
+
+**Two things to do once:** run `db/migrations/006_security_hardening.sql` on
+your Supabase project, and change the admin password if it is still the
+default. Your clinical decisions are listed at the top of `NEEDS_REVIEW.md`.
+
+---
+
+## Previous package — every detail audited (September 2026)
 
 You asked me to audit everything and fix what I found. The full account, in
 plain language, is **`docs/FULL_AUDIT_REPORT.md`**. The step-by-step detail
