@@ -298,7 +298,26 @@ function importData(file) {
   reader.readAsText(file);
 }
 
+/* An ARCHIVE file is not a backup: it holds old visits to merge back, and
+   must never replace anything. It used to be refused here as "not an Entopic
+   backup", which left archive files with no way back in at all. */
+function _importArchive(data) {
+  if (typeof archiveRestore !== "function") { alert("Archive restore is unavailable in this build."); return; }
+  var n = Array.isArray(data.visits) ? data.visits.length : 0;
+  if (!window.confirm("This is an Entopic ARCHIVE file (" + n + " visit(s)" +
+      (data.created ? ", made " + String(data.created).slice(0, 10) : "") + ").\n\n" +
+      "Restore those visits into the matching patients' charts?\n\n" +
+      "Nothing is replaced: only the archive markers in each chart are filled back in, " +
+      "and a visit that is already live is left as it is.")) return;
+  var r = archiveRestore(data);
+  alert(r.ok
+    ? (r.restored + " visit(s) restored from the archive." + (r.reason ? "\n\n" + r.reason : ""))
+    : "Nothing was restored: " + r.reason);
+  if (r.ok && typeof renderHome === "function") { try { renderHome(); } catch (e) {} }
+}
+
 function _importDecoded(data) {
+    if (data && typeof data === "object" && data.__entopic_archive) { _importArchive(data); return; }
     var check = validateBackup(data);
     if (!check.ok) {
       alert("This file was NOT restored:\n\n• " + check.errors.join("\n• ") +

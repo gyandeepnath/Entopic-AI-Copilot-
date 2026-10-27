@@ -6,6 +6,81 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-10-27 — Second full audit, part 3: findings that read "[object Object]", a drug list that made a diagnosis, and recovery
+
+### Recorded findings printed as "[object Object]"
+Since findings were given an eye (for example "Hypopyon, OD"), each one has
+been stored as a pair: the finding and the eye. Several places still treated
+it as plain text, and printed **"[object Object]"** instead of the finding:
+- the **SOAP note** ("Anterior segment: [object Object]");
+- the **patient chart** (slit-lamp and fundus findings);
+- the **AI remarks summary**;
+- **teaching cases**: their filter chips, their quiz clues and the line under
+  each case.
+
+On the slit-lamp and fundus pages, **each tap on a finding also closed its
+section** and hid the count, because the count looked for plain text.
+
+All of these now read findings through one helper,
+`recFindingTexts()` in `js/clinical-record.js`, and show "Hypopyon (OD)". This
+was confirmed in a real browser. It went unnoticed because every test used the
+old plain-text form. There are now tests in the current form, plus a check
+that fails if any module reads the raw list as text again. The training
+simulator also no longer adds a second copy of a finding that the student has
+already tapped.
+
+### A medication list alone produced a dry-eye differential
+Drugs that can cause dry eye (isotretinoin, SSRIs, anticholinergics) added
+the token `dryness`. That token means dryness **the patient reports or the slit
+lamp shows**, and the dry-eye conditions **require** it. Measured on the
+real engine, "sertraline 50mg" with nothing else produced Dry Eye
+(Evaporative), Dry Eye (Aqueous Deficient) and Exposure Keratopathy. The drug
+no longer adds `dryness`. Nothing real is lost: when the patient does have
+dryness, the symptom or finding already adds that token. The dry-eye risk
+still shows in the medication review. A malformed medication entry can also
+no longer stop the engine from collecting its findings. Flagged for your
+review: a steroid in the medication list **alone** still produces "Drug-induced
+Cataract (Steroid)", because that condition requires only a steroid history.
+That is a clinical design choice, so it is yours to decide (NEEDS_REVIEW.md).
+
+### Recovery after the browser's storage is wiped
+When the browser's storage is wiped, Entopic restores from its second copy.
+Recovery restored old backup snapshots alongside the live records, in no
+particular order, and they filled the space. In a real browser with a
+400-visit clinic, **only 368 visits came back**. Snapshots are now left out
+and the essential records go first, so all 400 come back.
+
+### Archives could not actually be restored
+The archive screen offered a restore, but restoring a backup refused archive
+files, and nothing called the archive restore at all. Archive files now
+restore through the normal backup import, and each archive has a "Restore from
+this device's copy" button.
+
+### Smaller fixes
+- The on-screen error banner said "your data is saved" even when the device
+  was refusing to save. It now tells the truth, and **Reload saves first**, and
+  asks before discarding unsaved work.
+- The app reported version 1.5.0 / KB 1.3.1 for three months of changes. The
+  checks only enforce a version bump on pull requests, and none were opened. It
+  is now 1.6.0 / KB 1.4.0. Sign-offs are not affected, because they follow each
+  condition's content, not this number.
+- **The browser checks could no longer run.** The automated browser checks
+  (XSS sweep, patient journey, accessibility and others) named an exact
+  Chromium folder and an exact parser location. When the container updated,
+  every one of them failed before opening a page. `tools/lib/browser.js` now
+  finds both. The accessibility check also always tested the
+  `/home/user` copy, whatever copy it was run from. It now tests its own copy.
+- The event bus could not be confused by an event named like a built-in
+  property.
+
+### Verified
+1,435 unit tests pass. Each new test fails on the previous code. All 8
+browser journeys, all 9 stress suites and the token-registry check pass.
+`npm run audit` still reports the one known exclusion target that waits for
+clinical review (Dry Eye → "acute_keratitis").
+
+---
+
 ## 2026-10-27 — Second full audit, part 2: the server, the cloud, and copies nobody counted
 
 ### CI had not run a single test since 24 September

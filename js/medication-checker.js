@@ -340,17 +340,22 @@ function getMedicationTokens() {
   for (var i = 0; i < checks.length; i++) {
     var med = checks[i];
     for (var e = 0; e < med.effects.length; e++) {
-      var condition = med.effects[e].condition.toLowerCase();
+      /* The medication list is KB data the admin editor can change, and this
+         runs inside the engine: a malformed entry must not stop the differential. */
+      var condition = String((med.effects[e] && med.effects[e].condition) || "").toLowerCase();
 
-      /* Map drug effects to engine tokens */
+      /* Map drug effects to engine tokens — RISK tokens only. A drug that can
+         cause dry eye used to push "dryness", which is the token for dryness the
+         patient reports or the slit lamp shows, and is REQUIRED by the dry-eye
+         conditions. "Sertraline 50mg" and nothing else produced a differential
+         of two dry-eye diseases and exposure keratopathy (measured, second full
+         audit 2026-10-27). Real dryness raises that token from the symptom or
+         finding anyway; the drug stays in the medication review either way. */
       if (condition.indexOf("cataract") >= 0 || condition.indexOf("psc") >= 0) {
         tokens.push("steroid_history");
       }
       if (condition.indexOf("iop") >= 0 || condition.indexOf("pressure") >= 0) {
         tokens.push("raised_iop_risk");
-      }
-      if (condition.indexOf("dry eye") >= 0 || condition.indexOf("mgd") >= 0) {
-        tokens.push("dryness");
       }
       if (condition.indexOf("macular toxicity") >= 0) {
         tokens.push("macular_screening_needed");

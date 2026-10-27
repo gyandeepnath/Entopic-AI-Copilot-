@@ -161,6 +161,23 @@ Nothing below was changed.
    The dead name was removed — behaviour is unchanged. Which keratitis, if any,
    should that gate force onto the list?
 
+### 🟧 How medications map to engine tokens — found in the 2026-10-27 audit
+The medication list feeds the engine by matching words in each drug's listed
+side effects (`getMedicationTokens`, js/medication-checker.js). Measured on the
+real engine with nothing recorded except the drug:
+1. **Changed (please confirm):** isotretinoin, SSRIs and anticholinergics used
+   to add `dryness`, the token for dryness the patient reports or the slit lamp
+   shows, which the dry-eye conditions *require*. "Sertraline 50mg" alone
+   produced two dry-eye diagnoses and exposure keratopathy. The drug no longer
+   adds it. Real dryness still adds it through the symptom or finding, and the
+   risk is still listed in the medication review.
+2. **Not changed:** "Prednisolone 5mg" alone produces **Drug-induced Cataract
+   (Steroid)**, because that condition requires only `steroid_history`. Should
+   it also require a lens finding (`psc_opacity`) or a visual symptom?
+3. **Not changed:** amiodarone's listed "Optic neuropathy" raises no token. The
+   matcher looks for "optic" + "neuritis", which only ethambutol's "Optic
+   neuritis (toxic)" contains. Should amiodarone raise `toxic_optic_risk`?
+
 ### 🟧 Exclusion rules delete by name fragment — found in the 2026-09-24 audit
 When a condition scores ≥ 0.5 its exclusion list removes matching conditions
 from the differential entirely (urgent ones are always kept). Matching is by

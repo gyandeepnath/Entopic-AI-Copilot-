@@ -151,6 +151,19 @@ test("a slit-lamp sign is recorded as its finding label", () => {
   })()`);
   assert.ok(r.sl.length > 0 || r.fun.length > 0, `no finding label recorded for ${tok}`);
   assert.ok(r.desc, "and reported back to the student");
+
+  /* The student may already have tapped that finding, which stores {label, eye}.
+     indexOf(label) missed the object and added a bare-string duplicate beside it,
+     so the note listed the finding twice (second full audit, 2026-10-27). */
+  const again = evalJson(`(function () {
+    V = blankVisit();
+    var label = simFindingLabelFor(${JSON.stringify(tok)});
+    var list = simFindingIsFundus(label) ? V.fun.findings : V.sl.findings;
+    list.push({ label: label, eye: "OD" });
+    simPresentToken(${JSON.stringify(tok)}, "slit_lamp");
+    return list.slice();
+  })()`);
+  assert.strictEqual(again.length, 1, "the tapped finding was duplicated: " + JSON.stringify(again));
 });
 
 test("procedure names are never presented as findings", () => {

@@ -911,12 +911,15 @@ function pgSL() {
     ? '<div style="margin-bottom:10px">' + renderDrawingGallery("slit_lamp") + '</div>'
     : '');
 
+  /* By label: findings are {label, eye} objects, so indexOf(label) on the raw
+     list counted nothing and every section collapsed after each tap. */
+  var slRecorded = recFindingTexts(V.sl.findings, true);
   for (var sec in SL_FINDINGS) {
     var items = SL_FINDINGS[sec];
     var sid = "slf_" + sec.replace(/[^a-zA-Z]/g, "");
     var cnt = 0;
     for (var ci = 0; ci < items.length; ci++) {
-      if (V.sl.findings.indexOf(items[ci]) >= 0) cnt++;
+      if (slRecorded.indexOf(items[ci]) >= 0) cnt++;
     }
 
     fh += '<div class="col-trig" onclick="togCollapse(\'' + sid + '\')">' +
@@ -927,8 +930,7 @@ function pgSL() {
     for (var ii = 0; ii < items.length; ii++) {
       var item = items[ii];
       /* The chip shows WHICH EYE, and cycles OD -> OS -> OU -> off (CL-2). */
-      var eyeSel = (typeof recFindingState === "function") ? recFindingState(V.sl.findings, item)
-                                                          : (V.sl.findings.indexOf(item) >= 0 ? "?" : "");
+      var eyeSel = recFindingState(V.sl.findings, item);
       fh += '<span class="fn' + (eyeSel ? " sel" : "") + '" title="Click to cycle OD / OS / both / off" onclick="togSlFind(\'' + escAttrJs(item) + '\')">' + escHtml(item) +
             (eyeSel ? ' <b style="font-size:.9em">' + (eyeSel === "?" ? "eye?" : eyeSel) + '</b>' : '') + '</span>';
     }

@@ -335,10 +335,10 @@ function simPresentToken(tok, step) {
   if (label && wantsFinding) {
     if (simFindingIsFundus(label)) {
       if (!V.fun.findings) V.fun.findings = [];
-      if (V.fun.findings.indexOf(label) < 0) V.fun.findings.push(label);
+      if (!_simHasFinding(V.fun.findings, label)) V.fun.findings.push(label);
     } else {
       if (!V.sl.findings) V.sl.findings = [];
-      if (V.sl.findings.indexOf(label) < 0) V.sl.findings.push(label);
+      if (!_simHasFinding(V.sl.findings, label)) V.sl.findings.push(label);
     }
     return label;
   }
@@ -353,11 +353,22 @@ function simPresentToken(tok, step) {
   /* 4. A finding label even if the step did not suggest one. */
   if (label) {
     if (!V.sl.findings) V.sl.findings = [];
-    if (V.sl.findings.indexOf(label) < 0) V.sl.findings.push(label);
+    if (!_simHasFinding(V.sl.findings, label)) V.sl.findings.push(label);
     return label;
   }
 
   return null;
+}
+
+/* Already recorded, in either shape? The student may have tapped the finding
+   themselves ({label, eye}); a bare-string duplicate beside it would list the
+   finding twice in the note. */
+function _simHasFinding(list, label) {
+  for (var i = 0; i < list.length; i++) {
+    var f = list[i];
+    if (((f && typeof f === "object") ? f.label : f) === label) return true;
+  }
+  return false;
 }
 
 /* Coverage report — used by the test suite and by the KB linter so a new

@@ -366,7 +366,7 @@ function buildClinicalSummary() {
 
   /* SL findings */
   if (V.sl && V.sl.findings.length > 0) {
-    s += "SL: " + V.sl.findings.join(", ") + "\n";
+    s += "SL: " + recFindingTexts(V.sl.findings).join(", ") + "\n";
   }
 
   /* RAPD */
@@ -386,7 +386,7 @@ function buildClinicalSummary() {
     s += "C/D: OD " + V.fun.od.cd_v + " OS " + (V.fun.os.cd_v || "—") + "\n";
   }
   if (V.fun && V.fun.findings.length > 0) {
-    s += "Fundus: " + V.fun.findings.join(", ") + "\n";
+    s += "Fundus: " + recFindingTexts(V.fun.findings).join(", ") + "\n";
   }
 
   return s;

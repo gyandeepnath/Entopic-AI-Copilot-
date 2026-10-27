@@ -286,9 +286,14 @@ function archiveScreen() {
       'practice that is months, not years. Archiving moves ' +
       'completed visits older than your retention floor into a file <b>you keep</b>, and leaves ' +
       'a marker in each chart showing the date, the leading impression, and where the rest went.' +
-      '<br><b>Nothing is destroyed.</b> Importing the file restores those visits in full. ' +
-      'The records are only removed from this device <i>after</i> the file has been written and ' +
-      'read back and checked, record for record — if that check fails, nothing is removed.' +
+      '<br><b>Nothing is destroyed.</b> Restoring the file (Admin → Restore from backup) puts those ' +
+      'visits back in full. The records are only removed from this device <i>after</i> a copy has been ' +
+      'written and read back and checked, record for record — if that check fails, nothing is removed. ' +
+      /* The browser can confirm only that a download STARTED. The check above
+         is of the copy this device keeps, so say so, and say what to do. */
+      'That check is of a copy this device keeps; a browser cannot check your Downloads folder, so ' +
+      '<b>make sure the downloaded file is there and keep it somewhere safe</b>. If it is lost, the ' +
+      'device copy can restore the visits (below).' +
       (su ? '<br><span style="color:var(--sv)">This device is at <b>' + su.pct + '%</b> of its storage budget.</span>' : '') +
     '</div>' +
     '<div style="display:flex;gap:14px;flex-wrap:wrap;margin:8px 0;font-size:.62rem">' +
@@ -313,7 +318,9 @@ function archiveScreen() {
       ? '<div style="margin-top:8px;font-size:.58rem"><b>Archives created</b>' +
         past.slice(0, 6).map(function (a) {
           return '<div style="color:var(--sv)">' + esc(String(a.at).slice(0, 10)) + ' · ' +
-            a.count + ' visit(s) · <code>' + esc(a.file) + '</code></div>';
+            esc(String(a.count)) + ' visit(s) · <code>' + esc(a.file) + '</code> ' +
+            '<button class="btn btn-s" style="font-size:.52rem;padding:1px 6px" ' +
+              'onclick="archiveUiRestoreDevice(\'' + escAttrJs(a.id) + '\')">Restore from this device\'s copy</button></div>';
         }).join("") + '</div>'
       : '') +
     '<div id="arcMsg" class="home-settings-status"></div></div>';
@@ -356,6 +363,21 @@ function archiveUiRun() {
       msg.style.color = "#c0392b";
       msg.textContent = r.reason;
     }
+  });
+}
+
+function archiveUiRestoreDevice(id) {
+  var msg = document.getElementById("arcMsg");
+  if (typeof archiveRestoreFromDevice !== "function") return;
+  if (!window.confirm("Restore the visits in this archive from the copy kept on this device?\n\n" +
+      "Only the archive markers in each chart are filled back in; nothing live is replaced.")) return;
+  if (msg) { msg.style.color = "var(--sl)"; msg.textContent = "Restoring…"; }
+  archiveRestoreFromDevice(id).then(function (r) {
+    if (!msg) return;
+    msg.style.color = r.ok ? "#2e7d46" : "#c0392b";
+    msg.textContent = r.ok ? (r.restored + " visit(s) restored." + (r.reason ? " " + r.reason : ""))
+                           : "Nothing was restored: " + r.reason;
+    if (r.ok && r.restored && typeof renderHome === "function") renderHome();
   });
 }
 

@@ -18,7 +18,7 @@ const roles = require("../js/roles.js");
 const an = require("../js/analytics.js");
 
 const eng = createEngine();
-["knowledge/condition-info.js", "knowledge/common-conditions.js", "js/reasoning-views.js", "js/ui-quiz.js"].forEach(function (f) {
+["knowledge/condition-info.js", "knowledge/common-conditions.js", "js/clinical-record.js", "js/reasoning-views.js", "js/ui-quiz.js"].forEach(function (f) {
   vm.runInContext(fs.readFileSync(path.resolve(__dirname, "..", f), "utf8"), eng.context, { filename: f });
 });
 function evalIn(expr) { return vm.runInContext(expr, eng.context); }

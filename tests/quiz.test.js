@@ -21,7 +21,7 @@ const { createEngine } = require("../tools/lib/load-engine");
 
 const eng = createEngine();
 /* Quiz reads condition-info (explanations), reasoning-views (casebook) */
-["knowledge/condition-info.js", "js/reasoning-views.js", "js/ui-quiz.js"].forEach((f) => {
+["knowledge/condition-info.js", "js/clinical-record.js", "js/reasoning-views.js", "js/ui-quiz.js"].forEach((f) => {
   vm.runInContext(
     fs.readFileSync(path.resolve(__dirname, "..", f), "utf8"),
     eng.context,
@@ -86,6 +86,15 @@ test("casebook-sourced question: real de-identified case becomes a quiz item", (
   assert.strictEqual(q.options.length, 4);
   const joined = q.findings.join(" ");
   assert.ok(!/Quiz|Seed/.test(joined), "no patient identifiers in the vignette");
+});
+
+test("a case whose findings were tapped with an eye gives readable clues, not [object Object]", () => {
+  const q = evalIn("quizBuildQuestionFromCase({ title: 'Acute Angle Closure Crisis', state: {" +
+    " objective: { anterior: [{ label: 'Corneal oedema', eye: 'OD' }], iop: { od: '48', os: '16' } } } }," +
+    " function(){return 0.3;})");
+  assert.ok(q, "question produced");
+  assert.ok(q.findings.indexOf("Corneal oedema (OD)") >= 0, "the clue names the finding and its eye: " + q.findings);
+  assert.ok(!/object/i.test(q.findings.join(" ")), "no object leaked into a clue");
 });
 
 /* ── Difficulty tiers (clue count + distractor closeness — never invented

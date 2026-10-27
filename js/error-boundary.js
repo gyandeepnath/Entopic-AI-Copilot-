@@ -106,15 +106,34 @@ function errShowBanner(message) {
        escaping implementation is exactly how the stored-XSS hole (R-1)
        happened. Scrubbed as well, since an error message can carry patient
        data and this banner is on screen in front of whoever is in the room. */
+    /* It used to promise "Your entered data is saved" unconditionally — on a
+       device whose saves were being refused (full, damaged store, locked
+       vault), and for anything typed since the last autosave. And Reload
+       reloaded at once, discarding up to an autosave interval of typing. Say
+       what is true, and save before reloading (second full audit, 2026-10-27). */
+    var failing = (typeof storageWriteFailure === "function") && !!storageWriteFailure();
     el.innerHTML =
-      '<b>Something went wrong on screen.</b> Your entered data is saved. ' +
+      '<b>Something went wrong on screen.</b> ' +
+      (failing ? 'This device is <b>not saving</b> right now — see the storage warning before reloading. '
+               : 'What you have entered is still here; Reload saves it first. ') +
       (message ? '<span style="opacity:.75">(' + escHtml(errScrub(message).slice(0, 120)) + ')</span> ' : "") +
-      '<button onclick="location.reload()" style="margin-left:8px;background:#fff;color:#4a1010;border:0;' +
+      '<button onclick="errSaveAndReload()" style="margin-left:8px;background:#fff;color:#4a1010;border:0;' +
       'border-radius:5px;padding:3px 10px;font-weight:600;cursor:pointer">Reload</button>' +
       '<button onclick="this.parentNode.remove()" style="margin-left:6px;background:transparent;color:#fff;' +
       'border:1px solid rgba(255,255,255,.4);border-radius:5px;padding:3px 8px;cursor:pointer">Dismiss</button>';
     el.style.display = "block";
   } catch (e) { /* the boundary must never throw */ }
+}
+
+/* Save the open exam, then reload. If the save is refused, ask first: a
+   reload would discard everything typed since the last successful save. */
+function errSaveAndReload() {
+  var res = null;
+  try { if (typeof doSave === "function" && typeof CV !== "undefined" && CV) res = doSave(); } catch (e) { res = { ok: false }; }
+  if (res && res.ok === false && typeof window !== "undefined" && window.confirm &&
+      !window.confirm("The exam could NOT be saved" + (res.reason ? " (" + res.reason + ")" : "") +
+                      ".\n\nReloading now will lose what was typed since the last save. Reload anyway?")) return;
+  try { location.reload(); } catch (e) {}
 }
 
 /* Run fn, catching and reporting any throw. Returns fn's value, or `fallback`
@@ -157,5 +176,5 @@ if (typeof window !== "undefined") {
 }
 
 if (typeof module !== "undefined" && module.exports) {
-  module.exports = { safeCall: safeCall, errRecord: errRecord, errRecent: errRecent };
+  module.exports = { safeCall: safeCall, errRecord: errRecord, errRecent: errRecent, errSaveAndReload: errSaveAndReload };
 }

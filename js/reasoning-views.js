@@ -276,13 +276,13 @@ function stateToNoteText(state) {
   }
   if (o.iop) oLines.push("IOP (" + o.iop.method + "): OD " + (o.iop.od || "—") + " OS " + (o.iop.os || "—") + " mmHg" + (o.iop.time ? " @ " + o.iop.time : ""));
   if (o.pupil) oLines.push("Pupils: RAPD " + o.pupil.rapd + (o.pupil.grade ? " grade " + o.pupil.grade : ""));
-  if (o.anterior) oLines.push("Anterior segment: " + o.anterior.join(", "));
+  if (o.anterior) oLines.push("Anterior segment: " + recFindingTexts(o.anterior).join(", "));
   if (o.bv) oLines.push("Binocular vision: " + o.bv.join(" · "));
   if (o.fundus) {
     var f = "Fundus (" + o.fundus.method + (o.fundus.dilated ? ", dilated" : "") + "): ";
     var fb = [];
     if (o.fundus.cd) fb.push("C/D " + o.fundus.cd);
-    if (o.fundus.findings) fb.push(o.fundus.findings.join(", "));
+    if (o.fundus.findings) fb.push(recFindingTexts(o.fundus.findings).join(", "));
     oLines.push(f + fb.join("; "));
   }
   if (o.motility) oLines.push("Motility: " + o.motility.join("; "));
@@ -552,8 +552,8 @@ function casebookEntryTokens(entry) {
   if (entry && entry.title) conditions.push(entry.title);
   tokens = (s.tokens || []).slice();
   var o = s.objective || {};
-  if (o.anterior) findings = findings.concat(o.anterior);
-  if (o.fundus && o.fundus.findings) findings = findings.concat(o.fundus.findings);
+  if (o.anterior) findings = findings.concat(recFindingTexts(o.anterior, true));
+  if (o.fundus && o.fundus.findings) findings = findings.concat(recFindingTexts(o.fundus.findings, true));
 
   function uniqLower(arr) {
     var seen = Object.create(null), out = [];
@@ -848,7 +848,7 @@ if (typeof document !== "undefined") {
     var cue = "";
     if (s.subjective && s.subjective.cc) cue = s.subjective.cc;
     else if (s.subjective && s.subjective.symptoms && s.subjective.symptoms.length) cue = s.subjective.symptoms.slice(0, 3).join(", ");
-    else if (s.objective && s.objective.anterior && s.objective.anterior.length) cue = s.objective.anterior.slice(0, 2).join(", ");
+    else if (s.objective && s.objective.anterior && s.objective.anterior.length) cue = recFindingTexts(s.objective.anterior).slice(0, 2).join(", ");
     var urgent = (s.assessment && s.assessment[0] && s.assessment[0].urgent);
     var body = stateToNoteText(s);
     var teaching = entry.teachingNote

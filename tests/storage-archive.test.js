@@ -320,6 +320,41 @@ test("an archive restores the full records over their stubs", async () => {
   assert.strictEqual(back.data.final_dx, "Keratoconus");
 });
 
+/* ═══ An archive must be restorable from INSIDE the app (2026-10-27) ═══
+   Every message said "importing the file restores them", but nothing called
+   archiveRestore: the backup restore rejected an archive as "not an Entopic
+   backup". And the browser can confirm only that a download started. */
+
+test("the backup restore recognises an archive file and merges it back", async () => {
+  const ctx = sandbox({ window: { confirm: () => true }, alert: () => {} });
+  vm.runInContext(read("js/storage-backup.js"), ctx, { filename: "storage-backup.js" });
+  clinic(ctx, [{ id: "old", pid: "p1", date: iso(365 * 5), dx: "Keratoconus" }, { id: "new", pid: "p1", date: iso(5) }]);
+  const r = await call(ctx, `archiveRun(Object.assign({ years: 3 }, ${goodIO(ctx)}))`);
+  ctx.__p = JSON.parse(ctx.__disk[r.file]);
+  assert.strictEqual(call(ctx, "validateBackup(__p).ok"), false, "sanity: it is not a backup");
+  call(ctx, "_importDecoded(__p)");
+  const back = call(ctx, 'loadVisits().find(function(v){return v.id==="old";})');
+  assert.ok(!back.archived, "the archive file could not be brought back into the app");
+  assert.strictEqual(back.data.final_dx, "Keratoconus");
+  assert.strictEqual(call(ctx, "loadVisits().length"), 2, "merged, not replaced");
+});
+
+test("if the downloaded file is lost, the device's own copy restores the visits", async () => {
+  const blobs = {};
+  const ctx = sandbox({
+    mirrorPutBlob: (k, j) => { blobs[k] = j; return Promise.resolve(true); },
+    mirrorGetRaw: (k) => Promise.resolve(blobs[k] || null)
+  });
+  clinic(ctx, [{ id: "old", pid: "p1", date: iso(365 * 5), dx: "Keratoconus" }, { id: "new", pid: "p1", date: iso(5) }]);
+  /* the default read-back writes the device copy; the "download" goes nowhere */
+  const r = await call(ctx, `archiveRun({ years: 3, writeFile: function () { return Promise.resolve(true); } })`);
+  assert.strictEqual(r.ok, true, r.reason);
+  const res = await call(ctx, `archiveRestoreFromDevice(${JSON.stringify(r.archive_id)})`);
+  assert.strictEqual(res.ok, true, res.reason);
+  assert.strictEqual(res.restored, 1);
+  assert.strictEqual(call(ctx, 'loadVisits().find(function(v){return v.id==="old";}).data.final_dx'), "Keratoconus");
+});
+
 test("restoring twice is harmless", async () => {
   const ctx = sandbox();
   clinic(ctx, [{ id: "old", pid: "p1", date: iso(365 * 5) }, { id: "new", pid: "p1", date: iso(5) }]);

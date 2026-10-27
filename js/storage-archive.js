@@ -415,6 +415,37 @@ function archiveRestore(payload) {
            reason: mismatched ? mismatched + " record(s) were skipped: they belong to a different patient than the chart entry they would replace" : "" };
 }
 
+/* Restore an archive from the copy this device kept when it was made.
+
+   ── ARCHIVES COULD NOT BE RESTORED AT ALL (second full audit, 2026-10-27) ──
+   Every message about archiving — the screen, the confirmation, the audit
+   entry — said "importing the file restores them in full". Nothing called
+   archiveRestore: the only import path is the backup restore, which rejected
+   an archive file as "not an Entopic backup". It now recognises one
+   (storage-backup.js importData). And because the browser can confirm only
+   that a download STARTED, not that the file was kept, the on-device copy the
+   verification step writes is restorable here too — the way back when the
+   file was cancelled, blocked or lost. */
+function archiveRestoreFromDevice(archiveId) {
+  if (typeof mirrorGetRaw !== "function") {
+    return Promise.resolve({ ok: false, restored: 0, reason: "this device keeps no archive copies" });
+  }
+  return Promise.resolve(mirrorGetRaw("snap_" + archiveId)).then(function (raw) {
+    if (!raw) return { ok: false, restored: 0, reason: "this device has no copy of that archive" };
+    var obj;
+    try { obj = JSON.parse(raw); } catch (e) { return { ok: false, restored: 0, reason: "the copy on this device is damaged" }; }
+    if (typeof vaultIsEnvelope === "function" && vaultIsEnvelope(obj)) {
+      if (typeof vaultUnlocked !== "function" || !vaultUnlocked()) {
+        return { ok: false, restored: 0, reason: "the record vault is locked" };
+      }
+      return vaultDecryptValue(obj).then(archiveRestore);
+    }
+    return archiveRestore(obj);
+  }).catch(function (e) {
+    return { ok: false, restored: 0, reason: (e && e.message) || "the copy could not be read" };
+  });
+}
+
 /* How much headroom archiving would actually buy, for the UI to show before
    anyone commits to it. */
 function archiveProjection(opts) {
@@ -439,7 +470,7 @@ if (typeof module !== "undefined" && module.exports) {
     archiveState: archiveState, archiveSetYears: archiveSetYears,
     archiveCandidates: archiveCandidates, archiveStubOf: archiveStubOf,
     archiveBuild: archiveBuild, archiveVerify: archiveVerify, archivePrune: archivePrune,
-    archiveRun: archiveRun, archiveRestore: archiveRestore,
+    archiveRun: archiveRun, archiveRestore: archiveRestore, archiveRestoreFromDevice: archiveRestoreFromDevice,
     archiveProjection: archiveProjection, archiveList: archiveList
   };
 }

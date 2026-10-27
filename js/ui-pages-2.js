@@ -88,12 +88,14 @@ function pgFun() {
     ? '<div style="margin-bottom:10px">' + renderDrawingGallery("fundus") + '</div>'
     : '');
 
+  /* By label — see the slit-lamp page: indexOf on {label, eye} objects counted nothing. */
+  var funRecorded = recFindingTexts(V.fun.findings, true);
   for (var sec in FUN_FINDINGS) {
     var items = FUN_FINDINGS[sec];
     var sid = "fdf_" + sec.replace(/[^a-zA-Z]/g, "");
     var cnt = 0;
     for (var ci = 0; ci < items.length; ci++) {
-      if (V.fun.findings.indexOf(items[ci]) >= 0) cnt++;
+      if (funRecorded.indexOf(items[ci]) >= 0) cnt++;
     }
 
     fh += '<div class="col-trig" onclick="togCollapse(\'' + sid + '\')">' +
@@ -104,8 +106,7 @@ function pgFun() {
     for (var ii = 0; ii < items.length; ii++) {
       var item = items[ii];
       /* The chip shows WHICH EYE, and cycles OD -> OS -> OU -> off (CL-2). */
-      var eyeSel = (typeof recFindingState === "function") ? recFindingState(V.fun.findings, item)
-                                                          : (V.fun.findings.indexOf(item) >= 0 ? "?" : "");
+      var eyeSel = recFindingState(V.fun.findings, item);
       fh += '<span class="fn' + (eyeSel ? " sel" : "") + '" title="Click to cycle OD / OS / both / off" onclick="togFunFind(\'' + escAttrJs(item) + '\')">' + escHtml(item) +
             (eyeSel ? ' <b style="font-size:.9em">' + (eyeSel === "?" ? "eye?" : eyeSel) + '</b>' : '') + '</span>';
     }

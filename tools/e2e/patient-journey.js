@@ -32,8 +32,7 @@
 "use strict";
 
 const path = require("path");
-const PW = "/opt/node22/lib/node_modules/playwright";
-const CHROME = "/opt/pw-browsers/chromium-1194/chrome-linux/chrome";
+const { PW, CHROME } = require("../lib/browser");
 const APP = "file://" + path.resolve(__dirname, "..", "..", "index.html");
 
 let held = 0;

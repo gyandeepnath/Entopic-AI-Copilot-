@@ -37,10 +37,17 @@
 /* ═══════════════════════════════════════════════════════════════ */
 "use strict";
 
-var APP_VERSION = "1.5.0";
-var KB_VERSION = "1.3.1";
+/* 1.5.0 / 1.3.1 (2026-08-01) stood unchanged through two full audits' worth of
+   fixes, because CI enforces the bump only on pull requests and none were
+   opened — so a clinic on August's build and one on today's reported the same
+   version. Bumped 2026-10-27: 1.6.0 for the app; KB 1.4.0 for the engine-
+   failure red-flag rules added to knowledge/red-flags.js on 2026-09-24 (no
+   condition content changed, so no sign-off goes stale — staleness follows
+   each condition's content fingerprint, not this number). */
+var APP_VERSION = "1.6.0";
+var KB_VERSION = "1.4.0";
 var BUILD_COMMIT = "dev";
-var BUILD_DATE = "2026-08-01";
+var BUILD_DATE = "2026-10-27";
 
 /* One string for a support call, a bug report, or an error banner.
    Deliberately contains no patient data and no device identifier — it is

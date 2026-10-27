@@ -1738,8 +1738,7 @@ function togOcFlag(key) {
 /* Cycle: absent -> OD -> OS -> OU -> absent (CL-2). One tap per state, so a
    finding cannot be recorded without an eye. */
 function togSlFind(item) {
-  if (typeof recCycleFinding === "function") V.sl.findings = recCycleFinding(V.sl.findings, item);
-  else { var i0 = V.sl.findings.indexOf(item); if (i0 >= 0) V.sl.findings.splice(i0, 1); else V.sl.findings.push(item); }
+  V.sl.findings = recCycleFinding(V.sl.findings, item);
   if (typeof runDiagnosticEngine === "function") runDiagnosticEngine();
   renderMain();
   renderAdvisory();
@@ -1748,8 +1747,7 @@ function togSlFind(item) {
 /* Toggle fundus finding */
 /* Cycle: absent -> OD -> OS -> OU -> absent (CL-2). */
 function togFunFind(item) {
-  if (typeof recCycleFinding === "function") V.fun.findings = recCycleFinding(V.fun.findings, item);
-  else { var i0 = V.fun.findings.indexOf(item); if (i0 >= 0) V.fun.findings.splice(i0, 1); else V.fun.findings.push(item); }
+  V.fun.findings = recCycleFinding(V.fun.findings, item);
   if (typeof runDiagnosticEngine === "function") runDiagnosticEngine();
   renderMain();
   renderAdvisory();

@@ -55,3 +55,75 @@ test("index.html loads the mirror before storage.js", () => {
   assert.ok(mirrorAt > -1, "mirror script included");
   assert.ok(mirrorAt < storageAt, "mirror loads before storage.js");
 });
+
+
+/* ═══ Disaster recovery with automatic snapshots present (2026-10-27) ═══
+   The mirror's IndexedDB store also holds the automatic backup snapshots
+   (snap_*), each a copy of the WHOLE clinic. Recovery restored every key it
+   found, in key order — and "snap_…" sorts before "users", "vault_meta" and
+   "visit_…". The snapshots filled localStorage first, the restore threw part
+   way, and the accounts, the vault key and every visit were never put back:
+   the safety net failed in the one disaster it exists for. */
+
+function recoveryWorld(entries, quotaBytes) {
+  const ls = new Map();
+  let used = 0;
+  const reloads = [];
+  const sorted = Object.keys(entries).sort().map((k) => ({ key: k, json: entries[k] }));
+  const ctx = {
+    console: { log() {}, warn() {}, error() {} },
+    JSON, Object, Array, String, Date,
+    localStorage: {
+      getItem: (k) => (ls.has(k) ? ls.get(k) : null),
+      setItem: (k, v) => {
+        const add = String(v).length - (ls.has(k) ? ls.get(k).length : 0);
+        if (used + add > quotaBytes) { const e = new Error("quota"); e.name = "QuotaExceededError"; throw e; }
+        used += add; ls.set(k, String(v));
+      },
+      removeItem: (k) => { if (ls.has(k)) { used -= ls.get(k).length; ls.delete(k); } }
+    },
+    sessionStorage: { getItem: () => null, setItem() {} },
+    location: { reload: () => reloads.push(1) },
+    indexedDB: {
+      open() {
+        const req = {};
+        setImmediate(() => {
+          const db = {
+            objectStoreNames: { contains: () => true },
+            close() {},
+            transaction() {
+              return { objectStore() { return { getAll() { const r = {}; setImmediate(() => { r.result = sorted; r.onsuccess && r.onsuccess(); }); return r; } }; } };
+            }
+          };
+          req.onsuccess && req.onsuccess({ target: { result: db } });
+        });
+        return req;
+      }
+    }
+  };
+  ctx.window = ctx;
+  return { ctx, ls, reloads };
+}
+
+test("recovery restores the records, not the snapshots — even when snapshots would not fit", async () => {
+  const clinic = JSON.stringify(Array.from({ length: 200 }, (_, i) => ({ id: "p" + i, first_name: "Patient " + i })));
+  const entries = {
+    users: JSON.stringify([{ id: "u1", username: "dr" }]),
+    patients: clinic,
+    vault_meta: JSON.stringify({ v: 1 }),
+    visit_index: JSON.stringify([{ id: "v1" }]),
+    visit_v1: JSON.stringify({ id: "v1", data: {} })
+  };
+  for (let i = 0; i < 7; i++) entries["snap_2026-10-0" + i] = JSON.stringify({ patients: JSON.parse(clinic), visits: [] });
+  /* room for the records about three times over — but not for seven snapshots */
+  const { ctx, ls, reloads } = recoveryWorld(entries, clinic.length * 3);
+  vm.createContext(ctx);
+  vm.runInContext(src, ctx, { filename: "storage-mirror.js" });
+  await new Promise((r) => setTimeout(r, 20));
+
+  assert.ok(ls.has("entopic_users"), "the accounts were not restored");
+  assert.ok(ls.has("entopic_vault_meta"), "the vault key wrapper was not restored — every record unreadable");
+  assert.ok(ls.has("entopic_visit_v1"), "the visits were not restored");
+  assert.ok(![...ls.keys()].some((k) => /snap_/.test(k)), "snapshots are backups, not stores; they stay in IndexedDB");
+  assert.strictEqual(reloads.length, 1, "and the app reloads onto the recovered records");
+});

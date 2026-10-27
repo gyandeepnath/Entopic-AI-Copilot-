@@ -21,10 +21,9 @@
 "use strict";
 
 const path = require("path");
-const PW = "/opt/node22/lib/node_modules/playwright";
-const CHROME = "/opt/pw-browsers/chromium-1194/chrome-linux/chrome";
+const { PW, CHROME, ESPREE } = require("../lib/browser");
 const APP = "file://" + path.resolve(__dirname, "..", "..", "index.html");
-const espree = require("/opt/node22/lib/node_modules/eslint/node_modules/espree");
+const espree = require(ESPREE);
 
 let held = 0;
 const broke = [];

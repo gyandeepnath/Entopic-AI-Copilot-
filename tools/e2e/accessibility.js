@@ -27,11 +27,15 @@
    changed referral selects). Phase 9 reported unlabelled 9 -> 0 and
    keyboard-inaccessible 31 -> 0; those numbers are only true of the app as it
    was then. */
-const { chromium } = require("/opt/node22/lib/node_modules/playwright");
-const URL = "file:///home/user/Entopic-AI-Copilot-/index.html";
+const path = require("path");
+const { PW, CHROME } = require("../lib/browser");
+const { chromium } = require(PW);
+/* The copy this script sits in, not one fixed folder — run from an unpacked
+   release, it used to test whatever happened to be at /home/user instead. */
+const URL = "file://" + path.resolve(__dirname, "..", "..", "index.html");
 
 (async () => {
-  const b = await chromium.launch({ executablePath: "/opt/pw-browsers/chromium-1194/chrome-linux/chrome" });
+  const b = await chromium.launch({ executablePath: CHROME });
   const p = await b.newPage({ viewport: { width: 1400, height: 950 } });
   const errs = [];
   p.on("pageerror", (e) => errs.push(String(e)));

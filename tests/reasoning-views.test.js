@@ -26,7 +26,7 @@ const eng = createEngine();
    engine runs in, so views read the real V / P / ENGINE_STATE globals and the
    authored summaries. document is undefined here, so the browser DOM-wiring
    block is skipped (as intended). */
-["knowledge/condition-info.js", "js/reasoning-views.js"].forEach(function (f) {
+["knowledge/condition-info.js", "js/clinical-record.js", "js/reasoning-views.js"].forEach(function (f) {
   vm.runInContext(fs.readFileSync(path.resolve(__dirname, "..", f), "utf8"), eng.context, { filename: f });
 });
 
@@ -98,6 +98,29 @@ test("entered findings DO appear; unentered ones do not", () => {
   assert.ok(/Corneal ulcer/.test(note), "entered anterior finding is documented");
   assert.ok(!/Refraction/.test(note), "refraction not documented — none entered");
   assert.ok(!/C\/D/.test(note), "cup:disc not documented — none entered");
+});
+
+/* Since CL-2 a tapped finding is {label, eye}. Every test above used the
+   legacy bare string, so the note printed "Anterior segment: [object Object]"
+   for each finding a clinician actually recorded, unseen (second full audit,
+   2026-10-27). */
+test("findings recorded with an eye read as 'label (eye)' in the note, never [object Object]", () => {
+  const note = noteFor({
+    sl: { findings: [{ label: "Hypopyon", eye: "OD" }, "Corneal ulcer"] },
+    fun: { findings: [{ label: "Drusen — large (>125μm)", eye: "OU" }] }
+  });
+  assert.ok(!/\[object Object\]/.test(note), "an object leaked into the note:\n" + note);
+  assert.ok(/Hypopyon \(OD\)/.test(note), "the anterior finding carries its eye");
+  assert.ok(/Corneal ulcer/.test(note), "a legacy string finding still reads");
+  assert.ok(/Drusen — large \(>125μm\) \(OU\)/.test(note), "the fundus finding carries its eye");
+});
+
+test("casebook facets group a finding by its label, whichever eye it was in", () => {
+  const f = JSON.parse(evalIn("JSON.stringify(casebookEntryTokens({ state: { objective: {" +
+    " anterior: [{ label: 'Hypopyon', eye: 'OD' }]," +
+    " fundus: { findings: [{ label: 'Hypopyon', eye: 'OS' }] } } } }))"));
+  assert.deepStrictEqual(f.findings, ["hypopyon"]);
+  assert.ok(!/object/.test(f.text), "no '[object object]' search text or filter chip");
 });
 
 

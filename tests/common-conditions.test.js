@@ -19,7 +19,7 @@ const vm = require("vm");
 const { createEngine } = require("../tools/lib/load-engine");
 
 const eng = createEngine();
-["knowledge/condition-info.js", "js/reasoning-views.js", "js/ui-quiz.js"].forEach((f) => {
+["knowledge/condition-info.js", "js/clinical-record.js", "js/reasoning-views.js", "js/ui-quiz.js"].forEach((f) => {
   vm.runInContext(fs.readFileSync(path.resolve(__dirname, "..", f), "utf8"), eng.context, { filename: f });
 });
 function evalIn(expr) { return vm.runInContext(expr, eng.context); }

@@ -2186,7 +2186,6 @@ var TOKEN_REGISTRY = {
       "engine_derived",
       "finding_map",
       "free_text",
-      "medication",
       "symptom_chip"
     ],
     "usage": {

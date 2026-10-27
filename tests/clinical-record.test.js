@@ -232,6 +232,34 @@ test("findings read with their eye in the clinical record", () => {
   assert.strictEqual(R.recFindingText({ label: "Disc pallor", eye: "OU" }), "Disc pallor (OU)");
 });
 
+test("a findings list reads as text, or as bare labels for grouping, in either stored shape", () => {
+  const L = [{ label: "Hypopyon", eye: "OD" }, "Corneal ulcer", { label: "", eye: "OS" }, null];
+  assert.deepStrictEqual(R.recFindingTexts(L), ["Hypopyon (OD)", "Corneal ulcer"]);
+  assert.deepStrictEqual(R.recFindingTexts(L, true), ["Hypopyon", "Corneal ulcer"]);
+  assert.deepStrictEqual(R.recFindingTexts(undefined), []);
+});
+
+/* Once a finding became {label, eye}, every place that joined or searched the
+   raw array broke silently: the chart and the SOAP note printed "[object
+   Object]", the AI summary sent it, and the finding sections collapsed after
+   each tap because indexOf(label) found nothing. All of it went unseen because
+   the tests used legacy strings. This keeps the raw array from being read as
+   strings again (second full audit, 2026-10-27). */
+test("no module joins or searches a raw findings list as if it held strings", () => {
+  const fs = require("node:fs");
+  const path = require("node:path");
+  const dir = path.resolve(__dirname, "..", "js");
+  const RAW = /\b(?:sl\.findings|fun\.findings|fundus\.findings|anterior)\.(?:join|indexOf|includes|lastIndexOf)\(/;
+  const hits = [];
+  for (const f of fs.readdirSync(dir).filter((x) => x.endsWith(".js"))) {
+    fs.readFileSync(path.join(dir, f), "utf8").split("\n").forEach((line, i) => {
+      if (RAW.test(line)) hits.push("js/" + f + ":" + (i + 1) + "  " + line.trim());
+    });
+  }
+  assert.deepStrictEqual(hits, [],
+    "read findings through recFindingTexts / recFindingState (js/clinical-record.js):\n  " + hits.join("\n  "));
+});
+
 test("cycling one finding leaves the others untouched", () => {
   let L = [{ label: "Hypopyon", eye: "OD" }, { label: "Corneal ulcer", eye: "OS" }];
   L = R.recCycleFinding(L, "Hypopyon");

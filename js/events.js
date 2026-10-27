@@ -35,7 +35,7 @@
 /* ═══════════════════════════════════════════════════════════════ */
 "use strict";
 
-var _evHandlers = {};
+var _evHandlers = Object.create(null);   /* names never collide with Object.prototype */
 
 /* Subscribe. Returns an unsubscribe function. */
 function evOn(name, fn) {

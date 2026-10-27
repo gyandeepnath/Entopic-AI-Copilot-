@@ -341,14 +341,14 @@ function fullVisitHTML(v) {
   var ant = "";
   if (d.iop && (d.iop.od || d.iop.os)) ant += eyes("IOP", d.iop.od, d.iop.os);
   if (d.sl && d.sl.od) ant += row("Cornea", (d.sl.od.cornea || "") + " / " + (d.sl.os ? d.sl.os.cornea || "" : "")) + row("AC cells", (d.sl.od.cells || "0"));
-  if (d.sl && d.sl.findings && d.sl.findings.length) ant += '<div style="font-size:.62rem;color:var(--sl)">SL findings: ' + esc(d.sl.findings.join(", ")) + '</div>';
+  if (d.sl && d.sl.findings && d.sl.findings.length) ant += '<div style="font-size:.62rem;color:var(--sl)">SL findings: ' + esc(recFindingTexts(d.sl.findings).join(", ")) + '</div>';
   if (d.gon && (d.gon.od && d.gon.od.s)) ant += row("Gonioscopy OD", d.gon.od.s);
   sec("Anterior segment & IOP", ant);
 
   /* Posterior / neuro */
   var post = "";
   if (d.fun && d.fun.od && d.fun.od.cd_v) post += eyes("C/D ratio", d.fun.od.cd_v, d.fun.os ? d.fun.os.cd_v : "");
-  if (d.fun && d.fun.findings && d.fun.findings.length) post += '<div style="font-size:.62rem;color:var(--sl)">Fundus findings: ' + esc(d.fun.findings.join(", ")) + '</div>';
+  if (d.fun && d.fun.findings && d.fun.findings.length) post += '<div style="font-size:.62rem;color:var(--sl)">Fundus findings: ' + esc(recFindingTexts(d.fun.findings).join(", ")) + '</div>';
   if (d.pupil && d.pupil.rapd && d.pupil.rapd !== "None") post += row("RAPD", d.pupil.rapd);
   if (d.neuro && d.neuro.notes) post += row("Neuro", d.neuro.notes);
   if (d.inv && (d.inv.oct_rnfl_od || d.inv.vf_md_od || d.inv.notes)) post += row("Investigations", (d.inv.notes || "") + (d.inv.oct_rnfl_od ? " RNFL OD " + d.inv.oct_rnfl_od : ""));

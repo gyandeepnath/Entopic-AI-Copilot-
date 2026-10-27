@@ -194,8 +194,8 @@ function quizBuildQuestionFromCase(entry, rng) {
   var findings = [];
   if (s.subjective && s.subjective.symptoms) findings = findings.concat(s.subjective.symptoms.map(quizTokenLabel));
   var o = s.objective || {};
-  if (o.anterior) findings = findings.concat(o.anterior);
-  if (o.fundus && o.fundus.findings) findings = findings.concat(o.fundus.findings);
+  if (o.anterior) findings = findings.concat(recFindingTexts(o.anterior));
+  if (o.fundus && o.fundus.findings) findings = findings.concat(recFindingTexts(o.fundus.findings));
   if (o.iop) findings.push("IOP OD " + (o.iop.od || "—") + " / OS " + (o.iop.os || "—") + " mmHg");
   if (o.pupil) findings.push("RAPD " + o.pupil.rapd);
   if (findings.length < 2) return null;   /* too thin to be a fair question */

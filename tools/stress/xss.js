@@ -27,11 +27,10 @@
 "use strict";
 
 const path = require("path");
-const PW = "/opt/node22/lib/node_modules/playwright";
-const CHROME = "/opt/pw-browsers/chromium-1194/chrome-linux/chrome";
+const { PW, CHROME, ESPREE } = require("../lib/browser");
 const URL = "file://" + path.resolve(__dirname, "..", "..", "index.html");
 const { chromium } = require(PW);
-const espree = require("/opt/node22/lib/node_modules/eslint/node_modules/espree");
+const espree = require(ESPREE);
 
 /* Does this inline-handler body EXECUTE the payload? An escaped payload still
    CONTAINS the text "__xss" — inside a string literal passed to an app

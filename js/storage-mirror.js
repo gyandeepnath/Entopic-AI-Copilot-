@@ -315,7 +315,22 @@ function mirrorRawLooksValid(key, raw) {
   }
 
   mirrorReadAll(function (mirrorData) {
-    var keys = Object.keys(mirrorData);
+    /* Only STORES go back into localStorage. This object store also holds
+       the automatic backup snapshots and archive copies (snap_*), each a copy
+       of the whole clinic, and recovery used to restore those too — in key
+       order, where "snap_…" comes before "users", "vault_meta" and
+       "visit_…". The snapshots filled localStorage, the restore threw part
+       way, and the accounts, the vault key and every visit stayed lost: the
+       safety net failed in the one disaster it exists for (second full audit,
+       2026-10-27). Snapshots stay in IndexedDB, restorable from the Admin
+       panel. What must come first comes first: without vault_meta every
+       recovered record is unreadable ciphertext. */
+    var FIRST = ["vault_meta", "users", "patients", "visit_index"];
+    var keys = Object.keys(mirrorData).filter(function (k) { return !mirrorIsSnapshotKey(k); });
+    keys.sort(function (a, b) {
+      var ia = FIRST.indexOf(a), ib = FIRST.indexOf(b);
+      return (ia < 0 ? FIRST.length : ia) - (ib < 0 ? FIRST.length : ib);
+    });
     if (!needsMirrorRecovery(hasLocalData, keys.length, alreadyRecovered)) return;
     try {
       for (var i = 0; i < keys.length; i++) {

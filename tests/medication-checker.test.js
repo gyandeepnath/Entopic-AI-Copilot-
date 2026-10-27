@@ -157,6 +157,31 @@ test("tamsulosin raises the floppy-iris token", () => {
   assert.ok(load("tamsulosin").getMedicationTokens().includes("ifis_risk"));
 });
 
+/* A drug that CAN cause dry eye is a risk, not a symptom. It used to push
+   "dryness" — the token the dry-eye conditions REQUIRE — so a medication list
+   alone produced a dry-eye differential (second full audit, 2026-10-27). */
+test("a drug that can cause dry eye does not report dryness the patient never had", () => {
+  for (const meds of ["sertraline 50mg od", "isotretinoin 20mg", "oxybutynin 5mg bd"]) {
+    const tokens = load(meds).getMedicationTokens();
+    assert.ok(!tokens.includes("dryness"), meds + " raised the dryness symptom token: " + JSON.stringify(tokens));
+  }
+  assert.ok(/Dry eye/.test(load("sertraline 50mg od").renderMedicationReview()),
+    "the dry-eye risk is still shown to the clinician in the medication review");
+});
+
+test("on the real engine, a medication list alone does not produce a dry-eye differential", () => {
+  const { createEngine } = require("../tools/lib/load-engine");
+  const r = createEngine().runCase({ hxM: { medications: "sertraline 50mg od" } });
+  const dry = r.dxList.filter((d) => /dry eye|exposure keratopathy/i.test(d.n)).map((d) => d.n);
+  assert.strictEqual(dry.length, 0, "a dry-eye diagnosis from the drug list alone: " + dry.join(", "));
+});
+
+test("a malformed medication entry cannot stop the engine's token collection", () => {
+  const ctx = load("prednisolone 5mg");
+  vm.runInContext("MEDICATION_OCULAR_EFFECTS[0].effects.push({ risk: 'low' });", ctx);
+  assert.ok(ctx.getMedicationTokens().includes("steroid_history"), "the valid effects still map");
+});
+
 test("no medications means no tokens — not a default risk", () => {
   assert.strictEqual(load("").getMedicationTokens().length, 0);
 });
@@ -165,7 +190,8 @@ test("every token the checker can emit is a token the knowledge base uses", () =
   /* A token nothing consumes is a risk that silently does nothing. */
   const src = read("js/medication-checker.js");
   const emitted = [...src.matchAll(/tokens\.push\("([a-z_]+)"\)/g)].map((m) => m[1]);
-  assert.ok(emitted.length >= 7, "expected the full token set, found " + emitted.length);
+  /* 6 since "dryness" was removed: it is a symptom token, not a drug risk. */
+  assert.ok(emitted.length >= 6, "expected the full token set, found " + emitted.length);
 
   const kb = fs.readdirSync(path.join(ROOT, "knowledge"))
     .filter((f) => f.endsWith(".js"))

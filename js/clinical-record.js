@@ -502,6 +502,18 @@ function recFindingState(list, label) {
   return "";
 }
 
+/* A findings list as display strings ("Hypopyon (OD)"), or with labelsOnly
+   the bare labels — for grouping and search, where one finding in either eye
+   is one thing. Read findings through this, never .join() them: once a
+   finding became an object, joining the array printed "[object Object]" into
+   the chart, the SOAP note, the casebook and the AI summary (second full
+   audit, 2026-10-27). */
+function recFindingTexts(list, labelsOnly) {
+  if (!Array.isArray(list)) return [];
+  return list.map(function (f) { return labelsOnly ? recFindingLabel(f) : recFindingText(f); })
+             .filter(Boolean);
+}
+
 if (typeof module !== "undefined" && module.exports) {
   module.exports = {
     recStampVisit: recStampVisit, recIsAmended: recIsAmended, recAmendments: recAmendments,
@@ -511,7 +523,7 @@ if (typeof module !== "undefined" && module.exports) {
     recDayGap: recDayGap,
     recFindingLabel: recFindingLabel, recFindingEye: recFindingEye,
     recFindingText: recFindingText, recCycleFinding: recCycleFinding,
-    recFindingState: recFindingState, REC_EYES: REC_EYES
+    recFindingState: recFindingState, recFindingTexts: recFindingTexts, REC_EYES: REC_EYES
   };
 }
 
