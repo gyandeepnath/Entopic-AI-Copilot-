@@ -46,7 +46,7 @@ const TARGET = arg("target", "engine");
    that subset has a hole regardless of what the rest of the suite does. */
 const TARGETS = {
   engine: {
-    files: ["js/engine.js", "js/engine-exclusions.js", "js/engine-inputs.js", "js/engine-next-tests.js"],
+    files: ["js/engine.js", "js/engine-exclusions.js", "js/engine-evidence.js", "js/engine-inputs.js", "js/engine-next-tests.js"],
     /* EVERY engine-behaviour test, not a hand-picked subset.
 
        The first version of this list omitted engine-reachability.test.js, and

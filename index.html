@@ -611,10 +611,13 @@
 <!-- Timing ring (Phase 7, step 10). Loads before everything it measures.
      Durations and counts only — never a patient id, a token or free text. -->
 <script src="js/perf-metrics.js"></script>
-<!-- Stage 8 of the pipeline, split out of engine.js: the only stage that
-     removes a condition from the differential. Must load BEFORE engine.js,
-     which calls applyExclusions(). -->
+<!-- Stage 8 of the pipeline, split out of engine.js: exclusions DEMOTE a
+     condition a better-supported one argues against (they never remove it).
+     Must load BEFORE engine.js, which calls applyExclusions(). -->
 <script src="js/engine-exclusions.js"></script>
+<!-- What counts as evidence: context-only tokens, count-once classes, and how
+     distinctive a finding is across the KB. engine.js calls all of it. -->
+<script src="js/engine-evidence.js"></script>
 <!-- How recorded values become comparable ones (safe read view, measured
      numbers, VA, cover test, Van Herick, RAPD). engine.js reads all of it. -->
 <script src="js/engine-inputs.js"></script>

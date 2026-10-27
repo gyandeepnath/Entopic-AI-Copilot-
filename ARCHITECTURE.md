@@ -1,8 +1,8 @@
 # Entopic — System Architecture & Scaling Blueprint
 
 **Document version:** 1.1
-**Covers build:** Entopic v1.6.0, KB v1.4.0 — 131 loaded files (108 in `js/`, 23 in
-`knowledge/`), 394 conditions across 9 domains, 111 test files.
+**Covers build:** Entopic v1.7.0, KB v1.4.1 — 132 loaded files (109 in `js/`, 23 in
+`knowledge/`), 394 conditions across 9 domains, 112 test files.
 **Counts last verified:** 2026-10-27, regenerated from `index.html` and the repo.
 **Purpose:** A ground-truth teardown of everything in the current system, followed by a target architecture that keeps the same UI and concept but rebuilds the foundations for scale, onboarding, a stable backend, an independent continuously-looping diagnostic engine, and a trustworthy evidence-based knowledge base.
 **Standing constraint:** Entopic is advisory decision-support. Every diagnostic output requires clinical correlation. Nothing here changes that contract.
@@ -252,11 +252,13 @@ This is a clean, sensible assembly step. It is the natural place to later insert
 
 **Stage 6 — Route selection (`selectRoutes`).** Decides which domains to evaluate at all, so the engine doesn't score all 394 conditions blindly. Routes: urgent, neuro, retina, anterior, surface, binocular, refractive, glaucoma, lens, or `general` fallback.
 
-**Stage 7 — Scoring (`scoreCondition`).** For each condition on an active route (or gated): +3 per matched required token, +1 per supportive, −3 per contradicting, ±0.5 temporal. Normalizes against max-possible, then applies multiplicative penalties (missing required ×0.7 then ×0.5; any contradiction ×0.6; <2 total tokens ×0.5), caps to [0,1], and **forces 0 if no required token matched**. Gated conditions get a ×1.3 boost.
+**Stage 7 — Scoring (`scoreCondition`; weights in `SCORE_WEIGHTS`, evidence rules in `js/engine-evidence.js`).** For each candidate condition: 0.60 × the share of required findings present, plus saturating credit for supportive (0.25) and objective-test (0.15) matches. Then multiplicative adjustments: ×0.45 per missing required finding, ×0.55 per contradiction, ×1.08 / ×0.85 for temporal fit, × (1 − 0.30 × the share of recorded findings the condition does not explain), ×0.5 for fewer than two clinical facts. Capped to [0,1]. **Forced to 0** if no required finding matched, or if nothing matched is a real, discriminating finding: age and background history (context-only) and a finding most of the KB lists (only "reduced vision", 212 of 394) sharpen a differential but cannot create one. Each finding counts once, in its strongest class (required > test > supportive). "Findings" are what was entered — one tapped item or measurement is one finding however many tokens it emits (IOP 48 → `high_iop` + `very_high_iop` is one). Gating confers visibility only; it no longer boosts the score.
 
-**Stage 8 — Exclusions (`applyExclusions`).** Drops conditions that a high-scoring condition rules out. Urgent conditions are never suppressed here.
+**Stage 7b — A second problem's findings are not evidence against the first (`engineAttributeContradictions`).** A contradiction is set aside, and named in the trail, when another condition that lists the finding has every required finding present AND each of the two explains at least `second_problem_min_findings` (2) recorded findings the other does not, the contested one excluded. Never for context, onset/course, laterality or a normal result. Added in the second engine audit (2026-10-27): fully presented conditions were kept off the list by a co-existing problem's findings in 464 of 621 measured two-problem presentations.
 
-> **Moved out of `engine.js` into `js/engine-exclusions.js` (2026-08-08).** It is the only stage that *removes* a clinical possibility, and it was found returning wrong differentials: its lookup tables were plain objects, so a single property on `Object.prototype` — from any script on the page — answered every lookup and the stage struck out most of a correct differential (measured: 4 correct conditions → 1 unrelated, silently). Found by `tools/stress/attack.js` attack E7. The tables are now `Object.create(null)` here and throughout `knowledge/loader.js` (`kbMap()`), and an exclusion rule must be an actual array to be applied. `js/engine-exclusions.js` must load **before** `js/engine.js`.
+**Stage 8 — Exclusions (`applyExclusions`).** A condition scoring ≥ 0.5 argues against the conditions its `exclusions` name: the target is **demoted** (×0.5, once, by its strongest objector) and labelled "less likely given …" — never removed. Only an objector scoring higher than its target can demote it; a target with every required finding present, and any urgent condition, is never demoted. (Until 2026-10-27 it deleted by name fragment, and a fully presented fourth-nerve palsy vanished beside Convergence Insufficiency.)
+
+> **Moved out of `engine.js` into `js/engine-exclusions.js` (2026-08-08).** It was then the only stage that *removed* a clinical possibility, and it was found returning wrong differentials: its lookup tables were plain objects, so a single property on `Object.prototype` — from any script on the page — answered every lookup and the stage struck out most of a correct differential (measured: 4 correct conditions → 1 unrelated, silently). Found by `tools/stress/attack.js` attack E7. The tables are now `Object.create(null)` here and throughout `knowledge/loader.js` (`kbMap()`), and an exclusion rule must be an actual array to be applied. `js/engine-exclusions.js` must load **before** `js/engine.js`.
 
 **Stage 9 — Evidence (`generateEvidence`).** For each condition, builds the human-readable trail: which tokens **matched**, which required tokens are **missing**, which are **contradicted**, plus suggested tests and a confidence band. This transparent trail is the differentiator (and, as you've noted, the anchoring-bias risk to manage).
 
@@ -266,7 +268,7 @@ This is a clean, sensible assembly step. It is the natural place to later insert
 
 **Stage 12 — Log.** Records each run (token/route/result counts, top Dx, top score, alert count), keeps the last 50, persists the last 10 into `V.engineLog`.
 
-Finally, results are sorted (urgent floats up when score >0.2), the top 8 become `V.dxList` with a reasoning string, and alerts/nudges are written back to `V`.
+Finally, results are sorted — by score, with a small urgent tie-break (+0.02 once an urgent condition scores ≥ 0.15), then by evidence (fewer missing required findings, more real findings matched, more of its own picture present), never by file order. Conditions under the display floor (`DX_FLOOR` 0.15) are not shown unless a decision-tree gate surfaced them; nothing below the floor is promoted to fill an empty list. The top 8 become `V.dxList` — and a gated condition is never cut by that limit: it takes the place of the lowest-scoring ungated entry (the panel does the same at its 6 rows). A gated entry scoring under the floor is marked `safetyOnly` and shown as "safety", not "0%". Derived urgent banners (stage 10) fire for a shown urgent condition with every required finding present, or with a missing one only when what is present includes a distinctive finding (listed by ≤ 5 conditions). Alerts/nudges are written back to `V`.
 
 ### 6.1 The input boundary and stage isolation (full audit, 2026-09-24)
 
@@ -817,13 +819,13 @@ Each phase is independently shippable and independently valuable; none requires 
 
 Generated by `node tools/sync-docs.js` from the `<script>` order in
 `index.html`, which IS the dependency graph in a build-step-free app.
-131 loaded files.
+132 loaded files.
 
-**Root** — `index.html` (722), `css/entopic.css` (2604)
+**Root** — `index.html` (725), `css/entopic.css` (2604)
 
 **`/knowledge`** — 23 files, loaded first, in this order:
 
-- `clinical-thresholds.js` (523)
+- `clinical-thresholds.js` (568)
 - `red-flags.js` (299)
 - `surface.js` (351)
 - `corneal.js` (293)
@@ -847,10 +849,10 @@ Generated by `node tools/sync-docs.js` from the `<script>` order in
 - `clinical-scales.js` (206)
 - `loader.js` (421)
 
-**`/js`** — 108 files, in load order:
+**`/js`** — 109 files, in load order:
 
 - `dom-escape.js` (93)
-- `build-info.js` (98)
+- `build-info.js` (102)
 - `browser-io.js` (101)
 - `kb-authoring.js` (312)
 - `data-classification.js` (285)
@@ -885,7 +887,7 @@ Generated by `node tools/sync-docs.js` from the `<script>` order in
 - `storage-archive.js` (477)
 - `storage-archive-auto.js` (186)
 - `visit-history.js` (264)
-- `clinical-contradictions.js` (267)
+- `clinical-contradictions.js` (284)
 - `kb-overlay.js` (436)
 - `competency.js` (602)
 - `ui-trends.js` (99)
@@ -897,9 +899,10 @@ Generated by `node tools/sync-docs.js` from the `<script>` order in
 - `ui-competency.js` (572)
 - `clinical-validators.js` (113)
 - `perf-metrics.js` (178)
-- `engine-exclusions.js` (102)
+- `engine-exclusions.js` (140)
+- `engine-evidence.js` (314)
 - `engine-inputs.js` (310)
-- `engine.js` (2245)
+- `engine.js` (2340)
 - `engine-next-tests.js` (190)
 - `engine-diff.js` (310)
 - `engine-replay.js` (442)
@@ -908,9 +911,9 @@ Generated by `node tools/sync-docs.js` from the `<script>` order in
 - `ui-sidebar.js` (150)
 - `clinical-scales.js` (396)
 - `medication-checker.js` (377)
-- `ui-advisory.js` (514)
+- `ui-advisory.js` (547)
 - `ui-pages.js` (1296)
-- `ui-pages-2.js` (576)
+- `ui-pages-2.js` (577)
 - `module-links.js` (222)
 - `simulation-progress.js` (236)
 - `simulation-presentation.js` (404)
@@ -925,11 +928,11 @@ Generated by `node tools/sync-docs.js` from the `<script>` order in
 - `clinics-ui.js` (111)
 - `ui-modules.js` (307)
 - `ui-report.js` (651)
-- `reasoning-views.js` (895)
+- `reasoning-views.js` (900)
 - `ui-quiz.js` (415)
 - `analytics.js` (287)
 - `data-export.js` (221)
-- `ui-flowmap.js` (799)
+- `ui-flowmap.js` (800)
 - `ui-age-brackets.js` (138)
 - `ui-thresholds.js` (398)
 - `ui-replay.js` (143)

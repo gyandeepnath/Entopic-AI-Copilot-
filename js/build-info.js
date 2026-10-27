@@ -43,9 +43,13 @@
    version. Bumped 2026-10-27: 1.6.0 for the app; KB 1.4.0 for the engine-
    failure red-flag rules added to knowledge/red-flags.js on 2026-09-24 (no
    condition content changed, so no sign-off goes stale — staleness follows
-   each condition's content fingerprint, not this number). */
-var APP_VERSION = "1.6.0";
-var KB_VERSION = "1.4.0";
+   each condition's content fingerprint, not this number).
+   1.7.0 / KB 1.4.1 (2026-10-27, engine audit): the differential changes for the
+   same findings — exclusions demote instead of delete, the second-problem rule,
+   gated conditions never cut. KB 1.4.1 for new rows in
+   knowledge/clinical-thresholds.js only; no condition content changed. */
+var APP_VERSION = "1.7.0";
+var KB_VERSION = "1.4.1";
 var BUILD_COMMIT = "dev";
 var BUILD_DATE = "2026-10-27";
 

@@ -174,7 +174,7 @@ if (typeof KB_EXPANSION !== "undefined") {
    engine-only sandbox sees; tests/build-info.test.js keeps it equal to
    KB_VERSION so the two cannot drift again. */
 var KB_META = {
-  version: "1.4.0",
+  version: "1.4.1",
   date: "2026-10-27",
   conditions: KNOWLEDGE_ALL.length,
   domains: Object.keys(KNOWLEDGE_DOMAINS).length,

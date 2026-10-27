@@ -136,6 +136,7 @@ function renderInlineGraph() {
   var ev = lead.evidence || {};
   if (ev.matched && ev.matched.length) h += '<div style="font-size:.48rem;color:var(--ok,#27ae60);margin-top:1px">✓ ' + esc(ev.matched.slice(0, 3).join(", ")) + (ev.matched.length > 3 ? " +" + (ev.matched.length - 3) : "") + '</div>';
   if (ev.contradicted && ev.contradicted.length) h += '<div style="font-size:.48rem;color:var(--ur,#c0392b)">✕ ' + esc(ev.contradicted.slice(0, 2).join(", ")) + '</div>';
+  if (ev.setAside && ev.setAside.length) h += '<div style="font-size:.48rem;color:var(--sv)">↷ not counted against (separate problem): ' + esc(ev.setAside.slice(0, 2).join(", ")) + '</div>';
   h += '</div></div>';
 
   /* close rivals within 0.15 of the leader */

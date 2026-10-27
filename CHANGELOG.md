@@ -6,6 +6,120 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-10-27 — Engine audit: rules that clashed, suppressed the right diagnosis, or fired without support
+
+**Reported:** "some logics are clashing, resulting in suppression and misfiring
+of improper diagnoses." Confirmed and measured. Every rule in the scoring
+pipeline was run against the knowledge base's own definitions: each
+condition's own required + supportive findings should put that condition
+first. No clinical claim is made by these checks. The ground truth is the KB
+you sign off. Each fix below was measured before and after. Each has a test
+that **fails on the engine as it stood before** (`tests/engine-consistency.test.js`,
+17 tests; `tests/engine-exclusions.test.js`, rewritten).
+
+| Measure | Before | After |
+|---|---|---|
+| A condition's own full presentation ranks it **first** | 367 / 394 | **391 / 394** |
+| Required findings alone rank it first | 243 / 394 | **321 / 394** |
+| Wrong alternatives shown at ≥ 60% per textbook presentation | 4.45 | **1.89** |
+| Two problems at once: the condition the other's findings argue against is still listed | 157 / 621 | **595 / 621** |
+| Safety-gated condition (e.g. Retinal Detachment) cut from the list when flashes + floaters are added to any presentation | 380 / 394 | **0 / 394** |
+| Two conditions with an exclusion rule between them, both fully presented: one disappears | 18 / 40 | **0 / 40** |
+
+### What was clashing, and what changed
+1. **A finding counted twice.** 99 conditions list the same finding as both
+   required and supportive (Epiphora: "watering"). It earned both credits, so
+   those conditions beat neighbours on a finding both had. Each finding now
+   counts once, in its strongest class.
+2. **Exclusions deleted by name fragment.** "Allergic Conjunctivitis"
+   excluding "uveitis" removed **all 14 uveitis entries**. A fully presented
+   fourth-nerve palsy (0.81) vanished because Convergence Insufficiency scored
+   0.5. Exclusions now **demote (×0.5) and label** ("less likely given …").
+   They never remove. Only a better-supported condition can demote another.
+   A condition with every required finding present, or any urgent one, is
+   never demoted. *(Your option (c) from NEEDS_REVIEW, now done.)*
+3. **"Reduced vision" alone created three diagnoses.** It is listed by 212 of
+   394 conditions. It was the only required finding of Optic Atrophy, Cortical
+   Visual Impairment and Optic Neuritis, so any patient with reduced vision
+   got all three. A 70-year-old with gradual blur and glare got "Optic Atrophy
+   60%". A finding that most of the KB lists now behaves like age or history:
+   it supports a diagnosis but cannot create one by itself.
+4. **A diagnosis didn't have to explain the findings.** On a chemical splash,
+   four conditions sat within 3–5 points of Chemical Eye Burn, though none of
+   them explained the splash. The score now weighs how many recorded findings
+   a condition accounts for (shown as "Explains 4 of 5 findings"). A finding
+   is what you **entered**: IOP 52 counts as one, not as "high" and "very
+   high" separately.
+5. **The urgent tie-break overrode the evidence.** A +0.08 sort bonus put
+   Retinal Detachment (0.78) above a fully presented Hemiretinal Vein
+   Occlusion (0.85). It is now +0.02: enough to order genuinely close
+   candidates, too small to outrank a better match. Equal scores are now
+   broken by evidence (fewer required findings missing, then more findings
+   matched), not by position in the file. Amblyopia (Refractive) used to take
+   first place on Anisometropic Amblyopia's own picture at an exact tie. This
+   decides 25 required-findings-only cases. (Optic Neuritis no longer edges out
+   LHON on LHON's own picture: that was the double count in item 1.)
+6. **Urgent banners for half-matched conditions.** Floaters + reduced vision
+   in a non-diabetic raised a Proliferative Diabetic Retinopathy banner, and
+   three common symptoms raised seven keratitis banners. The automatic "urgent
+   condition in the differential" banner now needs every required finding
+   present. The one exception is a present finding that is **distinctive**
+   (listed by ≤ 5 conditions): a high-speed particle injury still raises the
+   Intraocular Foreign Body banner before pain is recorded. **The hand-written
+   red flags (RAPD, flashes + floaters, IOP > 40, hypopyon, …) are untouched
+   and still always fire.** *(Your option (c), now done, with that one
+   exception.)*
+7. **Two problems at once suppressed each other.** Allergic conjunctivitis
+   lists photophobia against it, and uveitis lists itching. In a patient with
+   both, each was cut to 55% by the other's findings. Traumatic Iritis, whose
+   only required finding is "pain", then **led the list with no trauma
+   recorded**. A contradicting finding is now set aside, and named ("not
+   counted against (separate problem): itching — explained by Allergic
+   Conjunctivitis"), only when:
+   - another condition that explains it has all its required findings, and
+   - **each** of the two explains at least two findings the other cannot.
+
+   "Itchy, red, painful, light-sensitive eye" is still one picture, so the
+   itch still counts against uveitis. Age, onset, laterality and normal
+   results are never set aside.
+8. **The list limit cut safety-gated conditions.** Flashes + floaters always
+   put Retinal Detachment on the list, but the cut to 8 entries then removed
+   it from 380 of 394 presentations. (The red-flag *banner* always fired.)
+   A gated condition now takes the place of the lowest-scoring ungated entry,
+   in the engine and in the panel's 6 rows.
+9. **A sub-threshold guess filled an empty list.** "Headache" alone led with
+   "Terson Syndrome 7%", which the flow map labelled *not in the
+   differential*. Nothing below the display floor is promoted now. The panel
+   says "No condition is supported strongly enough by the findings so far".
+10. **"Retinal Detachment 0%".** A condition listed only by a safety rule
+    shows **"safety"** instead of a match score that looked like the engine
+    contradicting itself.
+
+### Divergence from ARCHITECTURE.md
+§6 stages 7–8 described scoring that no longer existed (+3/+1/−3 points, a
+×1.3 gated boost). They are rewritten to match the code, with the new stage
+7b. The evidence rules (what counts as a finding, distinctiveness, the
+second-problem rule) live in `js/engine-evidence.js`. `engine.js` keeps the
+pipeline.
+
+### Tried and rejected (measured)
+- **Weighting every finding by its rarity.** A small gain, but it lowered the
+  correct condition's score across the board. One variant put Optic Neuritis
+  above Retinal Tear on flashes + floaters + RAPD.
+- **Treating a blank age as "not young".** It would let a missing entry argue
+  against a diagnosis.
+
+### New engineering thresholds (all UNVERIFIED, in `knowledge/clinical-thresholds.js`)
+`exclusion_demote_factor` 0.5 · `nondiscriminating_share` 0.5 ·
+`derived_alert_partial_df_max` 5 · `urgent_sort_bonus` 0.02 ·
+`second_problem_min_findings` 2 · `SCORE_WEIGHTS.unexplained_weight` 0.30.
+Each row says what it does and how it was measured.
+
+**Version:** app 1.7.0 (the same findings now give a different differential),
+KB 1.4.1 (new settings rows only, so no sign-off goes stale).
+
+---
+
 ## 2026-10-27 — Second full audit, part 3: findings that read "[object Object]", a drug list that made a diagnosis, and recovery
 
 ### Pressing "✓ Normal" could erase a recorded RAPD, and its red flag

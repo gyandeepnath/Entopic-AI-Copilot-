@@ -35,7 +35,14 @@ test("POAG at high score suppresses nothing urgent — AACC survives (safety gua
     "urgent condition must never be removed by exclusion logic");
 });
 
-test("normalized matching fires: high scorer excludes a non-urgent target", () => {
+/* Since 2026-10-27 an exclusion DEMOTES its target and labels it; it never
+   removes it. Deleting by name fragment hid fully-presented conditions — a
+   fourth-nerve palsy scoring 0.81 vanished because Convergence Insufficiency
+   scored 0.5, and Allergic Conjunctivitis reached 24 keratitis/uveitis
+   entries including Acute Anterior Uveitis. */
+const DEMOTE = vm.runInContext("scoreThreshold('exclusion_demote_factor', 0.5)", eng.context);
+
+test("normalized matching fires: a high scorer demotes a non-urgent target, never removes it", () => {
   /* Dry Eye (Evaporative) excludes "allergic_conjunctivitis"; the display
      name is "Allergic Conjunctivitis" — only matches after normalization. */
   const results = [
@@ -43,21 +50,84 @@ test("normalized matching fires: high scorer excludes a non-urgent target", () =
     { name: "Allergic Conjunctivitis", score: 0.3, urgent: false }
   ];
   const out = applyExclusions(results);
-  const names = out.map((r) => r.name);
-  assert.ok(names.indexOf("Allergic Conjunctivitis") === -1,
-    "allergic conjunctivitis should be suppressed by high-scoring MGD");
-  assert.ok(names.indexOf("Dry Eye Disease - Evaporative (MGD)") >= 0);
+  const ac = out.find((r) => r.name === "Allergic Conjunctivitis");
+  assert.ok(ac, "the target is still in the list");
+  assert.ok(Math.abs(ac.score - 0.3 * DEMOTE) < 1e-9, "and demoted: " + ac.score);
+  assert.strictEqual(ac._excludedBy, "Dry Eye Disease - Evaporative (MGD)", "labelled with what argued against it");
+  assert.strictEqual(out.length, 2);
 });
 
-test("renamed exclusion resolves: Divergence Insufficiency suppresses Sixth CN Palsy", () => {
+test("renamed exclusion resolves: Divergence Insufficiency demotes Sixth CN Palsy", () => {
   const results = [
     { name: "Divergence Insufficiency", score: 0.7, urgent: false },
     { name: "Sixth Cranial Nerve Palsy", score: 0.3, urgent: false }
   ];
   const out = applyExclusions(results);
-  const names = out.map((r) => r.name);
-  assert.ok(names.indexOf("Sixth Cranial Nerve Palsy") === -1,
-    "sixth_cranial_nerve_palsy exclusion should now resolve and fire");
+  const p6 = out.find((r) => r.name === "Sixth Cranial Nerve Palsy");
+  assert.ok(p6 && p6._excludedBy === "Divergence Insufficiency",
+    "sixth_cranial_nerve_palsy exclusion should resolve and apply");
+  assert.ok(p6.score < 0.3);
+});
+
+test("a condition better supported than its objector is not demoted at all", () => {
+  /* An exclusion means "if A is the explanation, B is less likely". A weaker A
+     is not the leading explanation. Measured case: a fourth-nerve palsy at
+     0.81 was deleted by Convergence Insufficiency at 0.5. */
+  const out = applyExclusions([
+    { name: "Convergence Insufficiency", score: 0.55, urgent: false },
+    { name: "Fourth Cranial Nerve Palsy", score: 0.81, urgent: false }
+  ]);
+  const p4 = out.find((r) => r.name === "Fourth Cranial Nerve Palsy");
+  assert.strictEqual(p4.score, 0.81);
+  assert.strictEqual(p4._excludedBy, undefined);
+});
+
+test("a condition with ALL its required findings present is never demoted", () => {
+  const out = applyExclusions([
+    { name: "Convergence Insufficiency", score: 0.87, urgent: false },
+    { name: "Fourth Cranial Nerve Palsy", score: 0.82, urgent: false,
+      _scoreDetail: { reqMatched: 1, reqMissing: 0 } }
+  ]);
+  const p4 = out.find((r) => r.name === "Fourth Cranial Nerve Palsy");
+  assert.strictEqual(p4.score, 0.82, "an established condition is not overruled");
+  /* ...while a partly supported one still is. */
+  const partial = applyExclusions([
+    { name: "Convergence Insufficiency", score: 0.87, urgent: false },
+    { name: "Fourth Cranial Nerve Palsy", score: 0.30, urgent: false,
+      _scoreDetail: { reqMatched: 0, reqMissing: 1 } }
+  ]).find((r) => r.name === "Fourth Cranial Nerve Palsy");
+  assert.ok(partial.score < 0.30 && partial._excludedBy === "Convergence Insufficiency");
+});
+
+test("one objector demotes once; two objectors do not stack", () => {
+  const out = applyExclusions([
+    { name: "Dry Eye Disease - Evaporative (MGD)", score: 0.8, urgent: false },
+    { name: "Bacterial Conjunctivitis", score: 0.7, urgent: false },
+    { name: "Allergic Conjunctivitis", score: 0.4, urgent: false }
+  ]);
+  const ac = out.find((r) => r.name === "Allergic Conjunctivitis");
+  assert.ok(Math.abs(ac.score - 0.4 * DEMOTE) < 1e-9, "demoted once, not twice: " + ac.score);
+  assert.strictEqual(ac._excludedBy, "Dry Eye Disease - Evaporative (MGD)", "named after the strongest objector");
+});
+
+test("end-to-end: a fully presented fourth-nerve palsy is not deleted by Convergence Insufficiency", () => {
+  /* Measured on the real engine before the fix: present both conditions'
+     own pictures, and the palsy (own score 0.81) disappeared entirely. */
+  const pick = (n) => vm.runInContext("(function(){var c=findCondition(" + JSON.stringify(n) +
+    ");return c.req.concat(c.sup, (c.temporal||[]).slice(0,1))})()", eng.context);
+  const out = eng.runCase({ symptoms: pick("Convergence Insufficiency").concat(pick("Fourth Cranial Nerve Palsy")) });
+  const names = out.dxList.map((d) => d.n);
+  assert.ok(names.indexOf("Fourth Cranial Nerve Palsy") >= 0, "the palsy was removed: " + names.join(", "));
+});
+
+test("end-to-end: a fully presented condition stays in the differential beside its objector", () => {
+  /* Allergic conjunctivitis + acute anterior uveitis signs: the uveitis must
+     still be on the list (it used to be deleted by the "uveitis" fragment). */
+  const ac = vm.runInContext("(function(){var c=findCondition('Allergic Conjunctivitis');return c.req.concat(c.sup)})()", eng.context);
+  const au = vm.runInContext("(function(){var c=findCondition('Anterior Uveitis (Acute)');return c.req.concat(c.sup, c.tests||[])})()", eng.context);
+  const out = eng.runCase({ symptoms: ac.concat(au) });
+  const names = out.dxList.map((d) => d.n);
+  assert.ok(names.indexOf("Anterior Uveitis (Acute)") >= 0, "uveitis is still shown: " + names.join(", "));
 });
 
 test("low scorers exclude nothing", () => {
@@ -100,9 +170,15 @@ test("end-to-end: high-scoring POAG cannot suppress Acute Angle Closure Crisis",
      "acute_angle_closure") at the same time as an acute angle-closure
      presentation. The fixed matcher WOULD now match — the urgent guard
      must keep the emergency visible in the differential. */
+  /* Re-authored 2026-10-27: "halos" is a POAG contradictor, and once the
+     engine weighed how much of a presentation each condition explains, POAG
+     could no longer reach 0.5 beside it (0.499) — so the vignette stopped
+     exercising the exclusion, as the precondition below warns. Without halos
+     the acute picture is still severe pain, vomiting and IOP 46 (and
+     "nausea_vomiting" was never a real token; "vomiting" is). */
   const out = eng.runCase(
     {
-      symptoms: ["pain_severe", "halos", "nausea_vomiting"],
+      symptoms: ["pain_severe", "vomiting"],
       iop: { od: "46", os: "24" },
       /* glaucomatous disc findings so POAG scores >=0.5 even after the KB
          enrichment added `halos` (an angle-closure symptom) as a POAG

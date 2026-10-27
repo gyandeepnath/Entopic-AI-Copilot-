@@ -28,6 +28,7 @@ const ctx = eng.context;
 const ALL = ctx.KNOWLEDGE_ALL;
 const ALL_TOKENS = Object.keys(ctx.TOKEN_REGISTRY);
 const COND_NAMES = new Set([...ALL].map((c) => c.name));
+const URGENT_BONUS = require("node:vm").runInContext("scoreThreshold('urgent_sort_bonus', 0.02)", eng.context);
 
 /* ── deterministic PRNG (mulberry32) ── */
 function rng(seed) {
@@ -66,9 +67,10 @@ function assertWellFormed(out, label) {
     assert.ok(d.prob >= 0 && d.prob <= 1, label + ": score in [0,1] (" + d.n + "=" + d.prob + ")");
     assert.ok(COND_NAMES.has(d.n), label + ": '" + d.n + "' is a real condition");
     /* sorted by the engine's bounded-urgent sort key: score plus a small
-       additive bonus (0.08) for urgent conditions that cleared the 0.15
-       plausibility floor. Mirror it here so ordering stays monotonic. */
-    const key = d.prob + (d.urgent && d.prob >= 0.15 ? 0.08 : 0);
+       additive bonus (urgent_sort_bonus, read from the engine's own table —
+       it was hard-coded here as 0.08 and went stale when it changed) for
+       urgent conditions that cleared the 0.15 plausibility floor. */
+    const key = d.prob + (d.urgent && d.prob >= 0.15 ? URGENT_BONUS : 0);
     assert.ok(key <= prevKey + 1e-9, label + ": differential is ordered");
     prevKey = key;
   }

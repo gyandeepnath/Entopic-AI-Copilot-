@@ -99,6 +99,16 @@ for (const token of literalsIn(parseSrc, "t\\.push")) addProducer(token, "free_t
 /* 5. Engine derivation (history flags + measurements) in collectTokens */
 const collectSrc = extractFunctionSource(engineSrc, "collectTokens");
 for (const token of literalsIn(collectSrc, "addToken")) addProducer(token, "engine_derived");
+/* addFact([...]) — one recorded item emitting several tokens (2026-10-27).
+   Every token literal inside the call, except a value it is compared against
+   (=== "acute"), a threshold id (clinThreshold("…")) and a prefix that is
+   concatenated ("cells_" + grade). */
+for (const m of collectSrc.matchAll(/addFact\(/g)) {
+  let i = m.index + m[0].length, depth = 1;
+  while (i < collectSrc.length && depth) { const ch = collectSrc[i++]; if (ch === "(") depth++; else if (ch === ")") depth--; }
+  const args = collectSrc.slice(m.index, i);
+  for (const v of args.matchAll(/(?<!===\s{0,3}|clinThreshold\()"([A-Za-z0-9_]+)"(?!\s*\+)/g)) addProducer(v[1], "engine_derived");
+}
 
 /* 5b. Exam free-text keyword maps — slParseText([...], { stem: "token" }, addToken).
       These were never scanned, so a token produced ONLY by typing it into an

@@ -154,8 +154,14 @@ function renderAdvisory() {
   }
 
   if (!V.dxList || V.dxList.length === 0) {
+    /* Something WAS recorded but no condition is supported well enough to
+       list. The engine no longer promotes a sub-floor guess to fill the gap,
+       so say so rather than asking for data the clinician already entered. */
+    var _entered = V.engine_tokens && V.engine_tokens.length > 0;
     h += '<div style="color:var(--sv);font-size:.64rem;margin-top:12px;padding:10px;border:1px dashed var(--ms);border-radius:var(--r);text-align:center;line-height:1.5">' +
-      'Enter symptoms and clinical data to generate diagnostic suggestions</div>';
+      (_entered
+        ? 'No condition is supported strongly enough by the findings so far to list. Continue the examination.'
+        : 'Enter symptoms and clinical data to generate diagnostic suggestions') + '</div>';
     el.innerHTML = h;
     return;
   }
@@ -169,7 +175,9 @@ function renderAdvisory() {
     (lead.urgent ? ';border-left:3px solid var(--ur,#c0392b)' : '') + '">';
   h += '<div style="display:flex;align-items:center;gap:6px">';
   h += '<div class="dx-n" style="flex:1;font-weight:600">' + escHtml(lead.n) + (lead.urgent ? ' <span style="color:var(--ur,#c0392b);font-size:.5rem">· URGENT</span>' : '') + '</div>';
-  h += '<div class="dx-pct" title="Match strength (0-100), not a probability">' + leadPct + '</div>';
+  h += lead.safetyOnly
+    ? '<div class="dx-pct" title="Listed by a safety rule, not by match strength">safety</div>'
+    : '<div class="dx-pct" title="Match strength (0-100), not a probability">' + leadPct + '</div>';
   h += '</div>';
   if (leadConf) h += '<div style="font-size:.5rem;color:var(--sv)">' + leadConf + ' confidence · best match, not most likely</div>';
   h += '<div style="font-size:.5rem;color:var(--sv);font-style:italic">Advisory only — clinical correlation required. Not a definitive diagnosis.</div>';
@@ -200,7 +208,10 @@ function renderAdvisory() {
           '<div class="dx-pct">' + (foc.confidence * 100).toFixed(0) + '%</div></div>';
         if (foc.candidates.length > 1) {
           var alts = [];
-          for (var ca = 1; ca < foc.candidates.length; ca++) alts.push(foc.candidates[ca].n + ' ' + (foc.candidates[ca].prob * 100).toFixed(0) + '%');
+          for (var ca = 1; ca < foc.candidates.length; ca++) {
+            var fc = foc.candidates[ca];
+            alts.push(fc.n + ' ' + (fc.safetyOnly ? '(safety)' : (fc.prob * 100).toFixed(0) + '%'));
+          }
           h += '<div class="dx-evidence"><span class="missing">vs ' + alts.join(' · ') + '</span></div>';
         }
         h += '</div>';
@@ -231,7 +242,16 @@ function renderAdvisory() {
           '</div>';
       }
     }
-    var maxToShow = Math.min(V.dxList.length, 6);
+    /* Six rows; a safety-gated entry ranked below them takes the place of the
+       lowest-ranked ungated one (the engine does the same at eight) — "shown
+       whatever it scores" has to include the panel. */
+    var rows = V.dxList.slice(0, 6);
+    var lateGated = V.dxList.slice(6).filter(function (x) { return x.gatedBecause; });
+    for (var rg = rows.length - 1; rg >= 0 && rows.length + lateGated.length > 6; rg--) {
+      if (!rows[rg].gatedBecause) rows.splice(rg, 1);
+    }
+    rows = rows.concat(lateGated);
+    var maxToShow = rows.length;
 
     /* Which entries are tied with their neighbour.
 
@@ -242,11 +262,11 @@ function renderAdvisory() {
        Ties are now shown as ties. (Safety Register CS-07 / HF-03.) */
     var tiedWithPrev = [];
     for (var ti = 0; ti < maxToShow; ti++) {
-      tiedWithPrev[ti] = (ti > 0 && Math.abs(V.dxList[ti].prob - V.dxList[ti - 1].prob) < 0.005);
+      tiedWithPrev[ti] = (ti > 0 && Math.abs(rows[ti].prob - rows[ti - 1].prob) < 0.005);
     }
 
     for (var di = 0; di < maxToShow; di++) {
-      var d = V.dxList[di];
+      var d = rows[di];
       var pct = (d.prob * 100).toFixed(0);
       var ev = d.evidence || {};
       var tiedNext = (di + 1 < maxToShow && tiedWithPrev[di + 1]);
@@ -267,7 +287,12 @@ function renderAdvisory() {
         '<div class="dx-n">' + escHtml(d.n) + '</div><div class="dx-icd">' + escHtml(d.icd) +
           (d.domain ? ' · ' + escHtml(d.domain) : '') + '</div></div>';
       h += '<div class="dx-bar"><div class="dx-bar-fill" style="width:' + pct + '%"></div></div>';
-      h += '<div class="dx-pct" title="Match strength — how much of this condition\'s expected evidence is present. NOT a probability of having it.">' + pct + '</div></div>';
+      /* A condition on the list only because a safety rule put it there has
+         little or none of its own evidence yet; "0" beside it read as the
+         engine contradicting itself. */
+      h += d.safetyOnly
+        ? '<div class="dx-pct" title="Listed by a safety rule — its own findings are not yet recorded. Not a match strength.">safety</div></div>'
+        : '<div class="dx-pct" title="Match strength — how much of this condition\'s expected evidence is present. NOT a probability of having it.">' + pct + '</div></div>';
       /* Why it was force-surfaced. Shown ABOVE the evidence line and styled
          distinctly, because "you recorded flashes and floaters, so this is on
          the list whatever it scored" is the most useful sentence the engine
@@ -275,6 +300,14 @@ function renderAdvisory() {
          nobody reads (Phase 4 F-5). */
       if (d.gatedBecause) {
         h += '<div class="dx-gated">Shown because: ' + escH(d.gatedBecause) + '</div>';
+      }
+      /* A finding that would count against it, explained by a second problem. */
+      if (ev.setAside && ev.setAside.length) {
+        h += '<div class="dx-evidence"><span class="missing">Not counted against (separate problem): ' + escH(ev.setAside.join(", ")) + '</span></div>';
+      }
+      /* Demoted, not removed, by a better-supported condition (stage 8). */
+      if (d.lessLikelyGiven) {
+        h += '<div class="dx-evidence"><span class="missing">Less likely given ' + escH(d.lessLikelyGiven) + '</span></div>';
       }
       if (ev.matched && ev.matched.length > 0) {
         h += '<div class="dx-evidence"><span class="matched">' + ev.matched.slice(0, 4).join(", ") + '</span>' +

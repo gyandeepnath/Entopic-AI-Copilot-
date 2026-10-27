@@ -178,7 +178,15 @@ real engine with nothing recorded except the drug:
    matcher looks for "optic" + "neuritis", which only ethambutol's "Optic
    neuritis (toxic)" contains. Should amiodarone raise `toxic_optic_risk`?
 
-### 🟧 Urgent alerts for conditions missing a REQUIRED finding — seen 2026-10-27
+### 🟧 Urgent alerts for conditions missing a REQUIRED finding — DONE as option (c), please confirm
+**Done in the engine audit (2026-10-27), as recommended below.** The automatic
+banner now needs every required finding present. The one exception is a
+present finding that is distinctive (listed by ≤ 5 conditions), so that
+"high-speed particle" still raises Intraocular Foreign Body before pain is
+recorded. The condition is still listed either way. The hand-written red flags
+are unchanged. To undo it, raise `derived_alert_partial_df_max` very high (the
+exception then applies to everything). Original finding:
+
 A 58-year-old with flashes, floaters and a left RAPD, and **no diabetes
 recorded**, gets two extra urgent banners:
 - "Proliferative Diabetic Retinopathy — urgent condition in the differential
@@ -197,6 +205,63 @@ The cost is alert fatigue next to the two real red flags. Options:
 
 Recommendation: (c). It is your call, because it changes what triggers an
 urgent banner.
+
+### 🟧 Definitions that let one common symptom name a specific diagnosis — engine audit 2026-10-27
+The engine can now only be as specific as the definitions. These conditions
+need just **one common finding** as their whole required set. Each is
+therefore listed (at a low score) whenever that symptom is recorded, and in
+rich presentations they can sit high because they have nothing listed against
+them:
+- **"pain"** alone → **Traumatic Iritis** (trauma is only *supportive*; it
+  sat 2nd on an allergy + uveitis picture with no trauma recorded),
+  **Lens-induced Uveitis**, **Herpetic Anterior Uveitis**.
+- **"pain_severe"** alone → **Microbial Keratitis**, **Corneal Ulcer**,
+  **Herpes Zoster Ophthalmicus (Corneal)**, **Acute Angle Closure Crisis**.
+  On a textbook angle-closure picture (IOP 52, halos, vomiting) the three
+  keratitis entries come 2nd–4th at 52% while explaining 1 of 5 findings.
+- **"blur"** alone → **Diabetic Retinopathy**, **Posterior Uveitis**,
+  **CRVO**, **Corneal Edema**.
+- **Optic Atrophy**: pale disc is only supportive/test, so its required set
+  is "reduced vision" alone. That finding no longer creates a diagnosis on
+  its own, so Optic Atrophy now needs other support.
+
+Options, per condition: (a) add the defining finding as **required**, e.g.
+`trauma_history` for Traumatic Iritis, a corneal finding for the keratitis
+entries, a raised IOP or angle finding for angle closure; (b) leave as is.
+Recommendation: (a) for Traumatic Iritis and the keratitis entries. **The
+choice of defining finding is clinical, so nothing was changed.**
+
+### 🟧 Pairs the engine cannot separate on their own definitions — engine audit 2026-10-27
+On its own full presentation, each of these comes **second** to its partner.
+The two definitions are nearly identical, so the engine has no basis to tell
+them apart:
+- **Punctal Stenosis** vs **Epiphora (Lacrimal Obstruction)**
+- **Aniridia** vs **Ocular Albinism**
+- **Anterior Polar Cataract** vs **Nuclear Sclerotic Cataract**
+
+A distinguishing finding in either definition would fix each pair.
+
+### 🟧 Age listed as a contradiction — engine audit 2026-10-27
+63 conditions list `older_age` (60 and over, `age_older`) **against** them.
+Among them are **Central Serous Chorioretinopathy (Chronic)** and **Corneal
+Hydrops**. With an age of 60 typed in, each loses 45% of its score, enough
+to leave the list on its own textbook picture. **Giant Cell Arteritis**
+*requires* `older_age`, so a patient under 60 cannot have it complete.
+Please check (1) the 60 cut-off for GCA and (2) whether older age should
+count *against* chronic CSC.
+
+### 🟦 New engine settings from the audit (engineering, not clinical) — 2026-10-27
+All are marked UNVERIFIED in `knowledge/clinical-thresholds.js`, each with the
+measurement behind it:
+- `exclusion_demote_factor` 0.5;
+- `nondiscriminating_share` 0.5;
+- `derived_alert_partial_df_max` 5;
+- `urgent_sort_bonus` 0.02 (was 0.08);
+- `second_problem_min_findings` 2;
+- `unexplained_weight` 0.30 (in `SCORE_WEIGHTS`).
+
+Nothing to decide unless a ranking looks wrong to you in clinic. If one does,
+these are the knobs.
 
 ### 🟦 Should editing a condition's About summary require re-review? — 2026-10-27
 A sign-off covers "findings, urgency, ICD code and About summary", but the
@@ -219,7 +284,17 @@ Recommendation: (c).
    thickness entered as Pachymetry has no effect on the differential. Is the
    Investigations "Pachymetry" a central reading the engine should also use?
 
-### 🟧 Exclusion rules delete by name fragment — found in the 2026-09-24 audit
+### 🟧 Exclusion rules delete by name fragment — DONE as option (c), please confirm
+**Done in the engine audit (2026-10-27).** An exclusion now **demotes** its
+target (×0.5, `exclusion_demote_factor`) and labels it "less likely given …".
+It never removes it. Only a condition scoring higher than its target can
+demote it. A target with every required finding present, and any urgent
+condition, is never demoted. Measured: of 40 exclusion pairs presented
+together, 18 lost a condition before and 0 now. Option (b), naming the exact
+conditions excluded instead of a fragment such as "uveitis", is still yours
+to decide: the fragments still reach the same 24 entries, only gently now.
+Original finding:
+
 When a condition scores ≥ 0.5 its exclusion list removes matching conditions
 from the differential entirely (urgent ones are always kept). Matching is by
 name fragment, so **"Allergic Conjunctivitis" excluding "keratitis" and

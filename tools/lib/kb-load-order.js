@@ -44,6 +44,7 @@ const ENGINE_TAIL = [
   "js/data-model.js",
   "js/medication-checker.js",       /* defines getMedicationTokens (engine source 10) */
   "js/engine-exclusions.js",        /* pipeline stage 8 — engine.js calls applyExclusions() */
+  "js/engine-evidence.js",          /* what counts as evidence — engine.js scores with it */
   "js/engine-inputs.js",            /* recorded value → comparable value; engine.js reads it */
   "js/engine.js",
   "js/engine-next-tests.js",        /* stage 12 — engine.js calls computeNextTests() */

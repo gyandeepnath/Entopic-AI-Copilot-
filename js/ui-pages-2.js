@@ -380,7 +380,8 @@ function pgDx() {
         ' <button class="btn btn-s" style="font-size:.52rem;padding:1px 6px;margin-left:6px" ' +
         'title="Add to the clinician\'s diagnosis" onclick="dxUseAsFinal(\'' + escAttrJs(d.n) + '\')">＋ Use</button></div>';
       h += '<div style="font-size:.52rem;color:var(--sv);font-family:var(--mono)">' + escH(d.icd) + ' · ' + escH(d.cat) + (d.domain ? ' · ' + escH(d.domain) : '') + '</div></div>';
-      h += '<div style="font-family:var(--mono);font-weight:600;font-size:.92rem">' + pct + '%</div>';
+      h += '<div style="font-family:var(--mono);font-weight:600;font-size:.92rem"' +
+        (d.safetyOnly ? ' title="Listed by a safety rule — its own findings are not yet recorded">safety' : '>' + pct + '%') + '</div>';
       h += '</div>';
 
       /* Evidence trail */

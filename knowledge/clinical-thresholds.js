@@ -476,10 +476,55 @@ var SCORING_THRESHOLDS = {
     where: "problem foci", src: "", status: "UNVERIFIED"
   },
   exclusion_high_scorer: {
-    v: 0.5, what: "Score at or above which a condition can exclude a rival",
+    v: 0.5, what: "Score at or above which a condition can argue against a rival",
     where: "stage 8 exclusions", src: "", status: "UNVERIFIED",
-    note: "⚠ This is the one scoring number that can REMOVE a condition from " +
-          "view. Red flags are exempt by separate rule; see the exclusion stage."
+    note: "Since 2026-10-27 an exclusion DEMOTES its target (see " +
+          "exclusion_demote_factor) and never removes it, and only a condition " +
+          "scoring higher than the target can argue against it. Urgent " +
+          "conditions are exempt by separate rule."
+  },
+  exclusion_demote_factor: {
+    v: 0.5, what: "Multiplier applied to a condition that a better-supported condition argues against",
+    where: "stage 8 exclusions", src: "", status: "UNVERIFIED",
+    note: "Engineering default: halving moves the target below its objector " +
+          "while keeping it visible, labelled 'less likely given …'. 1 would " +
+          "switch exclusions off; it can never reach 0 (deletion)."
+  },
+  nondiscriminating_share: {
+    v: 0.5, what: "Share of all conditions above which a finding is too common to establish any one of them by itself",
+    where: "scoreCondition — substantive-finding rule", src: "", status: "UNVERIFIED",
+    note: "Measured from the KB, not asserted: today only 'reduced vision' (listed " +
+          "by 212 of 394 conditions) is above it. Such a finding still adds to a " +
+          "condition that other findings support; it can no longer be the ONLY " +
+          "finding behind one (Optic Atrophy, Cortical Visual Impairment and Optic " +
+          "Neuritis each required nothing else)."
+  },
+  second_problem_min_findings: {
+    v: 2, what: "Recorded findings EACH of two conditions must explain that the other does not, before one's finding stops counting against the other",
+    where: "engineAttributeContradictions (js/engine-evidence.js) — stage 7b", src: "", status: "UNVERIFIED",
+    note: "An engineering threshold, not a clinical one: how separate two pictures " +
+          "must be before the engine treats them as two problems. At 2, \"itchy, red, " +
+          "painful, light-sensitive eye\" stays ONE picture (itching still counts " +
+          "against uveitis); add two more allergic findings and it becomes two."
+  },
+  derived_alert_partial_df_max: {
+    v: 5, what: "A required finding listed by this many conditions or fewer counts as distinctive",
+    where: "computeDerivedAlerts — partial matches", src: "", status: "UNVERIFIED",
+    note: "A partial match of an urgent condition raises its banner only if a " +
+          "distinctive required finding is present (high-speed particle: 5 " +
+          "conditions). 5 is where three-quarters of all findings sit. At 10, " +
+          "'pain on eye movement' (6) would banner Orbital Cellulitis on every " +
+          "optic-neuritis presentation."
+  },
+  urgent_sort_bonus: {
+    v: 0.02, what: "Ranking-only bonus that puts an urgent condition first when it is within this margin of a non-urgent one",
+    where: "stage 8 sort", src: "", status: "UNVERIFIED",
+    note: "Was 0.08 (a local constant in the engine). At 0.08 a worse-matched " +
+          "urgent condition outranked the best-matched diagnosis: Retinal " +
+          "Detachment (0.78) led a Hemiretinal Vein Occlusion presentation " +
+          "scoring 0.85. 0.02 keeps urgency as a tie-break between genuinely " +
+          "close candidates; urgency itself is shown by the URGENT badge and the " +
+          "alert banners, which do not depend on rank."
   }
 };
 

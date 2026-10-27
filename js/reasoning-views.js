@@ -182,7 +182,10 @@ function buildExamState() {
       urgent: !!d.urgent,
       matched: (ev.matched || []).slice(),
       missing: (ev.missing || []).slice(),
-      contradicted: (ev.contradicted || []).slice()
+      contradicted: (ev.contradicted || []).slice(),
+      /* findings that WOULD count against it, set aside to a second problem */
+      setAside: (ev.setAside || []).slice(),
+      lessLikelyGiven: d.lessLikelyGiven || ""
     });
   }
 
@@ -300,6 +303,8 @@ function stateToNoteText(state) {
       line(head);
       if (d.matched && d.matched.length)         line("       supported by: " + d.matched.join(", "));
       if (d.contradicted && d.contradicted.length) line("       against: " + d.contradicted.join(", "));
+      if (d.setAside && d.setAside.length)       line("       not counted against (separate problem): " + d.setAside.join(", "));
+      if (d.lessLikelyGiven)                     line("       less likely given: " + d.lessLikelyGiven);
       if (d.missing && d.missing.length)         line("       not yet confirmed: " + d.missing.join(", "));
     }
   } else {

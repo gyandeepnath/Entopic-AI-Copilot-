@@ -96,6 +96,12 @@ function collectTokens(visit, patient) {
   var P = enginePatientView(patient);
 
   var tokens = [];
+  /* FACTS: what was recorded, as distinct from the tokens it became. One
+     tapped finding, measurement or selector is ONE fact however many tokens it
+     emits (IOP 48 → high_iop + very_high_iop). The scorer asks how many facts
+     a condition accounts for (enginePresentationFacts). Background — history,
+     age, medication — is not part of the presentation and records none. */
+  var facts = [], _fact = null, _bg = false;
 
   /* Helper: add token if not already present.
      Canonicalise synonyms first (see TOKEN_ALIASES) so every producer —
@@ -106,9 +112,17 @@ function collectTokens(visit, patient) {
   function addToken(t) {
     if (typeof t !== "string" || !t) return;
     if (typeof canonicalToken === "function") t = canonicalToken(t);
-    if (typeof t === "string" && t && tokens.indexOf(t) === -1) {
-      tokens.push(t);
-    }
+    if (typeof t !== "string" || !t) return;
+    if (tokens.indexOf(t) === -1) tokens.push(t);
+    if (!_bg) { if (_fact) { if (_fact.indexOf(t) < 0) _fact.push(t); } else facts.push([t]); }
+  }
+
+  /* One recorded item that emits several tokens — one fact. */
+  function addFact(arr) {
+    _fact = [];
+    addTokens(arr);
+    if (_fact.length) facts.push(_fact);
+    _fact = null;
   }
 
   /* Helper: add array of tokens */
@@ -216,14 +230,13 @@ function collectTokens(visit, patient) {
   /* ── SOURCE 3: Temporal pattern ── */
   if (V.temporal) {
     if (V.temporal.onset) {
-      addToken(V.temporal.onset);
       /* The onset selector uses the temporal-field vocabulary (acute/gradual/…),
          but many conditions carry the onset signal in their req/sup/con lists
          under sudden_onset / gradual_onset. Bridge the two so that explicitly
          recording onset from the UI actually feeds those matches — otherwise the
          signal is only reachable via free text. */
-      if (V.temporal.onset === "acute")   addToken("sudden_onset");
-      if (V.temporal.onset === "gradual") addToken("gradual_onset");
+      addFact([V.temporal.onset].concat(V.temporal.onset === "acute" ? ["sudden_onset"] :
+                                        V.temporal.onset === "gradual" ? ["gradual_onset"] : []));
     }
     if (V.temporal.duration) {
       /* Map duration to temporal categories */
@@ -237,7 +250,7 @@ function collectTokens(visit, patient) {
          in their timing, but the course selector's Variable became only
          `intermittent` and Stable produced nothing — so choosing either
          could never match the conditions written for it. */
-      if (V.temporal.course === "variable") { addToken("intermittent"); addToken("variable"); }
+      if (V.temporal.course === "variable") addFact(["intermittent", "variable"]);
       if (V.temporal.course === "stable") addToken("stable");
     }
   }
@@ -253,7 +266,7 @@ function collectTokens(visit, patient) {
       var slFind = V.sl.findings[si];
       var slLabel = (slFind && typeof slFind === "object") ? slFind.label : slFind;
       if (typeof FINDING_TOKEN_MAP !== "undefined" && FINDING_TOKEN_MAP[slLabel]) {
-        addTokens(FINDING_TOKEN_MAP[slLabel]);
+        addFact(FINDING_TOKEN_MAP[slLabel]);
       }
     }
   }
@@ -265,13 +278,14 @@ function collectTokens(visit, patient) {
       var funFind = V.fun.findings[fi];
       var funLabel = (funFind && typeof funFind === "object") ? funFind.label : funFind;
       if (typeof FINDING_TOKEN_MAP !== "undefined" && FINDING_TOKEN_MAP[funLabel]) {
-        addTokens(FINDING_TOKEN_MAP[funLabel]);
+        addFact(FINDING_TOKEN_MAP[funLabel]);
       }
     }
   }
 
 
-  /* ── SOURCE 6: Medical history flags ── */
+  /* ── SOURCE 6: Medical history flags ── (background: no presentation facts) */
+  _bg = true;
   if (V.hxM) {
     if (V.hxM.dm)         addToken("diabetes_history");
     if (V.hxM.htn)        addToken("hypertension_history");
@@ -288,6 +302,7 @@ function collectTokens(visit, patient) {
 
   /* Autoimmune history → token used by Scleritis and others */
   if (V.hxM && V.hxM.autoimmune) addToken("autoimmune_history");
+  _bg = false;
 
   /* Pupils: anisocoria + which-is-larger (Horner vs CN III discriminator).
      od_l / os_l are the light-reaction pupil sizes (mm). */
@@ -313,7 +328,8 @@ function collectTokens(visit, patient) {
   }
 
 
-  /* ── SOURCE 7: Ocular history flags ── */
+  /* ── SOURCE 7: Ocular history flags ── (background, with SOURCE 8 and age) */
+  _bg = true;
   if (V.hxO && V.hxO.flags) {
     for (var oi = 0; oi < V.hxO.flags.length; oi++) {
       var flag = V.hxO.flags[oi];
@@ -368,6 +384,7 @@ function collectTokens(visit, patient) {
     if (age >= _ageOld) addToken("older_age");
     if (age >= _age40) addToken("age_related");
   }
+  _bg = false;
 
   /* IOP auto-derivation */
   if (V.iop) {
@@ -375,8 +392,8 @@ function collectTokens(visit, patient) {
     var iopOs = parseFloat(V.iop.os) || 0;
     var iopMax = Math.max(iopOd, iopOs);
     var _iopHigh = clinThreshold("iop_high", 21);
-    if (iopMax > _iopHigh) addToken("high_iop");
-    if (iopMax > clinThreshold("iop_very_high", 30)) addToken("very_high_iop");
+    addFact((iopMax > _iopHigh ? ["high_iop"] : [])
+      .concat(iopMax > clinThreshold("iop_very_high", 30) ? ["very_high_iop"] : []));
     if (iopMax > 0 && iopMax <= _iopHigh) addToken("normal_iop");
   }
 
@@ -397,7 +414,7 @@ function collectTokens(visit, patient) {
     var vhOd = vanHerickGrade(V.sl.od.vh);
     var vhOs = vanHerickGrade(V.sl.os.vh);
     var _vhN = clinThreshold("van_herick_narrow", 2);
-    if ((vhOd !== null && vhOd <= _vhN) || (vhOs !== null && vhOs <= _vhN)) { addToken("narrow_angle"); addToken("shallow_ac"); }
+    if ((vhOd !== null && vhOd <= _vhN) || (vhOs !== null && vhOs <= _vhN)) addFact(["narrow_angle", "shallow_ac"]);
   }
 
   /* ── SOURCE 9b: STRUCTURED SLIT-LAMP GRADES + FREE-TEXT SIGNS ──
@@ -410,14 +427,12 @@ function collectTokens(visit, patient) {
     /* AC cells (SUN 0 / 0.5+ / 1+ … 4+) → cells_present + severity grade */
     var cellsN = Math.max(slGrade(V.sl.od.cells), slGrade(V.sl.os.cells));
     if (cellsN > 0) {
-      addToken("cells_present");
-      if (cellsN >= clinThreshold("ac_cells_graded", 2)) addToken("cells_" + Math.min(cellsN, 4));
+      addFact(["cells_present"].concat(cellsN >= clinThreshold("ac_cells_graded", 2) ? ["cells_" + Math.min(cellsN, 4)] : []));
     }
     /* AC flare (SUN) → flare_present + grade */
     var flareN = Math.max(slGrade(V.sl.od.flare), slGrade(V.sl.os.flare));
     if (flareN > 0) {
-      addToken("flare_present");
-      if (flareN >= clinThreshold("ac_flare_graded", 2)) addToken("flare_" + Math.min(flareN, 4));
+      addFact(["flare_present"].concat(flareN >= clinThreshold("ac_flare_graded", 2) ? ["flare_" + Math.min(flareN, 4)] : []));
     }
     /* Lens LOCS graded tokens (nuclear grade / cortical / PSC opacities) */
     var nsN = Math.max(parseInt(V.sl.od.ns) || 0, parseInt(V.sl.os.ns) || 0);
@@ -448,8 +463,7 @@ function collectTokens(visit, patient) {
 
   /* RAPD */
   if (V.pupil && rapdPresent(V.pupil.rapd)) {
-    addToken("RAPD_positive");
-    addToken("reduced_vision");
+    addFact(["RAPD_positive", "reduced_vision"]);
   }
 
   /* NPC auto-derivation */
@@ -495,8 +509,7 @@ function collectTokens(visit, patient) {
     if (accMin !== null && age !== null) {
       var hofMin = hofstetter(age).min;
       if (hofMin !== null && accMin < hofMin) {
-        addToken("reduced_amplitude");
-        addToken("low_amplitude");
+        addFact(["reduced_amplitude", "low_amplitude"]);
       }
     }
   }
@@ -641,7 +654,7 @@ function collectTokens(visit, patient) {
       if (gv === "0" || gv === "1" || gv === "slit" ||
           slKeywordAt(gv, "closed") || slKeywordAt(gv, "narrow")) gonNarrow = true;
     }
-    if (gonNarrow) { addToken("narrow_angle"); addToken("angle_closure_risk"); }
+    if (gonNarrow) addFact(["narrow_angle", "angle_closure_risk"]);
     /* Recession and angle neovascularisation are written in the NOTES box —
        its placeholder says "PAS, NVA…" — but only the four grade dropdowns
        were ever read, so "NVA 360°" typed there raised no rubeosis red flag.
@@ -667,9 +680,7 @@ function collectTokens(visit, patient) {
     var butOs = engineMeasured(V.sl.os.but);
     var butMin = (butOd === null) ? butOs : (butOs === null ? butOd : Math.min(butOd, butOs));
     if (butMin !== null && butMin < clinThreshold("tbut_reduced", 10)) {
-      addToken("dryness");
-      addToken("TBUT_reduced");
-      addToken("tear_film_instability");
+      addFact(["dryness", "TBUT_reduced", "tear_film_instability"]);
     }
 
     /* Schirmer — same pattern: symptom token + objective-test token */
@@ -677,8 +688,7 @@ function collectTokens(visit, patient) {
     var schOs = engineMeasured(V.sl.os.schirmer);
     var schMin = (schOd === null) ? schOs : (schOs === null ? schOd : Math.min(schOd, schOs));
     if (schMin !== null && schMin < clinThreshold("schirmer_low", 10)) {
-      addToken("reduced_tearing");
-      addToken("schirmer_low");
+      addFact(["reduced_tearing", "schirmer_low"]);
     }
 
     /* LOCS grading */
@@ -692,7 +702,7 @@ function collectTokens(visit, patient) {
     var pscOd = parseInt(V.sl.od.psc) || 0;
     var pscOs = parseInt(V.sl.os.psc) || 0;
     var _pscSym = clinThreshold("locs_psc_symptomatic", 1);
-    if (pscOd >= _pscSym || pscOs >= _pscSym) { addToken("near_blur"); addToken("glare"); }
+    if (pscOd >= _pscSym || pscOs >= _pscSym) addFact(["near_blur", "glare"]);
   }
 
   /* Neuro fields */
@@ -750,8 +760,7 @@ function collectTokens(visit, patient) {
     var rnflOs = parseFloat(V.inv.oct_rnfl_os) || 0;
     var _rnflT = clinThreshold("rnfl_thin", 80);
     if ((rnflOd > 0 && rnflOd < _rnflT) || (rnflOs > 0 && rnflOs < _rnflT)) {
-      addToken("RNFL_thinning");
-      addToken("field_defect");
+      addFact(["RNFL_thinning", "field_defect"]);
     }
 
     /* Visual field MD */
@@ -759,8 +768,8 @@ function collectTokens(visit, patient) {
     var mdOs = parseFloat(V.inv.vf_md_os) || 0;
     var _mdDef = clinThreshold("vf_md_defect", -3);
     var _mdSig = clinThreshold("vf_md_significant", -6);
-    if (mdOd < _mdDef || mdOs < _mdDef) addToken("field_defect");
-    if (mdOd < _mdSig || mdOs < _mdSig) addToken("visual_field_defect");
+    addFact((mdOd < _mdDef || mdOs < _mdDef ? ["field_defect"] : [])
+      .concat(mdOd < _mdSig || mdOs < _mdSig ? ["visual_field_defect"] : []));
   }
 
   /* ── SOURCE 10: Systemic medication effects ──
@@ -770,9 +779,14 @@ function collectTokens(visit, patient) {
      tokens (e.g. Steroid-Induced Cataract) could never fire. Guarded so
      the engine still runs if the feature module isn't loaded. */
   if (typeof getMedicationTokens === "function") {
+    _bg = true;
     addTokens(getMedicationTokens());
+    _bg = false;
   }
 
+  /* Facts ride on the array, out of sight of anything that copies or
+     serialises the tokens; _engineDifferential hands them to the scorer. */
+  try { Object.defineProperty(tokens, "_facts", { value: facts, enumerable: false }); } catch (e) {}
   return tokens;
 }
 
@@ -1094,69 +1108,23 @@ var SCORE_WEIGHTS = {
   noreq_sup_share: 0.45,
   noreq_test_share: 0.25,
   contra_factor: 0.55,     /* multiplied in once per matched contradiction */
+  /* How much a condition loses for leaving the presentation unexplained:
+     score × (1 − unexplained_weight × share of findings it does not list).
+     Measured against every condition's own presentation (second engine audit,
+     2026-10-27): 0.3 halves the confident wrong alternatives shown (3.9 → 1.9
+     per presentation) and takes the right leader from 379 to 391 of 394,
+     without losing a second, co-existing problem. A condition explaining
+     nothing else loses at most 30% — enough to rank it below one that explains
+     the picture, never enough to hide it on its own evidence. */
+  unexplained_weight: 0.30,
   req_missing_factor: 0.45, /* multiplied in once per ABSENT required token */
   temporal_match: 1.08,
   temporal_mismatch: 0.85,
   sparse_evidence: 0.5     /* fewer than 2 clinical FACTS in the encounter — see engineFactCount */
 };
 
-/* ═══════════════════════════════════════════════════════════════ */
-/* CONTEXT-ONLY TOKENS                                              */
-/*                                                                  */
-/* These describe WHO the patient is, or their background risk —    */
-/* not what is wrong with the eye. They legitimately sharpen a       */
-/* differential that real findings have already raised, but a        */
-/* condition must NEVER enter the differential on them alone.        */
-/* Typing an age, or ticking "diabetic", is not a clinical finding:  */
-/* before this rule, entering age 6 and nothing else put             */
-/* Retinoblastoma in the differential on `young_age` with its        */
-/* required `leukocoria` still missing.                              */
-/*                                                                  */
-/* Temporal descriptors (acute/chronic/…) are deliberately absent —  */
-/* they are handled separately and never count as evidence either.   */
-/* ═══════════════════════════════════════════════════════════════ */
-var CONTEXT_ONLY_TOKENS = {
-  /* demographics */
-  young_age: 1, older_age: 1, age_related: 1, age_over_40: 1,
-  /* background / risk history */
-  family_history: 1,
-  diabetes_history: 1, hypertension_history: 1, autoimmune_history: 1,
-  thyroid_history: 1, eczema_history: 1, ra_history: 1, sle_history: 1,
-  ms_history: 1, migraine_history: 1,
-  blepharitis_history: 1, contact_lens_history: 1, trauma_history: 1,
-  steroid_history: 1, stress_history: 1,
-  recent_viral_history: 1, history_trauma_or_infection: 1
-};
 
-/* Own property only — an inherited one answering here would make EVERY token
-   context-only at once, draining every condition's evidence (kbMap(), loader.js). */
-function isContextOnlyToken(t) {
-  return Object.prototype.hasOwnProperty.call(CONTEXT_ONLY_TOKENS, t) && !!CONTEXT_ONLY_TOKENS[t];
-}
-
-/* How many clinical facts an encounter holds, for the sparse-evidence rule.
-   Demographic and background-risk tokens are not facts about the eye
-   (CONTEXT_ONLY_TOKENS). The onset and course descriptors count once
-   between them: one "sudden" selection emits sudden_onset, acute and
-   acute_bias, which is one thing the patient said, not three. */
-var TEMPORAL_DESCRIPTOR_TOKENS = {
-  acute: 1, subacute: 1, chronic: 1, sudden_onset: 1, gradual_onset: 1,
-  subacute_onset: 1, acute_bias: 1, chronic_bias: 1, progressive: 1,
-  intermittent: 1, recurrent: 1, variable: 1, stable: 1, seasonal: 1,
-  gradual: 1, constant: 1, episodic: 1
-};
-function engineFactCount(tokens) {
-  var n = 0, temporal = false;
-  for (var i = 0; i < tokens.length; i++) {
-    var t = tokens[i];
-    if (isContextOnlyToken(t)) continue;
-    if (Object.prototype.hasOwnProperty.call(TEMPORAL_DESCRIPTOR_TOKENS, t)) { temporal = true; continue; }
-    n++;
-  }
-  return n + (temporal ? 1 : 0);
-}
-
-function scoreCondition(condition, tokens, tokenSet) {
+function scoreCondition(condition, tokens, tokenSet, setAside) {
 
   /* O(1) membership when the caller passes a shared Set (the hot loop
      does); otherwise fall back to a linear scan of the token list. */
@@ -1173,38 +1141,50 @@ function scoreCondition(condition, tokens, tokenSet) {
   /* Matches that are actual clinical findings (see CONTEXT_ONLY_TOKENS). */
   var substantiveMatched = 0;
 
+  /* Each finding is evidence ONCE, in its strongest class: required, then
+     objective test, then supportive. 99 conditions list a token in two classes
+     (most often the required token repeated as supportive), and each such token
+     was credited twice — a condition re-scoring its own hallmark outranked one
+     whose evidence was genuinely broader (second engine audit, 2026-10-27). */
+  var cls = engineEvidenceClasses(condition);
+
   /* Required tokens */
-  for (var ri = 0; ri < condition.req.length; ri++) {
-    if (has(condition.req[ri])) {
+  for (var ri = 0; ri < cls.req.length; ri++) {
+    if (has(cls.req[ri])) {
       reqMatched++;
-      if (!isContextOnlyToken(condition.req[ri])) substantiveMatched++;
+      if (isSubstantiveToken(cls.req[ri])) substantiveMatched++;
     } else reqMissing++;
   }
 
   /* Supportive tokens */
-  for (var si = 0; si < condition.sup.length; si++) {
-    if (has(condition.sup[si])) {
+  for (var si = 0; si < cls.sup.length; si++) {
+    if (has(cls.sup[si])) {
       supMatched++;
-      if (!isContextOnlyToken(condition.sup[si])) substantiveMatched++;
+      if (isSubstantiveToken(cls.sup[si])) substantiveMatched++;
     }
   }
 
-  /* Contradicting tokens */
+  /* Contradicting tokens — except any set aside as belonging to a second,
+     separate problem (engineAttributeContradictions, stage 7b). */
   for (var ci = 0; ci < condition.con.length; ci++) {
-    if (has(condition.con[ci])) conMatched++;
+    if (has(condition.con[ci]) && !(setAside && setAside[condition.con[ci]])) conMatched++;
   }
 
   /* Objective test/sign tokens (condition.tests). When the tokenizer has
      emitted one (e.g. TBUT_reduced from a measured TBUT), it counts as
      confirmatory evidence — so the score sharpens as the exam proceeds
      from symptoms to objective findings. */
-  var testList = condition.tests || [];
-  for (var xi = 0; xi < testList.length; xi++) {
-    if (has(testList[xi])) {
+  for (var xi = 0; xi < cls.tests.length; xi++) {
+    if (has(cls.tests[xi])) {
       testsMatched++;
-      if (!isContextOnlyToken(testList[xi])) substantiveMatched++;
+      if (isSubstantiveToken(cls.tests[xi])) substantiveMatched++;
     }
   }
+
+  /* How much of the condition's own picture is present — used only to break
+     exact ties (see the sort in _engineDifferential), never in the score. */
+  var defined = cls.req.length + cls.sup.length + cls.tests.length;
+  var coverage = defined ? (reqMatched + supMatched + testsMatched) / defined : 0;
 
   /* Temporal matching (same detection as before, applied multiplicatively) */
   var tempMismatch = false;
@@ -1228,8 +1208,8 @@ function scoreCondition(condition, tokens, tokenSet) {
   var base;
   var supSat = supMatched / (supMatched + SCORE_WEIGHTS.sup_k);
   var testSat = testsMatched / (testsMatched + SCORE_WEIGHTS.test_k);
-  if (condition.req.length > 0) {
-    base = SCORE_WEIGHTS.req_share * (reqMatched / condition.req.length) +
+  if (cls.req.length > 0) {
+    base = SCORE_WEIGHTS.req_share * (reqMatched / cls.req.length) +
            SCORE_WEIGHTS.sup_share * supSat +
            SCORE_WEIGHTS.test_share * testSat;
   } else {
@@ -1243,7 +1223,7 @@ function scoreCondition(condition, tokens, tokenSet) {
      must not float to the top on a single shared token. Multiplicative per
      missing required token. Conditions whose full req set is present are
      untouched. */
-  if (reqMissing > 0 && condition.req.length > 0) {
+  if (reqMissing > 0 && cls.req.length > 0) {
     base *= Math.pow(SCORE_WEIGHTS.req_missing_factor, reqMissing);
   }
 
@@ -1255,6 +1235,17 @@ function scoreCondition(condition, tokens, tokenSet) {
   if (tempMatch) base *= SCORE_WEIGHTS.temporal_match;
   else if (tempMismatch) base *= SCORE_WEIGHTS.temporal_mismatch;
 
+  /* A good diagnosis accounts for the findings. The score used to ignore
+     what a condition left unexplained, so a condition matching one shared
+     symptom of a rich presentation scored as if nothing were left over —
+     Acute Angle Closure on a chemical splash, Optic Atrophy on a cataract
+     picture. Only presentations with two or more findings are weighed; one
+     finding has nothing else to explain. Counted in recorded FACTS, not
+     tokens (enginePresentationFacts). */
+  var xf = engineExplainedFacts(condition, tokens);
+  var explained = xf.filter(Boolean).length;
+  if (xf.length >= 2) base *= 1 - SCORE_WEIGHTS.unexplained_weight * (1 - explained / xf.length);
+
   /* Very sparse encounters can't produce confident calls. Counted in
      clinical FACTS, not tokens: this was `tokens.length < 2`, and typing the
      patient's age adds two or three demographic tokens — so entering an age
@@ -1263,13 +1254,26 @@ function scoreCondition(condition, tokens, tokenSet) {
   if (engineFactCount(tokens) < 2) base *= SCORE_WEIGHTS.sparse_evidence;
 
   /* All required tokens missing = zero (hard rule, unchanged) */
-  if (reqMatched === 0 && condition.req.length > 0) base = 0;
+  if (reqMatched === 0 && cls.req.length > 0) base = 0;
 
-  /* A condition needs at least one REAL clinical finding. Age, family history
-     and background risk factors modify a differential — they never create
-     one. Without this, entering only a patient's age surfaced conditions
-     whose required findings were entirely absent. */
-  if (substantiveMatched === 0) base = 0;
+  /* A condition needs at least one REAL, discriminating clinical finding.
+     Age, family history and background risk factors modify a differential —
+     they never create one. Without this, entering only a patient's age
+     surfaced conditions whose required findings were entirely absent. The same
+     now holds for a finding most of the KB lists (isNonDiscriminatingToken):
+     "reduced vision" alone no longer puts Optic Atrophy on the list.
+
+     A COMPLETE required set of two or more findings is a pattern in its own
+     right, and still counts when it holds at least one real finding and at
+     least one that is not ubiquitous — "reduced vision + past eye trauma" is
+     how Sympathetic Ophthalmia is defined, and neither half is doing the work
+     alone. A set made only of context (age + history) still never counts. */
+  if (substantiveMatched === 0 &&
+      !(reqMissing === 0 && cls.req.length >= 2 &&
+        cls.req.some(function (t) { return !isContextOnlyToken(t); }) &&
+        cls.req.some(function (t) { return !isNonDiscriminatingToken(t); }))) {
+    base = 0;
+  }
 
   base = Math.max(0, Math.min(1, base));
 
@@ -1281,6 +1285,11 @@ function scoreCondition(condition, tokens, tokenSet) {
     supMatched: supMatched,
     conMatched: conMatched,
     testsMatched: testsMatched,
+    coverage: coverage,
+    /* "explains N of M findings" — shown in the evidence trail */
+    explained: xf.length >= 2 ? explained : null,
+    findings: xf.length,
+    setAside: setAside || null,
     tempMatch: tempMatch,
     /* kept for display compatibility: score is already normalized 0..1 */
     maxPossible: 1,
@@ -1291,9 +1300,9 @@ function scoreCondition(condition, tokens, tokenSet) {
 
 /* ═══════════════════════════════════════════════════════════════ */
 /* STAGE 8: EXCLUSION RULES                                        */
-/* Lives in js/engine-exclusions.js — applyExclusions(). It is the  */
-/* only stage that DELETES a clinical possibility, so it is its own */
-/* file with its own tests rather than fifty lines buried here.     */
+/* Lives in js/engine-exclusions.js — applyExclusions(). It lets    */
+/* one condition argue AGAINST another (demote and label, never     */
+/* delete), so it is its own file with its own tests.               */
 /* ═══════════════════════════════════════════════════════════════ */
 
 
@@ -1311,45 +1320,49 @@ function generateEvidence(condition, tokens, scoreResult, tokenSet) {
   var matched = [];
   var missing = [];
   var contradicted = [];
+  /* The same one-class-per-finding lists the score used, so the trail never
+     shows a finding twice or a different evidence set from the number. */
+  var cls = engineEvidenceClasses(condition);
 
   /* Required */
-  for (var ri = 0; ri < condition.req.length; ri++) {
-    if (has(condition.req[ri])) {
-      matched.push(condition.req[ri]);
+  for (var ri = 0; ri < cls.req.length; ri++) {
+    if (has(cls.req[ri])) {
+      matched.push(cls.req[ri]);
     } else {
-      missing.push(condition.req[ri]);
+      missing.push(cls.req[ri]);
     }
   }
 
   /* Supportive */
-  for (var si = 0; si < condition.sup.length; si++) {
-    if (has(condition.sup[si])) {
-      matched.push(condition.sup[si]);
+  for (var si = 0; si < cls.sup.length; si++) {
+    if (has(cls.sup[si])) {
+      matched.push(cls.sup[si]);
     }
   }
 
-  /* Contradicting */
+  /* Contradicting (a finding set aside to a second problem is listed apart) */
+  var setAside = [], sa = scoreResult.setAside;
   for (var ci = 0; ci < condition.con.length; ci++) {
-    if (has(condition.con[ci])) {
-      contradicted.push(condition.con[ci]);
-    }
+    var ct = condition.con[ci];
+    if (!has(ct)) continue;
+    if (sa && sa[ct]) setAside.push(ct + " (explained by " + sa[ct] + ")");
+    else contradicted.push(ct);
   }
 
   /* Objective tests: a matched test token is confirmatory evidence (show
      it in `matched`); only tests NOT yet matched are suggested — so the
      "what to check next" list shrinks as the workup proceeds. */
   var suggestedTests = [];
-  if (condition.tests) {
-    for (var ti = 0; ti < condition.tests.length; ti++) {
-      if (has(condition.tests[ti])) matched.push(condition.tests[ti]);
-      else suggestedTests.push(condition.tests[ti]);
-    }
+  for (var ti = 0; ti < cls.tests.length; ti++) {
+    if (has(cls.tests[ti])) matched.push(cls.tests[ti]);
+    else suggestedTests.push(cls.tests[ti]);
   }
 
   return {
     matched: matched,
     missing: missing,
     contradicted: contradicted,
+    setAside: setAside,
     suggestedTests: suggestedTests,
     confidence: interpretConfidence(scoreResult.score),
     temporal: scoreResult.tempMatch ? "matches" : "unknown"
@@ -1519,6 +1532,17 @@ function computeAlerts(tokens, visit) {
    founder can find and change it without reading the engine — Phase 4 F-4. */
 var DERIVED_ALERT_MIN = scoreThreshold("derived_alert_min", 0.15);
 
+/* Is a DISTINCTIVE required finding of this result present? (isDistinctiveToken) */
+function _derivedHallmarkPresent(r) {
+  var c = (typeof findCondition === "function") ? findCondition(r.name) : null;
+  var matched = (r._evidence && r._evidence.matched) || [];
+  if (!c || !c.req) return false;
+  for (var i = 0; i < c.req.length; i++) {
+    if (matched.indexOf(c.req[i]) >= 0 && isDistinctiveToken(c.req[i])) return true;
+  }
+  return false;
+}
+
 /* Urgent conditions in the shown differential that no hand-written rule has
    already named. Returns alerts to APPEND — never to replace. */
 function computeDerivedAlerts(shownResults, existingAlerts) {
@@ -1536,6 +1560,17 @@ function computeDerivedAlerts(shownResults, existingAlerts) {
     if (!r.urgent) continue;
     if (r._overlay) continue;          /* user conditions alert via their own path */
     if (r.score < DERIVED_ALERT_MIN) continue;
+    /* A PARTIAL match raises a banner only when what is present is the
+       condition's own hallmark. Half of a two-finding definition scores ~0.17,
+       just over this threshold, so every partial match used to be an urgent
+       banner — Acanthamoeba keratitis on severe pain without contact-lens wear,
+       diabetic retinopathy on floaters without diabetes (second engine audit,
+       2026-10-27). A distinctive required finding still announces itself: a
+       high-speed particle injury raises the foreign-body banner before any
+       pain is recorded. A partial match without one is still LISTED, marked
+       URGENT, with what is missing as the next check. The hand-written
+       red-flag rules above are separate and unaffected. */
+    if (r._scoreDetail && r._scoreDetail.reqMissing > 0 && !_derivedHallmarkPresent(r)) continue;
 
     var nm = String(r.name || "");
     if (!nm) continue;
@@ -1689,7 +1724,7 @@ function computeProblemFoci(dxList) {
       band: interpretConfidence(lead.prob),
       urgent: !!lead.urgent,
       candidates: members.slice(0, 4).map(function(m) {
-        return { n: m.n, prob: m.prob, urgent: !!m.urgent };
+        return { n: m.n, prob: m.prob, urgent: !!m.urgent, safetyOnly: !!m.safetyOnly };
       }),
       /* the single most useful next check for THIS problem, if any */
       needs: (lead.evidence && lead.evidence.missing && lead.evidence.missing.length > 0)
@@ -1810,10 +1845,12 @@ function _engineFailSafe(tokens, what, e) {
 function _engineDifferential(tokens) {
 
   /* ── STAGE 3: Normalize ── */
+  var recordedFacts = tokens && tokens._facts;
   tokens = normalizeTokens(tokens);
 
   /* ── STAGE 4: Temporal weighting ── */
   tokens = applyTemporalWeight(tokens);
+  engineSetFacts(recordedFacts, tokens);
 
   /* Store tokens */
   ENGINE_STATE.tokens = tokens;
@@ -1847,10 +1884,12 @@ function _engineDifferential(tokens) {
      thousands of conditions. Falls back to a full KB scan if the index is
      absent (behaviour-preserving). */
   var scoreTokenSet = new Set(tokens);
+  var condOf = Object.create(null);
 
-  function scoreOne(cond, isGated) {
-    var scoreResult = scoreCondition(cond, tokens, scoreTokenSet);
+  function scoreOne(cond, isGated, setAside) {
+    var scoreResult = scoreCondition(cond, tokens, scoreTokenSet, setAside);
     if (scoreResult.score <= 0 && !isGated) return;
+    condOf[cond.name] = cond;
     /* Gating confers VISIBILITY, not inflated confidence. A gated condition is
        force-surfaced for the clinician's consideration (its _gateReason lets it
        bypass the DX_FLOOR display filter, and if urgent it gets the bounded
@@ -1925,6 +1964,16 @@ function _engineDifferential(tokens) {
     }
   }
 
+  /* ── STAGE 7b: a second problem's findings are not evidence against the first
+     (js/engine-evidence.js). Contradictions never change what it decides on. ── */
+  var attributed = engineAttributeContradictions(results, tokens, function (n) { return condOf[n]; });
+  for (var ra = 0; ra < results.length; ra++) {
+    var rr = results[ra];
+    if (!attributed[rr.name]) continue;
+    scoreOne(condOf[rr.name], !!rr._gateReason, attributed[rr.name]);
+    results[ra] = results.pop();
+  }
+
   /* ── STAGE 8: Apply exclusions ── */
   results = applyExclusions(results, tokens);
 
@@ -1940,16 +1989,33 @@ function _engineDifferential(tokens) {
      Patient safety does not rely on this ordering: urgent RED-FLAG
      ALERTS are computed separately and are un-suppressible regardless of
      where a condition lands in the differential list. */
-  var URGENT_SORT_BONUS = 0.08;
+  /* 0.08 → 0.02 (second engine audit, 2026-10-27). At 0.08 a worse-matched
+     urgent condition routinely took first place from the best-matched
+     diagnosis — Retinal Detachment 0.78 above a Hemiretinal Vein Occlusion
+     presentation scoring 0.85, Retinoblastoma 0.86 above Coats 0.92. Now it
+     only decides between genuinely close candidates. */
+  var URGENT_SORT_BONUS = scoreThreshold("urgent_sort_bonus", 0.02);
   var URGENT_SORT_MIN = 0.15;
   function sortKey(x) {
     return x.score + (x.urgent && x.score >= URGENT_SORT_MIN ? URGENT_SORT_BONUS : 0);
   }
+  function detail(x, k) { return (x._scoreDetail && x._scoreDetail[k]) || 0; }
   results.sort(function(a, b) {
     var ka = sortKey(a), kb = sortKey(b);
-    if (kb !== ka) return kb - ka;
-    /* Deterministic tie-break by KB index — makes the differential order
-       independent of how conditions were iterated/indexed. */
+    if (Math.abs(kb - ka) > 1e-9) return kb - ka;
+    /* Equal scores are decided by EVIDENCE, not by file order (which used to
+       pick, e.g., Optic Neuritis over Leber Hereditary Optic Neuropathy on
+       LHON's own complete picture):
+         1. fewer required findings missing,
+         2. more actual findings matched,
+         3. more of the condition's own picture present,
+         4. KB index — only so the order is still deterministic. */
+    var d = detail(a, "reqMissing") - detail(b, "reqMissing");
+    if (d) return d;
+    d = detail(b, "substantiveMatched") - detail(a, "substantiveMatched");
+    if (d) return d;
+    d = detail(b, "coverage") - detail(a, "coverage");
+    if (Math.abs(d) > 1e-9) return d;
     return (a._index || 0) - (b._index || 0);
   });
 
@@ -2001,11 +2067,10 @@ function _engineDifferential(tokens) {
   var shownResults = results.filter(function (r) {
     return r.score >= DX_FLOOR || r._gateReason;
   });
-  /* never return empty-handed when there WAS signal: if the floor removed
-     everything, fall back to the single best-scoring result. */
-  if (shownResults.length === 0 && results.length > 0 && results[0].score > 0) {
-    shownResults = [results[0]];
-  }
+  /* No fallback when the floor removes everything. One used to promote the
+     best sub-floor result, so "headache" alone led with "Terson Syndrome 7%"
+     — a guess the flow map simultaneously labelled NOT in the differential.
+     An empty list is the honest answer; the panel says why. */
 
   /* ── MERGE: core first, always, then overlays beneath ──
      Core keeps its own ordering (urgent-nudged, then by score). Overlay
@@ -2013,6 +2078,17 @@ function _engineDifferential(tokens) {
      do is occupy space below the core differential; it can never displace a
      core condition, urgent or otherwise. */
   var mergedShown = shownResults.slice(0, 8);
+  /* A safety-gated condition is listed whatever IT scores (the filter above)
+     and whatever ELSE scores: the cut to 8 dropped Retinal Detachment from
+     380 of 394 presentations with flashes and floaters added. It takes the
+     place of the lowest-scoring ungated entry, keeping its own rank. (More
+     than 8 gated at once — only an every-finding-ticked record — keeps the 8
+     best-ranked; every red-flag ALERT fires regardless.) */
+  var lostGated = shownResults.slice(8).filter(function (r) { return r._gateReason; });
+  for (var lg = mergedShown.length - 1; lg >= 0 && mergedShown.length + lostGated.length > 8; lg--) {
+    if (!mergedShown[lg]._gateReason) mergedShown.splice(lg, 1);
+  }
+  mergedShown = mergedShown.concat(lostGated).slice(0, 8);
   if (overlayResults.length) {
     var OVERLAY_FLOOR = scoreThreshold("overlay_floor", 0.15);
     var shownOverlay = overlayResults.filter(function (r) { return r.score >= OVERLAY_FLOOR; });
@@ -2038,6 +2114,18 @@ function _engineDifferential(tokens) {
     if (r._gateReason) {
       reasoning += " | GATED: " + r._gateReason;
     }
+    if (r._excludedBy) {
+      reasoning += " | Less likely given: " + r._excludedBy;
+    }
+    if (ev.setAside && ev.setAside.length) {
+      reasoning += " | Not counted against (separate problem): " + ev.setAside.join(", ");
+    }
+    var sd = r._scoreDetail || {};
+    if (sd.explained !== null && sd.explained !== undefined && sd.findings >= 2) {
+      ev.explains = { n: sd.explained, of: sd.findings };
+      reasoning += " | Explains " + sd.explained + " of " + sd.findings + " findings";
+    }
+    ev.confidence = conf;   /* after any exclusion demotion, so the two agree */
 
     return {
       n: r.name,
@@ -2056,6 +2144,12 @@ function _engineDifferential(tokens) {
          "the engine listed retinal detachment" and "the engine listed retinal
          detachment BECAUSE you recorded flashes and floaters". */
       gatedBecause: r._gateReason || null,
+      /* On the list ONLY because of that safety rule — its own findings score
+         under the display floor. The panel shows "safety", not "0%". */
+      safetyOnly: !!r._gateReason && !(r.score >= DX_FLOOR),
+      /* A better-supported condition argued against this one (stage 8). It
+         stays in the list, demoted and labelled — never silently removed. */
+      lessLikelyGiven: r._excludedBy || null,
       /* Present ONLY on clinician-authored conditions. Every consumer uses
          this to render them distinctly — they are never reviewed content. */
       overlay: r._overlay || null
@@ -2107,6 +2201,7 @@ function _runDiagnosticEngine() {
   /* ── Empty check ── */
   if (tokens.length === 0) {
     V.dxList = [];
+    V.engine_tokens = [];
     V.problemFoci = [];
     V.alerts = [];
     V.nudges = [];

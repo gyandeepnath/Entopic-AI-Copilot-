@@ -448,12 +448,21 @@ test("no NEW module exceeds the size at which one file stops having one job", ()
        appending to `results` would have been smaller and would have
        reintroduced exactly that hazard.
        Raised again 2200 -> 2300 for derived alerts (Phase 4 F-1): 51 of 63
-       urgent conditions reached the differential with no alert banner. */
+       urgent conditions reached the differential with no alert banner.
+       2300 -> 2330 (second engine audit, 2026-10-27): collectTokens now
+       records FACTS (what was entered) beside tokens, so a condition is judged
+       on how much of the presentation it explains. That bookkeeping belongs in
+       the collector — nothing else sees one measurement become two tokens. In
+       the same change ~140 lines moved OUT to js/engine-evidence.js.
+       2330 -> 2345 (same audit): a SAFETY fix — the cut to 8 entries dropped
+       safety-gated conditions (Retinal Detachment, 380 of 394 presentations
+       with flashes+floaters added). The second-problem rule it shipped with
+       lives in js/engine-evidence.js; engine.js holds only its 7-line call. */
     /* app.js raised 2000 -> 2020 for two boot hooks: the per-visit storage
        split and the automatic-archive watcher. Both are five-line calls into
        modules that hold their own logic — app.js gained wiring, not
        responsibility, which is the growth this cap is meant to allow. */
-    "js/engine.js": 2300, "js/app.js": 2020,
+    "js/engine.js": 2345, "js/app.js": 2020,
     /* data-model.js raised 1300 -> 1320 for REFERRAL_TARGETS /
        REFERRAL_URGENCIES. This file's one job IS the master schema and the
        app's controlled vocabularies; two more vocabulary lists sit squarely

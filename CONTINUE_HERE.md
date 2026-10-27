@@ -6,8 +6,15 @@ just start a session on this repo/branch and read, in order: **`CLAUDE.md` →
 `ARCHITECTURE.md` → `CHANGELOG.md`**, then scan the repo.
 
 ## Current state (2026-10-27) — read this, the July section below is history
-- **v1.6.0, KB 1.4.0.** 394 conditions, 131 loaded files, **1,452 tests**, CI
+- **v1.6.0, KB 1.4.0.** 394 conditions, 132 loaded files, **1,474 tests**, CI
   green (Node 22). Second full audit done: `docs/SECOND_AUDIT_REPORT.md`.
+- **Engine audit done (2026-10-27)** — see the top CHANGELOG entry.
+  `tests/engine-consistency.test.js` is the engine's ratchet. It includes
+  KB-wide self-consistency (≥ 99% of conditions first on their own picture,
+  391/394 today), two-problem presentations, and "a safety-gated condition is
+  never cut". The measuring scripts behind the CHANGELOG table are described
+  there. Re-measure before tuning any value in `SCORE_WEIGHTS` or
+  `clinical-thresholds.js`.
 - **Gates to run before calling anything done:** `npm test`; the 9 suites in
   `tools/stress/`; the 8 journeys in `tools/e2e/` (they find Chromium via
   `tools/lib/browser.js`); `node tools/sync-docs.js --check`; and, for SQL
@@ -16,7 +23,10 @@ just start a session on this repo/branch and read, in order: **`CLAUDE.md` →
 - **Waiting on the founder:** run migration 006 on Supabase; change the
   default admin password; the clinical decisions at the top of
   `NEEDS_REVIEW.md` (steroid-cataract requirement, amiodarone token,
-  pachymetry, OSDI N/A, About-summary fingerprint).
+  pachymetry, OSDI N/A, About-summary fingerprint). From the engine audit,
+  also: thin definitions (Traumatic Iritis requiring only "pain", etc.),
+  three inseparable pairs, age as a contradiction (GCA cut-off, chronic CSC),
+  and confirming the two items done as his recommended option (c).
 - **Rule learned the hard way:** check CI after every push. It ran no tests
   from 24 Sept to 27 Oct and nobody noticed.
 
