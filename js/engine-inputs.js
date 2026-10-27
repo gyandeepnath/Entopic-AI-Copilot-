@@ -208,7 +208,11 @@ function vaBetter(a, b, chart) {
    (over-alerting is safer than under-alerting for red flags). */
 function stripNegatedPhrases(text) {
   var clauses = String(text).split(/[,;.!?]|\bbut\b|\bexcept\b|\bhowever\b/i);
-  var NEG = /\b(no|not|denies|denied|denying|deny|without|never|nil)\b/i;
+  /* A hedge is not a denial. "Not sure if it's flashes or floaters", "no idea
+     why I see flashes and floaters" and "not only floaters" dropped the very
+     symptoms they mention, and with them the flashes + floaters red flag
+     (measured, second full audit 2026-10-27). Doubt keeps the mention. */
+  var NEG = /\b(no|not|denies|denied|denying|deny|without|never|nil)\b(?!\s+(?:quite\s+)?(?:sure|certain|only|just|idea)\b)/i;
   var kept = [];
   for (var i = 0; i < clauses.length; i++) {
     var clause = clauses[i];

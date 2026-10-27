@@ -141,6 +141,45 @@ test("changing the clinical content after sign-off requires re-review", () => {
   assert.ok(c.review_prev_on, "with its date");
 });
 
+/* Second full audit, 2026-10-27: a record with no fingerprint vouched for any
+   content, and sign-offs baked into knowledge/verified.js were never checked
+   against the content at all. */
+test("a sign-off with no content fingerprint is not treated as verified", () => {
+  const ctx = device({ kb_signoffs: JSON.stringify({
+    "Dry Eye Disease": { name: "Dry Eye Disease", on: "2026-07-31", by: "Dr Nath" } }) });
+  ctx.KNOWLEDGE_ALL = conditions();
+  const summary = run(ctx, "signoffApplyAll(KNOWLEDGE_ALL)");
+  assert.strictEqual(summary.applied, 0);
+  assert.strictEqual(ctx.KNOWLEDGE_ALL[0].review_status, "NEEDS_CLINICAL_REVIEW");
+  assert.strictEqual(ctx.KNOWLEDGE_ALL[0].review_stale, true);
+});
+
+test("a sign-off baked into verified.js is checked against the content at boot", () => {
+  const ctx = device();
+  ctx.KNOWLEDGE_ALL = conditions();
+  const hash = run(ctx, "signoffHash(findCondition('Retinal Detachment'))");
+
+  /* As committed: matches the content, so it holds. */
+  const ok = device();
+  ok.KNOWLEDGE_ALL = conditions();
+  ok.KB_VERIFIED = { "Retinal Detachment": { on: "2026-08-01", by: "Dr Nath", hash: hash } };
+  assert.strictEqual(run(ok, "signoffApplyAll(KNOWLEDGE_ALL)").applied, 1);
+  assert.strictEqual(ok.KNOWLEDGE_ALL[1].review_status, "VERIFIED_BY_CLINICIAN");
+
+  /* A later release changes the condition: the baked signature must not carry over. */
+  const changed = device();
+  changed.KNOWLEDGE_ALL = conditions();
+  changed.KNOWLEDGE_ALL[1].urgent = false;
+  changed.KNOWLEDGE_ALL[1].review_status = "VERIFIED_BY_CLINICIAN";   /* as the loader marks it */
+  changed.KNOWLEDGE_ALL[1].icd_status = "VERIFIED_BY_CLINICIAN";
+  changed.KB_VERIFIED = { "Retinal Detachment": { on: "2026-08-01", by: "Dr Nath", hash: hash } };
+  const s = run(changed, "signoffApplyAll(KNOWLEDGE_ALL)");
+  assert.strictEqual(s.stale, 1);
+  assert.strictEqual(changed.KNOWLEDGE_ALL[1].review_status, "NEEDS_CLINICAL_REVIEW");
+  assert.strictEqual(changed.KNOWLEDGE_ALL[1].icd_status, "NEEDS_CLINICAL_REVIEW",
+    "the ICD code is no longer covered by the signature either");
+});
+
 test("changing the urgency flag invalidates a signature", () => {
   /* Urgency is the safety-critical field. Flipping it must never inherit an
      old approval. */

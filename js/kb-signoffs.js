@@ -153,14 +153,40 @@ function signoffRemove(name) {
    "unsigned"   never signed off                                    */
 
 function signoffState(cond, map) {
-  map = map || signoffLoad();
+  map = map || signoffAllRecords();
   if (!cond || !cond.name) return { state: "unsigned" };
-  var rec = map[cond.name];
+  var rec = Object.prototype.hasOwnProperty.call(map, cond.name) ? map[cond.name] : null;
   if (!rec) return { state: "unsigned" };
-  if (rec.hash && rec.hash !== signoffHash(cond)) {
+  /* No fingerprint means nothing ties the attestation to the text that was
+     read, so it vouched for ANY content. It used to count as verified. */
+  if (!rec.hash) {
+    return { state: "stale", record: rec,
+             reason: "This sign-off carries no content fingerprint, so it cannot show what was reviewed." };
+  }
+  if (rec.hash !== signoffHash(cond)) {
     return { state: "stale", record: rec, reason: "The content changed after this sign-off." };
   }
   return { state: "verified", record: rec };
+}
+
+/* This device's sign-offs, plus those baked into knowledge/verified.js
+   (KB_VERIFIED). The loader marks baked entries verified as it assembles the
+   KB, before anything can check them; this is where they are checked, exactly
+   like a device record. Without it a baked sign-off stayed "verified" through
+   any later change to the condition (second full audit, 2026-10-27). A device
+   record wins: it is the newer work on this machine. */
+function signoffAllRecords() {
+  var out = {};
+  if (typeof KB_VERIFIED !== "undefined" && KB_VERIFIED) {
+    for (var n in KB_VERIFIED) {
+      if (!Object.prototype.hasOwnProperty.call(KB_VERIFIED, n) || !KB_VERIFIED[n]) continue;
+      out[n] = { name: n, on: KB_VERIFIED[n].on || "", by: KB_VERIFIED[n].by || "",
+                 hash: KB_VERIFIED[n].hash || "", baked: true };
+    }
+  }
+  var map = signoffLoad();
+  for (var k in map) if (Object.prototype.hasOwnProperty.call(map, k)) out[k] = map[k];
+  return out;
 }
 
 /* Apply every sign-off to the live knowledge base. Called once at boot,
@@ -168,7 +194,7 @@ function signoffState(cond, map) {
    overlay. Returns a summary so the admin panel can report it. */
 function signoffApplyAll(all) {
   all = all || (typeof KNOWLEDGE_ALL !== "undefined" ? KNOWLEDGE_ALL : []);
-  var map = signoffLoad();
+  var map = signoffAllRecords();
   var applied = 0, stale = 0;
 
   for (var i = 0; i < all.length; i++) {
@@ -186,6 +212,7 @@ function signoffApplyAll(all) {
          The old attestation is kept and surfaced so the re-review starts
          from "you approved this on <date>, here is what changed". */
       cond.review_status = "NEEDS_CLINICAL_REVIEW";
+      if (cond.icd_status === "VERIFIED_BY_CLINICIAN") cond.icd_status = "NEEDS_CLINICAL_REVIEW";
       cond.review_stale = true;
       cond.review_prev_on = st.record.on;
       cond.review_prev_by = st.record.by;
@@ -197,7 +224,7 @@ function signoffApplyAll(all) {
 
 function signoffStats(all) {
   all = all || (typeof KNOWLEDGE_ALL !== "undefined" ? KNOWLEDGE_ALL : []);
-  var map = signoffLoad();
+  var map = signoffAllRecords();
   var verified = 0, staleN = 0, unsigned = 0;
   for (var i = 0; i < all.length; i++) {
     var st = signoffState(all[i], map);
@@ -278,6 +305,7 @@ if (typeof module !== "undefined" && module.exports) {
     signoffRecord: signoffRecord,
     signoffRemove: signoffRemove,
     signoffState: signoffState,
+    signoffAllRecords: signoffAllRecords,
     signoffApplyAll: signoffApplyAll,
     signoffStats: signoffStats,
     signoffExportPayload: signoffExportPayload,

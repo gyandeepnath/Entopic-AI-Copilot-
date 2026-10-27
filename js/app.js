@@ -166,6 +166,7 @@ function doLogin() {
       if (typeof roleSessionReset === "function") roleSessionReset();
       if (typeof clinicIdleReset === "function") clinicIdleReset();
       showHomePage();
+      if (typeof clinicRestoreHeld === "function") clinicRestoreHeld(CU.username);
       /* The default is printed in the documentation, so on any device that
          still uses it, anyone who has read the docs is an administrator. */
       if (typeof adminUsingLegacyCredential === "function" && adminUsingLegacyCredential()) {
@@ -217,6 +218,8 @@ function doLogin() {
     if (typeof roleSessionReset === "function") roleSessionReset();
     if (typeof clinicIdleReset === "function") clinicIdleReset();
     showHomePage();
+    /* An exam the idle lock could not save comes back to its own clinician. */
+    if (typeof clinicRestoreHeld === "function") clinicRestoreHeld(CU.username);
   }).catch(function () { fail(); });
 }
 

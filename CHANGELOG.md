@@ -19,7 +19,32 @@ now fill blanks only. An untouched step fills exactly as before, because those
 fields already default to normal. A new test checks every field of every
 template.
 
+### "Not sure if it's flashes or floaters" switched the red flag off
+The chief-complaint reader drops whatever follows "no/not/never" in a phrase,
+so that "no flashes" is not read as flashes. Hedges were caught by the same
+rule. "Not sure if it is flashes or floaters" and "no idea why I see flashes
+and floaters" lost both symptoms, **and the flashes + floaters red flag with
+them** (measured on the real engine). "Not sure", "not certain", "no idea",
+"not only" and "not just" are now read as doubt, not denial. "Denies flashes"
+and "no pain" are still negated.
+
 ### Other clinical fixes
+- **Idle auto-lock could discard an exam and say it was saved.** Locking signs
+  out, which clears the open exam. If the save just before the lock was refused,
+  the exam was thrown away, and the message still said "Your work was saved".
+  The screen still locks, but the unsaved exam is now kept in that browser tab
+  and given back, and saved again, when the **same** clinician signs in. The
+  message tells the truth either way.
+- **Sign-offs baked into the app could vouch for changed content.** Exporting
+  sign-offs into `knowledge/verified.js` dropped each condition's content
+  fingerprint, and those entries were trusted forever, so a later change to a
+  signed-off condition kept your signature. The fingerprint is now exported,
+  and built-in sign-offs are checked at start-up like the ones on your device. A
+  sign-off without a fingerprint now asks for re-review instead of counting as
+  verified. (The built-in list is empty today, so nothing you signed is affected.)
+- **Trend charts spaced visits evenly**, so a pressure rise over two weeks drew
+  exactly like the same rise over two years. Points are now placed by date, and
+  the chart says so.
 - **Dry-eye score (OSDI).** Every tap stored a running score, so after one
   answer the chief-complaint badge and the dry-eye clinic's "already recorded"
   strip showed, say, "100 · Severe Dry Eye", while the questionnaire said
@@ -102,7 +127,7 @@ this device's copy" button.
   property.
 
 ### Verified
-1,442 unit tests pass. Each new test fails on the previous code. All 8
+1,449 unit tests pass. Each new test fails on the previous code. All 8
 browser journeys, all 9 stress suites and the token-registry check pass.
 `npm run audit` still reports the one known exclusion target that waits for
 clinical review (Dry Eye → "acute_keratitis").

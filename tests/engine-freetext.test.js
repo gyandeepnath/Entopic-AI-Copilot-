@@ -88,3 +88,22 @@ test("end-to-end: positive red flags in CC still fire the retinal alert", () => 
   const retinal = out.alerts.filter((a) => /flashes \+ floaters/i.test(a.m));
   assert.ok(retinal.length > 0, "retinal red-flag fires on positive phrasing");
 });
+
+/* A hedge is not a denial (second full audit, 2026-10-27). These dropped the
+   symptoms they mention, and the flashes + floaters red flag with them. */
+test("end-to-end: a hedged mention of flashes and floaters still fires the retinal alert", () => {
+  for (const cc of ["not sure if it is flashes or floaters",
+                    "no idea why i see flashes and floaters",
+                    "not quite sure, flashes and floaters"]) {
+    const out = eng.runCase({ cc });
+    assert.ok(out.alerts.some((a) => /flashes \+ floaters/i.test(a.m)), "no retinal alert for: " + cc);
+  }
+  const t = parse("not only floaters but also flashes");
+  assert.ok(t.indexOf("floaters") >= 0 && t.indexOf("flashes") >= 0, JSON.stringify(t));
+});
+
+test("a real denial after a hedge is still a denial", () => {
+  const t = parse("not sure when it started, no pain");
+  assert.ok(t.indexOf("pain") === -1, "no pain is still negated");
+  assert.strictEqual(parse("denies flashes").indexOf("flashes"), -1);
+});

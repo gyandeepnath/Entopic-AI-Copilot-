@@ -172,6 +172,25 @@ test("trends make no clinical judgement", () => {
   }
 });
 
+test("points are spaced by date, so time between visits is not distorted", () => {
+  /* Evenly spaced points drew a rise over two weeks and the same rise over two
+     years identically (second full audit, 2026-10-27). */
+  const vm = require("node:vm");
+  const ctx = { escHtml: (s) => String(s), Date, Math, String, isFinite };
+  vm.createContext(ctx);
+  vm.runInContext(read("js/ui-trends.js"), ctx);
+  const svg = ctx.trendChart([
+    { date: "2025-01-01", value: 16 }, { date: "2025-01-15", value: 18 }, { date: "2027-01-01", value: 24 }
+  ], "IOP OD", "mmHg");
+  const cx = [...svg.matchAll(/<circle[^>]*cx="([\d.]+)"/g)].map((m) => Number(m[1]));
+  assert.strictEqual(cx.length, 3);
+  assert.ok(cx[1] - cx[0] < (cx[2] - cx[1]) / 10,
+    "two weeks must draw far shorter than two years: " + cx.join(", "));
+  assert.ok(/spaced by date/.test(svg));
+  const bad = ctx.trendChart([{ date: "", value: 1 }, { date: "?", value: 2 }], "X", "");
+  assert.ok(/evenly spaced/.test(bad), "an unreadable date falls back and says so");
+});
+
 test("the chart is drawn without any external library", () => {
   /* Offline-first: a chart that needs a CDN is a chart that fails in a rural
      clinic. */

@@ -39,7 +39,17 @@ function trendChart(series, label, unit) {
   var w = TREND_W, h = TREND_H, pad = TREND_PAD;
   var innerW = w - pad * 2, innerH = h - pad;
 
-  function x(i) { return pad + (series.length === 1 ? innerW / 2 : (i / (series.length - 1)) * innerW); }
+  /* Spaced by DATE, not by visit number. Evenly spaced points made a rise over
+     two weeks look exactly like the same rise over two years, which is the one
+     thing a clinician reads a trend for (second full audit, 2026-10-27). If any
+     date cannot be read, fall back to even spacing and say so below. */
+  var ts = series.map(function (p) { return Date.parse(p.date); });
+  var byDate = ts.every(function (t) { return isFinite(t); }) && ts[ts.length - 1] > ts[0];
+
+  function x(i) {
+    if (byDate) return pad + ((ts[i] - ts[0]) / (ts[ts.length - 1] - ts[0])) * innerW;
+    return pad + (series.length === 1 ? innerW / 2 : (i / (series.length - 1)) * innerW);
+  }
   function y(v) { return (pad / 2) + innerH - ((v - min) / (max - min)) * innerH; }
 
   var pts = series.map(function (p, i) { return x(i).toFixed(1) + "," + y(p.value).toFixed(1); });
@@ -65,7 +75,8 @@ function trendChart(series, label, unit) {
   s += '<div class="trend-x"><span>' + escHtml(String(series[0].date).slice(0, 10)) + '</span>' +
        '<span>' + escHtml(String(series[series.length - 1].date).slice(0, 10)) + '</span></div>';
   s += '<div class="trend-n">' + series.length + ' recorded value' +
-       (series.length === 1 ? '' : 's') + '</div>';
+       (series.length === 1 ? '' : 's') +
+       (byDate ? ' · spaced by date' : ' · evenly spaced (dates unreadable)') + '</div>';
   s += '</div>';
   return s;
 }

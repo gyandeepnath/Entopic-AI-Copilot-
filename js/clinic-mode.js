@@ -20,13 +20,14 @@
 /* because slowing down repeated wrong passwords has no downside for */
 /* any install.                                                      */
 /*                                                                  */
-/* Deliberately NOT what this is: it does not encrypt local storage  */
-/* and does not turn the sign-in screen into real access control.    */
-/* Anyone with the device's filesystem can still read the records    */
-/* (see the audit's B-4). This raises the bar at the keyboard; full  */
-/* at-rest protection needs OS disk encryption plus the record-store */
-/* migration the audit scopes separately. Saying so plainly matters  */
-/* more than appearing to have solved it.                            */
+/* Deliberately NOT what this is: this switch does not encrypt local */
+/* storage and does not turn the sign-in screen into real access     */
+/* control. Without the record vault (js/local-vault.js, turned on   */
+/* separately) anyone with the device's filesystem can still read    */
+/* the records (see the audit's B-4). This raises the bar at the     */
+/* keyboard; at-rest protection is the vault plus OS disk            */
+/* encryption. Saying so plainly matters more than appearing to have */
+/* solved it.                                                        */
 /*                                                                  */
 /* Pure core first (Node-testable); DOM/timer wiring guarded below.  */
 /* ═══════════════════════════════════════════════════════════════ */
@@ -158,13 +159,29 @@ if (typeof document !== "undefined") {
   var _idleTimer = null;
   var _idleLast = Date.now();
 
+  /* An exam the lock could not save, kept in this tab's memory for the
+     clinician who was signed in. Signing out clears the open exam, so when the
+     save was refused (storage full, damaged store, locked vault) the lock used
+     to discard everything typed since the last good save — and then announce
+     "Your work was saved". Locking still happens, because an unattended
+     terminal must not stay open; the exam waits here, never in storage, until
+     the same person signs back in (second full audit, 2026-10-27). */
+  var _clinicHeld = null;
+
   /* Save first, then lock. doSave() is the same call the autosave timer
-     makes, so an in-progress exam is already on disk — locking cannot
-     cost the clinician work. */
+     makes, so normally the exam is already on disk. */
   function clinicLockNow() {
-    try { if (typeof doSave === "function") doSave(); } catch (e) {}
+    var res = null;
+    try {
+      if (typeof doSave === "function" && typeof CV !== "undefined" && CV) res = doSave();
+    } catch (e) { res = { ok: false }; }
+    var unsaved = !!(res && res.ok === false);
+    if (unsaved) {
+      _clinicHeld = { user: (typeof CU !== "undefined" && CU) ? CU.username : "", CV: CV, P: P, V: V };
+    }
     if (typeof logAudit === "function") {
-      try { logAudit("session_auto_locked", "Idle for " + clinicLockMinutes() + " min — session locked", {}); } catch (e) {}
+      try { logAudit("session_auto_locked", "Idle for " + clinicLockMinutes() + " min — session locked" +
+                     (unsaved ? " (the open exam could not be saved and is held in this tab)" : ""), {}); } catch (e) {}
     }
     if (typeof doLogout === "function") doLogout();
 
@@ -178,10 +195,32 @@ if (typeof document !== "undefined") {
     }
 
     if (typeof toast === "function") {
-      toast("Locked after " + clinicLockMinutes() + " min idle. Your work was saved — sign in to continue.");
+      toast(unsaved
+        ? "Locked after " + clinicLockMinutes() + " min idle. The open exam could NOT be saved — it is " +
+          "held in this tab until you sign back in. Do not close this tab."
+        : "Locked after " + clinicLockMinutes() + " min idle. Your work was saved — sign in to continue.");
     }
   }
   window.clinicLockNow = clinicLockNow;
+
+  /* Called on every successful sign-in. Gives the held exam back to the
+     clinician it was taken from — nobody else — and tries the save again. */
+  function clinicRestoreHeld(username) {
+    if (!_clinicHeld || !username || _clinicHeld.user !== username) return false;
+    var held = _clinicHeld;
+    _clinicHeld = null;
+    CV = held.CV; P = held.P; V = held.V;
+    var res = null;
+    try { if (typeof doSave === "function") res = doSave(); } catch (e) { res = { ok: false }; }
+    if (typeof openExam === "function") { try { openExam(); } catch (e) {} }
+    if (typeof toast === "function") {
+      toast(res && res.ok === false
+        ? "Your unsaved exam is back on screen. This device is still NOT saving — see the storage warning."
+        : "Your exam is back on screen and has now been saved.");
+    }
+    return true;
+  }
+  window.clinicRestoreHeld = clinicRestoreHeld;
 
   function clinicIdleTick() {
     if (!clinicModeOn()) return;

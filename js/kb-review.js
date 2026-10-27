@@ -106,7 +106,11 @@ function kbBuildVerifiedExport() {
     for (var i = 0; i < KNOWLEDGE_ALL.length; i++) {
       var c = KNOWLEDGE_ALL[i];
       if (c.review_status === "VERIFIED_BY_CLINICIAN") {
-        entries.push({ name: c.name, on: c.review_verified_on || "", by: c.review_verified_by || "" });
+        /* The content fingerprint travels with the attestation, so a baked
+           sign-off goes stale if the condition is later changed — it used to
+           be dropped here, and a committed sign-off then vouched for any text. */
+        entries.push({ name: c.name, on: c.review_verified_on || "", by: c.review_verified_by || "",
+                       hash: (typeof signoffHash === "function") ? signoffHash(c) : "" });
       }
     }
   }
@@ -114,7 +118,8 @@ function kbBuildVerifiedExport() {
   var lines = [];
   for (var j = 0; j < entries.length; j++) {
     lines.push('  ' + JSON.stringify(entries[j].name) + ': { on: ' +
-      JSON.stringify(entries[j].on) + ', by: ' + JSON.stringify(entries[j].by) + ' }');
+      JSON.stringify(entries[j].on) + ', by: ' + JSON.stringify(entries[j].by) +
+      ', hash: ' + JSON.stringify(entries[j].hash) + ' }');
   }
   var body =
     '/* ═══════════════════════════════════════════════════════════════ */\n' +

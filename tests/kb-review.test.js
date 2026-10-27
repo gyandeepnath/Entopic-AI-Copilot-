@@ -114,6 +114,9 @@ test("kbBuildVerifiedExport produces valid, ready-to-commit verified.js source",
   vm.runInNewContext(out.source, sandbox);
   assert.ok(sandbox.KB_VERIFIED && sandbox.KB_VERIFIED[name], "parses back to KB_VERIFIED");
   assert.strictEqual(sandbox.KB_VERIFIED[name].by, "Dr Founder");
+  /* The fingerprint travels with it, so the baked sign-off can go stale. */
+  assert.strictEqual(sandbox.KB_VERIFIED[name].hash,
+    evalIn("signoffHash(findCondition(" + JSON.stringify(name) + "))"));
 });
 
 test("a baked verified.js makes the sign-off permanent on a fresh boot (loader applies it)", () => {

@@ -72,6 +72,48 @@ test("idle lock minutes are bounded and default sensibly", () => {
 });
 
 
+/* ── clinic-mode: the idle lock never silently discards an exam ───────
+   Signing out clears the open exam. When the save before the lock was
+   refused, the lock threw the exam away and announced "Your work was saved"
+   (second full audit, 2026-10-27). */
+function lockWorld(saveOk) {
+  const toasts = [];
+  const ctx = load("js/clinic-mode.js", {
+    document: { readyState: "complete", addEventListener() {} },
+    setInterval: () => 0,
+    toast: (m) => toasts.push(m),
+    logAudit: () => {},
+    doSave: () => ({ ok: saveOk, reason: saveOk ? "" : "storage full" }),
+    openExam: () => { ctx.__opened = true; }
+  });
+  vm.runInContext(`
+    var CU = { username: "drm" }, CV = { id: "v1" }, P = { id: "p1" }, V = { id: "v1", cc: "typed since last save" };
+    function doLogout() { CU = null; CV = null; P = {}; V = {}; }`, ctx);
+  return { ctx, toasts };
+}
+
+test("an idle lock that could not save says so, and keeps the exam for its clinician", () => {
+  const { ctx, toasts } = lockWorld(false);
+  vm.runInContext("clinicLockNow()", ctx);
+  assert.strictEqual(vm.runInContext("V.cc", ctx), undefined, "the screen is still locked and cleared");
+  assert.ok(/could NOT be saved/.test(toasts[0]), "no false 'your work was saved': " + toasts[0]);
+
+  assert.strictEqual(vm.runInContext("clinicRestoreHeld('someone_else')", ctx), false,
+    "another clinician signing in is not handed the exam");
+  assert.strictEqual(vm.runInContext("clinicRestoreHeld('drm')", ctx), true);
+  assert.strictEqual(vm.runInContext("V.cc", ctx), "typed since last save", "the exam is back, intact");
+  assert.ok(ctx.__opened, "and on screen");
+  assert.strictEqual(vm.runInContext("clinicRestoreHeld('drm')", ctx), false, "handed back once only");
+});
+
+test("an idle lock after a good save holds nothing back", () => {
+  const { ctx, toasts } = lockWorld(true);
+  vm.runInContext("clinicLockNow()", ctx);
+  assert.ok(/Your work was saved/.test(toasts[0]));
+  assert.strictEqual(vm.runInContext("clinicRestoreHeld('drm')", ctx), false);
+});
+
+
 /* ── clinic-mode: login throttling ────────────────────────────────── */
 
 test("login throttling only bites after repeated failures, then backs off", () => {

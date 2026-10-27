@@ -18,5 +18,7 @@
 "use strict";
 
 var KB_VERIFIED = {
-  /* "Condition Name": { on: "YYYY-MM-DD", by: "Clinician Name" } */
+  /* "Condition Name": { on: "YYYY-MM-DD", by: "Clinician Name", hash: "<content fingerprint>" }
+     The hash is written by the export; an entry without one is treated as
+     needing re-review at boot (js/kb-signoffs.js). */
 };
