@@ -178,6 +178,26 @@ real engine with nothing recorded except the drug:
    matcher looks for "optic" + "neuritis", which only ethambutol's "Optic
    neuritis (toxic)" contains. Should amiodarone raise `toxic_optic_risk`?
 
+### 🟧 Urgent alerts for conditions missing a REQUIRED finding — seen 2026-10-27
+A 58-year-old with flashes, floaters and a left RAPD, and **no diabetes
+recorded**, gets two extra urgent banners:
+- "Proliferative Diabetic Retinopathy — urgent condition in the differential
+  (match 17)", although PDR *requires* `diabetes_history`;
+- the same for Acute Retinal Necrosis.
+
+They come from the automatic "urgent condition in the differential" alert. It
+fires for any urgent condition shown at a match of 15 or more
+(`derived_alert_min`, Clinical Safety Register CS-06). It is set to equal the
+display floor on purpose, so that nothing urgent is shown without a banner.
+The cost is alert fatigue next to the two real red flags. Options:
+- (a) keep;
+- (b) raise `derived_alert_min` (in `knowledge/clinical-thresholds.js`);
+- (c) no derived banner when a required finding is absent, while still
+  listing the condition.
+
+Recommendation: (c). It is your call, because it changes what triggers an
+urgent banner.
+
 ### 🟦 Should editing a condition's About summary require re-review? — 2026-10-27
 A sign-off covers "findings, urgency, ICD code and About summary", but the
 fingerprint that makes a sign-off go stale includes the findings, urgency,

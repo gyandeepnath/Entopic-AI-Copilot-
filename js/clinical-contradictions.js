@@ -119,25 +119,42 @@ function clinContradictions(V, P) {
     }
   }
 
-  /* A section asserted normal cannot also carry findings. Both statements are
-     in the record; they cannot both be true. */
-  if (V.sl && Array.isArray(V.sl.findings) && V.sl.findings.length) {
+  /* A STRUCTURE recorded as normal cannot also carry a finding of that same
+     structure: "Cornea: Clear" next to a corneal ulcer says two things.
+
+     This used to compare EVERY finding against the cornea and lids fields, so
+     blepharitis next to a clear cornea — an ordinary combination — was an
+     "error". And because a new exam starts with those fields pre-filled as
+     normal, the first slit-lamp finding a clinician tapped raised it every
+     time, blaming a "Normal quick-fill" nobody had pressed (seen in the real
+     app, second full audit 2026-10-27). Now each finding is checked only
+     against its own structure's field. */
+  if (V.sl && Array.isArray(V.sl.findings) && V.sl.findings.length &&
+      typeof SL_FINDINGS !== "undefined" && SL_FINDINGS) {
+    var SL_STRUCT = [
+      { section: "Lids & Adnexa", field: "lids", normal: "wnl", label: "lids" },
+      { section: "Conjunctiva", field: "conj", normal: "white and quiet", label: "conjunctiva" },
+      { section: "Cornea", field: "cornea", normal: "clear", label: "cornea" },
+      { section: "Iris", field: "iris", normal: "normal", label: "iris" }
+    ];
     ["od", "os"].forEach(function (eye) {
       var side = V.sl[eye];
       if (!side) return;
-      var forThisEye = V.sl.findings.filter(function (f) {
-        var e = (f && f.eye) || "";
-        return e === eye.toUpperCase() || e === "OU";
-      });
-      if (!forThisEye.length) return;
-      if (String(side.cornea || "").toLowerCase() === "clear" ||
-          String(side.lids || "").toUpperCase() === "WNL") {
+      SL_STRUCT.forEach(function (s) {
+        var labels = SL_FINDINGS[s.section] || [];
+        if (String(side[s.field] || "").trim().toLowerCase() !== s.normal) return;
+        var hits = V.sl.findings.filter(function (f) {
+          var e = (f && f.eye) || "";
+          var lab = (f && typeof f === "object") ? f.label : f;
+          return (e === eye.toUpperCase() || e === "OU") && labels.indexOf(lab) >= 0;
+        }).map(function (f) { return f.label; });
+        if (!hits.length) return;
         out.push(_contra("sl_wnl_with_findings", "error",
-          eye.toUpperCase() + ": the slit lamp is recorded as normal, but " +
-          forThisEye.length + " finding(s) are also recorded for this eye.",
-          true, "One of the two entries is stale — most often a 'Normal' quick-fill " +
-                "applied after findings were entered."));
-      }
+          eye.toUpperCase() + ": the " + s.label + " is recorded as \"" + side[s.field] + "\", but " +
+          hits.join(", ") + " is also recorded for this eye.",
+          true, "Update the " + s.label + " field so the record says one thing — it starts " +
+                "pre-filled as normal on every new exam."));
+      });
     });
   }
 

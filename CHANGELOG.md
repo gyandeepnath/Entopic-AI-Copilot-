@@ -53,6 +53,13 @@ and "no pain" are still negated.
   bundle numbered 1.2.0 would have replaced the newer built-in knowledge base.
   There is now one number (`KB_VERSION`), and the publishing script warns when a
   version would be ignored.
+- **A false "contradiction" on the first slit-lamp finding of every exam.**
+  The check compared every slit-lamp finding with the cornea and lid fields,
+  and a new exam starts with those pre-filled as "Clear" and "WNL". So tapping
+  blepharitis, an ordinary finding next to a clear cornea, raised an
+  **error** blaming a "Normal quick-fill" nobody had pressed (seen in the real
+  app). Each finding is now checked only against its own structure. "Cornea:
+  Clear" next to an epithelial defect is still flagged.
 - Wording: the readiness panel said cloud sync encrypts "names/MRNs"; it
   encrypts the whole record. The AI-proxy field suggested an address that the
   page's own security policy would block; it now suggests one that works.
@@ -138,7 +145,7 @@ this device's copy" button.
   property.
 
 ### Verified
-1,449 unit tests pass. Each new test fails on the previous code. All 8
+1,452 unit tests pass. Each new test fails on the previous code. All 8
 browser journeys, all 9 stress suites and the token-registry check pass.
 `npm run audit` still reports the one known exclusion target that waits for
 clinical review (Dry Eye → "acute_keratitis").

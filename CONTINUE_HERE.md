@@ -6,7 +6,7 @@ just start a session on this repo/branch and read, in order: **`CLAUDE.md` →
 `ARCHITECTURE.md` → `CHANGELOG.md`**, then scan the repo.
 
 ## Current state (2026-10-27) — read this, the July section below is history
-- **v1.6.0, KB 1.4.0.** 394 conditions, 131 loaded files, **1,450 tests**, CI
+- **v1.6.0, KB 1.4.0.** 394 conditions, 131 loaded files, **1,452 tests**, CI
   green (Node 22). Second full audit done: `docs/SECOND_AUDIT_REPORT.md`.
 - **Gates to run before calling anything done:** `npm test`; the 9 suites in
   `tools/stress/`; the 8 journeys in `tools/e2e/` (they find Chromium via

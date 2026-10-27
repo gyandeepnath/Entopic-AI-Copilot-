@@ -42,23 +42,54 @@ test("prism with no base direction is an error", () => {
   assert.deepStrictEqual(ids({ rx: { od_prism: "2", od_base: "" } }, null), ["rx_prism_no_base"]);
 });
 
-test("a section recorded normal cannot also carry findings", () => {
-  /* Both statements are in the record and they cannot both be true — usually a
-     "Normal" quick-fill applied after findings were entered. */
+/* The real finding lists, so the structure of each finding is the app's own. */
+const vm = require("node:vm");
+const dm = { console: { log() {}, warn() {}, error() {} } };
+vm.createContext(dm);
+vm.runInContext(fs.readFileSync(path.resolve(__dirname, "..", "js/data-model.js"), "utf8") +
+                ";this.__SL = SL_FINDINGS;", dm);
+global.SL_FINDINGS = dm.__SL;
+const CORNEAL = dm.__SL["Cornea"][0];          /* e.g. "Epithelial defect" */
+const LID = dm.__SL["Lids & Adnexa"][0];        /* e.g. "Blepharitis — anterior" */
+const CONJ = dm.__SL["Conjunctiva"][0];         /* e.g. "Diffuse injection" */
+
+test("a structure recorded normal cannot also carry a finding of that structure", () => {
   const r = C.clinContradictions({
-    sl: { od: { cornea: "Clear", lids: "WNL" }, findings: [{ label: "Corneal ulcer", eye: "OD" }] }
+    sl: { od: { cornea: "Clear", lids: "WNL" }, findings: [{ label: CORNEAL, eye: "OD" }] }
   }, null);
+  assert.strictEqual(r.length, 1);
   assert.strictEqual(r[0].id, "sl_wnl_with_findings");
   assert.strictEqual(r[0].level, "error");
-  assert.ok(/quick-fill/.test(r[0].why), "and explains the likely cause");
+  assert.ok(r[0].message.indexOf(CORNEAL) >= 0 && /cornea/.test(r[0].message), r[0].message);
 });
 
-test("an OU finding contradicts a normal record in either eye", () => {
+test("an OU finding contradicts a normal record of that structure in either eye", () => {
   const r = C.clinContradictions({
-    sl: { od: { cornea: "Clear" }, os: { cornea: "Clear" },
-          findings: [{ label: "Injection", eye: "OU" }] }
+    sl: { od: { conj: "White and quiet" }, os: { conj: "White and quiet" },
+          findings: [{ label: CONJ, eye: "OU" }] }
   }, null);
   assert.strictEqual(r.length, 2, "both eyes are contradicted by an OU finding");
+});
+
+/* Second full audit, 2026-10-27: every finding was checked against the cornea
+   and lids fields, and a new exam starts with both pre-filled as normal, so the
+   first finding tapped always raised an "error". */
+test("a finding of ANOTHER structure is not a contradiction (blepharitis + clear cornea)", () => {
+  const r = C.clinContradictions({
+    sl: { od: { cornea: "Clear", conj: "White and quiet", iris: "Normal" },
+          findings: [{ label: LID, eye: "OD" }] }
+  }, null);
+  assert.deepStrictEqual(r.map((x) => x.id), [], "an ordinary combination was reported as an error");
+});
+
+test("the first finding on an untouched exam raises nothing but its own structure", () => {
+  const r = C.clinContradictions({
+    sl: { od: { lids: "WNL", conj: "White and quiet", cornea: "Clear", iris: "Normal" },
+          os: { lids: "WNL", conj: "White and quiet", cornea: "Clear", iris: "Normal" },
+          findings: [{ label: CORNEAL, eye: "OD" }] }
+  }, null);
+  assert.strictEqual(r.length, 1, "only the cornea, only the right eye");
+  assert.ok(/^OD: the cornea/.test(r[0].message), r[0].message);
 });
 
 test("acute onset with a chronic course is flagged, and suggests the resolution", () => {

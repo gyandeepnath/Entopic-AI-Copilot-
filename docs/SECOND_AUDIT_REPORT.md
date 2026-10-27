@@ -30,7 +30,7 @@ loudly if no tests run, and it has been green on every push today.
 
 | | Start of this audit | Now |
 |---|---|---|
-| Unit tests | 1,387 | **1,450**, 0 failing |
+| Unit tests | 1,387 | **1,452**, 0 failing |
 | Stress suites | 9 | 9, all held: attack 46, privacy 43, crypto 24, clinical 47, pollution 16, sync 18, xss 48, output 26, red-flag screen 44 |
 | Browser journeys | 8 (all **unable to start**, see §5) | 8, all held: patient 29, competency 35, student 13, accessibility 0/0, dropdowns 8, legacy records 10, clinician decision 11, handlers 2 |
 | Database checks on real PostgreSQL 16 | none | **25 held** (11 fail without migration 006) |
@@ -63,6 +63,9 @@ loudly if no tests run, and it has been green on every push today.
    option (please confirm).
 7. **Trend charts spaced visits evenly**, so two weeks looked like two years.
    They are now spaced by date.
+8. **Every exam raised a false "contradiction" error** on its first slit-lamp
+   finding (e.g. blepharitis next to the default "clear cornea"). Findings are
+   now checked only against their own structure.
 
 ## 3. Your records — loss and recovery
 
