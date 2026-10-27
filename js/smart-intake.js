@@ -57,6 +57,15 @@ var OSDI_SCALE = [
   { value: 4, label: "All of the time" }
 ];
 
+/* "Not applicable". The published form offers it for the function and
+   environment items (6-12) only — a patient who does not drive cannot rate
+   night driving — and the scoring leaves N/A items out of the count. Without
+   it a non-driver could never complete the questionnaire, or had to answer 0,
+   which lowers the score. Items 1-5 have no N/A. NEEDS_CLINICAL_REVIEW:
+   confirm against the form you use (second full audit, 2026-10-27). */
+var OSDI_NA = "na";
+var OSDI_NA_FROM = 5;   /* zero-based: item 6 onwards */
+
 
 /* ═══════════════════════════════════════════════════════════════ */
 /* SPEED — STANDARD PATIENT EVALUATION OF EYE DRYNESS             */
@@ -102,9 +111,15 @@ function toggleOSDI() { OSDI_OPEN = !OSDI_OPEN; if (typeof renderMain === "funct
    never auto-adds tokens; the clinician decides. */
 function osdiTool() {
   var v = (typeof V !== "undefined" && V.osdi) ? V.osdi : null;
-  var badge = (v && v.total != null && v.total !== "")
-    ? '<span style="font-size:.58rem;color:var(--sv)"> · score ' + v.total + (v.severity ? " (" + v.severity + ")" : "") + '</span>'
-    : '';
+  var r = v ? calculateOSDI() : null;
+  /* A severity only for a finished questionnaire — the same rule the form
+     itself states. This badge used to show the running figure, so one answer
+     of 4 read "score 100 (Severe Dry Eye)". */
+  var badge = (r && r.complete)
+    ? '<span style="font-size:.58rem;color:var(--sv)"> · score ' + r.score + (r.severity ? " (" + r.severity + ")" : "") + '</span>'
+    : (r && r.answered + r.na > 0)
+      ? '<span style="font-size:.58rem;color:var(--sv)"> · ' + (r.answered + r.na) + '/12 answered, not yet scored</span>'
+      : '';
   var h = '<div class="dv"><span>Dry-Eye Score (OSDI) — optional</span></div>';
   h += '<button class="btn btn-s" style="font-size:.62rem" onclick="toggleOSDI()">' +
        (OSDI_OPEN ? '▾ Hide OSDI questionnaire' : '▸ Score dry-eye symptoms (OSDI)') + '</button>' + badge;
@@ -149,6 +164,11 @@ function renderOSDI() {
         h += opt.value;
         h += '</span>';
       }
+      if (qIndex >= OSDI_NA_FROM) {
+        h += '<span class="quest-opt' + (currentVal === OSDI_NA ? " sel" : "") + '" ' +
+             'title="Not applicable — left out of the score" ' +
+             'onclick="setOSDIScore(' + qIndex + ',\'' + OSDI_NA + '\')">N/A</span>';
+      }
 
       h += '</div>';
       h += '<div style="font-size:.5rem;color:var(--sv);margin-top:2px">';
@@ -170,9 +190,9 @@ function renderOSDI() {
     h += 'OSDI Score: <b>' + osdiResult.score.toFixed(1) + ' / 100</b>';
     h += '<br>Severity: <b>' + osdiResult.severity + '</b>';
   } else {
-    h += 'Answer all 12 questions to calculate OSDI score';
-    if (osdiResult.answered > 0) {
-      h += '<br><span style="font-size:.62rem;color:var(--sv)">' + osdiResult.answered + '/12 answered</span>';
+    h += 'Answer all 12 questions (N/A where it does not apply) to calculate OSDI score';
+    if (osdiResult.answered + osdiResult.na > 0) {
+      h += '<br><span style="font-size:.62rem;color:var(--sv)">' + (osdiResult.answered + osdiResult.na) + '/12 answered</span>';
     }
   }
   h += '</div>';
@@ -201,18 +221,13 @@ function setOSDIScore(index, value) {
     V.osdi.scores[index] = value;
   }
 
-  /* Recalculate */
+  /* Recalculate. The stored total and severity are what the dry-eye clinic
+     shows as "already recorded", so they are set only for a finished
+     questionnaire — never the running figure from a few answers. The score is
+     never turned into an engine token: the clinician decides. */
   var result = calculateOSDI();
-  V.osdi.total = result.score;
-  V.osdi.severity = result.severity;
-
-  /* Inject tokens based on OSDI score */
-  if (result.complete && result.score > 12) {
-    /* Add dryness token if not already present */
-    if (V.symptoms.indexOf("dryness") === -1) {
-      /* Don't auto-add — let the clinician decide */
-    }
-  }
+  V.osdi.total = result.complete ? result.score : null;
+  V.osdi.severity = result.complete ? result.severity : "";
 
   renderMain();
 }
@@ -252,23 +267,25 @@ function osdiIsAnswer(v) {
 
 function calculateOSDI() {
   if (!V.osdi || !Array.isArray(V.osdi.scores)) {
-    return { complete: false, score: 0, severity: "", answered: 0, rejected: 0 };
+    return { complete: false, score: 0, severity: "", answered: 0, na: 0, rejected: 0 };
   }
 
   var sum = 0;
   var answered = 0;
+  var na = 0;
   var rejected = 0;
 
   for (var i = 0; i < V.osdi.scores.length; i++) {
     var v = V.osdi.scores[i];
     if (v === null || v === undefined) continue;      /* simply not answered yet */
+    if (v === OSDI_NA && i >= OSDI_NA_FROM && i < 12) { na++; continue; }  /* out of the count */
     if (!osdiIsAnswer(v)) { rejected++; continue; }   /* present but not an OSDI answer */
     sum += v;
     answered++;
   }
 
   if (answered === 0) {
-    return { complete: false, score: 0, severity: "", answered: 0, rejected: rejected };
+    return { complete: false, score: 0, severity: "", answered: 0, na: na, rejected: rejected };
   }
 
   /* OSDI formula: (sum of scores x 25) / number of questions ANSWERED. */
@@ -279,7 +296,7 @@ function calculateOSDI() {
      that is exactly why it must refuse rather than fall through to the last
      branch of the severity ladder if it ever is. */
   if (!isFinite(score)) {
-    return { complete: false, score: 0, severity: "", answered: answered, rejected: rejected };
+    return { complete: false, score: 0, severity: "", answered: answered, na: na, rejected: rejected };
   }
 
   var severity = "";
@@ -289,10 +306,11 @@ function calculateOSDI() {
   else severity = "Severe Dry Eye";
 
   return {
-    complete: answered === 12,
+    complete: answered + na === 12,
     score: score,
     severity: severity,
     answered: answered,
+    na: na,
     /* How many stored values were present but were NOT valid OSDI answers.
        A questionnaire scored from 3 of 12 items is a different statement from
        one scored from 12, and a clinician has to be able to see which. */

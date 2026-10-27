@@ -77,8 +77,16 @@ function applyExclusions(results, tokens) {
 
       for (var ei = 0; ei < exclusions.length; ei++) {
         /* Normalised substring match: "acute_angle_closure" matches
-           "acute_angle_closure_crisis". */
-        if (rNorm.indexOf(_exclNormName(exclusions[ei])) >= 0) {
+           "acute_angle_closure_crisis".
+
+           An entry that normalises to nothing ("", " ", "-") is skipped: every
+           name contains the empty string, so one such entry deleted EVERY
+           non-urgent condition from the differential. The editor drops blank
+           entries but not "-", and a remote KB bundle is only checked to be
+           strings (second full audit, 2026-10-27). */
+        var exNorm = _exclNormName(exclusions[ei]);
+        if (!exNorm) continue;
+        if (rNorm.indexOf(exNorm) >= 0) {
           r._excludedBy = condName;
           return false;
         }

@@ -97,6 +97,9 @@ function clinValidateVisit(V, P) {
   if (V && V.inv) {
     push(clinCheck("rnfl", V.inv.oct_rnfl_od, "od")); push(clinCheck("rnfl", V.inv.oct_rnfl_os, "os"));
     push(clinCheck("vf_md", V.inv.vf_md_od, "od"));   push(clinCheck("vf_md", V.inv.vf_md_os, "os"));
+    /* Corneal thickness can also be entered as Pachymetry on the investigations
+       page; it went unchecked there (second full audit, 2026-10-27). */
+    push(clinCheck("cct", V.inv.pachymetry_od, "od")); push(clinCheck("cct", V.inv.pachymetry_os, "os"));
   }
 
   out.sort(function (a, b) { return (a.level === "error" ? 0 : 1) - (b.level === "error" ? 0 : 1); });
@@ -104,5 +107,6 @@ function clinValidateVisit(V, P) {
 }
 
 if (typeof module !== "undefined" && module.exports) {
-  module.exports = { CLIN_RANGES: CLIN_RANGES, clinCheck: clinCheck, clinValidateVisit: clinValidateVisit };
+  module.exports = { CLIN_RANGES: CLIN_RANGES, CLIN_VALIDATION_STATUS: CLIN_VALIDATION_STATUS,
+                     clinCheck: clinCheck, clinValidateVisit: clinValidateVisit };
 }

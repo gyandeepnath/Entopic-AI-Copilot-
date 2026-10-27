@@ -69,6 +69,23 @@ test("low scorers exclude nothing", () => {
   assert.strictEqual(out.length, 2, "below the 0.5 threshold nothing is suppressed");
 });
 
+test("an exclusion entry that is blank or punctuation removes nothing", () => {
+  /* Every name contains the empty string, so "" or "-" in one condition's list
+     deleted every non-urgent condition whenever that condition scored >= 0.5. */
+  const saved = vm.runInContext("JSON.stringify(KB_EXCLUSION_MAP['Divergence Insufficiency'])", eng.context);
+  vm.runInContext("KB_EXCLUSION_MAP['Divergence Insufficiency'] = ['', ' ', '-', '()'];", eng.context);
+  try {
+    const out = applyExclusions([
+      { name: "Divergence Insufficiency", score: 0.9, urgent: false },
+      { name: "Allergic Conjunctivitis", score: 0.3, urgent: false },
+      { name: "Presbyopia", score: 0.3, urgent: false }
+    ]);
+    assert.strictEqual(out.length, 3, "removed: " + JSON.stringify(out.map((r) => r.name)));
+  } finally {
+    vm.runInContext("KB_EXCLUSION_MAP['Divergence Insufficiency'] = " + saved + ";", eng.context);
+  }
+});
+
 test("a condition never excludes itself", () => {
   /* Allergic Conjunctivitis's own exclusion list contains "uveitis" etc.;
      self-match must be impossible even when it is the high scorer. */

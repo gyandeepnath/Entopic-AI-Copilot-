@@ -73,7 +73,16 @@ test("an impossible age is caught", () => {
 });
 
 test("the range set is flagged for clinical review", () => {
-  /* plausibility envelopes are still clinical judgement */
+  /* plausibility envelopes are still clinical judgement. This read a status
+     the module never exported and asserted nothing about it, so it could not
+     fail (second full audit, 2026-10-27). */
   const { CLIN_VALIDATION_STATUS } = require("../js/clinical-validators.js");
+  assert.strictEqual(CLIN_VALIDATION_STATUS, "NEEDS_CLINICAL_REVIEW");
   assert.ok(Object.keys(CLIN_RANGES).length >= 8, "a meaningful set of numerics is covered");
+});
+
+test("corneal thickness entered as Pachymetry on the investigations page is checked too", () => {
+  const issues = clinValidateVisit({ inv: { pachymetry_od: "1500", pachymetry_os: "540" } }, null);
+  assert.strictEqual(issues.length, 1);
+  assert.ok(/corneal thickness \(OD\) 1500/i.test(issues[0].message), issues[0].message);
 });

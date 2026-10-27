@@ -143,6 +143,51 @@ test("the count of rejected values is reported, not hidden", () => {
   assert.strictEqual(r.rejected, 2);
 });
 
+/* ═══ N/A, and no severity from a half-finished form (2026-10-27) ═══ */
+
+test("N/A on items 6-12 is left out of the count and still completes the form", () => {
+  /* A non-driver: items 1-5 answered 2, item 7 (night driving) N/A, rest 2. */
+  const r = score(J([2, 2, 2, 2, 2, 2, "na", 2, 2, 2, 2, 2]));
+  assert.strictEqual(r.answered, 11);
+  assert.strictEqual(r.na, 1);
+  assert.strictEqual(r.complete, true, "a form with an N/A item can be finished");
+  assert.strictEqual(r.score, 50, "(22 x 25) / 11 answered = 50, not diluted by the N/A item");
+});
+
+test("N/A is not an option on the symptom items 1-5", () => {
+  const r = score(J(["na", 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]));
+  assert.strictEqual(r.na, 0);
+  assert.strictEqual(r.rejected, 1, "an N/A on a symptom item is not a valid answer");
+  assert.strictEqual(r.complete, false);
+});
+
+test("a half-finished questionnaire stores no score or severity on the visit", () => {
+  const ctx = { console: { log() {}, warn() {}, error() {} }, module: { exports: {} }, renderMain: () => {} };
+  vm.createContext(ctx);
+  vm.runInContext(read("js/smart-intake.js"), ctx, { filename: "smart-intake.js" });
+  vm.runInContext("V = { symptoms: [] }; setOSDIScore(0, 4);", ctx);
+  assert.strictEqual(vm.runInContext("V.osdi.total", ctx), null,
+    "one answer of 4 used to be stored, and shown, as 100 / Severe Dry Eye");
+  assert.strictEqual(vm.runInContext("V.osdi.severity", ctx), "");
+  assert.ok(/1\/12 answered, not yet scored/.test(vm.runInContext("osdiTool()", ctx)));
+
+  vm.runInContext("for (var i = 1; i < 12; i++) setOSDIScore(i, 4);", ctx);
+  assert.strictEqual(vm.runInContext("V.osdi.total", ctx), 100);
+  assert.strictEqual(vm.runInContext("V.osdi.severity", ctx), "Severe Dry Eye");
+});
+
+test("the dry-eye clinic does not carry in a severity from a half-finished form", () => {
+  const ctx = { console: { log() {}, warn() {}, error() {} }, module: { exports: {} }, renderMain: () => {},
+                esc: (s) => String(s) };
+  vm.createContext(ctx);
+  vm.runInContext(read("js/smart-intake.js"), ctx, { filename: "smart-intake.js" });
+  vm.runInContext(read("js/module-links.js"), ctx, { filename: "module-links.js" });
+  /* A visit saved before the fix: a running figure stored from one answer. */
+  vm.runInContext("V = { osdi: { scores: [4,null,null,null,null,null,null,null,null,null,null,null], total: 100, severity: 'Severe Dry Eye' } };", ctx);
+  const html = vm.runInContext("mlCarryIn(ML_CARRY_IN.cl_dryeye)", ctx);
+  assert.ok(!/Severe/.test(html), "a stale partial severity was carried into the dry-eye clinic");
+});
+
 test("the module no longer treats 'not null' as 'is an answer'", () => {
   /* The root cause, pinned in source: the old guard was a null check, which
      admitted strings, NaN, objects and out-of-range numbers alike. */

@@ -8,6 +8,34 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ## 2026-10-27 — Second full audit, part 3: findings that read "[object Object]", a drug list that made a diagnosis, and recovery
 
+### Pressing "✓ Normal" could erase a recorded RAPD, and its red flag
+The "✓ Normal" button fills the rest of a step with normal results. On the
+**pupil**, **slit-lamp** and **motility** steps it overwrote fields that were
+already filled, instead of only filling the blanks as the other steps do. On
+the real engine: record a left RAPD, press "✓ Normal" to finish the pupil step,
+and **the RAPD became "None" and the RAPD alert disappeared**. Corneal oedema,
+AC cells or a restricted duction were replaced in the same way. All templates
+now fill blanks only. An untouched step fills exactly as before, because those
+fields already default to normal. A new test checks every field of every
+template.
+
+### Other clinical fixes
+- **Dry-eye score (OSDI).** Every tap stored a running score, so after one
+  answer the chief-complaint badge and the dry-eye clinic's "already recorded"
+  strip showed, say, "100 · Severe Dry Eye", while the questionnaire said
+  "answer all 12". A score and severity are now shown only when the
+  questionnaire is complete; until then it shows "n/12 answered". Items 6–12
+  now offer **N/A**, as the published form does, and N/A items are left out of
+  the count. Without it a non-driver could never finish the form, or had to
+  answer 0, which lowered the score. (Flagged for your confirmation.)
+- **Exclusion rules.** A blank or punctuation-only entry in a condition's
+  exclusion list (e.g. "-", or an empty string in a published KB update) would
+  have **removed every non-urgent condition** from the differential whenever
+  that condition scored highly. Such entries are now ignored.
+- **Plausibility checks** now also cover corneal thickness entered as
+  Pachymetry on the Investigations page. A test that claimed to check "the range
+  set is flagged for clinical review" asserted nothing, and now does.
+
 ### Recorded findings printed as "[object Object]"
 Since findings were given an eye (for example "Hypopyon, OD"), each one has
 been stored as a pair: the finding and the eye. Several places still treated
@@ -74,7 +102,7 @@ this device's copy" button.
   property.
 
 ### Verified
-1,435 unit tests pass. Each new test fails on the previous code. All 8
+1,442 unit tests pass. Each new test fails on the previous code. All 8
 browser journeys, all 9 stress suites and the token-registry check pass.
 `npm run audit` still reports the one known exclusion target that waits for
 clinical review (Dry Eye → "acute_keratitis").

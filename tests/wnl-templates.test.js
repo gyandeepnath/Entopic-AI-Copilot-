@@ -157,6 +157,30 @@ test("a template never overwrites something already recorded", () => {
   assert.strictEqual(v.iop.od, "31", "a real measurement must survive the quick-fill");
 });
 
+/* The test above only ever tried IOP. The slit-lamp, pupil and motility
+   templates assigned unconditionally, so pressing "✓ Normal" erased a recorded
+   RAPD (and its red flag), corneal oedema or a restricted duction (second full
+   audit, 2026-10-27). Every field of every template, now. */
+test("no template overwrites ANY field that already holds a recorded value", () => {
+  const v = blank();
+  (function fill(o, at) {
+    for (const k in o) {
+      if (o[k] && typeof o[k] === "object") fill(o[k], at + k + ".");
+      else o[k] = "RECORDED:" + at + k;
+    }
+  })(v, "");
+  const ctx = loadTemplates(v);
+  for (const step of Object.keys(ctx.WNL_TEMPLATES)) ctx.WNL_TEMPLATES[step].call(ctx);
+  const lost = [];
+  (function walk(o, at) {
+    for (const k in o) {
+      if (o[k] && typeof o[k] === "object") walk(o[k], at + k + ".");
+      else if (o[k] !== "RECORDED:" + at + k) lost.push(at + k + " -> " + o[k]);
+    }
+  })(v, "");
+  assert.deepStrictEqual(lost, [], "the quick-fill replaced recorded values:\n  " + lost.join("\n  "));
+});
+
 test("the rule is written where the next author will read it", () => {
   const src = read("js/wnl-templates.js");
   assert.ok(/MEASUREMENT/.test(src) && /RESULT/.test(src),

@@ -33,14 +33,25 @@
 /* ═══════════════════════════════════════════════════════════════ */
 "use strict";
 
+/* Every template fills BLANKS ONLY. The slit-lamp, pupil and motility ones
+   used to overwrite: a recorded RAPD, corneal oedema or restricted duction was
+   silently replaced by the normal value — and with it the red flag — when
+   "✓ Normal" was pressed to finish the rest of the step. Their blank-visit
+   defaults already are the normal values, so an untouched step fills exactly
+   as before (second full audit, 2026-10-27). */
 var WNL_TEMPLATES = {
   va:        function () { V.va.od_un = V.va.od_un || "6/6"; V.va.os_un = V.va.os_un || "6/6"; },
   iop:       function () { V.iop.od = V.iop.od || "15"; V.iop.os = V.iop.os || "15"; V.iop.method = V.iop.method || "GAT"; },
   slit_lamp: function () {
-    ["od", "os"].forEach(function (e) { if (V.sl[e]) { V.sl[e].lids = "WNL"; V.sl[e].conj = "White and quiet"; V.sl[e].cornea = "Clear"; V.sl[e].cells = "0"; V.sl[e].flare = "0"; V.sl[e].iris = "Normal"; } });
+    ["od", "os"].forEach(function (e) {
+      var s = V.sl[e];
+      if (!s) return;
+      s.lids = s.lids || "WNL"; s.conj = s.conj || "White and quiet"; s.cornea = s.cornea || "Clear";
+      s.cells = s.cells || "0"; s.flare = s.flare || "0"; s.iris = s.iris || "Normal";
+    });
   },
-  pupil:     function () { V.pupil.rapd = "None"; V.pupil.notes = V.pupil.notes || "PERRL, no RAPD"; },
-  motility:  function () { V.mot.versions = "Full"; V.mot.ductions = "Full"; },
+  pupil:     function () { V.pupil.rapd = V.pupil.rapd || "None"; V.pupil.notes = V.pupil.notes || "PERRL, no RAPD"; },
+  motility:  function () { V.mot.versions = V.mot.versions || "Full"; V.mot.ductions = V.mot.ductions || "Full"; },
   gonioscopy: function () { ["od", "os"].forEach(function (e) { if (V.gon[e]) V.gon[e].s = V.gon[e].s || "Open (Grade 4)"; }); },
   fundus:    function () { ["od", "os"].forEach(function (e) { if (V.fun[e]) { V.fun[e].cd_v = V.fun[e].cd_v || "0.3"; } }); },
   neuro:     function () { V.neuro.color_od = V.neuro.color_od || "Normal"; V.neuro.notes = V.neuro.notes || "Colour, fields, Amsler normal"; },

@@ -178,6 +178,17 @@ real engine with nothing recorded except the drug:
    matcher looks for "optic" + "neuritis", which only ethambutol's "Optic
    neuritis (toxic)" contains. Should amiodarone raise `toxic_optic_risk`?
 
+### 🟧 OSDI "N/A" and corneal thickness in two places — found in the 2026-10-27 audit
+1. **Changed (please confirm):** the OSDI now offers N/A on items 6–12 (reading,
+   night driving, computer, TV, wind, low humidity, air conditioning) and leaves
+   N/A items out of the count, as the published form's scoring does. Items 1–5
+   have no N/A. Please check this against the OSDI form you use.
+2. **Not changed:** corneal thickness can be entered on the IOP page ("CCT") or
+   on the Investigations page ("Pachymetry"). The engine's thin-cornea rule
+   (CCT < 520 µm → `thin_cornea`) reads **only the IOP-page field**, so a
+   thickness entered as Pachymetry has no effect on the differential. Is the
+   Investigations "Pachymetry" a central reading the engine should also use?
+
 ### 🟧 Exclusion rules delete by name fragment — found in the 2026-09-24 audit
 When a condition scores ≥ 0.5 its exclusion list removes matching conditions
 from the differential entirely (urgent ones are always kept). Matching is by

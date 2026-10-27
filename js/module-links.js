@@ -36,7 +36,9 @@ function mlGet(path) {
    offers a jump to the step that owns it — the value is never duplicated
    into the module, so there is exactly one place it can be edited. */
 function mlCarryIn(rows) {
-  var live = rows.filter(function (r) { return mlGet(r.path) !== ""; });
+  /* A row may compute its value (r.get) instead of reading a stored path. */
+  function val(r) { var x = r.get ? r.get() : mlGet(r.path); return (x === undefined || x === null) ? "" : String(x); }
+  var live = rows.filter(function (r) { return val(r) !== ""; });
   if (!live.length) return "";
   return '<div style="border:1px solid var(--fg);border-radius:var(--r);padding:8px 10px;margin-bottom:8px;background:var(--sn)">' +
     '<div style="font-size:.56rem;color:var(--sl);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">' +
@@ -44,18 +46,27 @@ function mlCarryIn(rows) {
     live.map(function (r) {
       return '<div style="font-size:.6rem;display:flex;justify-content:space-between;gap:8px;padding:1px 0">' +
         '<span style="color:var(--sl)">' + esc(r.label) + '</span>' +
-        '<span><b>' + esc(mlGet(r.path)) + '</b>' +
+        '<span><b>' + esc(val(r)) + '</b>' +
         (r.step ? ' <a href="#" onclick="nav(\'' + r.step + '\');return false" style="color:var(--md);font-size:.54rem">edit</a>' : '') +
         '</span></div>';
     }).join("") +
   '</div>';
 }
 
+/* The OSDI only once it is finished — never a severity from a few answers. */
+function mlOsdi(field) {
+  if (typeof calculateOSDI !== "function" || !V || !V.osdi) return "";
+  var r = calculateOSDI();
+  return r.complete ? r[field] : "";
+}
+
 /* What each module / clinic section carries in from the core exam. */
 var ML_CARRY_IN = {
   cl_dryeye: [
-    { label: "OSDI score", path: "osdi.total", step: "chief_complaint" },
-    { label: "OSDI severity", path: "osdi.severity", step: "chief_complaint" },
+    /* Computed, not read from osdi.total/severity: visits saved before
+       2026-10-27 stored a running figure from a half-finished questionnaire. */
+    { label: "OSDI score", step: "chief_complaint", get: function () { return mlOsdi("score"); } },
+    { label: "OSDI severity", step: "chief_complaint", get: function () { return mlOsdi("severity"); } },
     { label: "TBUT OD (slit lamp)", path: "sl.od.but", step: "slit_lamp" },
     { label: "TBUT OS (slit lamp)", path: "sl.os.but", step: "slit_lamp" },
     { label: "Schirmer OD", path: "sl.od.schirmer", step: "slit_lamp" },
