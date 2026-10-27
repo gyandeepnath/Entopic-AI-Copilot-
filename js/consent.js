@@ -186,7 +186,13 @@ function consentSet(patientId, purposeId, state, by, nowIso) {
   /* Withdrawal is not just "stop collecting". Anything already contributed
      under this purpose has to go, or the withdrawal is cosmetic. */
   if (state === "withdrawn" && typeof corpusPurgePatient === "function") {
-    try { corpusPurgePatient(patientId, purposeId); } catch (e) {}
+    var purge = null;
+    try { purge = corpusPurgePatient(patientId, purposeId); } catch (e) { purge = { ok: false }; }
+    /* Reported, not swallowed: a withdrawal whose purge did not land is the
+       one outcome this ledger exists to prevent. */
+    if (purge && purge.ok === false) {
+      return { state: rec.state, at: rec.at, by: rec.by, text_version: rec.text_version, purge_failed: true };
+    }
   }
   return rec;
 }

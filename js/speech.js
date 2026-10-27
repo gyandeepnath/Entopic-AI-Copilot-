@@ -156,7 +156,7 @@ function finishSpeechInput(targetId, rawText) {
   }
 
   /* If API key available and this is the CC field, parse with AI */
-  if (API_KEY && targetId === "ccTA" && rawText.length > 10) {
+  if ((typeof llmAvailable === "function" ? llmAvailable() : !!API_KEY) && targetId === "ccTA" && rawText.length > 10) {
     if (el) el.value = "[Processing speech with AI...]";
     parseSpeechWithAI(rawText, el);
     return;

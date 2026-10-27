@@ -308,7 +308,21 @@
     </div>
     <div class="fi" style="margin:12px 0">
       <label>API Key</label>
-      <input id="inp_apikey" type="text" placeholder="sk-ant-api03-..." 
+      <input id="inp_apikey" type="password" autocomplete="off" placeholder="sk-ant-api03-..."
+             style="font-family:var(--mono);font-size:.68rem">
+    </div>
+    <div class="modal-desc" style="font-size:.6rem">
+      <b>Better for any shared or multi-user device:</b> leave the key empty and use a proxy that
+      holds it on a server (see <i>server/llm-proxy.example.js</i>). The key then never reaches this browser.
+    </div>
+    <div class="fi" style="margin:8px 0">
+      <label>Proxy address (optional)</label>
+      <input id="inp_llmproxy" type="url" placeholder="https://your-proxy.example.workers.dev/"
+             style="font-family:var(--mono);font-size:.68rem">
+    </div>
+    <div class="fi" style="margin:8px 0">
+      <label>Proxy access token (optional — or sign in to cloud sync)</label>
+      <input id="inp_llmproxytok" type="password" autocomplete="off" placeholder="the PROXY_TOKEN set on your proxy"
              style="font-family:var(--mono);font-size:.68rem">
     </div>
     <div class="btn-g">

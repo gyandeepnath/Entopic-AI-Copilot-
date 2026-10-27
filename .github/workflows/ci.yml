@@ -23,16 +23,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Must match package.json "engines" (>=22). `npm test` passes a glob
+      # (tests/**/*.test.js) that only Node 21+ expands; on Node 20 it failed
+      # with "Could not find …" and NO test ran — every push from 2026-09-24
+      # to 2026-10-27 went through CI unchecked (second full audit).
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
 
       # No dependencies to install — the harness uses only Node built-ins.
       - name: Syntax-check all app JS
         run: |
           set -e
-          for f in js/*.js knowledge/*.js tools/*.js tools/lib/*.js; do
+          for f in js/*.js knowledge/*.js tools/*.js tools/*/*.js; do
             node --check "$f"
           done
 
@@ -40,7 +44,11 @@ jobs:
         run: npm run registry:check
 
       - name: Golden clinical vignettes + full test suite
-        run: npm test
+        run: |
+          set -eo pipefail   # without pipefail, `| tee` would hide a failing npm test
+          npm test | tee /tmp/test.txt
+          # A runner that finds no tests must not read as a pass.
+          grep -qE "^# pass [1-9]" /tmp/test.txt || { echo "::error::no tests ran"; exit 1; }
 
       # Wiring, escaping, dead handlers, credential and privacy checks.
       # This was previously not run in CI at all — only the KB audit was, and

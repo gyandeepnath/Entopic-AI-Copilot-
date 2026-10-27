@@ -238,7 +238,7 @@ function startFollowUpVisit() {
     carried = (typeof carryForward === "function") ? carryForward(nv, prior.data) : 0;
     if (carried) nv._carried_from = prior.id;
   }
-  var vid = "v" + Date.now().toString(36);
+  var vid = newRecordId("v");
   CV = vid; V = nv;
   visits.push({
     id: vid, patient_id: CP, data: V,

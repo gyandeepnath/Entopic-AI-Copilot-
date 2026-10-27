@@ -90,6 +90,14 @@ if (typeof document !== "undefined") {
       if (typeof toast === "function") toast("Could not record that — this device may be out of storage.");
       return;
     }
+    if (rec.purge_failed) {
+      window.alert("The withdrawal is recorded, but this patient's research data could NOT be " +
+        "deleted — the device refused the write (it may be out of storage).\n\n" +
+        "Free some space and record the withdrawal again. Until then their de-identified " +
+        "data is still in the research set on this device.");
+      if (typeof renderMain === "function") renderMain();
+      return;
+    }
     if (typeof toast === "function") {
       toast(state === "granted" ? "Consent recorded."
         : state === "refused" ? "Declined — recorded."

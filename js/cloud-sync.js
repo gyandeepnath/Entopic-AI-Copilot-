@@ -269,12 +269,33 @@ function cloudSyncProfile(cb) {
    clinic and starts live sync. */
 function cloudJoinClinic(code, cb) {
   if (!CLOUD.session || !CLOUD.session.access_token) { cb && cb(new Error("sign in first")); return; }
-  var c = String(code || "").trim().toUpperCase();
+  /* Codes are shown as XXXX-XXXX-XXXX; accept them however they were typed. */
+  var c = String(code || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
   if (!c) { cb && cb(new Error("enter a join code")); return; }
   cloudApi("/rest/v1/rpc/join_clinic_by_code", { method: "POST", body: { p_code: c } },
     function (err, data) {
       if (err) { cb && cb(err); return; }
+      /* The server answers a code that matches nothing with null rather than
+         an error (db/migrations/006: an error would undo the record of the
+         failed attempt that the guessing limit counts). Treating null as
+         success used to report "Joined" for a wrong code. */
+      if (!data) {
+        cb && cb(new Error("that code does not match any clinic — check it with your clinic administrator"));
+        return;
+      }
       cloudResolveClinic(function () { cloudStart(); cb && cb(null, data); });
+    });
+}
+
+/* The clinic's join code, for an administrator to share with a colleague.
+   Readable by any member under RLS; the UI offers it to admins. */
+function cloudFetchJoinCode(cb) {
+  if (!cloudSignedIn()) { cb && cb(new Error("not connected to a clinic")); return; }
+  cloudApi("/rest/v1/clinics?id=eq." + encodeURIComponent(CLOUD.clinicId) + "&select=join_code", {},
+    function (err, rows) {
+      var code = (!err && rows && rows[0] && rows[0].join_code) || "";
+      if (!code) { cb && cb(err || new Error("this clinic has no join code yet — run db/migrations/006 on the project")); return; }
+      cb && cb(null, code.replace(/(.{4})(?=.)/g, "$1-"));
     });
 }
 function cloudSignUp(email, password, cb) {
@@ -344,7 +365,10 @@ function cloudSignOutEverywhere(cb) {
 /* ── clinic membership ── */
 function cloudResolveClinic(cb) {
   cloudApi("/rest/v1/clinic_members?select=clinic_id,role&limit=1", {}, function (err, rows) {
-    if (!err && rows && rows.length > 0) CLOUD.clinicId = rows[0].clinic_id;
+    if (!err && rows && rows.length > 0) {
+      CLOUD.clinicId = rows[0].clinic_id;
+      CLOUD.clinicRole = rows[0].role || "";
+    }
     cloudSaveState();
     cb && cb();
   });
@@ -401,19 +425,33 @@ function cloudWsNextDelay() {
 
 function cloudWsResetBackoff() { _wsBackoff = CLOUD_WS_BACKOFF_MIN; }
 
+/* ONE socket at a time (second full audit, 2026-10-27).
+
+   cloudStart() runs at boot, when the network comes back, after an unlock,
+   after joining or creating a clinic, and after setting the passphrase — and
+   each run opened a NEW socket without looking at the existing one. Every
+   superseded socket kept its own close handler, which scheduled its own
+   reconnect, so a clinic day of wifi blips multiplied the connections (and the
+   duplicate merges and heartbeats that come with them). Now a live or
+   connecting socket is reused, and a handler belonging to a socket that has
+   been replaced does nothing. */
 function cloudConnectRealtime() {
   if (!cloudSignedIn() || typeof WebSocket === "undefined") return;
+  if (CLOUD.ws && (CLOUD.ws.readyState === 0 || CLOUD.ws.readyState === 1)) return;
   var wsUrl = CLOUD_CONFIG.url.replace(/^http/, "ws") +
     "/realtime/v1/websocket?apikey=" + encodeURIComponent(CLOUD_CONFIG.anonKey) + "&vsn=1.0.0";
-  try { CLOUD.ws = new WebSocket(wsUrl); } catch (e) { CLOUD.wsOk = false; return; }
+  var ws;
+  try { ws = new WebSocket(wsUrl); } catch (e) { CLOUD.wsOk = false; return; }
+  CLOUD.ws = ws;
   var hb = null, refN = 1;
 
-  CLOUD.ws.onopen = function () {
+  ws.onopen = function () {
+    if (CLOUD.ws !== ws) { try { ws.close(); } catch (e) {} return; }
     /* The connection stood up: forget the backoff so an ordinary blip
        reconnects promptly next time and only a persistently unavailable
        server gets progressively longer waits. */
     cloudWsResetBackoff();
-    CLOUD.ws.send(JSON.stringify({
+    ws.send(JSON.stringify({
       topic: "realtime:entopic", event: "phx_join", ref: String(refN++), join_ref: "1",
       payload: {
         access_token: CLOUD.session.access_token,
@@ -424,12 +462,13 @@ function cloudConnectRealtime() {
       }
     }));
     hb = setInterval(function () {
-      try { CLOUD.ws.send(JSON.stringify({ topic: "phoenix", event: "heartbeat", payload: {}, ref: String(refN++) })); }
+      try { ws.send(JSON.stringify({ topic: "phoenix", event: "heartbeat", payload: {}, ref: String(refN++) })); }
       catch (e) { /* socket died; onclose handles it */ }
     }, 25000);
   };
 
-  CLOUD.ws.onmessage = function (ev) {
+  ws.onmessage = function (ev) {
+    if (CLOUD.ws !== ws) return;
     var msg;
     try { msg = JSON.parse(ev.data); } catch (e) { return; }
     if (msg.event === "phx_reply" && msg.payload && msg.payload.status === "ok") { CLOUD.wsOk = true; return; }
@@ -445,13 +484,15 @@ function cloudConnectRealtime() {
     }
   };
 
-  CLOUD.ws.onclose = function () {
-    CLOUD.wsOk = false;
+  ws.onclose = function () {
     if (hb) clearInterval(hb);
+    if (CLOUD.ws !== ws) return;          /* superseded or stopped: no reconnect */
+    CLOUD.wsOk = false;
+    CLOUD.ws = null;
     /* Jittered exponential backoff — see the note above cloudConnectRealtime. */
     if (cloudSignedIn()) setTimeout(cloudConnectRealtime, cloudWsNextDelay());
   };
-  CLOUD.ws.onerror = function () { CLOUD.wsOk = false; };
+  ws.onerror = function () { if (CLOUD.ws === ws) CLOUD.wsOk = false; };
 }
 
 /* ── lifecycle ── */
@@ -472,7 +513,7 @@ function cloudStart() {
 }
 function cloudStop() {
   if (CLOUD.pollTimer) { clearInterval(CLOUD.pollTimer); CLOUD.pollTimer = null; }
-  if (CLOUD.ws) { try { CLOUD.ws.close(); } catch (e) {} CLOUD.ws = null; }
+  if (CLOUD.ws) { var old = CLOUD.ws; CLOUD.ws = null; try { old.close(); } catch (e) {} }
   CLOUD.wsOk = false;
 }
 

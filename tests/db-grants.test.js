@@ -75,3 +75,44 @@ test("the audit log is append-only (no update/delete policy)", () => {
   assert.ok(!/create\s+policy[^;]*on\s+public\.audit_log[^;]*for\s+(update|delete)/.test(SQL),
     "audit_log must carry no UPDATE or DELETE policy — it is the tamper-evidence record");
 });
+
+
+/* ═══ Second full audit (2026-10-27) — each of these was demonstrated on a
+   real PostgreSQL 16 with Supabase's roles before it was fixed; the live
+   check is tools/db/verify-migrations.js. ═══ */
+
+test("every public view runs with the caller's rights (RLS applies to it)", () => {
+  /* A view runs with its OWNER's rights unless declared security_invoker,
+     so RLS on the tables beneath it does not apply. orphan_visits let anyone
+     holding the public anon key list every clinic's ids. Only the LAST
+     definition of each view counts. */
+  const defs = {};
+  const re = /create\s+(?:or\s+replace\s+)?view\s+public\.(\w+)([\s\S]*?)\bas\b/g;
+  let m;
+  while ((m = re.exec(SQL))) defs[m[1]] = m[2];
+  assert.ok(Object.keys(defs).length > 0, "sanity: views were found");
+  for (const [name, head] of Object.entries(defs)) {
+    assert.match(head, /security_invoker\s*=\s*true/,
+      "public." + name + " is not security_invoker — it bypasses row-level security");
+  }
+});
+
+test("clinic join codes are generated server-side, long, and throttled", () => {
+  assert.match(SQL, /create trigger clinics_join_code\s+before insert on public\.clinics/,
+    "a new clinic must get a code when it is created (it used to get none)");
+  assert.match(SQL, /for i in 0\.\.11 loop/, "12 characters");
+  assert.match(SQL, /private\.join_attempts/, "failed attempts are counted");
+  assert.match(SQL, /v_fails >= 10/, "and limited");
+});
+
+test("audit rows are attributed by the server, not the caller", () => {
+  assert.match(SQL, /new\.user_id := auth\.uid\(\)/);
+  assert.match(SQL, /create trigger audit_log_stamp_user\s+before insert on public\.audit_log/);
+});
+
+test("a user cannot raise their own entitlement tier", () => {
+  assert.match(SQL, /with check \(user_id = auth\.uid\(\) and tier = 'free'\)/);
+  assert.match(SQL, /revoke update on public\.profiles from authenticated/);
+  assert.doesNotMatch(SQL.split("revoke update on public.profiles from authenticated").pop(),
+    /grant update \([^)]*\btier\b/, "tier must not be re-granted");
+});

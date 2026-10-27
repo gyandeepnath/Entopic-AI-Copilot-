@@ -98,7 +98,8 @@ function vaultSecretAvailable(storageKey) {
    envelope format. It was left out, so a key cached before the vault was
    turned on stayed on disk in the clear until cloud sync next happened to
    load it — which, on a device that never syncs that session, was never. */
-var VAULT_MANAGED_SECRETS = ["entopic_cloud_session", "entopic_apikey", "entopic_cloud_phi_keyhex"];
+var VAULT_MANAGED_SECRETS = ["entopic_cloud_session", "entopic_apikey", "entopic_cloud_phi_keyhex",
+                             "entopic_llm_proxy_token"];
 
 function vaultRewrapSecrets() {
   if (!vaultSecretUsable()) return Promise.resolve(false);

@@ -421,3 +421,27 @@ test("a large patient set produces no pseudonym collisions", () => {
   }
   assert.strictEqual(seen.size, 20000, "20,000 patients must yield 20,000 distinct pseudonyms");
 });
+
+test("a withdrawal reaches disk at once, and a purge that did not land is reported", () => {
+  /* The purge used to be scheduled on a debounce timer and logged as done
+     before anything was written: a full device, or the tab closing in the
+     next few seconds, left the data in place under a "purged" audit entry. */
+  const ctx = device();
+  run(ctx, "consentSet('p1','research_secondary','granted','Dr Nath')");
+  run(ctx, "corpusCapture(__v, __p)", { __v: visit("a"), __p: patient("p1") });
+  run(ctx, "corpusFlush()");
+  run(ctx, "consentSet('p1','research_secondary','withdrawn','Dr Nath')");
+  assert.strictEqual(JSON.parse(ctx.__disk.research_corpus || ctx.__disk[Object.keys(ctx.__disk).find((k) => /corpus/.test(k))]).detail.length, 0,
+    "already on disk — not waiting for a timer");
+
+  const ctx2 = device();
+  run(ctx2, "consentSet('p1','research_secondary','granted','Dr Nath')");
+  run(ctx2, "corpusCapture(__v, __p)", { __v: visit("a"), __p: patient("p1") });
+  run(ctx2, "corpusFlush()");
+  const realSave = ctx2.saveStore;
+  ctx2.saveStore = (k, v) => (/corpus/.test(k) ? false : realSave(k, v));   /* device full for the corpus */
+  const rec = run(ctx2, "consentSet('p1','research_secondary','withdrawn','Dr Nath')");
+  assert.strictEqual(rec.purge_failed, true, "the caller is told the data is still there");
+  assert.ok(ctx2.__audit.some((a) => a.k === "research_withdraw_failed"));
+  assert.ok(!ctx2.__audit.some((a) => a.k === "research_withdrawn"), "no 'purged' entry for a purge that failed");
+});

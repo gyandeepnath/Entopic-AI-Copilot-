@@ -68,14 +68,44 @@ function closeModal(id) {
 function saveApiKeyFromModal() {
   var inp = document.getElementById("inp_apikey");
   var key = inp ? inp.value.trim() : "";
-  if (!key) {
-    alert("Please paste your API key.");
+  var proxy = ((document.getElementById("inp_llmproxy") || {}).value || "").trim();
+  var ptok = ((document.getElementById("inp_llmproxytok") || {}).value || "").trim();
+  /* The proxy was the documented secure route (no key in the browser) but had
+     no field anywhere — it could only be set from the browser's developer
+     tools. */
+  if (proxy && !/^https:\/\/[^\s]+$|^http:\/\/localhost(:\d+)?(\/[^\s]*)?$/.test(proxy)) {
+    alert("The proxy address must start with https:// (or http://localhost for testing).");
     return;
   }
-  saveApiKey(key);
-  API_KEY = key;
+  if (!key && !proxy) {
+    alert("Paste an API key, or enter your proxy's address.");
+    return;
+  }
+  /* index.html's Content-Security-Policy lets the app talk only to itself,
+     *.supabase.co and api.anthropic.com. A proxy anywhere else is blocked by
+     the browser with nothing on screen — so say so now, not at the first
+     failed remark. Hosting it as an Edge Function on the clinic's own Supabase
+     project needs no policy change. */
+  if (proxy && !/^https:\/\/[a-z0-9-]+\.supabase\.co\//i.test(proxy) && !/^http:\/\/localhost/.test(proxy)) {
+    if (!window.confirm("That address is outside what Entopic's security policy allows the app to contact, " +
+        "so the browser will block it.\n\nThe simplest fix is to run the proxy as a Supabase Edge Function on " +
+        "your clinic's own project (https://<project>.supabase.co/functions/v1/…) — see " +
+        "server/llm-proxy.example.js. Otherwise the address must be added to connect-src in index.html.\n\n" +
+        "Save it anyway?")) return;
+  }
+  try {
+    if (proxy) localStorage.setItem("entopic_llm_proxy", proxy);
+    else localStorage.removeItem("entopic_llm_proxy");
+  } catch (e) {}
+  if (ptok && typeof vaultSecretSet === "function") vaultSecretSet("entopic_llm_proxy_token", ptok);
+  if (key) { saveApiKey(key); API_KEY = key; }
+  else if (proxy && API_KEY) {
+    /* Moving to the proxy is the point of having one: the key must not stay
+       behind in this browser, or the status below would be untrue. */
+    saveApiKey(""); API_KEY = "";
+  }
   var status = document.getElementById("apiKeyStatus");
-  if (status) status.textContent = "✓ API key saved successfully.";
+  if (status) status.textContent = proxy ? "✓ Proxy saved — the browser holds no API key." : "✓ API key saved successfully.";
   closeModal("modalApiKey");
   /* Re-render home if we're on home page */
   if (document.getElementById("pgHome").classList.contains("active")) {
@@ -232,7 +262,7 @@ function doSetup() {
   }
 
   var user = {
-    id: "u" + Date.now().toString(36),
+    id: newRecordId("u"),
     username: uname,
     name: name,
     cred: cred,
@@ -568,7 +598,10 @@ function homeSecCasebook() { return '<div class="home-hd"><h1>Casebook</h1></div
 function homeSecKB()       { return '<div class="home-hd"><h1>Reference</h1></div>' + homeCardKB(); }
 
 function homeSecAccount() {
-  var apiStatus = API_KEY
+  var viaProxy = (typeof llmProxyUrl === "function") && !!llmProxyUrl();
+  var apiStatus = viaProxy
+    ? '<div class="home-settings-status">✓ Using your proxy — no API key is held in this browser</div>'
+    : API_KEY
     ? '<div class="home-settings-status">✓ API key configured — interpretive remarks active</div>'
     : '<div class="home-settings-status" style="color:var(--md)">⚠ No key — diagnostic engine works offline, interpretive remarks disabled</div>';
   return '<div class="home-hd"><h1>Account</h1></div>' +
@@ -587,7 +620,7 @@ function homeSecAccount() {
     '<div class="home-settings" style="margin-top:8px">' +
       '<div class="home-settings-title">🔑 AI Interpretive Engine (Claude API)</div>' +
       '<div class="home-settings-desc">Optional. Provides clinical remarks and speech parsing. The diagnostic engine runs fully offline without this.</div>' +
-      '<button class="btn btn-s" onclick="openModal(\'modalApiKey\')" style="font-size:.62rem">' + (API_KEY ? "Update API Key" : "Configure API Key") + '</button>' +
+      '<button class="btn btn-s" onclick="openModal(\'modalApiKey\')" style="font-size:.62rem">' + ((API_KEY || viaProxy) ? "Update AI connection" : "Configure AI connection") + '</button>' +
       apiStatus +
     '</div>' +
     (typeof dataExportCard === "function" ? dataExportCard() : "") +
@@ -885,7 +918,7 @@ function renderCloudCard() {
         '<button class="btn btn-p" style="font-size:.6rem" onclick="cloudUiCreateClinic()">Create clinic</button>' +
       '</div>' +
       '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:5px">' +
-        '<input id="cloudJoinCode" placeholder="or join code (6 chars)" maxlength="6" style="font-size:.62rem;padding:3px 5px;border:1px solid var(--fg);border-radius:2px;text-transform:uppercase">' +
+        '<input id="cloudJoinCode" placeholder="or join code (XXXX-XXXX-XXXX)" maxlength="20" style="font-size:.62rem;padding:3px 5px;border:1px solid var(--fg);border-radius:2px;text-transform:uppercase">' +
         '<button class="btn btn-s" style="font-size:.6rem" onclick="cloudUiJoinClinic()">Join a clinic</button>' +
         '<button class="btn btn-s" style="font-size:.6rem" onclick="cloudUiSignOut()">Sign out</button>' +
       '</div>' +
@@ -896,8 +929,14 @@ function renderCloudCard() {
       cloudPhiPanel(s) +
       '<div style="display:flex;gap:6px;margin-top:6px">' +
         '<button class="btn btn-s" style="font-size:.6rem" onclick="cloudUiSyncNow()">Sync now</button>' +
+        /* There was no way to see the clinic's join code anywhere in the app,
+           so "join a clinic with a share code from a colleague" could not be
+           done without database access. */
+        (CLOUD && CLOUD.clinicRole === "admin"
+          ? '<button class="btn btn-s" style="font-size:.6rem" onclick="cloudUiShowJoinCode()">Invite a colleague…</button>' : '') +
         '<button class="btn btn-s" style="font-size:.6rem" onclick="cloudUiSignOut()">Sign out</button>' +
-      '</div>';
+      '</div>' +
+      '<div id="cloudMsg" class="home-settings-status"></div>';
   }
 
   return '<div class="home-settings" style="margin-top:8px">' +
@@ -1019,9 +1058,18 @@ function cloudUiDisconnect() {
   if (typeof disconnectCloud === "function") disconnectCloud();
   renderHome();
 }
+function cloudUiShowJoinCode() {
+  if (typeof cloudFetchJoinCode !== "function") return;
+  cloudUiMsg("Fetching the clinic's join code…", true);
+  cloudFetchJoinCode(function (err, code) {
+    if (err) { cloudUiMsg("Couldn't get the join code: " + err.message, false); return; }
+    cloudUiMsg("Join code: " + code + " — give it only to staff of this clinic. Anyone holding it can " +
+      "join and see the clinic's (encrypted) records; they will still need the clinic passphrase to read them.", true);
+  });
+}
 function cloudUiJoinClinic() {
   var code = (document.getElementById("cloudJoinCode") || {}).value || "";
-  if (!code.trim()) { cloudUiMsg("Enter a 6-character join code.", false); return; }
+  if (!code.trim()) { cloudUiMsg("Enter the clinic's join code.", false); return; }
   cloudUiMsg("Joining…", true);
   if (typeof cloudJoinClinic !== "function") { cloudUiMsg("Cloud is unavailable.", false); return; }
   cloudJoinClinic(code, function (err) {
@@ -1274,8 +1322,8 @@ function newPatient() {
     }
   }
 
-  var pid = "p" + Date.now().toString(36);
-  var vid = "v" + (Date.now() + 1).toString(36);
+  var pid = newRecordId("p");
+  var vid = newRecordId("v");
   var mrn = "EP-" + Date.now().toString(36).toUpperCase();
 
   P = blankPatient(pid, mrn);
@@ -1336,7 +1384,7 @@ function openPatient(pid) {
     if (typeof setVisitSeenStamp === "function") setVisitSeenStamp(last.updated || last.date);
   }
   else {
-    CV = "v" + (Date.now() + 1).toString(36); V = blankVisit();
+    CV = newRecordId("v"); V = blankVisit();
     visits.push({ id: CV, patient_id: pid, data: V, status: "in_progress", date: new Date().toISOString(), updated: new Date().toISOString() });
     saveVisits(visits);
   }

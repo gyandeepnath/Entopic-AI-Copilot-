@@ -532,16 +532,24 @@ function corpusPurgePatient(patientId, purposeId) {
   c.stats = c.stats || {};
   c.stats.withdrawn_purges = (c.stats.withdrawn_purges || 0) + purged;
   corpusSave(c);
+  /* Written NOW, not on the debounce timer. corpusSave only schedules the
+     write; the purge used to be logged as done before anything reached disk,
+     so a full device, or the tab closing within the next few seconds, left
+     the withdrawn patient's data in the corpus while the audit trail said it
+     had gone (second full audit, 2026-10-27). */
+  var ok = corpusFlush() !== false;
 
   if (typeof logAudit === "function") {
     try {
-      logAudit("research_withdrawn",
-        "Consent withdrawn — " + purged + " de-identified research record(s) purged. " +
-        "Older encounters already folded into monthly aggregates cannot be individually removed.",
+      logAudit(ok ? "research_withdrawn" : "research_withdraw_failed",
+        ok ? "Consent withdrawn — " + purged + " de-identified research record(s) purged. " +
+             "Older encounters already folded into monthly aggregates cannot be individually removed."
+           : "Consent withdrawn, but deleting " + purged + " research record(s) FAILED — the " +
+             "device refused the write. They are still in the research data.",
         { patient_id: patientId });
     } catch (e) {}
   }
-  return { purged: purged, rollup_note: c.rollup.length > 0 };
+  return { purged: purged, ok: ok, rollup_note: c.rollup.length > 0 };
 }
 
 

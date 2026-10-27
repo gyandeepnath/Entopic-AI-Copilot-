@@ -29,6 +29,29 @@ function _vaultOnFor(key) {
          typeof vaultIsProtected === "function" && vaultIsProtected(key);
 }
 
+/* A new record id: a time part (so ids sort and read sensibly) plus 50
+   random bits.
+
+   Ids used to be "p" + Date.now() alone — predictable to the millisecond.
+   They are the cloud database's primary key, shared across every clinic on
+   the server, so (1) two clinics creating a patient in the same millisecond
+   collided, and the second clinic's record could never sync; and (2) anyone
+   with their own clinic on the same server could pre-create rows under ids
+   another clinic was about to generate, and that clinic's whole sync batch
+   was then refused, with no error the clinician could see (second full audit,
+   2026-10-27). Existing ids are unchanged; only new records use this. */
+function newRecordId(prefix) {
+  var rnd = "";
+  try {
+    var b = new Uint8Array(10);
+    crypto.getRandomValues(b);
+    for (var i = 0; i < b.length; i++) rnd += (b[i] % 32).toString(32);
+  } catch (e) {
+    for (var j = 0; j < 10; j++) rnd += Math.floor(Math.random() * 32).toString(32);
+  }
+  return String(prefix || "") + Date.now().toString(36) + rnd;
+}
+
 /* ── Timing hook (js/perf-metrics.js) ──
    Records how long the measured storage calls actually take ON THIS DEVICE,
    which is the thing the Phase 7 benchmark could not tell anyone: its figures

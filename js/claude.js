@@ -34,6 +34,30 @@ function llmModel() {
   catch (e) { return "claude-sonnet-5"; }
 }
 
+/* The proxy's access token (server/llm-proxy.example.js requires one: an
+   unauthenticated proxy is an open relay that spends the clinic's key for
+   anyone who finds its URL). Kept as a vault-managed secret. Falls back to the
+   signed-in cloud session, which the proxy can verify against the clinic's own
+   Supabase project instead. Resolves "" when neither is available. */
+function llmProxyToken() {
+  var p = (typeof vaultSecretGet === "function")
+    ? vaultSecretGet("entopic_llm_proxy_token")
+    : Promise.resolve((function () {
+        try { return localStorage.getItem("entopic_llm_proxy_token") || ""; } catch (e) { return ""; }
+      })());
+  return p.then(function (t) {
+    if (t) return t;
+    return (typeof CLOUD !== "undefined" && CLOUD && CLOUD.session && CLOUD.session.access_token) || "";
+  }, function () { return ""; });
+}
+
+/* Is any route to the model configured? The callers used to test API_KEY
+   alone, so with the RECOMMENDED setup — a proxy, and deliberately no key in
+   the browser — interpretive remarks and speech parsing never ran at all. */
+function llmAvailable() {
+  return !!(llmProxyUrl() || (typeof API_KEY !== "undefined" && API_KEY));
+}
+
 var _llmDirectWarned = false;
 
 /* ── DE-IDENTIFICATION BEFORE ANYTHING LEAVES ──
@@ -112,6 +136,7 @@ function callClaudeAPI(systemPrompt, userPrompt, maxTokens, onSuccess, onError) 
     };
   }
 
+  function send() {
   fetch(url, { method: "POST", headers: headers, body: JSON.stringify(body) })
   .then(function(response) {
     return response.json();
@@ -140,6 +165,16 @@ function callClaudeAPI(systemPrompt, userPrompt, maxTokens, onSuccess, onError) 
     console.error("Claude API fetch error:", err);
     if (onError) onError(err.message || "Network error");
   });
+  }
+
+  if (proxy) {
+    llmProxyToken().then(function (tok) {
+      if (tok) headers["Authorization"] = "Bearer " + tok;
+      send();
+    });
+  } else {
+    send();
+  }
 }
 
 
@@ -153,8 +188,8 @@ var _interpretTimer = null;
 
 function requestInterpretiveRemarks() {
 
-  /* Guard: need API key and diagnosis results */
-  if (!API_KEY) return;
+  /* Guard: need a route to the model (key OR proxy) and diagnosis results */
+  if (!llmAvailable()) return;
   if (!V.dxList || V.dxList.length === 0) return;
 
   /* Debounce — wait 2 seconds after last change */

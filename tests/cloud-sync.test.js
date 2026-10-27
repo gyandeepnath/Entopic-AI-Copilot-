@@ -383,3 +383,34 @@ test("an unreadable store makes the badge cautious, never crashes it", () => {
     "a damaged store must not break the status badge");
   assert.strictEqual(s.pending, 0, "unknown must not be reported as a positive count");
 });
+
+test("starting sync repeatedly keeps ONE live socket, and a replaced socket never reconnects", () => {
+  /* Each cloudStart() (boot, network back, unlock, join…) used to open a new
+     socket; every superseded one kept a close handler that scheduled its own
+     reconnect, so connections multiplied through the day. */
+  const sb = makeSandbox();
+  const made = [];
+  sb.WebSocket = function () { this.readyState = 0; this.sent = []; made.push(this); };
+  sb.WebSocket.prototype.send = function (m) { this.sent.push(m); };
+  sb.WebSocket.prototype.close = function () { this.readyState = 3; if (this.onclose) this.onclose(); };
+  let reconnects = 0;
+  sb.setTimeout = () => { reconnects++; return 0; };
+  vm.runInContext(`CLOUD.session = { access_token: "t", refresh_token: "r" }; CLOUD.clinicId = "c1";`, sb);
+
+  for (let i = 0; i < 5; i++) vm.runInContext("cloudConnectRealtime()", sb);
+  assert.strictEqual(made.length, 1, "five starts while connecting must not open five sockets");
+
+  made[0].readyState = 1;
+  vm.runInContext("cloudConnectRealtime()", sb);
+  assert.strictEqual(made.length, 1, "an open socket is reused");
+
+  made[0].readyState = 3; made[0].onclose();             /* the network drops */
+  assert.strictEqual(reconnects, 1, "one reconnect is scheduled");
+  vm.runInContext("cloudConnectRealtime()", sb);          /* and runs */
+  assert.strictEqual(made.length, 2);
+  made[0].onclose();                                      /* a late close from the dead socket */
+  assert.strictEqual(reconnects, 1, "a replaced socket must not schedule another reconnect");
+
+  vm.runInContext("cloudStop()", sb);
+  assert.strictEqual(reconnects, 1, "stopping sync must not reconnect");
+});

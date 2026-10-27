@@ -76,3 +76,21 @@ test("doSave always refreshes the open visit's updated stamp", () => {
   assert.notStrictEqual(v.updated, "2026-07-01T00:00:00.000Z", "open visit is stamped on save");
   assert.deepStrictEqual(JSON.parse(JSON.stringify(v.data)), { cc: "new complaint" });
 });
+
+test("record ids cannot be predicted or collide within a millisecond", () => {
+  /* They are the cloud primary key, shared across every clinic on the server.
+     "p" + Date.now() let two clinics collide, and let anyone pre-create the
+     ids another clinic was about to use, blocking its whole sync. */
+  const sb = makeSandbox();
+  vm.runInContext("var crypto = { getRandomValues: function (a) { return require_crypto().getRandomValues(a); } };", sb, {});
+  sb.require_crypto = () => require("node:crypto").webcrypto;
+  const ids = vm.runInContext(`(function () {
+    var out = [], frozen = Date.now, t = 1790000000000;
+    Date.now = function () { return t; };              /* one millisecond */
+    try { for (var i = 0; i < 2000; i++) out.push(newRecordId("p")); }
+    finally { Date.now = frozen; }
+    return out;
+  })()`, sb);
+  assert.strictEqual(new Set(ids).size, ids.length, "ids made in the same millisecond collided");
+  for (const id of ids.slice(0, 20)) assert.match(id, /^p[0-9a-z]{8,}[0-9a-v]{10}$/);
+});
