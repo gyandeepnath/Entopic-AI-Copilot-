@@ -115,8 +115,31 @@ function vaultRewrapSecrets() {
   return chain.then(function () { return true; });
 }
 
+/* ── Everything else the vault key must cover (second full audit, 2026-10-27) ──
+   Two places held full clinical content outside the record stores, in the
+   clear, on devices whose owners had turned encryption on: the automatic
+   backup snapshots (js/storage-autobackup.js) and attached files — scans,
+   photographs, PDFs, often bearing the patient's name (js/file-store.js).
+   Sealed as soon as the vault is enabled or opened (catching anything written
+   before), unsealed before it is turned off (a copy sealed under a discarded
+   key is a copy that no longer exists). Best-effort: a failure leaves that
+   item as it was and never fails the unlock. */
+function vaultSealSideStores() {
+  var jobs = [];
+  if (typeof autobackupSealExisting === "function") jobs.push(autobackupSealExisting());
+  if (typeof fsSealExisting === "function") jobs.push(fsSealExisting());
+  return Promise.all(jobs.map(function (p) { return Promise.resolve(p).catch(function () { return 0; }); }));
+}
+function vaultUnsealSideStores(dek) {
+  var jobs = [];
+  if (typeof autobackupUnsealExisting === "function") jobs.push(autobackupUnsealExisting(dek));
+  if (typeof fsUnsealExisting === "function") jobs.push(fsUnsealExisting(dek));
+  return Promise.all(jobs.map(function (p) { return Promise.resolve(p).catch(function () { return 0; }); }));
+}
+
 if (typeof module !== "undefined" && module.exports) {
   module.exports = {
+    vaultSealSideStores: vaultSealSideStores, vaultUnsealSideStores: vaultUnsealSideStores,
     vaultSecretSet: vaultSecretSet, vaultSecretGet: vaultSecretGet,
     vaultSecretPresent: vaultSecretPresent, vaultSecretAvailable: vaultSecretAvailable,
     vaultIsWrappedSecret: vaultIsWrappedSecret, vaultRewrapSecrets: vaultRewrapSecrets,

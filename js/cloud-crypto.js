@@ -254,8 +254,24 @@ function phiDecrypt(envelope) {
   });
 }
 
+/* Bytes (an attachment) under the same clinic key: iv (12 bytes) followed by
+   the AES-GCM ciphertext, as one Uint8Array ready to upload. */
+function phiEncryptBytes(buf) {
+  return phiLoadKey().then(function (key) {
+    if (!key) throw new Error("No encryption key on this device.");
+    var iv = new Uint8Array(12);
+    crypto.getRandomValues(iv);
+    return crypto.subtle.encrypt({ name: "AES-GCM", iv: iv }, key, buf).then(function (ct) {
+      var out = new Uint8Array(12 + ct.byteLength);
+      out.set(iv, 0); out.set(new Uint8Array(ct), 12);
+      return out;
+    });
+  });
+}
+
 if (typeof module !== "undefined" && module.exports) {
   module.exports = {
+    phiEncryptBytes: phiEncryptBytes,
     phiConsentGiven: phiConsentGiven, phiSetConsent: phiSetConsent,
     phiSetPassphrase: phiSetPassphrase, phiKeyReady: phiKeyReady,
     phiArmed: phiArmed, phiEncrypt: phiEncrypt, phiDecrypt: phiDecrypt,

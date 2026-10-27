@@ -299,9 +299,24 @@ function archiveRun(opts) {
       return Promise.resolve(null);
     }
     var key = "snap_" + archiveId;
-    return mirrorPutBlob(key, json)
+    /* This on-device copy is KEPT as a safety net for the downloaded file —
+       so with the vault on it is sealed with the vault key, like the
+       automatic snapshots. It used to be written in the clear: every archive
+       left a full plaintext copy of the archived visits in IndexedDB beside
+       an encrypted vault (second full audit, 2026-10-27). */
+    var vaultOn = typeof vaultEnabled === "function" && vaultEnabled() &&
+                  typeof vaultEncryptValue === "function";
+    var put = vaultOn
+      ? vaultEncryptValue(payload).then(function (env) { return mirrorPutBlob(key, JSON.stringify(env)); })
+      : mirrorPutBlob(key, json);
+    return put
       .then(function () { return mirrorGetRaw(key); })
-      .then(function (raw) { try { return JSON.parse(raw); } catch (e) { return null; } });
+      .then(function (raw) {
+        var obj;
+        try { obj = JSON.parse(raw); } catch (e) { return null; }
+        if (typeof vaultIsEnvelope === "function" && vaultIsEnvelope(obj)) return vaultDecryptValue(obj);
+        return obj;
+      });
   };
 
   return Promise.resolve()

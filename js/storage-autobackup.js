@@ -122,8 +122,6 @@ function autobackupSnapshot(opts) {
 
   var payload;
   try { payload = buildBackupPayload(); } catch (e) { return fail("could not build the payload"); }
-  var json;
-  try { json = JSON.stringify(payload); } catch (e) { return fail("could not serialise the payload"); }
 
   /* A random suffix, not just the timestamp. Two snapshots taken in the same
      millisecond — a forced one during a restore, or a test loop — produced the
@@ -131,8 +129,9 @@ function autobackupSnapshot(opts) {
      window quietly held fewer copies than it reported. Found by a test. */
   var id = MIRROR_SNAPSHOT_PREFIX + new Date().toISOString().replace(/[:.]/g, "-") +
            "-" + Math.random().toString(36).slice(2, 8);
-  return Promise.resolve()
-    .then(function () { return mirrorPutBlob(id, json); })
+  var json = "";
+  return _autobackupSeal(payload)
+    .then(function (sealed) { json = sealed; return mirrorPutBlob(id, json); })
     .then(function () {
       st = autobackupState();
       st.snapshots.push({ id: id, at: new Date().toISOString(), bytes: json.length });
@@ -156,6 +155,92 @@ function autobackupSnapshot(opts) {
     .catch(function (e) { return { ok: false, reason: (e && e.message) || "the snapshot write failed" }; });
 }
 
+/* ── With the vault on, a snapshot is SEALED (second full audit, 2026-10-27) ──
+
+   A snapshot is the WHOLE backup — every patient, visit, account and audit
+   entry. It was written to IndexedDB with JSON.stringify and nothing else, so
+   on a device whose owner had turned encryption on, up to seven complete
+   plaintext copies of the records sat in the same browser profile the vault
+   exists to protect: a stolen laptop or a copied profile gave up everything
+   the vault was hiding. Snapshots taken before encryption was turned on also
+   stayed readable after it.
+
+   Now: sealed with the vault's own data key when the vault is on; existing
+   plaintext snapshots are sealed as soon as the vault is enabled or next
+   unlocked (autobackupSealExisting, called by js/local-vault.js); and turning
+   the vault off unseals them first (autobackupUnsealExisting), because a
+   snapshot sealed under a key that has just been thrown away is a backup that
+   no longer exists. */
+function _autobackupVaultOn() {
+  return typeof vaultEnabled === "function" && vaultEnabled();
+}
+
+function _autobackupSeal(payload) {
+  if (!_autobackupVaultOn()) {
+    try { return Promise.resolve(JSON.stringify(payload)); }
+    catch (e) { return Promise.reject(new Error("could not serialise the payload")); }
+  }
+  if (typeof vaultEncryptValue !== "function") {
+    return Promise.reject(new Error("the vault is on but cannot seal the snapshot; none was written"));
+  }
+  return vaultEncryptValue(payload).then(function (env) { return JSON.stringify(env); });
+}
+
+function _autobackupIsSealed(obj) {
+  return typeof vaultIsEnvelope === "function" && vaultIsEnvelope(obj);
+}
+
+/* Rewrite every snapshot through `fn(parsed) -> Promise<string|null>`;
+   null means "leave it as it is". One failure leaves that snapshot unchanged
+   and does not stop the rest. Resolves the number rewritten. */
+function _autobackupRewriteAll(fn) {
+  if (typeof mirrorGetRaw !== "function" || typeof mirrorPutBlob !== "function") return Promise.resolve(0);
+  var done = 0, chain = Promise.resolve();
+  /* The automatic snapshots, AND the on-device copy each archive keeps
+     (storage-archive.js) — both are full copies of clinical records. */
+  var ids = autobackupState().snapshots.slice();
+  try {
+    var arc = (typeof loadStore === "function") ? loadStore("archives", null) : null;
+    ((arc && Array.isArray(arc.archives)) ? arc.archives : []).forEach(function (a) {
+      if (a && a.id) ids.push({ id: "snap_" + a.id });
+    });
+  } catch (e) { /* no archives */ }
+  ids.forEach(function (s) {
+    chain = chain.then(function () {
+      return Promise.resolve(mirrorGetRaw(s.id)).then(function (raw) {
+        if (!raw) return null;
+        var obj;
+        try { obj = JSON.parse(raw); } catch (e) { return null; }
+        return fn(obj);
+      }).then(function (out) {
+        if (out === null || out === undefined) return;
+        return mirrorPutBlob(s.id, out).then(function () { done++; });
+      }).catch(function () { /* leave this one as it was */ });
+    });
+  });
+  return chain.then(function () { return done; });
+}
+
+/* Seal every snapshot still in the clear. Needs the vault OPEN. */
+function autobackupSealExisting() {
+  if (!_autobackupVaultOn() || typeof vaultUnlocked !== "function" || !vaultUnlocked() ||
+      typeof vaultEncryptValue !== "function") return Promise.resolve(0);
+  return _autobackupRewriteAll(function (obj) {
+    if (_autobackupIsSealed(obj)) return null;
+    return vaultEncryptValue(obj).then(function (env) { return JSON.stringify(env); });
+  });
+}
+
+/* Unseal every snapshot with `dek` — called while the vault is being turned
+   OFF, before its key is discarded. */
+function autobackupUnsealExisting(dek) {
+  if (!dek || typeof vaultDecryptValue !== "function") return Promise.resolve(0);
+  return _autobackupRewriteAll(function (obj) {
+    if (!_autobackupIsSealed(obj)) return null;
+    return vaultDecryptValue(obj, dek).then(function (plain) { return JSON.stringify(plain); });
+  });
+}
+
 /* The snapshots available to restore from, newest first. */
 function autobackupSnapshots() {
   return autobackupState().snapshots.slice().reverse();
@@ -168,7 +253,13 @@ function autobackupRead(id) {
   return Promise.resolve(mirrorGetRaw(id))
     .then(function (json) {
       if (!json) return null;
-      try { return JSON.parse(json); } catch (e) { return null; }
+      var obj;
+      try { obj = JSON.parse(json); } catch (e) { return null; }
+      if (!_autobackupIsSealed(obj)) return obj;
+      /* Sealed: readable only with the vault open. */
+      if (typeof vaultUnlocked !== "function" || !vaultUnlocked() ||
+          typeof vaultDecryptValue !== "function") return null;
+      return vaultDecryptValue(obj);
     })
     .catch(function () { return null; });
 }

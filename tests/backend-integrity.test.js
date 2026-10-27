@@ -658,3 +658,60 @@ test("snapshots live in their own namespace, not in the store allowlist", () => 
   assert.ok(/function mirrorPutBlob[\s\S]{0,300}mirrorIsSnapshotKey/.test(src),
     "mirrorPutBlob must reject any key outside the snapshot namespace");
 });
+
+
+/* ═══ Snapshots and the vault (second full audit, 2026-10-27) ═══
+   A snapshot is the whole backup. It was written to IndexedDB as plain JSON
+   even with the vault on — up to seven complete plaintext copies of the
+   records beside the encrypted ones. */
+
+function vaultedBackupSandbox() {
+  /* A tiny reversible "cipher" so the test can see sealed vs clear without
+     real crypto; the real envelope format is covered in local-vault.test.js. */
+  let unlocked = true;
+  const ctx = backupSandbox({
+    vaultEnabled: () => true,
+    vaultUnlocked: () => unlocked,
+    vaultIsEnvelope: (x) => !!(x && x.__vault === "t" && x.ct),
+    vaultEncryptValue: (o) => Promise.resolve({ __vault: "t", iv: "0", ct: Buffer.from(JSON.stringify(o)).toString("base64") }),
+    vaultDecryptValue: (env) => Promise.resolve(JSON.parse(Buffer.from(env.ct, "base64").toString()))
+  });
+  ctx.Buffer = Buffer;
+  ctx.__lock = () => { unlocked = false; };
+  return ctx;
+}
+
+test("with the vault on, a snapshot on disk is sealed — and still restores", async () => {
+  const ctx = vaultedBackupSandbox();
+  const r = await vm.runInContext("autobackupSnapshot({force:true})", ctx);
+  assert.strictEqual(r.ok, true, r.reason);
+  const raw = Object.values(ctx._blobs)[0];
+  assert.doesNotMatch(raw, /"patients"/, "the records were written in the clear beside an encrypted vault");
+  const id = vm.runInContext("autobackupSnapshots()[0].id", ctx);
+  const back = await vm.runInContext(`autobackupRead(${JSON.stringify(id)})`, ctx);
+  assert.strictEqual(back.patients.length, 1, "a sealed snapshot must still read back whole");
+  ctx.__lock();
+  assert.strictEqual(await vm.runInContext(`autobackupRead(${JSON.stringify(id)})`, ctx), null,
+    "and not while the vault is locked");
+});
+
+test("snapshots left in the clear are sealed when the vault opens; unsealed before it is turned off", async () => {
+  const ctx = vaultedBackupSandbox();
+  vm.runInContext(`saveStore("autobackup", { snapshots: [{ id: "snap_old", at: "2026-01-01T00:00:00Z" }] })`, ctx);
+  ctx._blobs.snap_old = JSON.stringify({ version: "1", patients: [{ id: "p1", first_name: "Meera" }] });
+  const n = await vm.runInContext("autobackupSealExisting()", ctx);
+  assert.strictEqual(n, 1);
+  assert.doesNotMatch(ctx._blobs.snap_old, /Meera/);
+  await vm.runInContext("autobackupUnsealExisting({})", ctx);
+  assert.match(ctx._blobs.snap_old, /Meera/, "turning the vault off must not strand the backups under a discarded key");
+});
+
+test("the vault seals snapshots on enable and unlock, and unseals them on disable", () => {
+  const src = read("js/local-vault.js");
+  assert.ok((src.match(/vaultSealSideStores\(\)/g) || []).length >= 2, "enable AND unlock");
+  assert.match(src, /vaultUnsealSideStores\(dek\)/);
+  const side = read("js/vault-secrets.js");
+  assert.match(side, /autobackupSealExisting\(\)/);
+  assert.match(side, /autobackupUnsealExisting\(dek\)/);
+  assert.match(side, /fsSealExisting\(\)/, "attachments too");
+});

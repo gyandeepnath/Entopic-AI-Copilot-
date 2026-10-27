@@ -350,7 +350,9 @@ function fsIngest(file, opts) {
     }
     return prep;
   }).then(function (blob) {
-    return fsPut(id, blob).then(function () {
+    return fsSealForStore(blob).then(function (stored) {
+      return fsPut(id, stored).then(function () { rec.sealed = (stored !== blob); });
+    }).then(function () {
       rec.store = "idb";
       return rec;
     }).catch(function () {
@@ -384,12 +386,101 @@ var FS_SAFE_THUMB = /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+\/=\s]+$/i;
 function fsSafeDataUrl(s) { return (typeof s === "string" && FS_SAFE_DATA_URL.test(s)) ? s : ""; }
 function fsSafeThumb(s) { return (typeof s === "string" && FS_SAFE_THUMB.test(s)) ? s : ""; }
 
+/* ── Attachments are sealed with the vault key when the vault is on ──
+   (second full audit, 2026-10-27). Scans, photographs and PDFs — often
+   bearing the patient's name — were stored in IndexedDB as raw files, so on a
+   device whose owner had turned encryption on they were the one part of the
+   record left readable. Stored now as { __fsSealed, env, type } where env is
+   a vault byte envelope; inline (no-IndexedDB) attachments live inside the
+   record and are already encrypted with it. */
+function fsVaultSealing() {
+  return typeof vaultEnabled === "function" && vaultEnabled() &&
+         typeof vaultUnlocked === "function" && vaultUnlocked() &&
+         typeof vaultEncryptBytes === "function";
+}
+function fsIsSealed(v) { return !!(v && typeof v === "object" && v.__fsSealed && v.env); }
+
+function fsBlobBytes(blob) {
+  if (blob && typeof blob.arrayBuffer === "function") return blob.arrayBuffer();
+  return new Promise(function (resolve, reject) {
+    var r = new FileReader();
+    r.onload = function () { resolve(r.result); };
+    r.onerror = function () { reject(r.error || new Error("read-failed")); };
+    r.readAsArrayBuffer(blob);
+  });
+}
+
+/* What to put in IndexedDB for this blob: the blob itself, or its sealed form. */
+function fsSealForStore(blob, key) {
+  if (!key && !fsVaultSealing()) return Promise.resolve(blob);
+  return fsBlobBytes(blob).then(function (buf) { return vaultEncryptBytes(buf, key); })
+    .then(function (env) { return { __fsSealed: 1, env: env, type: (blob && blob.type) || "" }; });
+}
+
+/* The blob for a stored value; null when it is sealed and the vault is shut. */
+function fsOpenStored(v, key) {
+  if (!fsIsSealed(v)) return Promise.resolve(v || null);
+  if (!key && !(typeof vaultUnlocked === "function" && vaultUnlocked())) return Promise.resolve(null);
+  return vaultDecryptBytes(v.env, key).then(function (buf) {
+    return new Blob([buf], { type: v.type || "application/octet-stream" });
+  });
+}
+
+/* Every stored value, as [id, value] pairs (one read-only pass). */
+function fsAllEntries() {
+  return fsOpen().then(function (db) {
+    return new Promise(function (resolve, reject) {
+      var out = [];
+      var tx = db.transaction(FS_STORE, "readonly");
+      var rq = tx.objectStore(FS_STORE).openCursor();
+      rq.onsuccess = function () {
+        var c = rq.result;
+        if (c) { out.push([c.key, c.value]); c.continue(); }
+      };
+      tx.oncomplete = function () { db.close(); resolve(out); };
+      tx.onerror = function () { db.close(); reject(tx.error); };
+    });
+  });
+}
+
+/* Seal every attachment still in the clear (vault just enabled or opened). */
+function fsSealExisting() {
+  if (!fsVaultSealing()) return Promise.resolve(0);
+  return fsAllEntries().then(function (rows) {
+    var n = 0, chain = Promise.resolve();
+    rows.forEach(function (r) {
+      if (fsIsSealed(r[1]) || !r[1]) return;
+      chain = chain.then(function () {
+        return fsSealForStore(r[1]).then(function (sealed) { return fsPut(r[0], sealed); })
+          .then(function () { n++; }, function () { /* leave it as it was */ });
+      });
+    });
+    return chain.then(function () { return n; });
+  }).catch(function () { return 0; });
+}
+
+/* Unseal every attachment with `dek` — the vault is being turned OFF. */
+function fsUnsealExisting(dek) {
+  if (!dek) return Promise.resolve(0);
+  return fsAllEntries().then(function (rows) {
+    var n = 0, chain = Promise.resolve();
+    rows.forEach(function (r) {
+      if (!fsIsSealed(r[1])) return;
+      chain = chain.then(function () {
+        return fsOpenStored(r[1], dek).then(function (blob) { return fsPut(r[0], blob); })
+          .then(function () { n++; }, function () { /* leave it as it was */ });
+      });
+    });
+    return chain.then(function () { return n; });
+  }).catch(function () { return 0; });
+}
+
 /* Resolve a stored record back to something the browser can open. Returns a
    Promise of an object URL (caller should revoke) or a data URL. */
 function fsResolveUrl(rec) {
   if (!rec) return Promise.resolve("");
   if (rec.store === "inline" || rec.dataUrl) return Promise.resolve(fsSafeDataUrl(rec.dataUrl));
-  return fsGet(rec.id).then(function (blob) {
+  return fsGet(rec.id).then(fsOpenStored).then(function (blob) {
     if (!blob) return "";
     return URL.createObjectURL(blob);
   }).catch(function () { return ""; });
@@ -406,7 +497,17 @@ function fsForget(rec) {
 
 /* Upload a stored file to the user's Supabase Storage bucket. No-ops unless a
    cloud project is configured and signed in — the cloud is never a runtime
-   dependency for documenting an exam. */
+   dependency for documenting an exam.
+
+   ── SAME RULES AS A PATIENT RECORD (second full audit, 2026-10-27) ──
+   This sent the file itself — a scan, a photograph, a referral PDF — in the
+   clear, under a path containing its ORIGINAL FILENAME (often the patient's
+   name), as soon as anyone was signed in. Patient records only ever leave the
+   device after the clinic's explicit consent and encrypted with the clinic
+   key (js/cloud-crypto.js), and the cloud panel promises "the cloud only ever
+   stores ciphertext, never a name". Attachments now follow that rule:
+   consent and a key are required (phiArmed), the bytes are encrypted with the
+   clinic key, and the path is the opaque record id. */
 function fsCloudUpload(rec, bucket) {
   bucket = bucket || "attachments";
   if (typeof cloudConfigured !== "function" || !cloudConfigured()) {
@@ -414,27 +515,36 @@ function fsCloudUpload(rec, bucket) {
   }
   var s = (typeof CLOUD !== "undefined" && CLOUD) ? CLOUD.session : null;
   if (!s || !s.access_token) return Promise.resolve({ skipped: "signed-out" });
+  if (typeof phiArmed !== "function" || !phiArmed() || typeof phiEncryptBytes !== "function") {
+    return Promise.resolve({ skipped: "patient-data-sync-off" });
+  }
 
-  return fsGet(rec.id).then(function (blob) {
-    if (!blob && rec.dataUrl) return fetch(rec.dataUrl).then(function (r) { return r.blob(); });
+  return fsGet(rec.id).then(fsOpenStored).then(function (blob) {
+    if (!blob && rec.dataUrl) {
+      var safe = fsSafeDataUrl(rec.dataUrl);
+      return safe ? fetch(safe).then(function (r) { return r.blob(); }) : null;
+    }
     return blob;
   }).then(function (blob) {
     if (!blob) return { skipped: "no-bytes" };
-    var path = encodeURIComponent(rec.id) + "-" + encodeURIComponent(rec.name);
-    return fetch(CLOUD_CONFIG.url + "/storage/v1/object/" + bucket + "/" + path, {
-      method: "POST",
-      headers: {
-        "Authorization": "Bearer " + s.access_token,
-        "apikey": CLOUD_CONFIG.anonKey,
-        "Content-Type": rec.type || "application/octet-stream",
-        "x-upsert": "true"
-      },
-      body: blob
-    }).then(function (r) {
-      if (!r.ok) return { error: "upload-failed-" + r.status };
-      rec.cloud = "synced";
-      rec.cloud_path = bucket + "/" + path;
-      return { ok: true, path: rec.cloud_path };
+    return fsBlobBytes(blob).then(phiEncryptBytes).then(function (sealed) {
+      var path = "enc-" + encodeURIComponent(rec.id);
+      return fetch(CLOUD_CONFIG.url + "/storage/v1/object/" + bucket + "/" + path, {
+        method: "POST",
+        headers: {
+          "Authorization": "Bearer " + s.access_token,
+          "apikey": CLOUD_CONFIG.anonKey,
+          "Content-Type": "application/octet-stream",
+          "x-upsert": "true"
+        },
+        body: new Blob([sealed], { type: "application/octet-stream" })
+      }).then(function (r) {
+        if (!r.ok) return { error: "upload-failed-" + r.status };
+        rec.cloud = "synced";
+        rec.cloud_path = bucket + "/" + path;
+        rec.cloud_encrypted = true;
+        return { ok: true, path: rec.cloud_path };
+      });
     });
   }).catch(function (e) { return { error: String(e) }; });
 }
@@ -446,6 +556,7 @@ if (typeof module !== "undefined" && module.exports) {
     FS_ALLOWED_TYPES: FS_ALLOWED_TYPES, FS_ALLOWED_EXT: FS_ALLOWED_EXT,
     FS_ABS_MAX: FS_ABS_MAX,
     fsTypeAllowed: fsTypeAllowed, fsSniff: fsSniff,
-    fsSafeDataUrl: fsSafeDataUrl, fsSafeThumb: fsSafeThumb, fsResolveUrl: fsResolveUrl
+    fsSafeDataUrl: fsSafeDataUrl, fsSafeThumb: fsSafeThumb, fsResolveUrl: fsResolveUrl,
+    fsSealExisting: fsSealExisting, fsUnsealExisting: fsUnsealExisting, fsCloudUpload: fsCloudUpload
   };
 }

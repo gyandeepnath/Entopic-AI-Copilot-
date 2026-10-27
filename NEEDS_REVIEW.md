@@ -197,6 +197,28 @@ rule shown in the confirmation.
 
 ## For later (architecture — needs a decision + possibly spend)
 
+### 🟥 Run db/migrations/006 on your Supabase project — 2026-10-27
+It closes the cross-clinic data leak in `orphan_visits`, the guessable join
+codes, unattributed audit rows, and self-granted paid tiers (CHANGELOG, part
+2). Paste it into the Supabase SQL editor and run it once; re-running is
+harmless. It **rotates** any existing short join codes. Nobody could see them
+in the app, so in practice this breaks nothing.
+
+### 🟧 Archive files are not encrypted — found 2026-10-27
+When old visits are archived, the downloaded archive file is plain JSON with
+those visits' full clinical content, even with the vault on. Backups, by
+contrast, are encrypted by default. The on-device copy is now sealed. The
+file itself needs a decision. It must stay restorable years later on a
+different machine, so it cannot use this device's vault key. That leaves a
+passphrase you must not lose (like backups), or unencrypted as now.
+Recommendation: the same passphrase as backups, entered once per archive.
+
+### 🟦 Who may set the AI key — found 2026-10-27
+Any signed-in user can set the AI key or proxy in Account. That decides
+whether de-identified clinical text leaves the device, and it bills the
+practice. Connecting cloud sync is admin-only for the same reason.
+Recommendation: make the AI connection admin-only too.
+
 ### 🟧 Cloud encryption key strength — found 2026-10-27
 What the cloud stores is encrypted with a key derived from the clinic
 passphrase using 150,000 PBKDF2 iterations, and the passphrase can be as

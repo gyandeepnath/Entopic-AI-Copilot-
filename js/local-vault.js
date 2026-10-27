@@ -83,6 +83,11 @@ var VAULT_PROTECTED = ["patients", "visits", "audit", "users", "visit_index"];
    told it is encrypted; tests/local-vault.test.js asserts it rather than
    trusting it. */
 var VAULT_PROTECTED_PREFIX = "visit_";
+/* The pre-migration snapshot (js/storage-migrations.js) is a full copy of
+   whichever stores a migration touches — patients and visits included — and
+   was left out, so the first real migration on an encrypted device would have
+   written them to disk in plaintext. */
+var VAULT_PROTECTED_PREFIXES = [VAULT_PROTECTED_PREFIX, "premigration_"];
 
 /* In-memory only. Cleared on lock; never written to disk in raw form. */
 var _vaultDek = null;
@@ -97,8 +102,11 @@ function vaultHasCrypto() {
 function vaultIsProtected(storeKey) {
   if (VAULT_PROTECTED.indexOf(storeKey) >= 0) return true;
   /* Every per-visit record. See VAULT_PROTECTED_PREFIX above. */
-  return typeof storeKey === "string" &&
-         storeKey.indexOf(VAULT_PROTECTED_PREFIX) === 0;
+  if (typeof storeKey !== "string") return false;
+  for (var i = 0; i < VAULT_PROTECTED_PREFIXES.length; i++) {
+    if (storeKey.indexOf(VAULT_PROTECTED_PREFIXES[i]) === 0) return true;
+  }
+  return false;
 }
 
 /* ── EVERY protected store actually on this device ──
@@ -182,9 +190,8 @@ function vaultSaveMeta(meta) {
 }
 
 function vaultEnabled() { return !!vaultMeta(); }
-/* Unlocked means the key AND the decrypted records are in memory. A key
-   without its cache used to count as unlocked, which made every protected
-   store read as empty and writable (see vaultHydrate). */
+/* Unlocked = key AND decrypted records in memory. A key alone used to count,
+   making every protected store read as empty and writable (vaultHydrate). */
 function vaultUnlocked() { return !!_vaultDek && !!_vaultCache; }
 
 function vaultState() {
@@ -322,6 +329,20 @@ function vaultEncryptValue(obj, key) {
   });
 }
 
+/* Raw bytes (attachments, js/file-store.js): same key, no JSON round trip. */
+function vaultIsBytesEnvelope(x) { return !!(x && x.__vaultbytes === VAULT_TAG && x.iv && x.ct); }
+function vaultEncryptBytes(buf, key) {
+  var k = key || _vaultDek, iv = new Uint8Array(12);
+  if (!k) return Promise.reject(new Error("Vault is locked"));
+  crypto.getRandomValues(iv);
+  return crypto.subtle.encrypt({ name: "AES-GCM", iv: iv }, k, buf)
+    .then(function (ct) { return { __vaultbytes: VAULT_TAG, iv: iv, ct: ct }; });
+}
+function vaultDecryptBytes(env, key) {
+  var k = key || _vaultDek;
+  if (!k) return Promise.reject(new Error("Vault is locked"));
+  return crypto.subtle.decrypt({ name: "AES-GCM", iv: env.iv }, k, env.ct);
+}
 function vaultDecryptValue(env, key) {
   if (!vaultIsEnvelope(env)) return Promise.resolve(env);   /* not encrypted yet */
   var k = key || _vaultDek;
@@ -355,6 +376,8 @@ function _vaultVerifyAndAdopt(dek, meta) {
     /* Re-wrap any secret still lying in the clear (e.g. stored before the
        vault was enabled). Security review S-1. js/vault-secrets.js. */
     return (typeof vaultRewrapSecrets === "function") ? vaultRewrapSecrets() : true;
+  }).then(function () {   /* snapshots + attachments (js/vault-secrets.js) */
+    return (typeof vaultSealSideStores === "function") ? vaultSealSideStores() : true;
   }).then(function () { return vaultRestoreSecretConsumers(); });
 }
 
@@ -662,6 +685,8 @@ function vaultEnable(passphrase) {
       vaultSaveMeta(meta);
       return vaultHydrate(dek).then(function () {
         return (typeof vaultRewrapSecrets === "function") ? vaultRewrapSecrets() : true;
+      }).then(function () {
+        return (typeof vaultSealSideStores === "function") ? vaultSealSideStores() : true;
       });
     })
     .then(function () {
@@ -797,6 +822,10 @@ function vaultDisable(passphrase) {
          they became unreadable forever the moment the vault was turned off —
          the clinic silently lost its cloud sign-in and its cloud encryption
          key. "Turning it off is not a one-way door" has to include them. */
+      /* Snapshots and attachments are sealed with this same key. */
+      chain = chain.then(function () {
+        return (typeof vaultUnsealSideStores === "function") ? vaultUnsealSideStores(dek) : 0;
+      });
       var managed = (typeof VAULT_MANAGED_SECRETS !== "undefined") ? VAULT_MANAGED_SECRETS : [];
       managed.forEach(function (sk) {
         chain = chain.then(function () {
@@ -857,7 +886,8 @@ if (typeof module !== "undefined" && module.exports) {
     vaultRegenerateRecoveryCode: vaultRegenerateRecoveryCode,
     vaultDisable: vaultDisable,
     vaultEncryptValue: vaultEncryptValue, vaultDecryptValue: vaultDecryptValue,
-    vaultIsEnvelope: vaultIsEnvelope,
+    vaultIsEnvelope: vaultIsEnvelope, vaultIsBytesEnvelope: vaultIsBytesEnvelope,
+    vaultEncryptBytes: vaultEncryptBytes, vaultDecryptBytes: vaultDecryptBytes,
     vaultUnlockDelayMs: vaultUnlockDelayMs, vaultThrottleCheck: vaultThrottleCheck,
     vaultThrottleNoteFailure: vaultThrottleNoteFailure, vaultThrottleReset: vaultThrottleReset,
     VAULT_THROTTLE_AFTER: VAULT_THROTTLE_AFTER,

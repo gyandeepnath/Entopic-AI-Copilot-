@@ -477,8 +477,13 @@ test("no NEW module exceeds the size at which one file stops having one job", ()
        (measured in a browser, fixed, and pinned by seven tests in
        tests/local-vault.test.js). Both mechanisms are documented at length on
        purpose. Shaving that to fit a line count trades a security boundary
-       for a number. */
-    "js/local-vault.js": 880
+       for a number.
+       880 -> 900 (second full audit, 2026-10-27): per-wrapping KDF counts
+       (opening with the stored count, upgrading on success), per-store damage
+       isolation in hydrate, and the protected-prefix list. Two concerns were
+       split out at the same time (vault-secrets.js, backup-crypto.js); what
+       remains is the key and the record stores, which belong together. */
+    "js/local-vault.js": 900
   };
   const over = [];
   for (const f of fs.readdirSync(path.join(ROOT, "js")).filter((x) => x.endsWith(".js"))) {

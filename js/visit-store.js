@@ -119,6 +119,14 @@ function visitRecordSave(v) {
   return visitIndexSave(idx);
 }
 
+/* Is this visit's record DAMAGED (present but unreadable — already
+   quarantined and write-protected under its own key by storageNoteCorrupt)
+   rather than MISSING? The two need different handling: a damaged record is
+   accounted for, a missing one means the index and the records disagree. */
+function visitRecordDamaged(id) {
+  return typeof storageIsCorrupt === "function" && storageIsCorrupt(visitRecordKey(id));
+}
+
 function visitRecordRemove(id) {
   if (!id) return false;
   removeStore(visitRecordKey(id));
@@ -150,7 +158,11 @@ function visitStoreLoadAll() {
     var e = idx[i];
     if (!e || !e.id) continue;
     var v = visitRecordLoad(e.id);
-    if (v) out.push(v); else missing.push(e.id);
+    /* A DAMAGED record is reported under its own key and kept in the index
+       (visitStoreSaveAll preserves it). Blocking the whole index for it used
+       to stop every new visit in the clinic from being saved, because
+       creating a visit is an index write (second full audit, 2026-10-27). */
+    if (v) out.push(v); else if (!visitRecordDamaged(e.id)) missing.push(e.id);
   }
 
   if (missing.length) {
@@ -190,16 +202,23 @@ function visitStoreSaveAll(visits) {
 
   /* Records that are no longer in the collection. Removed AFTER the new index
      is written, so an interruption cannot leave the index pointing at a record
-     that has already gone. */
-  var gone = [];
+     that has already gone.
+
+     A DAMAGED record is never "gone": it could not be read, so it was never
+     in the collection the caller is saving. Its index entry and its bytes are
+     kept until someone deals with it, rather than being deleted by the first
+     unrelated save. */
+  var gone = [], kept = [];
   for (var j = 0; j < idx.length; j++) {
-    if (idx[j] && idx[j].id && !keep[idx[j].id]) gone.push(idx[j].id);
+    if (!idx[j] || !idx[j].id || keep[idx[j].id]) continue;
+    if (visitRecordDamaged(idx[j].id)) kept.push(idx[j]); else gone.push(idx[j].id);
   }
 
   var newIdx = [];
   for (var k = 0; k < visits.length; k++) {
     if (visits[k] && visits[k].id) newIdx.push(visitIndexEntry(visits[k]));
   }
+  for (var q = 0; q < kept.length; q++) newIdx.push(kept[q]);
   if (!visitIndexSave(newIdx)) return false;
 
   for (var g = 0; g < gone.length; g++) removeStore(visitRecordKey(gone[g]));
@@ -225,7 +244,7 @@ function visitStoreForPatient(patientId) {
   var out = [], missing = [];
   for (var i = 0; i < mine.length; i++) {
     var v = visitRecordLoad(mine[i].id);
-    if (v) out.push(v); else missing.push(mine[i].id);
+    if (v) out.push(v); else if (!visitRecordDamaged(mine[i].id)) missing.push(mine[i].id);
   }
   if (missing.length && typeof storageNoteCorrupt === "function") {
     storageNoteCorrupt(VISIT_INDEX_KEY, null,
@@ -387,9 +406,31 @@ function visitStoreSplitNow() {
 }
 
 /* Remove the pre-split copy. Only safe once the new layout holds everything
-   the old one did — checked here rather than assumed. */
+   the old one did — checked here rather than assumed.
+
+   ── NOTHING CALLED THIS (second full audit, 2026-10-27) ──
+   The split kept the old combined array "until a full session on the new
+   layout", but no code ever removed it. On every device split since August
+   it still held a full second copy of every pre-split visit, which meant:
+     • half the storage headroom gone, on the device limit the split exists
+       to push back;
+     • a DELETED patient's visits still on disk, in the old copy — an erasure
+       that did not erase;
+     • archiving freed nothing, because the full visit was still in it.
+   It is now dropped at the next start after the split (app.js boot), which
+   keeps the one-session safety margin the split promised.
+
+   A visit in the old copy that the index no longer lists is fine to lose IF
+   its record is gone too: every deliberate removal since the split (patient
+   delete, practice clear, restore) removes the index entry AND the record.
+   An unindexed visit whose record still EXISTS is an interrupted write, not a
+   deletion — that keeps the old copy. */
 function visitStoreDropLegacy() {
   if (!visitStoreSplit()) return { ok: false, reason: "this device has not been split" };
+  if (typeof storageIsCorrupt === "function" &&
+      (storageIsCorrupt(VISIT_INDEX_KEY) || storageIsCorrupt(VISIT_LEGACY_KEY))) {
+    return { ok: false, reason: "the visit store is damaged; keeping every copy" };
+  }
   var legacy = loadStore(VISIT_LEGACY_KEY, null);
   if (legacy === null) return { ok: true, reason: "already removed" };
   if (!Array.isArray(legacy)) return { ok: false, reason: "the legacy store is not a list" };
@@ -398,20 +439,28 @@ function visitStoreDropLegacy() {
   var have = Object.create(null);
   idx.forEach(function (e) { if (e && e.id) have[e.id] = true; });
 
-  var absent = legacy.filter(function (v) { return v && v.id && !have[v.id]; });
-  if (absent.length) {
+  var stranded = legacy.filter(function (v) {
+    return v && v.id && !have[v.id] && visitRecordLoad(v.id) !== null;
+  });
+  if (stranded.length) {
     return { ok: false,
-             reason: absent.length + " visit(s) in the previous store are not in the new one; " +
-                     "keeping it" };
+             reason: stranded.length + " visit(s) have a record but no index entry; keeping the " +
+                     "previous store until that is reconciled" };
   }
+  var held = legacy.length;
   removeStore(VISIT_LEGACY_KEY);
-  return { ok: true, reason: "" };
+  if (typeof logAudit === "function") {
+    try { logAudit("visit_store_legacy_dropped", "The pre-split combined visit store (" + held +
+      " visit(s)) was removed; every visit it held is in the per-visit store or was " +
+      "deliberately deleted since.", {}); } catch (e) {}
+  }
+  return { ok: true, reason: "", dropped: held };
 }
 
 if (typeof module !== "undefined" && module.exports) {
   module.exports = {
     VISIT_INDEX_KEY: VISIT_INDEX_KEY, VISIT_RECORD_PREFIX: VISIT_RECORD_PREFIX,
-    visitIndexLoad: visitIndexLoad, visitRecordLoad: visitRecordLoad,
+    visitIndexLoad: visitIndexLoad, visitRecordLoad: visitRecordLoad, visitRecordDamaged: visitRecordDamaged,
     visitRecordSave: visitRecordSave, visitRecordRemove: visitRecordRemove,
     visitStoreLoadAll: visitStoreLoadAll, visitStoreSaveAll: visitStoreSaveAll,
     visitStoreForPatient: visitStoreForPatient, visitStoreLastFor: visitStoreLastFor,

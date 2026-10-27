@@ -6,6 +6,86 @@ strong hypothesis, not a contract — the code is the source of truth).
 
 ---
 
+## 2026-10-27 — Second full audit, part 2: the server, the cloud, and copies nobody counted
+
+### CI had not run a single test since 24 September
+The automatic test run on GitHub used Node 20, but the test command (changed
+in my September audit) needs Node 21 or later. Every push since then failed at
+"Could not find tests". **No test ran in CI for a month.** That was my
+mistake: I relied on running tests myself and never checked CI. All the tests
+did pass when run locally, but the independent gate was blind. Fixed, and CI
+now fails loudly if no tests run at all. It is green again.
+
+### The database (checked on a real PostgreSQL 16, not just read)
+I ran every migration on PostgreSQL 16 with Supabase's roles, then acted as a
+visitor, a member of each clinic, and an outsider. Four real problems:
+- **Anyone holding the project's public key could list every clinic's orphaned
+  visit ids.** A database view ignored the per-clinic rules. Fixed.
+- **Joining a clinic did not work, and could not be made safe.** New clinics
+  never got a join code. Old ones had 6-character codes that could be guessed
+  with no limit, and a guessed code gave a stranger permission to delete the
+  clinic's records on every device. No screen ever showed the code anyway.
+  Now every clinic gets a 12-character code, guessing is limited to 10 tries an
+  hour, and an administrator can show the code from the Cloud card. A wrong
+  code no longer reports "Joined".
+- Audit entries could be written as "nobody". The server now stamps who wrote
+  them.
+- Any user could give themselves the institutional (paid) tier. Closed.
+
+All of this is in `db/migrations/006_security_hardening.sql`, **which you need
+to run once on your Supabase project**. `tools/db/verify-migrations.js` runs
+25 checks on a real database; without 006, 11 of them fail.
+
+### Copies of patient records that the vault did not protect
+With encryption on, these were still stored in plain text on the same
+device:
+- **Automatic backup snapshots**: up to seven full copies of every patient,
+  visit, account and audit entry.
+- **The on-device copy each archive keeps.**
+- **Attached files**: scans, photographs and PDFs, often with the patient's
+  name on them.
+- The copy made before a future data migration (none has run yet).
+
+All of these are now encrypted with the vault key. Copies made before
+encryption was turned on are encrypted the next time the vault opens, and
+they are decrypted again before encryption is turned off.
+
+### Attachments were uploaded to the cloud unencrypted, without consent
+As soon as anyone signed in to cloud sync, each attached file was sent as
+it was, under its **original filename** (often the patient's name). It did not
+wait for the patient-data consent, and it was not encrypted, although every
+patient record is held to both and the cloud panel says "the cloud only ever
+stores ciphertext". Attachments now follow the same rules as records: consent
+first, encrypted with the clinic key, stored under a meaningless id.
+
+### Other fixes
+- **The old copy of every visit was never removed.** When visit storage was
+  reorganised in August, the old combined copy was meant to be removed after
+  one session, but nothing did it. It used half the storage headroom, and
+  **deleted patients' visits stayed in it**. It is now removed safely at the
+  next start.
+- **One damaged visit could stop the clinic starting new visits.** It was
+  treated as "the visit list is damaged", which blocked every new exam. A
+  damaged visit is now kept, set aside and reported, while work carries on.
+- **Patient and visit ids could collide between clinics.** They were the
+  time to the millisecond, so two clinics could collide, and another clinic
+  could deliberately take an id and block your sync. New ids carry random
+  digits.
+- **Live sync opened a new connection** on every restart, network blip or
+  unlock, and never closed the old ones. Now one at a time.
+- **Withdrawing research consent** reported the data as deleted before it
+  was. It is now deleted at once, and a failure is reported.
+- **The AI proxy example was an open relay.** Anyone who found a deployed
+  copy could spend your Anthropic credit. It now needs a token or a signed-in
+  user of your Supabase project, and only allows chosen models. The app also
+  gained the proxy settings it was missing; before, they could only be set
+  from developer tools. The recommended host is a Supabase Edge Function,
+  which Entopic's security policy already allows.
+- AI features no longer require a key in the browser when a proxy is set up.
+  Before, the recommended setup turned the AI features off.
+
+---
+
 ## 2026-10-27 — Second full audit, part 1: device encryption and passwords
 
 You asked me to audit everything. This round starts with the parts the

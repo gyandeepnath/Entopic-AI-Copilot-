@@ -1896,6 +1896,12 @@ function esc(s) { return escHtml(s); }
       var _sp = visitStoreSplitNow();
       if (!_sp.ok) console.warn("Entopic: visit-store split held — " + _sp.reason);
       else if (_sp.migrated) console.info("Entopic: visit store split into " + _sp.migrated + " records.");
+      /* Split in an EARLIER session: retire the old combined copy now (it
+         was never removed — see visitStoreDropLegacy). */
+      if (_sp.ok && _sp.reason === "already split" && typeof visitStoreDropLegacy === "function") {
+        var _dl = visitStoreDropLegacy();
+        if (!_dl.ok) console.warn("Entopic: kept the pre-split visit store — " + _dl.reason);
+      }
     } catch (e) { console.error("Entopic: visit-store split failed", e); }
   }
 

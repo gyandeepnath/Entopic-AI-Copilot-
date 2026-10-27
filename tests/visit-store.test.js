@@ -646,3 +646,42 @@ test("with the record vault on, the pre-delete snapshot is encrypted, not plain"
   assert.ok(json.indexOf("0123 456 789") < 0 && json.indexOf("Ann") < 0, "patient details written to Downloads in the clear");
   assert.strictEqual(b.run("loadPatients().length"), 0);
 });
+
+test("a patient deleted after the split does not keep the old copy (and their visits) forever", () => {
+  /* Nothing ever called visitStoreDropLegacy, and its check refused to drop
+     the old copy once any visit had been deliberately removed — so a deleted
+     patient's visits stayed on disk in the pre-split array indefinitely. */
+  const c = sandbox();
+  seed(c, [visit("v1", "p1", ago(1)), visit("v2", "p2", ago(2))]);
+  c.run("visitStoreSplitNow()");
+  c.run('saveVisits(loadVisits().filter(function (v) { return v.patient_id !== "p2"; }))');   /* delete p2 */
+  assert.strictEqual(c.run('visitRecordLoad("v2")'), null, "sanity: the record went with it");
+
+  const drop = c.run("visitStoreDropLegacy()");
+  assert.strictEqual(drop.ok, true, drop.reason);
+  assert.strictEqual(c.run('localStorage.getItem("entopic_visits")'), null,
+    "the deleted patient's visit no longer survives in the old copy");
+  assert.strictEqual(c.run("loadVisits().length"), 1);
+});
+
+test("the old copy is retired at the start AFTER the split, not during it", () => {
+  const src = require("node:fs").readFileSync(require("node:path").resolve(__dirname, "..", "js", "app.js"), "utf8");
+  assert.match(src, /_sp\.reason === "already split" && typeof visitStoreDropLegacy === "function"/);
+});
+
+test("one damaged visit record does not stop the clinic saving new visits — and is not deleted by them", () => {
+  const c = sandbox();
+  seed(c, [visit("v1", "p1", ago(1)), visit("v2", "p2", ago(2))]);
+  c.run("visitStoreSplitNow()");
+  c.run('localStorage.setItem("entopic_visit_v2", "{\\"id\\":\\"v2\\",\\"da")');   /* damaged bytes */
+
+  assert.strictEqual(c.run("loadVisits().length"), 1, "the readable visit loads");
+  assert.strictEqual(c.run('storageIsCorrupt("visit_v2")'), true, "the damaged one is reported");
+  assert.strictEqual(c.run('storageIsCorrupt("visit_index")'), false, "but the index is not blocked for it");
+
+  const ok = c.run('visitRecordSave({ id: "v3", patient_id: "p3", date: "2026-10-27", data: {} })');
+  assert.strictEqual(ok, true, "a new visit can still be saved");
+  c.run('saveVisits(loadVisits())');                                            /* an unrelated full save */
+  assert.ok(c.run('localStorage.getItem("entopic_visit_v2")'), "the damaged record is kept, not deleted");
+  assert.ok(c.run('visitIndexLoad().some(function (e) { return e.id === "v2"; })'), "and stays indexed");
+});

@@ -887,3 +887,12 @@ test("turning the vault off with a damaged record stops, keeps the key, and says
   });
   assert.strictEqual(ctx.vaultEnabled(), true, "the key that could ever read it is kept");
 });
+
+test("a pre-migration snapshot is encrypted like the records it copies", async () => {
+  const ctx = makeEnv({ entopic_patients: PATIENTS });
+  await ctx.vaultEnable(PASS);
+  ctx.saveStore("premigration_1790000000000", { stores: { patients: PATIENTS } });
+  await ctx.vaultFlush();
+  assert.doesNotMatch(ctx.__raw["entopic_premigration_1790000000000"], /Meera|MRN-4471/,
+    "the first real migration would have written every patient in the clear");
+});
