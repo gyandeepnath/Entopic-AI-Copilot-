@@ -31,9 +31,10 @@
 /* with physical access to an unlocked device — that is out of scope */
 /* for a client-only app and is documented as such. The derived key  */
 /* is cached on the device so an all-day clinical tool does not      */
-/* demand the passphrase on every reload; the local record store is  */
-/* already plaintext by design, so caching the key there adds no new */
-/* exposure the local data did not already have.                     */
+/* demand the passphrase on every reload. Without the record vault   */
+/* the local store is plaintext anyway, so the cached key adds no    */
+/* exposure; with the vault on, the cached key is sealed by it like  */
+/* the records (VAULT_MANAGED_SECRETS in js/vault-secrets.js).       */
 /*                                                                  */
 /* Same salt derivation on every device in a clinic (passphrase +    */
 /* clinic id) means peers converge on the same key with no key       */

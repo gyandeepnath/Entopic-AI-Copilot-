@@ -27,8 +27,21 @@ Everything here uses Node's built-ins (no `npm install` needed).
   `runDiagnosticEngine()` on a `blankVisit()`/`blankPatient()` and returns
   `{ dxList, alerts, nudges, tokens, routes }`. This is what the golden
   vignettes drive.
+- `lib/browser.js` — where the browser checks (`e2e/`, `stress/xss.js`,
+  `stress/output.js`, `stress/redflag-screen.js`) find Playwright, Chromium
+  and the espree parser. Override with `ENTOPIC_PLAYWRIGHT`, `ENTOPIC_CHROME`
+  or `ENTOPIC_ESPREE`. Every harness used to name one exact Chromium build, so
+  a container update silently disabled all of them.
+- `db/verify-migrations.js` + `db/supabase-shim.sql` — run every migration in
+  `db/migrations/` on a real local PostgreSQL with Supabase's roles stubbed,
+  then act as an outsider, a clinic member and an anonymous visitor and check
+  what each can see and change. Point it at a scratch cluster with the usual
+  `PGHOST` / `PGPORT` / `PGUSER` variables; it never touches Supabase itself.
 - `kb-audit.js` — the audit report.
 - `gen-token-registry.js` — the token-registry generator.
+- `seed-cloud-kb.js` — prints the SQL that publishes the local KB to the
+  cloud. Publish with a `--version` above `KB_VERSION` in `js/build-info.js`,
+  or devices ignore it (the script warns).
 
 ## Token registry
 

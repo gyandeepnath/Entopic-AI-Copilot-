@@ -178,6 +178,16 @@ real engine with nothing recorded except the drug:
    matcher looks for "optic" + "neuritis", which only ethambutol's "Optic
    neuritis (toxic)" contains. Should amiodarone raise `toxic_optic_risk`?
 
+### 🟦 Should editing a condition's About summary require re-review? — 2026-10-27
+A sign-off covers "findings, urgency, ICD code and About summary", but the
+fingerprint that makes a sign-off go stale includes the findings, urgency,
+route, exclusions and ICD code — **not the About summary** (it lives in a
+separate file). So a later change to a summary keeps your signature. Including
+it is easy, but it would send **every condition you have already signed back
+for re-review** once. Options: (a) leave as is; (b) include it from now on and
+re-review once; (c) include it only for sign-offs made after the change.
+Recommendation: (c).
+
 ### 🟧 OSDI "N/A" and corneal thickness in two places — found in the 2026-10-27 audit
 1. **Changed (please confirm):** the OSDI now offers N/A on items 6–12 (reading,
    night driving, computer, TV, wind, low humidity, air conditioning) and leaves

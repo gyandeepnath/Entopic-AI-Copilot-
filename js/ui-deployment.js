@@ -89,7 +89,7 @@ function deployChecks(env) {
       label: "Patient-data encryption key",
       state: phi ? "ok" : "warn",
       detail: phi
-        ? "Consent given and the clinic key is set — names/MRNs are encrypted before leaving the device."
+        ? "Consent given and the clinic key is set — each patient and visit record is encrypted on this device; the cloud stores only ciphertext."
         : "Patient records are NOT syncing yet: cloud sync of identifiable data needs consent plus a clinic passphrase."
     });
   }

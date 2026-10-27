@@ -45,6 +45,17 @@ and "no pain" are still negated.
 - **Trend charts spaced visits evenly**, so a pressure rise over two weeks drew
   exactly like the same rise over two years. Points are now placed by date, and
   the chart says so.
+- **Two knowledge-base version numbers.** The loader kept its own KB version,
+  "1.1.0" from July, which nothing updated. Every visit since July recorded
+  "KB 1.1.0" as the knowledge base that produced its differential, so the
+  replay screen could never show that the knowledge base had changed. The
+  cloud-update check also compared against 1.1.0, so an **older** published
+  bundle numbered 1.2.0 would have replaced the newer built-in knowledge base.
+  There is now one number (`KB_VERSION`), and the publishing script warns when a
+  version would be ignored.
+- Wording: the readiness panel said cloud sync encrypts "names/MRNs"; it
+  encrypts the whole record. The AI-proxy field suggested an address that the
+  page's own security policy would block; it now suggests one that works.
 - **Dry-eye score (OSDI).** Every tap stored a running score, so after one
   answer the chief-complaint badge and the dry-eye clinic's "already recorded"
   strip showed, say, "100 · Severe Dry Eye", while the questionnaire said
